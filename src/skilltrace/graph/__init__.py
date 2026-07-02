@@ -7,6 +7,14 @@ frontmatter never carries prerequisites, unlocks, node_type, or state.
 
 from __future__ import annotations
 
+from .edges import (
+    EDGE_TYPES,
+    PRUNED_EDGE_FIELDS,
+    EdgeLoadError,
+    GraphEdge,
+    load_edge,
+    load_edges,
+)
 from .nodes import (
     FORBIDDEN_FRONTMATTER_KEYS,
     NodeLoadError,
@@ -16,9 +24,15 @@ from .nodes import (
 )
 
 __all__ = [
+    "EDGE_TYPES",
+    "PRUNED_EDGE_FIELDS",
+    "EdgeLoadError",
     "FORBIDDEN_FRONTMATTER_KEYS",
+    "GraphEdge",
     "NodeLoadError",
     "SkillNode",
+    "load_edge",
+    "load_edges",
     "load_node",
     "load_nodes",
 ]
