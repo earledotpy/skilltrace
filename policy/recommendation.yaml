@@ -44,6 +44,14 @@ recommendation_policy:
       weight: -3.0
       enabled: true
       notes: Open blockers reduce recommendation score unless remediation is being selected.
+  # Opaque track-priority map (decision 18): the engine attaches no meaning to
+  # track names — it only looks each node's track up here. An unmapped track
+  # scores 0 and warns. Full policy machinery (the factor weights above) is
+  # v0.6; the v0.3 `next` command reads only this map.
+  track_weights:
+    foundational: 3.0
+    core: 2.0
+    portfolio: 1.0
   default_available_minutes: 60
   default_limit: 5
   prefer_remediation_over_new_work: true
