@@ -5,7 +5,6 @@ summary: Create a README that explains what a project does and how to run it.
 domain: communication
 track: portfolio
 level: beginner
-node_type: portfolio_artifact
 roadmap_anchors:
   -
     phase: phase_4
@@ -34,11 +33,6 @@ tags:
   - readme
   - communication
   - portfolio
-prerequisites:
-  - communication.notes.technical_summary_01
-unlocks:
-  - portfolio.project.slope_calculator_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

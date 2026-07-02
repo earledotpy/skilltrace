@@ -5,7 +5,6 @@ summary: Use if, elif, and else statements to control program flow.
 domain: programming
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_1
@@ -33,11 +32,6 @@ mastery_policy:
 tags:
   - python
   - conditionals
-prerequisites:
-  - programming.python.variables_01
-unlocks:
-  - programming.python.functions_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

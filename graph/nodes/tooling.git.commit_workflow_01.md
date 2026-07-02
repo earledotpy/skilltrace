@@ -5,7 +5,6 @@ summary: Stage, commit, and inspect changes in a local repository.
 domain: tooling
 track: foundational
 level: beginner
-node_type: procedure
 roadmap_anchors:
   -
     phase: phase_1
@@ -34,11 +33,6 @@ tags:
   - git
   - commits
   - tooling
-prerequisites:
-  - tooling.git.repository_basics_01
-unlocks:
-  - portfolio.project.slope_calculator_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

@@ -5,7 +5,6 @@ summary: Write reusable functions with parameters and return values.
 domain: programming
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_1
@@ -33,12 +32,6 @@ mastery_policy:
 tags:
   - python
   - functions
-prerequisites:
-  - programming.python.conditionals_01
-unlocks:
-  - programming.python.errors_debugging_01
-  - portfolio.project.slope_calculator_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

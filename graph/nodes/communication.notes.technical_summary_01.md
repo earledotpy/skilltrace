@@ -5,7 +5,6 @@ summary: Summarize a concept, procedure, or blocker in clear technical notes.
 domain: communication
 track: foundational
 level: beginner
-node_type: reflection
 roadmap_anchors:
   -
     phase: phase_4
@@ -34,11 +33,6 @@ tags:
   - communication
   - notes
   - writing
-prerequisites:
-  []
-unlocks:
-  - communication.readme.basic_readme_01
-state: available
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

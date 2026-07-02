@@ -5,7 +5,6 @@ summary: Handle missing or malformed values in a small CSV file.
 domain: data
 track: core
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_1
@@ -34,11 +33,6 @@ tags:
   - data
   - csv
   - cleaning
-prerequisites:
-  - data.csv.read_csv_01
-unlocks:
-  - data.pandas.dataframe_basics_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

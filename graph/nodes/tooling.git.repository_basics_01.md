@@ -5,7 +5,6 @@ summary: Initialize or clone a repository and inspect its status.
 domain: tooling
 track: foundational
 level: beginner
-node_type: procedure
 roadmap_anchors:
   -
     phase: phase_1
@@ -34,11 +33,6 @@ tags:
   - git
   - github
   - tooling
-prerequisites:
-  []
-unlocks:
-  - tooling.git.commit_workflow_01
-state: available
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

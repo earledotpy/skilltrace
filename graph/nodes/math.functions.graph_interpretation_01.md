@@ -5,7 +5,6 @@ summary: Explain what a graph says about relationships, trends, and change.
 domain: mathematics
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_0
@@ -34,11 +33,6 @@ tags:
   - math
   - graphs
   - interpretation
-prerequisites:
-  - math.functions.linear_functions_01
-unlocks:
-  []
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

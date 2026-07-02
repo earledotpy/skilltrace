@@ -5,7 +5,6 @@ summary: Use basic terminal commands to move through folders and run local comma
 domain: tooling
 track: foundational
 level: beginner
-node_type: procedure
 roadmap_anchors:
   -
     phase: phase_1
@@ -34,11 +33,6 @@ tags:
   - cli
   - terminal
   - tooling
-prerequisites:
-  []
-unlocks:
-  - programming.python.environment_01
-state: available
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

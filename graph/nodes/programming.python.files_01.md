@@ -5,7 +5,6 @@ summary: Use Python to read from and write to local text files.
 domain: programming
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_1
@@ -33,11 +32,6 @@ mastery_policy:
 tags:
   - python
   - files
-prerequisites:
-  - programming.python.lists_loops_01
-unlocks:
-  - data.csv.read_csv_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

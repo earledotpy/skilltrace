@@ -5,7 +5,6 @@ summary: Plot, read, and interpret points on the coordinate plane.
 domain: mathematics
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_0
@@ -34,11 +33,6 @@ tags:
   - math
   - functions
   - graphs
-prerequisites:
-  - math.algebra.linear_equations_01
-unlocks:
-  - math.functions.slope_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

@@ -5,7 +5,6 @@ summary: Create a small Python project that calculates slope, handles edge cases
 domain: programming
 track: portfolio
 level: beginner
-node_type: project
 roadmap_anchors:
   -
     phase: phase_1
@@ -35,15 +34,6 @@ tags:
   - python
   - math
   - git
-prerequisites:
-  - math.functions.slope_01
-  - programming.python.functions_01
-  - programming.python.errors_debugging_01
-  - tooling.git.commit_workflow_01
-  - communication.readme.basic_readme_01
-unlocks:
-  []
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

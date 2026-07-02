@@ -5,7 +5,6 @@ summary: Evaluate arithmetic expressions using standard order of operations.
 domain: mathematics
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_0
@@ -34,11 +33,6 @@ tags:
   - math
   - algebra
   - foundation
-prerequisites:
-  []
-unlocks:
-  - math.algebra.variables_expressions_01
-state: available
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

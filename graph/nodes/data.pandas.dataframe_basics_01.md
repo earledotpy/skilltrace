@@ -5,7 +5,6 @@ summary: Load, inspect, filter, and summarize tabular data with Pandas.
 domain: data
 track: core
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_1
@@ -33,11 +32,6 @@ mastery_policy:
 tags:
   - data
   - pandas
-prerequisites:
-  - data.csv.clean_simple_dataset_01
-unlocks:
-  []
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

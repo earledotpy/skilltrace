@@ -5,7 +5,6 @@ summary: Calculate slope from two points and explain it as rate of change.
 domain: mathematics
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_0
@@ -34,12 +33,6 @@ tags:
   - math
   - functions
   - slope
-prerequisites:
-  - math.functions.coordinate_plane_01
-unlocks:
-  - math.functions.linear_functions_01
-  - portfolio.project.slope_calculator_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

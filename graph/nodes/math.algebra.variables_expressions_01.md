@@ -5,7 +5,6 @@ summary: Translate between words, symbols, and algebraic expressions.
 domain: mathematics
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_0
@@ -34,11 +33,6 @@ tags:
   - math
   - algebra
   - variables
-prerequisites:
-  - math.arithmetic.order_operations_01
-unlocks:
-  - math.algebra.linear_equations_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

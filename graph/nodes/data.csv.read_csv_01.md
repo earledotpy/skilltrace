@@ -5,7 +5,6 @@ summary: Load a simple CSV file and inspect rows and columns.
 domain: data
 track: core
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_1
@@ -34,11 +33,6 @@ tags:
   - data
   - csv
   - python
-prerequisites:
-  - programming.python.files_01
-unlocks:
-  - data.csv.clean_simple_dataset_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

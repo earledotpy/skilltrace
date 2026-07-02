@@ -5,7 +5,6 @@ summary: Use Python error messages to identify and fix simple bugs.
 domain: programming
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_1
@@ -33,11 +32,6 @@ mastery_policy:
 tags:
   - python
   - debugging
-prerequisites:
-  - programming.python.functions_01
-unlocks:
-  - portfolio.project.slope_calculator_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

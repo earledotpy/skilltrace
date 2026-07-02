@@ -5,7 +5,6 @@ summary: Solve equations of the form ax + b = c and explain each transformation.
 domain: mathematics
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_0
@@ -34,12 +33,6 @@ tags:
   - math
   - algebra
   - equations
-prerequisites:
-  - math.algebra.variables_expressions_01
-unlocks:
-  - math.algebra.inequalities_01
-  - math.functions.coordinate_plane_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

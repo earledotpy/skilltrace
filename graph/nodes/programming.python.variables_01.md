@@ -5,7 +5,6 @@ summary: Create variables, assign values, and use expressions to compute simple 
 domain: programming
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_1
@@ -33,12 +32,6 @@ mastery_policy:
 tags:
   - python
   - variables
-prerequisites:
-  - programming.python.environment_01
-unlocks:
-  - programming.python.conditionals_01
-  - programming.python.lists_loops_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

@@ -5,7 +5,6 @@ summary: Confirm Python runs locally and execute a simple script.
 domain: programming
 track: foundational
 level: beginner
-node_type: procedure
 roadmap_anchors:
   -
     phase: phase_1
@@ -34,11 +33,6 @@ tags:
   - python
   - environment
   - setup
-prerequisites:
-  - tooling.cli.navigation_01
-unlocks:
-  - programming.python.variables_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---

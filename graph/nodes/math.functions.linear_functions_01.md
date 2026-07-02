@@ -5,7 +5,6 @@ summary: Connect slope, intercept, equations, tables, and graphs.
 domain: mathematics
 track: foundational
 level: beginner
-node_type: skill
 roadmap_anchors:
   -
     phase: phase_0
@@ -34,11 +33,6 @@ tags:
   - math
   - functions
   - linear
-prerequisites:
-  - math.functions.slope_01
-unlocks:
-  - math.functions.graph_interpretation_01
-state: locked
 created_at: 2026-06-28
 updated_at: 2026-06-28
 ---
