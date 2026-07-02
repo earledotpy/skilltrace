@@ -1,0 +1,5 @@
+Action: master_node
+Permission: forbidden
+Allowed: False
+Requires confirmation: True
+Reason: Mastery must never be granted by automation in v0.1.

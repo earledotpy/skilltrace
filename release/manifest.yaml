@@ -1,0 +1,52 @@
+manifest:
+  id: release.manifest.skill_graph_v0_1
+  project_name: Skill Graph AI Learning
+  version: v0.1.0-rc1
+  status: candidate
+  description: Local-first skill graph learning system release candidate.
+  python_min_version: '3.11'
+  primary_interface: cli
+  local_first: true
+  required_paths:
+  - path: graph/
+    role: graph
+    required: true
+    description: Skill node and edge files.
+  - path: evidence/
+    role: evidence
+    required: true
+    description: Evidence specifications and records.
+  - path: execution/
+    role: execution
+    required: true
+    description: Session, blocker, remediation, review, and event logs.
+  - path: interface/
+    role: interface
+    required: true
+    description: CLI command and view registry.
+  - path: policy/
+    role: policy
+    required: true
+    description: Learning policy configuration.
+  - path: release/
+    role: config
+    required: true
+    description: Release metadata, tests, criteria, and workflow.
+  - path: schemas/
+    role: schema
+    required: true
+    description: Schema contract documentation.
+  - path: compiler/
+    role: compiler
+    required: true
+    description: Validation, export, and workflow commands.
+  - path: examples/
+    role: example
+    required: true
+    description: Example command flows.
+  - path: docs/
+    role: documentation
+    required: true
+    description: Install, run, and release notes.
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'

@@ -1,0 +1,18 @@
+Apply order of operations
+=========================
+ID: math.arithmetic.order_operations_01
+State: available
+Domain: mathematics
+Track: foundational
+
+Summary
+-------
+Evaluate arithmetic expressions using standard order of operations.
+
+Evidence required
+-----------------
+Artifact specs: 1
+- spec.math.arithmetic.order_operations: Evidence shows correct work, clear steps, and no recurring error pattern across required attempts.
+Validation gates: 1
+- gate.math.arithmetic.order_operations.closure (consecutive_passes)
+Blockers: 0

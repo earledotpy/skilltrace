@@ -1,0 +1,5 @@
+[VALID] Graph layer loaded successfully
+Nodes: 24
+Edges: 24
+available: 4
+locked: 20

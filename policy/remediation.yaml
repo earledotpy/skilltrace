@@ -1,0 +1,52 @@
+remediation_policy:
+  id: policy.remediation.default_v0_1
+  status: active
+  title: Default remediation policy
+  description: Conservative remediation policy that turns blockers and failures into small repair tasks.
+  rules:
+    -
+      id: rule.remediation.open_blocker_v0_1
+      trigger: open_blocker
+      title: Open blocker remediation
+      description: Suggest remediation when an unresolved blocker remains open.
+      enabled: true
+      severity_threshold: 2
+      target_same_node_allowed: true
+      target_prerequisite_allowed: true
+      suggested_minutes: 30
+      due_in_days: 1
+    -
+      id: rule.remediation.failed_attempt_v0_1
+      trigger: failed_attempt
+      title: Failed attempt remediation
+      description: Suggest a smaller practice task after a failed assessment attempt.
+      enabled: true
+      target_same_node_allowed: true
+      target_prerequisite_allowed: true
+      suggested_minutes: 30
+      due_in_days: 1
+    -
+      id: rule.remediation.repeated_failure_v0_1
+      trigger: repeated_failure
+      title: Repeated failure prerequisite review
+      description: Suggest prerequisite review after repeated failures on the same node.
+      enabled: true
+      repeated_failure_count: 2
+      target_same_node_allowed: true
+      target_prerequisite_allowed: true
+      suggested_minutes: 45
+      due_in_days: 2
+    -
+      id: rule.remediation.low_confidence_v0_1
+      trigger: low_confidence
+      title: Low confidence repair
+      description: Suggest a short explanation or smaller example when confidence remains low.
+      enabled: true
+      target_same_node_allowed: true
+      target_prerequisite_allowed: false
+      suggested_minutes: 20
+      due_in_days: 1
+  max_open_remediations: 5
+  block_new_nodes_when_remediation_over_limit: true
+  created_at: 2026-06-28
+  updated_at: 2026-06-28

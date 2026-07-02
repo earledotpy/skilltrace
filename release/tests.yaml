@@ -1,0 +1,151 @@
+tests:
+- id: test.graph.validate
+  test_kind: structure
+  title: Validate graph
+  description: Validate graph for the v0.1.0 release candidate.
+  command: python -m compiler.validate_graph
+  expected_result: '[VALID] Graph'
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.evidence.validate
+  test_kind: cross_layer
+  title: Validate evidence
+  description: Validate evidence for the v0.1.0 release candidate.
+  command: python -m compiler.validate_evidence
+  expected_result: '[VALID] Evidence'
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.execution.validate
+  test_kind: cross_layer
+  title: Validate execution
+  description: Validate execution for the v0.1.0 release candidate.
+  command: python -m compiler.validate_execution
+  expected_result: '[VALID] Execution'
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.interface.validate
+  test_kind: cross_layer
+  title: Validate interface
+  description: Validate interface for the v0.1.0 release candidate.
+  command: python -m compiler.validate_interface
+  expected_result: '[VALID] Interface'
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.policy.validate
+  test_kind: policy_safety
+  title: Validate policy
+  description: Validate policy for the v0.1.0 release candidate.
+  command: python -m compiler.validate_policy
+  expected_result: '[VALID] Policy'
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.release.validate
+  test_kind: structure
+  title: Validate release metadata
+  description: Validate release metadata for the v0.1.0 release candidate.
+  command: python -m compiler.validate_release
+  expected_result: '[VALID] Release'
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.system.health
+  test_kind: smoke
+  title: Show system health
+  description: Show system health for the v0.1.0 release candidate.
+  command: python -m compiler.show_system_health
+  expected_result: 'Status: healthy'
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.home.show
+  test_kind: cli_read_only
+  title: Show home
+  description: Show home for the v0.1.0 release candidate.
+  command: python -m compiler.show_home
+  expected_result: Skill Graph Home
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.recommend.next
+  test_kind: cli_read_only
+  title: Recommend next
+  description: Recommend next for the v0.1.0 release candidate.
+  command: python -m compiler.recommend_next --minutes 60 --limit 5 --show-locked
+  expected_result: Recommended next
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.node.detail
+  test_kind: cli_read_only
+  title: Show node detail
+  description: Show node detail for the v0.1.0 release candidate.
+  command: python -m compiler.show_node_detail math.arithmetic.order_operations_01
+  expected_result: Apply order of operations
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.evidence.status
+  test_kind: cli_read_only
+  title: Show evidence status
+  description: Show evidence status for the v0.1.0 release candidate.
+  command: python -m compiler.show_evidence_status --node-id math.arithmetic.order_operations_01
+  expected_result: Evidence Status
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.automation.pass.forbidden
+  test_kind: policy_safety
+  title: Check pass automation forbidden
+  description: Check pass automation forbidden for the v0.1.0 release candidate.
+  command: python -m compiler.check_automation pass_node
+  expected_result: 'Permission: forbidden'
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.automation.master.forbidden
+  test_kind: policy_safety
+  title: Check mastery automation forbidden
+  description: Check mastery automation forbidden for the v0.1.0 release candidate.
+  command: python -m compiler.check_automation master_node
+  expected_result: 'Permission: forbidden'
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.automation.delete.forbidden
+  test_kind: policy_safety
+  title: Check delete automation forbidden
+  description: Check delete automation forbidden for the v0.1.0 release candidate.
+  command: python -m compiler.check_automation delete_record
+  expected_result: 'Permission: forbidden'
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'
+- id: test.sqlite.export
+  test_kind: sqlite_export
+  title: Export SQLite
+  description: Export SQLite for the v0.1.0 release candidate.
+  command: python -m compiler.sqlite_export_all
+  expected_result: '[OK] Exported SQLite database'
+  required_for_release: true
+  severity_if_failed: blocker
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'

@@ -1,0 +1,313 @@
+artifact_specs:
+  -
+    id: spec.math.arithmetic.order_operations
+    node_id: math.arithmetic.order_operations_01
+    title: Order of operations problem-set evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.arithmetic.order_operations_01: order of operations problem-set evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_arithmetic_order_operations_set_001.md
+    acceptance_summary: Evidence shows correct work, clear steps, and no recurring error pattern across required attempts.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.math.algebra.variables_expressions
+    node_id: math.algebra.variables_expressions_01
+    title: Variables and expressions problem-set evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.algebra.variables_expressions_01: variables and expressions problem-set evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_algebra_variables_expressions_set_001.md
+    acceptance_summary: Evidence shows correct work, clear steps, and no recurring error pattern across required attempts.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.math.algebra.linear_equations
+    node_id: math.algebra.linear_equations_01
+    title: Linear equations problem-set evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.algebra.linear_equations_01: linear equations problem-set evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_algebra_linear_equations_set_001.md
+    acceptance_summary: Evidence shows correct work, clear steps, and no recurring error pattern across required attempts.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.math.algebra.inequalities
+    node_id: math.algebra.inequalities_01
+    title: Inequalities problem-set evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.algebra.inequalities_01: inequalities problem-set evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_algebra_inequalities_set_001.md
+    acceptance_summary: Evidence shows correct work, clear steps, and no recurring error pattern across required attempts.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.math.functions.coordinate_plane
+    node_id: math.functions.coordinate_plane_01
+    title: Coordinate plane problem-set evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.functions.coordinate_plane_01: coordinate plane problem-set evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_functions_coordinate_plane_set_001.md
+    acceptance_summary: Evidence shows correct work, clear steps, and no recurring error pattern across required attempts.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.math.functions.slope
+    node_id: math.functions.slope_01
+    title: Slope problem-set evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.functions.slope_01: slope problem-set evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_functions_slope_set_001.md
+    acceptance_summary: Evidence shows correct work, clear steps, and no recurring error pattern across required attempts.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.math.functions.linear_functions
+    node_id: math.functions.linear_functions_01
+    title: Linear functions problem-set evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.functions.linear_functions_01: linear functions problem-set evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_functions_linear_functions_set_001.md
+    acceptance_summary: Evidence shows correct work, clear steps, and no recurring error pattern across required attempts.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.math.functions.graph_interpretation
+    node_id: math.functions.graph_interpretation_01
+    title: Graph interpretation problem-set evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.functions.graph_interpretation_01: graph interpretation problem-set evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_functions_graph_interpretation_set_001.md
+    acceptance_summary: Evidence shows correct work, clear steps, and no recurring error pattern across required attempts.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.programming.python.environment
+    node_id: programming.python.environment_01
+    title: Local Python execution evidence
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.environment_01: local python execution evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/programming/
+    example_filename: programming_python_environment_snippet_001.py
+    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.programming.python.variables
+    node_id: programming.python.variables_01
+    title: Python variables code evidence
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.variables_01: python variables code evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/programming/
+    example_filename: programming_python_variables_snippet_001.py
+    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.programming.python.conditionals
+    node_id: programming.python.conditionals_01
+    title: Python conditionals code evidence
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.conditionals_01: python conditionals code evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/programming/
+    example_filename: programming_python_conditionals_snippet_001.py
+    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.programming.python.functions
+    node_id: programming.python.functions_01
+    title: Python functions code evidence
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.functions_01: python functions code evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/programming/
+    example_filename: programming_python_functions_snippet_001.py
+    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.programming.python.errors_debugging
+    node_id: programming.python.errors_debugging_01
+    title: Python debugging checklist evidence
+    artifact_kind: checklist
+    description: "Required evidence for programming.python.errors_debugging_01: python debugging checklist evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/programming/
+    example_filename: programming_python_errors_debugging_checklist_001.md
+    acceptance_summary: Checklist is completed with command or action notes sufficient to reproduce the procedure.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.programming.python.lists_loops
+    node_id: programming.python.lists_loops_01
+    title: Python lists and loops code evidence
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.lists_loops_01: python lists and loops code evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/programming/
+    example_filename: programming_python_lists_loops_snippet_001.py
+    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.programming.python.files
+    node_id: programming.python.files_01
+    title: Python file I/O code evidence
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.files_01: python file i/o code evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/programming/
+    example_filename: programming_python_files_snippet_001.py
+    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.tooling.cli.navigation
+    node_id: tooling.cli.navigation_01
+    title: Command-line navigation checklist evidence
+    artifact_kind: checklist
+    description: "Required evidence for tooling.cli.navigation_01: command-line navigation checklist evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/tooling/
+    example_filename: tooling_cli_navigation_checklist_001.md
+    acceptance_summary: Checklist is completed with command or action notes sufficient to reproduce the procedure.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.tooling.git.repository_basics
+    node_id: tooling.git.repository_basics_01
+    title: Git repository basics checklist evidence
+    artifact_kind: checklist
+    description: "Required evidence for tooling.git.repository_basics_01: git repository basics checklist evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/tooling/
+    example_filename: tooling_git_repository_basics_checklist_001.md
+    acceptance_summary: Checklist is completed with command or action notes sufficient to reproduce the procedure.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.tooling.git.commit_workflow
+    node_id: tooling.git.commit_workflow_01
+    title: Git commit workflow checklist evidence
+    artifact_kind: checklist
+    description: "Required evidence for tooling.git.commit_workflow_01: git commit workflow checklist evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/tooling/
+    example_filename: tooling_git_commit_workflow_checklist_001.md
+    acceptance_summary: Checklist is completed with command or action notes sufficient to reproduce the procedure.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.data.csv.read_csv
+    node_id: data.csv.read_csv_01
+    title: CSV reading code evidence
+    artifact_kind: code_snippet
+    description: "Required evidence for data.csv.read_csv_01: csv reading code evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/data/
+    example_filename: data_csv_read_csv_snippet_001.py
+    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.data.csv.clean_simple_dataset
+    node_id: data.csv.clean_simple_dataset_01
+    title: Simple dataset cleaning evidence
+    artifact_kind: code_snippet
+    description: "Required evidence for data.csv.clean_simple_dataset_01: simple dataset cleaning evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/data/
+    example_filename: data_csv_clean_simple_dataset_snippet_001.py
+    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.data.pandas.dataframe_basics
+    node_id: data.pandas.dataframe_basics_01
+    title: Pandas DataFrame notebook evidence
+    artifact_kind: notebook
+    description: "Required evidence for data.pandas.dataframe_basics_01: pandas dataframe notebook evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/data/
+    example_filename: data_pandas_dataframe_basics_notebook_001.ipynb
+    acceptance_summary: Notebook loads data, shows relevant operations, includes short explanations, and can be rerun top to bottom.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.communication.notes.technical_summary
+    node_id: communication.notes.technical_summary_01
+    title: Technical summary writing evidence
+    artifact_kind: technical_summary
+    description: "Required evidence for communication.notes.technical_summary_01: technical summary writing evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/communication/
+    example_filename: communication_notes_technical_summary_summary_001.md
+    acceptance_summary: Summary states the claim, supporting evidence, remaining uncertainty, and next action.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.communication.readme.basic_readme
+    node_id: communication.readme.basic_readme_01
+    title: Basic README evidence
+    artifact_kind: readme
+    description: "Required evidence for communication.readme.basic_readme_01: basic readme evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/communication/
+    example_filename: README.md
+    acceptance_summary: README explains project purpose, setup, usage, files, and expected output clearly enough for another person to run it.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: spec.portfolio.project.slope_calculator
+    node_id: portfolio.project.slope_calculator_01
+    title: Slope calculator portfolio repository evidence
+    artifact_kind: portfolio_repo
+    description: "Required evidence for portfolio.project.slope_calculator_01: slope calculator portfolio repository evidence."
+    required: true
+    minimum_count: 1
+    expected_location_hint: portfolio/slope-calculator/
+    example_filename: README.md
+    acceptance_summary: Repository includes working code, simple tests or manual test cases, commit history, and a usable README.
+    created_at: 2026-06-28
+    updated_at: 2026-06-28

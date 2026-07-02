@@ -1,0 +1,6 @@
+[VALID] Evidence layer loaded successfully
+Resources: 0
+Artifact_specs: 24
+Validation_gates: 24
+Attempts: 0
+Evidence_records: 0

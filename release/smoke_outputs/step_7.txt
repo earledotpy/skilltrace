@@ -1,0 +1,22 @@
+Recommended next
+================
+1. communication.notes.technical_summary_01
+   Title: Write a concise technical summary
+   State: available
+   Score: 7
+   Why: available, prerequisite-safe, and useful for downstream progress
+2. math.arithmetic.order_operations_01
+   Title: Apply order of operations
+   State: available
+   Score: 7
+   Why: available, prerequisite-safe, and useful for downstream progress
+3. tooling.cli.navigation_01
+   Title: Navigate folders from the command line
+   State: available
+   Score: 7
+   Why: available, prerequisite-safe, and useful for downstream progress
+4. tooling.git.repository_basics_01
+   Title: Create or clone a Git repository
+   State: available
+   Score: 7
+   Why: available, prerequisite-safe, and useful for downstream progress

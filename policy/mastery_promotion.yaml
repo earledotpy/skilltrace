@@ -1,0 +1,32 @@
+mastery_promotion_policy:
+  id: policy.mastery.default_v0_1
+  status: active
+  title: Default mastery promotion policy
+  description: Conservative mastery policy requiring evidence, delayed recall, and explicit confirmation.
+  minimum_days_after_pass: 3
+  requirements:
+    -
+      requirement_kind: accepted_evidence
+      minimum_count: 1
+      required: true
+      description: At least one accepted evidence record must exist for the node.
+    -
+      requirement_kind: passed_review
+      minimum_count: 1
+      required: true
+      description: At least one review must be completed after the node has passed.
+    -
+      requirement_kind: delayed_recall
+      minimum_count: 1
+      required: true
+      description: At least one delayed recall review must be completed successfully.
+    -
+      requirement_kind: manual_confirmation
+      minimum_count: 1
+      required: true
+      description: The learner must explicitly confirm mastery before state transition.
+  allow_mastery_from_single_session: false
+  allow_ai_review_as_mastery_authority: false
+  require_explicit_user_confirmation: true
+  created_at: 2026-06-28
+  updated_at: 2026-06-28

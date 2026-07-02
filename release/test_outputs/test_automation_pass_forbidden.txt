@@ -1,0 +1,5 @@
+Action: pass_node
+Permission: forbidden
+Allowed: False
+Requires confirmation: True
+Reason: Passing nodes must remain an explicit evidence-backed user transition.

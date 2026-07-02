@@ -1,0 +1,53 @@
+recommendation_policy:
+  id: policy.recommendation.default_v0_1
+  status: active
+  title: Default recommendation policy
+  description: Conservative node recommendation policy for the local MVP.
+  weights:
+    -
+      factor: prerequisite_readiness
+      weight: 5.0
+      enabled: true
+      notes: Hard prerequisites remain the strongest determinant.
+    -
+      factor: track_priority
+      weight: 3.0
+      enabled: true
+      notes: Foundational and core work should outrank contextual work.
+    -
+      factor: downstream_leverage
+      weight: 2.0
+      enabled: true
+      notes: Nodes that unlock more graph progress receive a moderate boost.
+    -
+      factor: micro_session_fit
+      weight: 1.0
+      enabled: true
+      notes: Prefer work that fits the available study window.
+    -
+      factor: active_continuation
+      weight: 2.0
+      enabled: true
+      notes: Continue active work before opening too many new nodes.
+    -
+      factor: remediation_priority
+      weight: 4.0
+      enabled: true
+      notes: Remediation outranks new work when a repair task is active.
+    -
+      factor: review_due
+      weight: 2.0
+      enabled: true
+      notes: Due reviews should surface before new expansion.
+    -
+      factor: blocker_penalty
+      weight: -3.0
+      enabled: true
+      notes: Open blockers reduce recommendation score unless remediation is being selected.
+  default_available_minutes: 60
+  default_limit: 5
+  prefer_remediation_over_new_work: true
+  prefer_active_node_continuation: true
+  allow_locked_node_preview: true
+  created_at: 2026-06-28
+  updated_at: 2026-06-28

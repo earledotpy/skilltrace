@@ -1,0 +1,47 @@
+automation_boundary_policy:
+  id: policy.automation.default_v0_1
+  status: active
+  title: Default automation boundary policy
+  description: Safety policy defining which actions may be automated, suggested, or forbidden.
+  rules:
+    -
+      action: recommend_node
+      permission: allowed
+      reason: Recommendations are advisory and do not mutate learning state.
+    -
+      action: sync_readiness
+      permission: allowed_with_confirmation
+      reason: Readiness sync updates safe availability states and should remain explicit.
+    -
+      action: create_review
+      permission: allowed_with_confirmation
+      reason: Review creation mutates execution logs and should remain user-confirmed.
+    -
+      action: create_remediation
+      permission: allowed_with_confirmation
+      reason: Remediation creation mutates execution logs and should remain user-confirmed.
+    -
+      action: start_node
+      permission: allowed_with_confirmation
+      reason: Starting a node changes graph state and must be explicit.
+    -
+      action: pass_node
+      permission: forbidden
+      reason: Passing nodes must remain an explicit evidence-backed user transition.
+    -
+      action: master_node
+      permission: forbidden
+      reason: Mastery must never be granted by automation in v0.1.
+    -
+      action: archive_node
+      permission: allowed_with_confirmation
+      reason: Archiving changes graph visibility and must require confirmation.
+    -
+      action: delete_record
+      permission: forbidden
+      reason: Deleting learning records would damage auditability and is forbidden in v0.1.
+  require_confirmation_for_mutation: true
+  require_evidence_for_pass: true
+  require_review_for_mastery: true
+  created_at: 2026-06-28
+  updated_at: 2026-06-28

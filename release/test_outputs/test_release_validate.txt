@@ -1,0 +1,9 @@
+[VALID] Release layer loaded successfully
+Release_tests: 15
+Smoke_steps: 8
+Criteria: 10
+Test_results: 0
+Project: Skill Graph AI Learning
+Version: v0.1.0-rc1
+Status: candidate
+[WARNING] Required tests have no recorded result: ['test.automation.delete.forbidden', 'test.automation.master.forbidden', 'test.automation.pass.forbidden', 'test.evidence.status', 'test.evidence.validate', 'test.execution.validate', 'test.graph.validate', 'test.home.show', 'test.interface.validate', 'test.node.detail', 'test.policy.validate', 'test.recommend.next', 'test.release.validate', 'test.sqlite.export', 'test.system.health']

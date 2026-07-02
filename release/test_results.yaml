@@ -1,0 +1,106 @@
+test_results:
+- id: result.graph-validate.20260628194430
+  test_id: test.graph.validate
+  status: passed
+  ran_at: '2026-06-28T19:44:30.219960'
+  exit_code: 0
+  output_path: release/test_outputs/test_graph_validate.txt
+  summary: Command completed successfully.
+- id: result.evidence-validate.20260628194431
+  test_id: test.evidence.validate
+  status: passed
+  ran_at: '2026-06-28T19:44:31.827018'
+  exit_code: 0
+  output_path: release/test_outputs/test_evidence_validate.txt
+  summary: Command completed successfully.
+- id: result.execution-validate.20260628194433
+  test_id: test.execution.validate
+  status: passed
+  ran_at: '2026-06-28T19:44:33.092631'
+  exit_code: 0
+  output_path: release/test_outputs/test_execution_validate.txt
+  summary: Command completed successfully.
+- id: result.interface-validate.20260628194434
+  test_id: test.interface.validate
+  status: passed
+  ran_at: '2026-06-28T19:44:34.278948'
+  exit_code: 0
+  output_path: release/test_outputs/test_interface_validate.txt
+  summary: Command completed successfully.
+- id: result.policy-validate.20260628194435
+  test_id: test.policy.validate
+  status: passed
+  ran_at: '2026-06-28T19:44:35.503408'
+  exit_code: 0
+  output_path: release/test_outputs/test_policy_validate.txt
+  summary: Command completed successfully.
+- id: result.release-validate.20260628194436
+  test_id: test.release.validate
+  status: passed
+  ran_at: '2026-06-28T19:44:36.718311'
+  exit_code: 0
+  output_path: release/test_outputs/test_release_validate.txt
+  summary: Command completed successfully.
+- id: result.system-health.20260628194438
+  test_id: test.system.health
+  status: passed
+  ran_at: '2026-06-28T19:44:38.286828'
+  exit_code: 0
+  output_path: release/test_outputs/test_system_health.txt
+  summary: Command completed successfully.
+- id: result.home-show.20260628194439
+  test_id: test.home.show
+  status: passed
+  ran_at: '2026-06-28T19:44:39.658367'
+  exit_code: 0
+  output_path: release/test_outputs/test_home_show.txt
+  summary: Command completed successfully.
+- id: result.recommend-next.20260628194440
+  test_id: test.recommend.next
+  status: passed
+  ran_at: '2026-06-28T19:44:40.813585'
+  exit_code: 0
+  output_path: release/test_outputs/test_recommend_next.txt
+  summary: Command completed successfully.
+- id: result.node-detail.20260628194442
+  test_id: test.node.detail
+  status: passed
+  ran_at: '2026-06-28T19:44:42.028567'
+  exit_code: 0
+  output_path: release/test_outputs/test_node_detail.txt
+  summary: Command completed successfully.
+- id: result.evidence-status.20260628194443
+  test_id: test.evidence.status
+  status: passed
+  ran_at: '2026-06-28T19:44:43.286422'
+  exit_code: 0
+  output_path: release/test_outputs/test_evidence_status.txt
+  summary: Command completed successfully.
+- id: result.automation-pass-forbidden.20260628194444
+  test_id: test.automation.pass.forbidden
+  status: passed
+  ran_at: '2026-06-28T19:44:44.587878'
+  exit_code: 0
+  output_path: release/test_outputs/test_automation_pass_forbidden.txt
+  summary: Command completed successfully.
+- id: result.automation-master-forbidden.20260628194445
+  test_id: test.automation.master.forbidden
+  status: passed
+  ran_at: '2026-06-28T19:44:45.986302'
+  exit_code: 0
+  output_path: release/test_outputs/test_automation_master_forbidden.txt
+  summary: Command completed successfully.
+- id: result.automation-delete-forbidden.20260628194447
+  test_id: test.automation.delete.forbidden
+  status: passed
+  ran_at: '2026-06-28T19:44:47.400629'
+  exit_code: 0
+  output_path: release/test_outputs/test_automation_delete_forbidden.txt
+  summary: Command completed successfully.
+- id: result.sqlite-export.20260628194449
+  test_id: test.sqlite.export
+  status: passed
+  ran_at: '2026-06-28T19:44:49.041635'
+  exit_code: 0
+  output_path: release/test_outputs/test_sqlite_export.txt
+  summary: Command completed successfully.

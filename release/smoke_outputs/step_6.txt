@@ -1,0 +1,10 @@
+System Health
+=============
+[OK] Graph layer
+[OK] Evidence layer
+[OK] Execution layer
+[OK] Interface layer
+[OK] Policy layer
+[OK] Release layer
+
+Status: healthy

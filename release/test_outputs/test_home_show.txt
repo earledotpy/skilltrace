@@ -1,0 +1,25 @@
+Skill Graph Home
+================
+
+Graph
+-----
+available: 4
+locked: 20
+
+Evidence
+--------
+artifact_specs: 24
+validation_gates: 24
+evidence_records: 0
+
+Execution
+---------
+sessions: 0
+open_blockers: 0
+scheduled_reviews: 0
+
+Recommended next
+----------------
+1. communication.notes.technical_summary_01 — Write a concise technical summary
+2. math.arithmetic.order_operations_01 — Apply order of operations
+3. tooling.cli.navigation_01 — Navigate folders from the command line

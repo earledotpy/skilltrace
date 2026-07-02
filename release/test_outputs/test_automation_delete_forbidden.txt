@@ -1,0 +1,5 @@
+Action: delete_record
+Permission: forbidden
+Allowed: False
+Requires confirmation: True
+Reason: Deleting learning records would damage auditability and is forbidden in v0.1.

@@ -1,0 +1,8 @@
+[VALID] Policy layer loaded successfully
+Policies: 6
+recommendation_policy: policy.recommendation.default_v0_1
+remediation_policy: policy.remediation.default_v0_1
+review_cadence_policy: policy.review.default_v0_1
+mastery_promotion_policy: policy.mastery.default_v0_1
+automation_boundary_policy: policy.automation.default_v0_1
+workload_policy: policy.workload.default_v0_1

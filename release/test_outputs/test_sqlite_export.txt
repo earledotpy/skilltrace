@@ -1,0 +1,1 @@
+[OK] Exported SQLite database: /mnt/data/skill_graph_v0_1_0_rc1/data/skill_graph.db

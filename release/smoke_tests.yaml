@@ -1,0 +1,65 @@
+smoke_test_plan:
+  id: smoke.skill_graph_v0_1
+  title: Skill Graph v0.1 read-only smoke tests
+  description: Read-only tests proving the package validates, presents home/recommendation
+    views, and enforces policy boundaries.
+  platform: cross_platform
+  steps:
+  - order: 1
+    title: Validate graph
+    command: python -m compiler.validate_graph
+    expected_output_contains:
+    - '[VALID] Graph'
+    mutates_files: false
+    required: true
+  - order: 2
+    title: Validate evidence
+    command: python -m compiler.validate_evidence
+    expected_output_contains:
+    - '[VALID] Evidence'
+    mutates_files: false
+    required: true
+  - order: 3
+    title: Validate execution
+    command: python -m compiler.validate_execution
+    expected_output_contains:
+    - '[VALID] Execution'
+    mutates_files: false
+    required: true
+  - order: 4
+    title: Validate interface
+    command: python -m compiler.validate_interface
+    expected_output_contains:
+    - '[VALID] Interface'
+    mutates_files: false
+    required: true
+  - order: 5
+    title: Validate policy
+    command: python -m compiler.validate_policy
+    expected_output_contains:
+    - '[VALID] Policy'
+    mutates_files: false
+    required: true
+  - order: 6
+    title: System health
+    command: python -m compiler.show_system_health
+    expected_output_contains:
+    - 'Status: healthy'
+    mutates_files: false
+    required: true
+  - order: 7
+    title: Recommendation
+    command: python -m compiler.recommend_next --minutes 60 --limit 5 --show-locked
+    expected_output_contains:
+    - Recommended next
+    mutates_files: false
+    required: true
+  - order: 8
+    title: Automation boundary
+    command: python -m compiler.check_automation pass_node
+    expected_output_contains:
+    - 'Permission: forbidden'
+    mutates_files: false
+    required: true
+  created_at: '2026-06-28'
+  updated_at: '2026-06-28'

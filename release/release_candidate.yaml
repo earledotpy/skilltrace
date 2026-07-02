@@ -1,0 +1,17 @@
+release_candidate:
+  id: rc.skill_graph_v0_1_0_rc1
+  version: v0.1.0-rc1
+  status: candidate
+  manifest_id: release.manifest.skill_graph_v0_1
+  title: Skill Graph AI Learning v0.1.0 RC1
+  description: First local-first release candidate for the skill graph learning system.
+  included_layers:
+  - layer_1_graph
+  - layer_2_evidence
+  - layer_3_execution
+  - layer_4_interface
+  - layer_5_policy
+  - layer_6_release
+  release_notes_path: docs/RELEASE_NOTES.md
+  created_at: '2026-06-28'
+  accepted_at: null

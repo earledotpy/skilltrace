@@ -1,0 +1,85 @@
+criteria:
+- id: criterion.layers.present
+  title: All six layers present
+  description: The release candidate includes graph, evidence, execution, interface,
+    policy, and release layers.
+  required: true
+  severity_if_unmet: blocker
+  verification_method: release_test_matrix
+  related_test_ids:
+  - test.release.validate
+- id: criterion.graph.valid
+  title: Graph validates
+  description: The graph layer validates without missing references or hard-prerequisite
+    cycles.
+  required: true
+  severity_if_unmet: blocker
+  verification_method: release_test_matrix
+  related_test_ids:
+  - test.graph.validate
+- id: criterion.evidence.valid
+  title: Evidence validates
+  description: Evidence specs and gates validate against graph nodes.
+  required: true
+  severity_if_unmet: blocker
+  verification_method: release_test_matrix
+  related_test_ids:
+  - test.evidence.validate
+- id: criterion.execution.valid
+  title: Execution validates
+  description: Execution logs validate against graph and evidence layers.
+  required: true
+  severity_if_unmet: blocker
+  verification_method: release_test_matrix
+  related_test_ids:
+  - test.execution.validate
+- id: criterion.interface.valid
+  title: Interface validates
+  description: The CLI-first interface registry validates.
+  required: true
+  severity_if_unmet: blocker
+  verification_method: release_test_matrix
+  related_test_ids:
+  - test.interface.validate
+- id: criterion.policy.valid
+  title: Policy validates
+  description: Policy safety checks validate.
+  required: true
+  severity_if_unmet: blocker
+  verification_method: release_test_matrix
+  related_test_ids:
+  - test.policy.validate
+- id: criterion.system.health
+  title: System health passes
+  description: Ordered system health validation passes.
+  required: true
+  severity_if_unmet: blocker
+  verification_method: release_test_matrix
+  related_test_ids:
+  - test.system.health
+- id: criterion.recommendation.available
+  title: Recommendation works
+  description: The system can produce a next-node recommendation.
+  required: true
+  severity_if_unmet: blocker
+  verification_method: release_test_matrix
+  related_test_ids:
+  - test.recommend.next
+- id: criterion.automation.forbidden
+  title: Unsafe automation forbidden
+  description: Pass, mastery, and deletion automation are forbidden.
+  required: true
+  severity_if_unmet: blocker
+  verification_method: release_test_matrix
+  related_test_ids:
+  - test.automation.pass.forbidden
+  - test.automation.master.forbidden
+  - test.automation.delete.forbidden
+- id: criterion.sqlite.export
+  title: SQLite export completes
+  description: Validated local data exports into SQLite.
+  required: true
+  severity_if_unmet: blocker
+  verification_method: release_test_matrix
+  related_test_ids:
+  - test.sqlite.export

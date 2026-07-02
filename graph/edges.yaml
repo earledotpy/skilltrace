@@ -1,0 +1,289 @@
+edges:
+  -
+    id: edge.math.arithmetic.order_operations_01__math.algebra.variables_expressions_01
+    source: math.arithmetic.order_operations_01
+    target: math.algebra.variables_expressions_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: Algebraic expressions require reliable order-of-operations handling.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.math.algebra.variables_expressions_01__math.algebra.linear_equations_01
+    source: math.algebra.variables_expressions_01
+    target: math.algebra.linear_equations_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: Linear equations depend on manipulating variables and expressions.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.math.algebra.linear_equations_01__math.algebra.inequalities_01
+    source: math.algebra.linear_equations_01
+    target: math.algebra.inequalities_01
+    edge_type: soft_prerequisite
+    strength: 0.7
+    reason: Inequalities reuse many linear-equation manipulation skills.
+    activation_rule: source_passed
+    can_override: true
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.math.algebra.linear_equations_01__math.functions.coordinate_plane_01
+    source: math.algebra.linear_equations_01
+    target: math.functions.coordinate_plane_01
+    edge_type: soft_prerequisite
+    strength: 0.6
+    reason: Coordinate-plane work benefits from equation fluency but can be previewed earlier.
+    activation_rule: source_passed
+    can_override: true
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.math.functions.coordinate_plane_01__math.functions.slope_01
+    source: math.functions.coordinate_plane_01
+    target: math.functions.slope_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: Slope requires reading points on the coordinate plane.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.math.functions.slope_01__math.functions.linear_functions_01
+    source: math.functions.slope_01
+    target: math.functions.linear_functions_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: Linear functions require understanding slope.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.math.functions.linear_functions_01__math.functions.graph_interpretation_01
+    source: math.functions.linear_functions_01
+    target: math.functions.graph_interpretation_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: Graph interpretation builds on linear function fluency.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.tooling.cli.navigation_01__programming.python.environment_01
+    source: tooling.cli.navigation_01
+    target: programming.python.environment_01
+    edge_type: soft_prerequisite
+    strength: 0.6
+    reason: CLI navigation helps with running Python locally.
+    activation_rule: source_passed
+    can_override: true
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.programming.python.environment_01__programming.python.variables_01
+    source: programming.python.environment_01
+    target: programming.python.variables_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: Python variable practice requires a working Python environment.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.programming.python.variables_01__programming.python.conditionals_01
+    source: programming.python.variables_01
+    target: programming.python.conditionals_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: Conditionals require basic variable and expression use.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.programming.python.conditionals_01__programming.python.functions_01
+    source: programming.python.conditionals_01
+    target: programming.python.functions_01
+    edge_type: soft_prerequisite
+    strength: 0.7
+    reason: Functions often contain conditionals, but simple functions can be introduced earlier.
+    activation_rule: source_passed
+    can_override: true
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.programming.python.functions_01__programming.python.errors_debugging_01
+    source: programming.python.functions_01
+    target: programming.python.errors_debugging_01
+    edge_type: soft_prerequisite
+    strength: 0.5
+    reason: Debugging becomes more useful once the learner writes reusable functions.
+    activation_rule: source_passed
+    can_override: true
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.programming.python.variables_01__programming.python.lists_loops_01
+    source: programming.python.variables_01
+    target: programming.python.lists_loops_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: Lists and loops require basic variable fluency.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.programming.python.lists_loops_01__programming.python.files_01
+    source: programming.python.lists_loops_01
+    target: programming.python.files_01
+    edge_type: soft_prerequisite
+    strength: 0.7
+    reason: File processing often uses loops, but simple file reads can be previewed.
+    activation_rule: source_passed
+    can_override: true
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.programming.python.files_01__data.csv.read_csv_01
+    source: programming.python.files_01
+    target: data.csv.read_csv_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: CSV reading depends on understanding files.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.data.csv.read_csv_01__data.csv.clean_simple_dataset_01
+    source: data.csv.read_csv_01
+    target: data.csv.clean_simple_dataset_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: Cleaning a dataset requires reading it first.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.data.csv.clean_simple_dataset_01__data.pandas.dataframe_basics_01
+    source: data.csv.clean_simple_dataset_01
+    target: data.pandas.dataframe_basics_01
+    edge_type: soft_prerequisite
+    strength: 0.6
+    reason: Pandas is easier after basic CSV cleaning, but can be introduced earlier.
+    activation_rule: source_passed
+    can_override: true
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.tooling.git.repository_basics_01__tooling.git.commit_workflow_01
+    source: tooling.git.repository_basics_01
+    target: tooling.git.commit_workflow_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: Commit workflow requires an initialized or cloned repository.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.communication.notes.technical_summary_01__communication.readme.basic_readme_01
+    source: communication.notes.technical_summary_01
+    target: communication.readme.basic_readme_01
+    edge_type: soft_prerequisite
+    strength: 0.5
+    reason: README writing is easier after practicing concise technical summaries.
+    activation_rule: source_passed
+    can_override: true
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.math.functions.slope_01__portfolio.project.slope_calculator_01
+    source: math.functions.slope_01
+    target: portfolio.project.slope_calculator_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: The project requires calculating slope.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.programming.python.functions_01__portfolio.project.slope_calculator_01
+    source: programming.python.functions_01
+    target: portfolio.project.slope_calculator_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: The project requires writing a reusable Python function.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.programming.python.errors_debugging_01__portfolio.project.slope_calculator_01
+    source: programming.python.errors_debugging_01
+    target: portfolio.project.slope_calculator_01
+    edge_type: soft_prerequisite
+    strength: 0.7
+    reason: Debugging skill reduces friction while completing the project.
+    activation_rule: source_passed
+    can_override: true
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.tooling.git.commit_workflow_01__portfolio.project.slope_calculator_01
+    source: tooling.git.commit_workflow_01
+    target: portfolio.project.slope_calculator_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: The project should be versioned as portfolio evidence.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: edge.communication.readme.basic_readme_01__portfolio.project.slope_calculator_01
+    source: communication.readme.basic_readme_01
+    target: portfolio.project.slope_calculator_01
+    edge_type: hard_prerequisite
+    strength: 1.0
+    reason: The portfolio project requires a readable README.
+    activation_rule: source_passed
+    can_override: false
+    active: true
+    created_at: 2026-06-28
+    updated_at: 2026-06-28

@@ -1,0 +1,10 @@
+[project]
+name = "skill-graph-ai-learning"
+version = "0.1.0rc1"
+description = "Local-first skill graph learning system release candidate."
+requires-python = ">=3.11"
+dependencies = ["PyYAML>=6.0"]
+
+[tool.skill_graph]
+primary_interface = "cli"
+local_first = true
