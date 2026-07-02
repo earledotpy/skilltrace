@@ -1,9 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "skill-graph-ai-learning"
-version = "0.1.0rc1"
-description = "Local-first skill graph learning system release candidate."
+name = "skilltrace"
+version = "0.3.0rc1"
+description = "Local-first, CLI-first, single-learner skill-graph learning engine."
 requires-python = ">=3.11"
 dependencies = ["PyYAML>=6.0"]
+
+[project.scripts]
+skilltrace = "skilltrace.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.skill_graph]
 primary_interface = "cli"

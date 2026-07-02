@@ -1,0 +1,10 @@
+# Python build / editable-install artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Derived, disposable data (invariant / decision 12): never read back by the engine
+data/*.db

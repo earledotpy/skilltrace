@@ -3,9 +3,24 @@ id: 1
 title: Installable skilltrace package with subcommand dispatcher
 milestone: v0.3.0-rc1
 labels: [cli, foundation]
-status: open
+status: done
 depends_on: []
 ---
+
+## Outcome (2026-07-02)
+
+Done. Installable `skilltrace` package under `src/skilltrace/` with a
+`skilltrace` console-script entry point (`pip install -e .` verified on
+Windows; `skilltrace --help` exits 0 and lists `validate`, `sync`, `next`).
+The argparse dispatcher (`cli.py` + `dispatch.py`) is the single chokepoint:
+mutating commands append exactly one audit event to `execution/events.yaml`
+(timestamp, command, args, records_touched); read-only commands append none.
+The automation boundary is code-authoritative — `pass_node`/`master_node`/
+`delete_record` are refused unconditionally in `automation.py`, independent of
+the policy file, which can only *add* forbidden actions. The three v0.3
+commands are registered with placeholder handlers; real logic lands in
+issues #5 (validate graph), #6 (sync), #7 (next). `compiler/` untouched.
+Tests: `tests/cli/` (21 passing).
 
 ## Context
 
