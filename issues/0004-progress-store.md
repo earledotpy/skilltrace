@@ -3,9 +3,23 @@ id: 4
 title: Progress store (graph/state.yaml) with five-state model
 milestone: v0.3.0-rc1
 labels: [graph, foundation]
-status: open
+status: done
 depends_on: [2]
 ---
+
+## Outcome
+
+Shipped `skilltrace.graph.state`: `ProgressStore` with two guarded writers —
+`write_readiness` (derived `locked`/`available` only, refuses to touch asserted
+progress, not forward-only) and `write_asserted` (asserted states only,
+forward-only along the state order). `load_state` validates the state enum
+(shape only); `check_state_references` is the separate dangling-node-id check
+that issue #5's `validate graph` will compose. Seed `graph/state.yaml` created
+with all 24 seed nodes in derived states — 12 `locked` (targets of active
+`hard_prerequisite` edges), 12 `available` — no asserted progress seeded.
+Tests in `tests/graph/test_state.py` (27) cover the enum, all four write
+guards, backward-transition refusal, dangling references, round-trip, and the
+seed store.
 
 ## Context
 

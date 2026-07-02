@@ -1,0 +1,73 @@
+progress:
+  communication.notes.technical_summary_01:
+    state: available
+    changed_at: '2026-07-02'
+  communication.readme.basic_readme_01:
+    state: available
+    changed_at: '2026-07-02'
+  data.csv.clean_simple_dataset_01:
+    state: locked
+    changed_at: '2026-07-02'
+  data.csv.read_csv_01:
+    state: locked
+    changed_at: '2026-07-02'
+  data.pandas.dataframe_basics_01:
+    state: available
+    changed_at: '2026-07-02'
+  math.algebra.inequalities_01:
+    state: available
+    changed_at: '2026-07-02'
+  math.algebra.linear_equations_01:
+    state: locked
+    changed_at: '2026-07-02'
+  math.algebra.variables_expressions_01:
+    state: locked
+    changed_at: '2026-07-02'
+  math.arithmetic.order_operations_01:
+    state: available
+    changed_at: '2026-07-02'
+  math.functions.coordinate_plane_01:
+    state: available
+    changed_at: '2026-07-02'
+  math.functions.graph_interpretation_01:
+    state: locked
+    changed_at: '2026-07-02'
+  math.functions.linear_functions_01:
+    state: locked
+    changed_at: '2026-07-02'
+  math.functions.slope_01:
+    state: locked
+    changed_at: '2026-07-02'
+  portfolio.project.slope_calculator_01:
+    state: locked
+    changed_at: '2026-07-02'
+  programming.python.conditionals_01:
+    state: locked
+    changed_at: '2026-07-02'
+  programming.python.environment_01:
+    state: available
+    changed_at: '2026-07-02'
+  programming.python.errors_debugging_01:
+    state: available
+    changed_at: '2026-07-02'
+  programming.python.files_01:
+    state: available
+    changed_at: '2026-07-02'
+  programming.python.functions_01:
+    state: available
+    changed_at: '2026-07-02'
+  programming.python.lists_loops_01:
+    state: locked
+    changed_at: '2026-07-02'
+  programming.python.variables_01:
+    state: locked
+    changed_at: '2026-07-02'
+  tooling.cli.navigation_01:
+    state: available
+    changed_at: '2026-07-02'
+  tooling.git.commit_workflow_01:
+    state: locked
+    changed_at: '2026-07-02'
+  tooling.git.repository_basics_01:
+    state: available
+    changed_at: '2026-07-02'
