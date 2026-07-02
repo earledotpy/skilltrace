@@ -3,9 +3,25 @@ id: 5
 title: Graph validation — IDs, endpoints, dangling refs, cycle detection
 milestone: v0.3.0-rc1
 labels: [graph, validation]
-status: open
+status: done
 depends_on: [2, 3, 4]
 ---
+
+## Outcome
+
+Done. `skilltrace/graph/validation.py` adds `check_graph(nodes, edges, store)`
+(pure, whole-graph) and `load_and_validate(root)` (loads + folds load/missing-file
+cases), rendered by the `validate graph` command. Errors: duplicate node/edge
+ids, edge endpoints naming unknown nodes (all edges, active or not), active
+hard-prerequisite cycles (printed with closing path), and dangling progress
+references (reusing `check_state_references`). Warnings (never affect exit code):
+active soft-prerequisite cycles. `validate graph` exits 0 on seed data
+(24 nodes / 24 edges). Tests in `tests/graph/test_validation.py`.
+
+**Deferred:** "unmapped tracks" is intentionally not implemented — there is no
+track registry to validate against, and hardcoding a track allowlist in engine
+code would violate the curriculum-agnostic invariant (tracks are seed data). It
+awaits a future track registry; noted in `validation.py`.
 
 ## Context
 
