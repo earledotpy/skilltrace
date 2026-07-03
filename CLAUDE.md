@@ -56,8 +56,9 @@ enter only as seed data and policy values, never as engine code.
 - `execution/` — sessions, work, blockers, remediation, reviews, event log
 - `policy/` — hard-boundary and advisory policy values (seed data)
 - `release/` — release manifest, tests, criteria
-- `compiler/` — **v0.1 scaffold, throwaway reference only**; replaced from
-  v0.3 by an installable `skilltrace` package with subcommands
+- `src/skilltrace/` — the installable `skilltrace` CLI package (subcommands).
+  The v0.1 `compiler/` scaffold it replaced was retired in v0.4; its
+  interface-layer history lives in ADR 0002 and the roadmap.
 - `docs/` — roadmap, ADRs, framework references (background reading)
 
 ## Working conventions
@@ -66,8 +67,6 @@ enter only as seed data and policy values, never as engine code.
   follow the roadmap's RC scope and don't build ahead of it.
 - Tests: `pytest` (per-layer suites under `tests/<layer>` as RCs land).
   Every RC's exit-gate commands must pass before it's done.
-- Scaffold smoke checks (until v0.3 replaces them):
-  `python -m compiler.show_system_health`, `python -m compiler.run_smoke_tests`.
 - When a domain term is added or changed, update `CONTEXT.md` in the same
   change. Glossary only — no implementation details there.
 - Offer an ADR only for hard-to-reverse, surprising, genuine-trade-off

@@ -48,6 +48,5 @@
   "automatic_pass_forbidden": true,
   "automatic_mastery_forbidden": true,
   "automatic_deletion_forbidden": true,
-  "release_test_results_recorded": 15,
-  "objective_closure_gates_are_not_ai_advisory_only": true
+  "release_test_results_recorded": 15
 }

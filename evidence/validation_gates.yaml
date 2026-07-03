@@ -1,250 +1,194 @@
 validation_gates:
 - id: gate.math.arithmetic.order_operations.closure
   node_id: math.arithmetic.order_operations_01
-  gate_kind: consecutive_passes
+  authority: manual
   title: Closure gate for Order of operations problem-set evidence
   description: Determines whether evidence for math.arithmetic.order_operations_01
     is sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
-  required_consecutive_passes: 3
+  updated_at: 2026-07-03
 - id: gate.math.algebra.variables_expressions.closure
   node_id: math.algebra.variables_expressions_01
-  gate_kind: consecutive_passes
+  authority: manual
   title: Closure gate for Variables and expressions problem-set evidence
   description: Determines whether evidence for math.algebra.variables_expressions_01
     is sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
-  required_consecutive_passes: 3
+  updated_at: 2026-07-03
 - id: gate.math.algebra.linear_equations.closure
   node_id: math.algebra.linear_equations_01
-  gate_kind: consecutive_passes
+  authority: manual
   title: Closure gate for Linear equations problem-set evidence
   description: Determines whether evidence for math.algebra.linear_equations_01 is
     sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
-  required_consecutive_passes: 3
+  updated_at: 2026-07-03
 - id: gate.math.algebra.inequalities.closure
   node_id: math.algebra.inequalities_01
-  gate_kind: consecutive_passes
+  authority: manual
   title: Closure gate for Inequalities problem-set evidence
   description: Determines whether evidence for math.algebra.inequalities_01 is sufficient
     to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
-  required_consecutive_passes: 3
+  updated_at: 2026-07-03
 - id: gate.math.functions.coordinate_plane.closure
   node_id: math.functions.coordinate_plane_01
-  gate_kind: consecutive_passes
+  authority: manual
   title: Closure gate for Coordinate plane problem-set evidence
   description: Determines whether evidence for math.functions.coordinate_plane_01
     is sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
-  required_consecutive_passes: 3
+  updated_at: 2026-07-03
 - id: gate.math.functions.slope.closure
   node_id: math.functions.slope_01
-  gate_kind: consecutive_passes
+  authority: manual
   title: Closure gate for Slope problem-set evidence
   description: Determines whether evidence for math.functions.slope_01 is sufficient
     to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
-  required_consecutive_passes: 3
+  updated_at: 2026-07-03
 - id: gate.math.functions.linear_functions.closure
   node_id: math.functions.linear_functions_01
-  gate_kind: consecutive_passes
+  authority: manual
   title: Closure gate for Linear functions problem-set evidence
   description: Determines whether evidence for math.functions.linear_functions_01
     is sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
-  required_consecutive_passes: 3
+  updated_at: 2026-07-03
 - id: gate.math.functions.graph_interpretation.closure
   node_id: math.functions.graph_interpretation_01
-  gate_kind: consecutive_passes
+  authority: manual
   title: Closure gate for Graph interpretation problem-set evidence
   description: Determines whether evidence for math.functions.graph_interpretation_01
     is sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
-  required_consecutive_passes: 3
+  updated_at: 2026-07-03
 - id: gate.programming.python.environment.closure
   node_id: programming.python.environment_01
-  gate_kind: manual_check
+  authority: manual
   title: Closure gate for Local Python execution evidence
   description: Determines whether evidence for programming.python.environment_01 is
     sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.programming.python.variables.closure
   node_id: programming.python.variables_01
-  gate_kind: manual_check
+  authority: manual
   title: Closure gate for Python variables code evidence
   description: Determines whether evidence for programming.python.variables_01 is
     sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.programming.python.conditionals.closure
   node_id: programming.python.conditionals_01
-  gate_kind: manual_check
+  authority: manual
   title: Closure gate for Python conditionals code evidence
   description: Determines whether evidence for programming.python.conditionals_01
     is sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.programming.python.functions.closure
   node_id: programming.python.functions_01
-  gate_kind: manual_check
+  authority: manual
   title: Closure gate for Python functions code evidence
   description: Determines whether evidence for programming.python.functions_01 is
     sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.programming.python.errors_debugging.closure
   node_id: programming.python.errors_debugging_01
-  gate_kind: checklist
+  authority: manual
   title: Closure gate for Python debugging checklist evidence
   description: Determines whether evidence for programming.python.errors_debugging_01
     is sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.programming.python.lists_loops.closure
   node_id: programming.python.lists_loops_01
-  gate_kind: manual_check
+  authority: manual
   title: Closure gate for Python lists and loops code evidence
   description: Determines whether evidence for programming.python.lists_loops_01 is
     sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.programming.python.files.closure
   node_id: programming.python.files_01
-  gate_kind: manual_check
+  authority: manual
   title: Closure gate for Python file I/O code evidence
   description: Determines whether evidence for programming.python.files_01 is sufficient
     to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.tooling.cli.navigation.closure
   node_id: tooling.cli.navigation_01
-  gate_kind: checklist
+  authority: manual
   title: Closure gate for Command-line navigation checklist evidence
   description: Determines whether evidence for tooling.cli.navigation_01 is sufficient
     to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.tooling.git.repository_basics.closure
   node_id: tooling.git.repository_basics_01
-  gate_kind: checklist
+  authority: manual
   title: Closure gate for Git repository basics checklist evidence
   description: Determines whether evidence for tooling.git.repository_basics_01 is
     sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.tooling.git.commit_workflow.closure
   node_id: tooling.git.commit_workflow_01
-  gate_kind: checklist
+  authority: manual
   title: Closure gate for Git commit workflow checklist evidence
   description: Determines whether evidence for tooling.git.commit_workflow_01 is sufficient
     to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.data.csv.read_csv.closure
   node_id: data.csv.read_csv_01
-  gate_kind: manual_check
+  authority: manual
   title: Closure gate for CSV reading code evidence
   description: Determines whether evidence for data.csv.read_csv_01 is sufficient
     to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.data.csv.clean_simple_dataset.closure
   node_id: data.csv.clean_simple_dataset_01
-  gate_kind: manual_check
+  authority: manual
   title: Closure gate for Simple dataset cleaning evidence
   description: Determines whether evidence for data.csv.clean_simple_dataset_01 is
     sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.data.pandas.dataframe_basics.closure
   node_id: data.pandas.dataframe_basics_01
-  gate_kind: manual_check
+  authority: manual
   title: Closure gate for Pandas DataFrame notebook evidence
   description: Determines whether evidence for data.pandas.dataframe_basics_01 is
     sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.communication.notes.technical_summary.closure
   node_id: communication.notes.technical_summary_01
-  gate_kind: rubric
+  authority: manual
   title: Closure gate for Technical summary writing evidence
   description: Determines whether evidence for communication.notes.technical_summary_01
     is sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.communication.readme.basic_readme.closure
   node_id: communication.readme.basic_readme_01
-  gate_kind: rubric
+  authority: manual
   title: Closure gate for Basic README evidence
   description: Determines whether evidence for communication.readme.basic_readme_01
     is sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
+  updated_at: 2026-07-03
 - id: gate.portfolio.project.slope_calculator.closure
   node_id: portfolio.project.slope_calculator_01
-  gate_kind: objective_eval
+  authority: objective
+  command: pytest portfolio/slope-calculator/tests
   title: Closure gate for Slope calculator portfolio repository evidence
   description: Determines whether evidence for portfolio.project.slope_calculator_01
     is sufficient to pass the node.
-  ai_advisory_only: false
-  can_close_node: true
   created_at: 2026-06-28
-  updated_at: 2026-06-28
-  command: pytest portfolio/slope-calculator/tests
+  updated_at: 2026-07-03

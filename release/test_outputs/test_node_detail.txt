@@ -14,5 +14,5 @@ Evidence required
 Artifact specs: 1
 - spec.math.arithmetic.order_operations: Evidence shows correct work, clear steps, and no recurring error pattern across required attempts.
 Validation gates: 1
-- gate.math.arithmetic.order_operations.closure (consecutive_passes)
+- gate.math.arithmetic.order_operations.closure (manual)
 Blockers: 0
