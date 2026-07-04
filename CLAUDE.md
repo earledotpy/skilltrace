@@ -63,8 +63,9 @@ enter only as seed data and policy values, never as engine code.
 
 ## Working conventions
 
-- Current phase: v0.2 (operating base). Real implementation starts at v0.3;
-  follow the roadmap's RC scope and don't build ahead of it.
+- Current phase: v0.4.0-rc1 complete (evidence core); v0.3 graph core also
+  complete. v0.5 (execution workflow) is next — follow the roadmap's RC scope
+  and don't build ahead of it.
 - Tests: `pytest` (per-layer suites under `tests/<layer>` as RCs land).
   Every RC's exit-gate commands must pass before it's done.
 - When a domain term is added or changed, update `CONTEXT.md` in the same
