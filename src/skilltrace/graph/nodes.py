@@ -83,7 +83,14 @@ class SkillNode:
     source_path: Path | None = None
 
 
-def _valid_node_id(node_id: str) -> bool:
+def is_valid_node_id(node_id: str) -> bool:
+    """True if `node_id` is a well-formed node ID.
+
+    Dot-separated lowercase segments (alphanumeric words joined by underscores)
+    whose final segment ends in a numeric sequence suffix (`_01`, `_02`, …).
+    Public because the evidence layer's `ev.<node_id>.NNN` / `att.<node_id>.NNN`
+    IDs embed a node ID and validate it with the same rule.
+    """
     parts = node_id.split(".")
     if len(parts) < 2:
         return False
@@ -169,7 +176,7 @@ def load_node(path: Path | str) -> SkillNode:
         )
 
     node_id = data["id"]
-    if not isinstance(node_id, str) or not _valid_node_id(node_id):
+    if not isinstance(node_id, str) or not is_valid_node_id(node_id):
         raise NodeLoadError(
             f"{path}: invalid node id {node_id!r} — expected dot-separated "
             "lowercase segments ending in a numeric sequence suffix "

@@ -19,6 +19,7 @@ from .nodes import (
     FORBIDDEN_FRONTMATTER_KEYS,
     NodeLoadError,
     SkillNode,
+    is_valid_node_id,
     load_node,
     load_nodes,
 )
@@ -31,6 +32,7 @@ __all__ = [
     "GraphEdge",
     "NodeLoadError",
     "SkillNode",
+    "is_valid_node_id",
     "load_edge",
     "load_edges",
     "load_node",

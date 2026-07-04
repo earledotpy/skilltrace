@@ -28,6 +28,8 @@ state plus when it changed). Progress belongs to the learner, not the
 curriculum.
 
 **Node states** — `locked → available → active → passed → mastered`.
+The chain is an ordering, not a mandatory itinerary: passing directly from
+`available` is legal (prior learning is real); `locked` is the only wall.
 The five states split into two kinds:
 
 - **Derived readiness** (`locked`, `available`) — computed from the graph at
@@ -96,12 +98,25 @@ never block a human-initiated action; the learner is the final authority.
 
 ## Evidence & execution (partial — being refined)
 
-**Pass eligibility** — a derived fact: the node has accepted evidence
-satisfying its closing gate. Computed on demand, never stored as truth.
+**ArtifactSpec** — the definition of one kind of evidence a node expects:
+what artifact, how many (its minimum count), and whether it is required.
+Every evidence record is submitted against exactly one spec. Optional specs
+are slots for extra evidence — kept and shown, never counted.
+
+**Pass eligibility** — a derived fact: every required artifact spec of the
+node has at least its minimum count of accepted, non-superseded evidence
+records. Computed on demand, never stored as truth. Evidence records are
+the *only* input; assessment attempts never count, no matter their outcome.
+Computing eligibility never executes anything — a gate's verification
+command runs only at submission, and its verdict is a historical fact about
+the artifact as submitted. Post-acceptance regression is the Review
+mechanism's concern, not eligibility's.
 
 **Passing** — an asserted act performed only by the learner via an explicit
-command; the command refuses unless pass eligibility holds. Nothing else —
-gate, sync, or AI — ever passes a node.
+command; the command refuses unless pass eligibility holds, and refuses on a
+locked node regardless of evidence (no hard-prerequisite override). Being
+`active` is never a precondition — it records engagement, not permission.
+Nothing else — gate, sync, or AI — ever passes a node.
 
 **Mastery eligibility** — a derived fact: the node is passed, at least one
 review completed satisfactorily after the pass, and the pass and that review
@@ -115,17 +130,58 @@ command; the command refuses unless mastery eligibility holds.
 an **objective gate** (a verification command that exits successfully) or
 **learner manual review** (the learner judges the artifact against the
 node's rubric). AI review may attach advisory commentary to evidence but is
-never an acceptance authority.
+never an acceptance authority — an AI authority is not even representable in
+a gate definition. A verification command that runs and fails produces a
+rejected record; one that cannot run at all produces an error and no record —
+inability to judge is not a judgment. On a manual-review node the learner
+must state the verdict explicitly; no verdict is ever defaulted.
 
-**EvidenceRecord** — one item of evidence submitted against a node. Records
-are never edited or deleted, by human or machine; a correction is a new
-record that **supersedes** the old one (with a required reason). Superseded
-records remain visible but no longer count toward pass eligibility. An
+**ValidationGate** — a node's closing gate: the declaration of which single
+acceptance authority judges evidence submitted against that node (objective
+or learner manual review). A node has at most one gate; a node without one
+cannot accept evidence and can never become pass-eligible — that is a
+curriculum-quality warning, never an engine error. A gate never changes
+node state by itself, and there is no AI gate. Distinctions like
+rubric-vs-checklist are descriptive seed wording, not gate kinds.
+
+**EvidenceRecord** — one item of evidence submitted against a node.
+Submission is legal in any node state — evidence is a historical record of
+proof, not a state change — with a warning when the node is locked.
+Acceptance is decided at submission — by the node's objective gate or by
+learner manual review — and frozen into the record; there is no pending
+state and no later un-accepting. Submitting is the act of judgment, which
+keeps the learner accountable to it. A rejected record stays rejected
+forever; a new try is a new record. Records are never edited or deleted, by
+human or machine; a correction is a new record that **supersedes** the old
+one (with a required reason). Superseded is a derived status — the old
+record is never touched; it means a later record names it. A correction
+targets the same artifact spec as the record it corrects; corrections form
+a chain with one live head (a record with a successor cannot be superseded
+again); any record may be corrected regardless of how it was judged; and
+the correction is judged on its own merits at its own submission.
+Superseded records remain visible but no longer count toward pass
+eligibility. A record fingerprints the artifact as submitted; the artifact
+file drifting afterwards is surfaced as a health warning and never changes
+acceptance or eligibility. An
 already-asserted pass is never revoked by supersession; the discrepancy is
 surfaced as an advisory warning for the learner to act on.
 
-**AssessmentAttempt** — one attempt at a validation gate for a node. Attempts
-may fail; failed attempts are the canonical record of assessment failure.
+**Advisory annotation** — a separate append-only note that names an
+evidence record; attachment is derived, and the record itself is never
+touched. This is the only form advisory commentary takes — from AI review
+or from the learner's own later margin notes. Annotations are displayed,
+never read by engine logic, and have no effect on acceptance, eligibility,
+or state. (Structure settled; no implementation before an AI-review
+workflow exists.)
+
+**AssessmentAttempt** — one attempt at demonstrating a node's skill against
+its gate's standard. Its outcome is passed or failed (two values, no
+scores), with optional notes. Attempts are immutable and recordable in any
+node state — on a gateless node the standard lived in the learner's head,
+which is a warning, not a refusal. Failed attempts are the canonical record
+of assessment failure and feed remediation pressure. Attempts never feed
+pass eligibility — a passing attempt justifies submitting evidence but
+proves nothing by itself.
 
 **Session** — a bounded block of study time. At most one session is open at
 a time; a completed session has start and end timestamps. Session templates

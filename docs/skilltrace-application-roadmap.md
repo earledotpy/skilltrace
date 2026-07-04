@@ -198,8 +198,10 @@ Scope:
 - supersede model: records immutable; corrections via `supersedes` + reason;
   superseded records excluded from eligibility
 - pass eligibility (derived, computed on demand)
-- explicit `skilltrace pass` — refuses without eligibility; schedules the
-  first review (see v0.5/v0.6)
+- explicit `skilltrace pass` — refuses without eligibility or on a locked
+  node; writes `passed` via the guarded store API and appends its event,
+  nothing more. Review auto-scheduling attaches to `pass` in v0.5/v0.6 once
+  reviews exist — do not stub it here.
 
 CLI:
 
@@ -214,8 +216,9 @@ skilltrace pass <node_id>
 Tests:
 
 - missing node/gate reference fails
-- AI-advisory gate cannot close a node; accepted evidence requires non-AI
-  authority
+- a gate declaring any authority other than objective/learner-manual fails
+  loading (AI authority is unrepresentable); accepted evidence requires
+  non-AI authority
 - green objective gate alone never flips node state
 - `pass` refuses without eligibility; succeeds with it; appends event
 - superseding accepted evidence removes eligibility but never revokes an
