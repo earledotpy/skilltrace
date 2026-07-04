@@ -200,8 +200,8 @@ Scope:
 - pass eligibility (derived, computed on demand)
 - explicit `skilltrace pass` — refuses without eligibility or on a locked
   node; writes `passed` via the guarded store API and appends its event,
-  nothing more. Review auto-scheduling attaches to `pass` in v0.5/v0.6 once
-  reviews exist — do not stub it here.
+  nothing more. Review auto-scheduling attaches to `pass` in v0.6 with the
+  policy engine (it reads cadence policy values) — do not stub it earlier.
 
 CLI:
 
@@ -239,12 +239,20 @@ Purpose: make the application usable during real study sessions.
 
 Scope:
 
-- sessions (one open at a time; completed requires start/end timestamps;
-  stale open session warns)
+- sessions (two statuses only: open, completed — no planned sessions; one
+  open at a time; completed requires start/end timestamps; stale open
+  session warns)
 - session work items (one node each; interleaving = many items per session;
-  starting work marks the node `active`)
-- session templates (micro/standard/deep) as seed presets
-- blockers, remediation actions, review items
+  starting work marks the node `active` only as a forward move — never a
+  demotion of passed/mastered; refused on locked; optional minutes, session
+  envelope stays authoritative)
+- session templates as optional opaque labels (seed presets define expected
+  minutes for later advisory use; unmapped template warns, track-style)
+- blockers (explicit create only — blocked work never auto-creates one;
+  refused on locked nodes; second open blocker on a node warns)
+- remediation actions (ad-hoc intervention log; zero mechanical effect)
+- reviews (schedule on passed/mastered only; scheduled → completed or
+  cancelled-with-reason; overdue is derived)
 - audit-only event log: every mutating command appends one event; events are
   never read back
 
@@ -257,7 +265,10 @@ skilltrace session close
 skilltrace blocker create <node_id> ...
 skilltrace blocker resolve <blocker_id> ...
 skilltrace remediation create ...
+skilltrace remediation complete <remediation_id> ...
 skilltrace review schedule <node_id> ...
+skilltrace review complete <review_id> ...
+skilltrace review cancel <review_id> ...
 skilltrace blockers
 skilltrace reviews
 skilltrace validate execution
@@ -265,10 +276,16 @@ skilltrace validate execution
 
 Tests:
 
-- planned session validates; completed session requires timestamps
+- open session requires a start timestamp; completed session requires both
+  timestamps; any other session status (e.g. `planned`) fails validation
 - second concurrent session refused; stale open session warns
-- blocked work requires notes; resolved blocker requires resolution summary
-- completed remediation/review requires result summary
+- work on a locked node refused; work on a passed/mastered node records
+  history without demoting state
+- blocked work requires notes and creates no Blocker
+- blocker create refused on locked node; resolved blocker requires
+  resolution summary
+- completed remediation/review requires result summary; cancelled review
+  requires reason; review schedule refused on non-passed/mastered node
 - every mutating command appends exactly one event; read-only commands
   append none
 - execution references valid graph/evidence IDs

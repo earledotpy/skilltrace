@@ -183,19 +183,55 @@ of assessment failure and feed remediation pressure. Attempts never feed
 pass eligibility — a passing attempt justifies submitting evidence but
 proves nothing by itself.
 
-**Session** — a bounded block of study time. At most one session is open at
-a time; a completed session has start and end timestamps. Session templates
-(micro/standard/deep) are seed presets, not distinct types.
+**Session** — a bounded block of study time, in exactly one of two
+statuses: **open** (started, not yet ended) or **completed** (has both start
+and end timestamps). At most one session is open at a time. There is no
+planned session — a session records study that is happening or has
+happened, never an intention. An open session older than a policy-configured
+window is **stale** — a derived status that warns and never blocks; closing
+a forgotten session records its honest end time, which may be in the past.
+A session template (micro/standard/deep) is an optional opaque label on a
+session — like a Track, the engine attaches no meaning to it; expected
+durations are seed presets read only by advisory policy, and a template
+with no preset warns rather than fails.
 
 **SessionWork** — one unit of what happened in a session, tied to exactly
 one node. A session holds many work items, so interleaving several nodes in
 one sitting is first-class. Starting work on a node is what marks it
-`active`. Work flagged as blocked requires notes.
+`active` — but only as a forward move: work on an `available` node asserts
+`active`; work on an `active` node changes nothing; work on a `passed` or
+`mastered` node is recorded as history without touching state (revisiting is
+never a demotion). Work on a `locked` node is refused — locked is the only
+wall, and "cannot be started" is literal. Work flagged as blocked requires
+notes; blocked work is a session-scoped observation with no remediation
+effect — it never creates a Blocker, which is a separate, deliberate act.
 
-**Blocker** — a record that the learner is stuck on a node. Blockers are the
-canonical record of being stuck; resolving one requires a resolution summary.
+**Blocker** — a record that the learner is *persistently* stuck on a node,
+created only by an explicit learner command — never auto-created from
+blocked work. Blockers are the canonical record of persistent stuckness and
+the only stuckness signal remediation edges react to. Each blocker names
+its own obstacle (description required), so one node may carry several open
+blockers — a second open one warns as a likely duplicate. A blocker may be
+created in any node state except locked: what cannot be started cannot be
+stuck. Resolving one requires a resolution summary.
 
-**Review** — a scheduled retention check on a passed node. Completing one
+**RemediationAction** — an execution record of one deliberate corrective
+intervention: tied to exactly one node, optionally naming the Blocker it
+addresses, in one of two statuses (open or completed; completing requires a
+result summary). It is the ad-hoc counterpart to a curriculum-level
+remediation edge — loggable without any remediation node existing in the
+graph. It has no mechanical effect: it never resolves a blocker, never
+touches state or eligibility, and never activates or deactivates a
+remediation edge; advisory policy may display it as context, never read it
+as a trigger.
+
+**Review** — a scheduled retention check on a passed or mastered node —
+never on a node with nothing to retain. After mastery only the learner
+schedules reviews by hand; automation stops per policy. A review is
+scheduled, then either completed or cancelled; cancelling is a learner-only
+act with a required reason — the record stays as honest history but stops
+counting as overdue and never feeds mastery eligibility. Overdue is
+derived (a scheduled review past its date), never stored. Completing one
 requires a result summary and an outcome (satisfactory or unsatisfactory).
 A satisfactory review after a pass feeds mastery eligibility; an
 unsatisfactory one creates failure-side pressure, never a demotion. The
