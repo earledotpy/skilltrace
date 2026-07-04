@@ -31,6 +31,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from .eligibility import live_accepted_count as _live_accepted_count
 from .ids import allocate_evidence_id
 from .records import EvidenceRecord
 from .specs import ArtifactSpec
@@ -105,20 +106,6 @@ class GateInfo:
 
     authority: str
     command: str | None = None
-
-
-def _live_accepted_count(records: list[EvidenceRecord], spec_id: str) -> int:
-    """Accepted, non-superseded records against `spec_id` — what counts to pass.
-
-    A record is *live* if nothing supersedes it; superseded corrections drop out.
-    Only accepted, live records count toward a required spec's `minimum_count`.
-    """
-    superseded = {r.supersedes for r in records if r.supersedes is not None}
-    return sum(
-        1
-        for r in records
-        if r.artifact_spec_id == spec_id and r.accepted and r.id not in superseded
-    )
 
 
 def _is_pass_eligible(

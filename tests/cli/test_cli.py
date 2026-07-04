@@ -8,7 +8,7 @@ from skilltrace.events import load_events
 
 def test_help_lists_the_command_surface():
     help_text = cli.build_parser().format_help()
-    for name in ("validate", "sync", "next", "evidence", "attempt"):
+    for name in ("validate", "sync", "next", "evidence", "attempt", "eligibility"):
         assert name in help_text
 
 
@@ -20,6 +20,7 @@ def test_registry_has_the_expected_commands():
         "next",
         "evidence submit",
         "attempt record",
+        "eligibility",
     }
 
 
