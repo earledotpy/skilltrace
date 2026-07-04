@@ -3,7 +3,7 @@
 Builds the argparse surface, resolves the repo root, and hands the parsed
 command to the dispatcher (which owns audit logging and the automation
 boundary). The surface is `validate graph`, `validate evidence`, `sync`,
-`evidence submit`, and `next`.
+`evidence submit`, `attempt record`, and `next`.
 """
 
 from __future__ import annotations
@@ -95,6 +95,22 @@ def build_parser() -> argparse.ArgumentParser:
         "--reason", default=None, help="Why the correction supersedes (required with --supersedes)."
     )
     submit_parser.set_defaults(_command_name="evidence submit")
+
+    # attempt <command>
+    attempt_parser = subcommands.add_parser(
+        "attempt", help="Assessment-attempt commands (record)."
+    )
+    attempt_commands = attempt_parser.add_subparsers(dest="_attempt_cmd", metavar="<command>")
+    attempt_commands.required = True
+    record_parser = attempt_commands.add_parser(
+        "record", help="Record one assessment attempt (passed/failed) as an immutable fact."
+    )
+    record_parser.add_argument("node_id", help="Node the attempt was against.")
+    record_parser.add_argument(
+        "--outcome", required=True, help="Attempt outcome: passed or failed."
+    )
+    record_parser.add_argument("--note", default=None, help="Optional note attached to the attempt.")
+    record_parser.set_defaults(_command_name="attempt record")
 
     # next
     next_parser = subcommands.add_parser(
