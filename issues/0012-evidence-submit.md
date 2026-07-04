@@ -3,9 +3,23 @@ id: 12
 title: skilltrace evidence submit
 milestone: v0.4.0-rc1
 labels: [evidence, cli]
-status: open
+status: done
 depends_on: [10]
 ---
+
+## Outcome (2026-07-03)
+
+Implemented as a pure `plan_submit` planner (`evidence/submission.py`) over
+already-loaded data with injected gate-runner and hasher seams, plus a thin
+`evidence submit` handler (`commands/submit.py`) binding the real subprocess
+gate run, artifact hash, and record append. A rejected record (manual or a
+failing objective gate) is a written, audited submit (exit 0, one event); only
+refusals and an unrunnable objective gate exit non-zero and write nothing.
+Objective gates run `shell=False` so `OSError` (unable to run) is distinct from
+a non-zero exit (rejection verdict). The supersede-drops-eligibility warning is
+scoped to an asserted *pass* (`passed`/`mastered`) per ADR 0003. Covered by
+`tests/evidence/test_submission.py` (planner) and `test_submit_command.py`
+(wired CLI + audit).
 
 ## Context
 

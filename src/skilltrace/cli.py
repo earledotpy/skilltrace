@@ -2,8 +2,8 @@
 
 Builds the argparse surface, resolves the repo root, and hands the parsed
 command to the dispatcher (which owns audit logging and the automation
-boundary). The surface is `validate graph`, `validate evidence`, `sync`, and
-`next`.
+boundary). The surface is `validate graph`, `validate evidence`, `sync`,
+`evidence submit`, and `next`.
 """
 
 from __future__ import annotations
@@ -63,6 +63,38 @@ def build_parser() -> argparse.ArgumentParser:
         "sync", help="Recompute derived readiness (locked/available) for every node."
     )
     sync_parser.set_defaults(_command_name="sync")
+
+    # evidence <command>
+    evidence_parser = subcommands.add_parser(
+        "evidence", help="Evidence-trail commands (submit)."
+    )
+    evidence_commands = evidence_parser.add_subparsers(dest="_evidence_cmd", metavar="<command>")
+    evidence_commands.required = True
+    submit_parser = evidence_commands.add_parser(
+        "submit", help="Submit one item of evidence against a node (judged at submission)."
+    )
+    submit_parser.add_argument("node_id", help="Node the evidence is submitted against.")
+    submit_parser.add_argument(
+        "--spec", default=None, help="Artifact spec id (optional when the node has exactly one)."
+    )
+    submit_parser.add_argument(
+        "--location", required=True, help="Repo-relative path or URL of the artifact."
+    )
+    submit_parser.add_argument("--note", default=None, help="Optional note attached to the record.")
+    verdict = submit_parser.add_mutually_exclusive_group()
+    verdict.add_argument(
+        "--accept", action="store_true", help="Manual-gate verdict: accept (refused on objective nodes)."
+    )
+    verdict.add_argument(
+        "--reject", action="store_true", help="Manual-gate verdict: reject (refused on objective nodes)."
+    )
+    submit_parser.add_argument(
+        "--supersedes", default=None, help="Evidence record id this submission corrects."
+    )
+    submit_parser.add_argument(
+        "--reason", default=None, help="Why the correction supersedes (required with --supersedes)."
+    )
+    submit_parser.set_defaults(_command_name="evidence submit")
 
     # next
     next_parser = subcommands.add_parser(
