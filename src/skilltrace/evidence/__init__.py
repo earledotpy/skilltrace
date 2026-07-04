@@ -14,6 +14,7 @@ allocator used by the submit / attempt-record commands (issues #12, #13).
 from __future__ import annotations
 
 from ._schema import EvidenceLoadError
+from .artifacts import hash_artifact, probe_hash
 from .attempts import (
     OUTCOMES,
     AssessmentAttempt,
@@ -45,6 +46,11 @@ from .specs import (
     load_artifact_spec,
     load_artifact_specs,
 )
+from .validation import (
+    EvidenceValidationResult,
+    check_evidence,
+    load_and_validate_evidence,
+)
 
 __all__ = [
     "ACCEPTED_BY_VALUES",
@@ -54,11 +60,15 @@ __all__ = [
     "AssessmentAttempt",
     "EvidenceLoadError",
     "EvidenceRecord",
+    "EvidenceValidationResult",
     "ValidationGate",
     "allocate_attempt_id",
     "allocate_evidence_id",
+    "check_evidence",
+    "hash_artifact",
     "is_valid_attempt_id",
     "is_valid_evidence_id",
+    "load_and_validate_evidence",
     "load_artifact_spec",
     "load_artifact_specs",
     "load_assessment_attempt",
@@ -67,6 +77,7 @@ __all__ = [
     "load_evidence_records",
     "load_validation_gate",
     "load_validation_gates",
+    "probe_hash",
     "split_attempt_id",
     "split_evidence_id",
 ]

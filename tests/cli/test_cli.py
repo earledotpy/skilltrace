@@ -6,14 +6,19 @@ from skilltrace import cli
 from skilltrace.events import load_events
 
 
-def test_help_lists_the_v03_command_surface():
+def test_help_lists_the_command_surface():
     help_text = cli.build_parser().format_help()
     for name in ("validate", "sync", "next"):
         assert name in help_text
 
 
-def test_registry_has_the_three_v03_commands():
-    assert set(cli.REGISTRY.names()) == {"validate graph", "sync", "next"}
+def test_registry_has_the_expected_commands():
+    assert set(cli.REGISTRY.names()) == {
+        "validate graph",
+        "validate evidence",
+        "sync",
+        "next",
+    }
 
 
 def test_main_is_callable_entry_point():

@@ -2,7 +2,8 @@
 
 Builds the argparse surface, resolves the repo root, and hands the parsed
 command to the dispatcher (which owns audit logging and the automation
-boundary). The v0.3 surface is `validate graph`, `sync`, and `next`.
+boundary). The surface is `validate graph`, `validate evidence`, `sync`, and
+`next`.
 """
 
 from __future__ import annotations
@@ -51,6 +52,11 @@ def build_parser() -> argparse.ArgumentParser:
         "graph", help="Validate the skill graph (nodes, edges, cycles)."
     )
     graph_parser.set_defaults(_command_name="validate graph")
+    evidence_parser = validate_targets.add_parser(
+        "evidence",
+        help="Validate the evidence trail (specs, gates, records, attempts).",
+    )
+    evidence_parser.set_defaults(_command_name="validate evidence")
 
     # sync
     sync_parser = subcommands.add_parser(
