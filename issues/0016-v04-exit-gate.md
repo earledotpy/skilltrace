@@ -3,7 +3,7 @@ id: 16
 title: v0.4 exit gate — fixtures, invalid matrix, integration sequence
 milestone: v0.4.0-rc1
 labels: [evidence, release]
-status: open
+status: done
 depends_on: [9, 10, 11, 12, 13, 14, 15]
 ---
 

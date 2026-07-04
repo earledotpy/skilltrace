@@ -3,7 +3,7 @@ id: 15
 title: skilltrace pass
 milestone: v0.4.0-rc1
 labels: [evidence, cli, safety]
-status: open
+status: done
 depends_on: [14]
 ---
 
