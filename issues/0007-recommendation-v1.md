@@ -3,7 +3,7 @@ id: 7
 title: Next-node recommendation v1
 milestone: v0.3.0-rc1
 labels: [graph, recommendation]
-status: open
+status: done
 depends_on: [5, 6]
 ---
 

@@ -3,7 +3,7 @@ id: 10
 title: Evidence models and strict loaders
 milestone: v0.4.0-rc1
 labels: [evidence, foundation]
-status: open
+status: done
 depends_on: [9]
 ---
 

@@ -3,7 +3,7 @@ id: 11
 title: skilltrace validate evidence
 milestone: v0.4.0-rc1
 labels: [evidence, validation]
-status: open
+status: done
 depends_on: [10]
 ---
 

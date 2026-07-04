@@ -3,7 +3,7 @@ id: 14
 title: Pass eligibility computation and skilltrace eligibility
 milestone: v0.4.0-rc1
 labels: [evidence, cli]
-status: open
+status: done
 depends_on: [10]
 ---
 

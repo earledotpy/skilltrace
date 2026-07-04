@@ -3,7 +3,7 @@ id: 9
 title: Evidence schema migration and compiler scaffold retirement
 milestone: v0.4.0-rc1
 labels: [evidence, migration]
-status: open
+status: done
 depends_on: [8]
 ---
 

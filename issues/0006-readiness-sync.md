@@ -3,7 +3,7 @@ id: 6
 title: Readiness sync (derived states only)
 milestone: v0.3.0-rc1
 labels: [graph]
-status: open
+status: done
 depends_on: [5]
 ---
 
