@@ -3,7 +3,7 @@
 Builds the argparse surface, resolves the repo root, and hands the parsed
 command to the dispatcher (which owns audit logging and the automation
 boundary). The surface is `validate graph`, `validate evidence`, `sync`,
-`evidence submit`, `attempt record`, `eligibility`, and `next`.
+`evidence submit`, `attempt record`, `eligibility`, `pass`, and `next`.
 """
 
 from __future__ import annotations
@@ -119,6 +119,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     eligibility_parser.add_argument("node_id", help="Node to compute pass-eligibility for.")
     eligibility_parser.set_defaults(_command_name="eligibility")
+
+    # pass <node_id>
+    pass_parser = subcommands.add_parser(
+        "pass",
+        help="Assert a node passed (refuses without eligibility or on a locked node).",
+    )
+    pass_parser.add_argument("node_id", help="Node to assert as passed.")
+    pass_parser.set_defaults(_command_name="pass")
 
     # next
     next_parser = subcommands.add_parser(
