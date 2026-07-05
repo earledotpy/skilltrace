@@ -90,7 +90,10 @@ remediation node is passed or the triggering blocker is resolved.
 **Hard boundary** — a policy the engine enforces by refusing the action
 (non-zero exit). Hard boundaries exist only to stop *automation* of acts
 that must stay manual: no AI-only pass, no automatic mastery, no automatic
-deletion, no hard-prerequisite override.
+deletion, no hard-prerequisite override. *Automation* means an action firing
+as a side effect of another command (e.g. review scheduling on pass); an
+explicit learner command is by definition manual, so every action is either
+automatable or manual-only — there is no middle "with confirmation" tier.
 
 **Advisory policy** — a policy that reorders recommendations or prints
 warnings (workload, review cadence, remediation pressure). Advisory policies

@@ -4,4 +4,9 @@ This package is the installable `skilltrace` CLI introduced at v0.3 (roadmap
 decision 13), replacing the throwaway `compiler/` scaffold retired in v0.4.
 """
 
-__version__ = "0.3.0rc1"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("skilltrace")
+except PackageNotFoundError:  # running from a source tree without an install
+    __version__ = "0+unknown"

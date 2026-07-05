@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skilltrace"
-version = "0.4.0rc1"
+version = "0.5.0rc1"
 description = "Local-first, CLI-first, single-learner skill-graph learning engine."
 requires-python = ">=3.11"
 dependencies = ["PyYAML>=6.0"]
