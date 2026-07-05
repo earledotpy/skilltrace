@@ -11,10 +11,14 @@ load facts and bind the writes.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ._common import now_iso as _now_iso, report_plan as _report
 from ..execution._store import ExecutionLoadError
 from ..execution.lifecycle import ExecutionPlan, plan_close, plan_start, plan_work
+from ..execution.remediation import load_remediation_actions
+from ..execution.reviews import load_reviews
 from ..execution.sessions import (
     Session,
     append_session,
@@ -26,6 +30,12 @@ from ..execution.staleness import stale_session_hours, stale_warning
 from ..execution.templates import known_templates
 from ..execution.work import append_work, load_session_work
 from ..graph.state import ProgressStoreError, load_state, save_state
+from ..policy.advisory import (
+    load_max_open_remediations,
+    load_workload_limits,
+    overdue_review_count,
+    start_warnings,
+)
 
 
 def _apply(root, plan: ExecutionPlan, store) -> CommandResult:
@@ -81,7 +91,37 @@ def start(ctx: Context) -> CommandResult:
         known_templates=known_templates(ctx.root),
     )
     _report(plan)
+    if plan.exit_code == 0:
+        _warn_start_advisories(ctx.root, store, ctx.args.node_id)
     return _apply(ctx.root, plan, store)
+
+
+def _warn_start_advisories(root, store, node_id: str) -> None:
+    """Advisory warnings at the moment of taking on work (warn-only, never blocks).
+
+    Any failure to read the review or remediation histories silences the
+    advisories rather than failing the start — the session commands already
+    loaded everything the start itself needs.
+    """
+    active = sum(1 for entry in store.entries.values() if entry.state == "active")
+    if store.state_of(node_id) != "active":
+        active += 1
+    try:
+        reviews = load_reviews(root)
+        actions = load_remediation_actions(root)
+    except ExecutionLoadError:
+        return
+    warnings = start_warnings(
+        prospective_active_count=active,
+        limits=load_workload_limits(root),
+        overdue_reviews=overdue_review_count(
+            reviews, today=datetime.now(timezone.utc).date()
+        ),
+        open_remediations=sum(1 for action in actions if action.status == "open"),
+        max_open_remediations=load_max_open_remediations(root),
+    )
+    for warning in warnings:
+        print(f"[warning] {warning}")
 
 
 def _warn_if_stale(root, current: Session | None) -> None:

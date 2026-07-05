@@ -63,11 +63,10 @@ enter only as seed data and policy values, never as engine code.
 
 ## Working conventions
 
-- Current phase: v0.5.0-rc1 complete (execution workflow); graph core and
-  evidence core also complete. v0.6 (policy engine) is next — follow the
-  roadmap's RC scope and don't build ahead of it. Before v0.6 engine code:
-  rewrite the `policy/` seed files to match CONTEXT.md (see ADR 0004 and the
-  2026-07-04 grilling decisions).
+- Current phase: v0.6.0-rc1 complete (policy engine); graph, evidence, and
+  execution cores also complete. v0.7 (resource registry and verification
+  workflow) is next — follow the roadmap's RC scope and don't build ahead
+  of it.
 - Tests: `pytest` (per-layer suites under `tests/<layer>` as RCs land).
   Every RC's exit-gate commands must pass before it's done.
 - When a domain term is added or changed, update `CONTEXT.md` in the same

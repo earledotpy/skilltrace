@@ -2,8 +2,11 @@
 
 Builds the argparse surface, resolves the repo root, and hands the parsed
 command to the dispatcher (which owns audit logging and the automation
-boundary). The surface is `validate graph`, `validate evidence`, `sync`,
-`evidence submit`, `attempt record`, `eligibility`, `pass`, and `next`.
+boundary). The full surface is pinned by tests/cli — graph (`validate`,
+`sync`, `next`), evidence (`evidence submit`, `attempt record`,
+`eligibility`, `pass`, `master`), execution (`start`, `work`, `session
+close`, blockers/remediation/reviews), and policy (`validate policy`,
+`check-automation`, `suggest`).
 """
 
 from __future__ import annotations
@@ -62,6 +65,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate the execution history (sessions, work, blockers, actions, reviews).",
     )
     execution_parser.set_defaults(_command_name="validate execution")
+    policy_parser = validate_targets.add_parser(
+        "policy",
+        help="Validate the policy seed files (six documents, boundary agreement).",
+    )
+    policy_parser.set_defaults(_command_name="validate policy")
 
     # sync
     sync_parser = subcommands.add_parser(
@@ -123,6 +131,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report whether a node is pass-eligible, with per-spec counts.",
     )
     eligibility_parser.add_argument("node_id", help="Node to compute pass-eligibility for.")
+    eligibility_parser.add_argument(
+        "--mastery",
+        action="store_true",
+        help="Compute mastery eligibility (passed + accepted evidence + spaced satisfactory review).",
+    )
     eligibility_parser.set_defaults(_command_name="eligibility")
 
     # pass <node_id>
@@ -131,6 +144,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Assert a node passed (refuses without eligibility or on a locked node).",
     )
     pass_parser.add_argument("node_id", help="Node to assert as passed.")
+
+    # master <node_id>
+    master_parser = subcommands.add_parser(
+        "master",
+        help="Assert a node mastered (refuses without mastery eligibility).",
+    )
+    master_parser.add_argument("node_id", help="Node to assert as mastered.")
+    master_parser.set_defaults(_command_name="master")
     pass_parser.set_defaults(_command_name="pass")
 
     # start <node_id>
@@ -285,6 +306,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="Also show locked nodes (never recommended as available).",
     )
     next_parser.set_defaults(_command_name="next")
+
+    # suggest <topic>
+    suggest_parser = subcommands.add_parser(
+        "suggest", help="Advisory suggestions (remediation, reviews)."
+    )
+    suggest_topics = suggest_parser.add_subparsers(dest="_suggest_cmd", metavar="<topic>")
+    suggest_topics.required = True
+    suggest_remediation = suggest_topics.add_parser(
+        "remediation",
+        help="Suggest corrective work from derived remediation pressure.",
+    )
+    suggest_remediation.set_defaults(_command_name="suggest remediation")
+    suggest_reviews = suggest_topics.add_parser(
+        "reviews", help="Suggest the scheduled reviews now due or overdue."
+    )
+    suggest_reviews.set_defaults(_command_name="suggest reviews")
+
+    # check-automation <action>
+    check_parser = subcommands.add_parser(
+        "check-automation",
+        help="Report whether an action may run on an automated path.",
+    )
+    check_parser.add_argument(
+        "action", help="Automation action label, e.g. pass_node or schedule_review."
+    )
+    check_parser.set_defaults(_command_name="check-automation")
 
     return parser
 

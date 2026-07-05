@@ -23,8 +23,29 @@ from ..evidence.eligibility import EligibilityResult, compute_eligibility
 from ..evidence.gates import load_validation_gates
 from ..evidence.records import load_evidence_records
 from ..evidence.specs import load_artifact_specs
+from ..execution._store import ExecutionLoadError
+from ..execution.reviews import load_reviews
 from ..graph.nodes import NodeLoadError, load_nodes
 from ..graph.state import ProgressStoreError, load_state
+from ..policy.mastery import (
+    MasteryEligibility,
+    compute_mastery_eligibility,
+    load_mastery_values,
+)
+
+
+def passed_at_of(store, node_id: str) -> str | None:
+    """The recorded pass timestamp: the `passed` transition, or `changed_at`
+    when the store predates per-transition timestamps and the node sits at
+    `passed` (its last change *was* the pass)."""
+    entry = store.entries.get(node_id)
+    if entry is None:
+        return None
+    if entry.transitions.get("passed") is not None:
+        return str(entry.transitions["passed"])
+    if entry.state == "passed" and entry.changed_at is not None:
+        return str(entry.changed_at)
+    return None
 
 
 def eligibility(ctx: Context) -> CommandResult:
@@ -50,6 +71,24 @@ def eligibility(ctx: Context) -> CommandResult:
         print(f"eligibility: FAILED — unknown node {node_id}.")
         return CommandResult(exit_code=1)
 
+    if getattr(ctx.args, "mastery", False):
+        try:
+            reviews = load_reviews(root)
+        except ExecutionLoadError as exc:
+            print(f"eligibility: FAILED — {exc}")
+            return CommandResult(exit_code=1)
+        mastery = compute_mastery_eligibility(
+            node_id,
+            current_state=store.state_of(node_id),
+            passed_at=passed_at_of(store, node_id),
+            specs=[s for s in specs if s.node_id == node_id],
+            records=records,
+            reviews=reviews,
+            values=load_mastery_values(root),
+        )
+        _report_mastery(mastery)
+        return CommandResult(exit_code=0)
+
     result = compute_eligibility(
         node_id,
         [s for s in specs if s.node_id == node_id],
@@ -60,6 +99,13 @@ def eligibility(ctx: Context) -> CommandResult:
 
     _report(result)
     return CommandResult(exit_code=0)
+
+
+def _report_mastery(result: MasteryEligibility) -> None:
+    verdict = "MASTERY ELIGIBLE" if result.eligible else "NOT MASTERY ELIGIBLE"
+    print(f"eligibility {result.node_id} (mastery): {verdict}")
+    for reason in result.reasons:
+        print(f"  - {reason}")
 
 
 def _report(result: EligibilityResult) -> None:

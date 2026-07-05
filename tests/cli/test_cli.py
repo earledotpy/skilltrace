@@ -17,6 +17,9 @@ def test_registry_has_the_expected_commands():
         "validate graph",
         "validate evidence",
         "validate execution",
+        "validate policy",
+        "check-automation",
+        "master",
         "sync",
         "next",
         "evidence submit",
@@ -35,6 +38,8 @@ def test_registry_has_the_expected_commands():
         "review cancel",
         "blockers",
         "reviews",
+        "suggest remediation",
+        "suggest reviews",
     }
 
 

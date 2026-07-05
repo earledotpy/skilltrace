@@ -22,6 +22,9 @@ failures (exit 1, no event); a refusal is exit 2 with nothing written.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
+from ..automation import check_automation
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence._schema import EvidenceLoadError
 from ..evidence.eligibility import compute_eligibility
@@ -29,8 +32,12 @@ from ..evidence.gates import load_validation_gates
 from ..evidence.passing import PassOutcome, plan_pass
 from ..evidence.records import load_evidence_records
 from ..evidence.specs import load_artifact_specs
+from ..execution._store import ExecutionLoadError
+from ..execution.ids import allocate_review_id
+from ..execution.reviews import append_review, load_reviews
 from ..graph.nodes import NodeLoadError, load_nodes
 from ..graph.state import ProgressStoreError, load_state, save_state
+from ..policy.cadence import load_cadence, review_dates
 
 
 def pass_node(ctx: Context) -> CommandResult:
@@ -74,13 +81,63 @@ def pass_node(ctx: Context) -> CommandResult:
     _report(outcome)
 
     if outcome.proceed:
-        # The sole side effect of a pass: assert `passed` through the guarded
-        # writer (which refuses any backward move as defense in depth) and persist
-        # the store. The dispatcher appends the one audit event on exit 0.
+        # Assert `passed` through the guarded writer (which refuses any backward
+        # move as defense in depth) and persist the store. The dispatcher appends
+        # the one audit event on exit 0.
         store.write_asserted(node_id, "passed")
         save_state(store, root)
+        # The one sanctioned automation (v0.6): schedule every cadence interval,
+        # dated from the pass. The created ids ride in this command's single
+        # audit event via records_touched.
+        outcome.records_touched.extend(_auto_schedule_reviews(root, node_id))
 
     return CommandResult(records_touched=outcome.records_touched, exit_code=outcome.exit_code)
+
+
+def _auto_schedule_reviews(root, node_id: str) -> list[str]:
+    """Create the cadence policy's scheduled reviews for a fresh pass.
+
+    Consults the automation boundary first — `schedule_review` is checked at
+    the moment of automation, so a boundary that forbids it skips scheduling
+    (with a warning) while the pass itself stands. Any failure here degrades
+    to "no reviews scheduled", never to a failed pass.
+    """
+    verdict = check_automation("schedule_review", root)
+    if verdict.forbidden:
+        print(
+            "[warning] review auto-scheduling skipped — automation boundary: "
+            f"{verdict.reason}"
+        )
+        return []
+
+    cadence = load_cadence(root)
+    if not cadence.schedule_reviews_after_pass or not cadence.intervals:
+        return []
+
+    now = datetime.now(timezone.utc)
+    try:
+        existing_ids = [review.id for review in load_reviews(root)]
+    except ExecutionLoadError as exc:
+        print(f"[warning] review auto-scheduling skipped — {exc}")
+        return []
+
+    created: list[str] = []
+    for label, scheduled_for in review_dates(now.date(), cadence):
+        review_id = allocate_review_id(node_id, existing_ids)
+        existing_ids.append(review_id)
+        append_review(
+            root,
+            {
+                "id": review_id,
+                "node_id": node_id,
+                "status": "scheduled",
+                "scheduled_for": scheduled_for,
+                "created_at": now.isoformat(timespec="seconds"),
+            },
+        )
+        created.append(review_id)
+        print(f"scheduled review {review_id} ({label}) for {scheduled_for}.")
+    return created
 
 
 def _report(outcome: PassOutcome) -> None:

@@ -13,14 +13,17 @@ from ..dispatch import Registry
 from . import (
     attempt,
     blocker,
+    check_automation,
     eligibility,
     listings,
+    master,
     pass_,
     recommend,
     remediation,
     review,
     session,
     submit,
+    suggest,
     sync,
     validate,
 )
@@ -35,9 +38,12 @@ def register_all(registry: Registry) -> Registry:
     attempt.register(registry)
     eligibility.register(registry)
     pass_.register(registry)
+    master.register(registry)
     session.register(registry)
     blocker.register(registry)
     remediation.register(registry)
     review.register(registry)
     listings.register(registry)
+    check_automation.register(registry)
+    suggest.register(registry)
     return registry

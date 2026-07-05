@@ -12,17 +12,22 @@ node is never recommended as available. `--show-locked` appends locked nodes wit
 their unsatisfied hard prerequisites named, so "why is this blocked?" is answered
 too.
 
-Scoring v1 (decision 18 — the engine knows no track names; weights come from the
-opaque policy map, an unmapped track scores 0 and warns):
+Scoring (decision 18 — the engine knows no track names; weights come from the
+opaque policy maps) is a pure weight map over factor values:
 
-    score = track_weight
-          + LEVERAGE_WEIGHT * (# active outgoing edges)   # downstream leverage
-          + FIT_WEIGHT     (if the node fits the session window)
-          + ACTIVE_BONUS   (if the node is already active)
+    score = w[track_priority]        * track_weight
+          + w[downstream_leverage]   * (# active outgoing edges)
+          + w[micro_session_fit]     (if the node fits the session window)
+          + w[active_continuation]   (if the node is already active)
+          + w[remediation_priority]  (if an active remediation edge boosts it)
+          + w[blocker_penalty]       (if it has an open blocker; the weight is negative)
 
-Full policy machinery (the factor-weight list, remediation/review/blocker terms)
-is v0.6; v0.3 reads only the track-weight map and uses fixed coefficients for the
-other three factors. Ties break by node id so ordering is deterministic.
+The factor weights come from `policy/recommendation.yaml` `factor_weights`
+(v0.6); when the map is absent the defaults reproduce the fixed v0.3
+coefficients, with the remediation/blocker terms standing down at weight 0.
+Which nodes are remediation-boosted or blocker-penalized is the caller's fact
+to derive (`policy/remediation_edges.py`) — this module stays pure ranking.
+Ties break by node id so ordering is deterministic.
 """
 
 from __future__ import annotations
@@ -42,13 +47,17 @@ _CANDIDATE_STATES: frozenset[str] = frozenset({"available", "active"})
 # (mirrors readiness._SATISFYING_STATES; kept local so this module stands alone).
 _SATISFYING_STATES: frozenset[str] = frozenset({"passed", "mastered"})
 
-# Fixed v0.3 coefficients for the non-track factors (the track weight itself
-# comes from policy). Kept modest relative to the track weights so track priority
-# leads, but large enough that leverage/fit/active break ties among same-track
-# nodes.
-LEVERAGE_WEIGHT: float = 0.5
-FIT_WEIGHT: float = 1.0
-ACTIVE_BONUS: float = 0.5
+# The factor weights when no policy map is supplied: the fixed v0.3
+# coefficients (track leads; leverage/fit/active break same-track ties), with
+# the v0.6 pressure terms standing down at weight 0.
+DEFAULT_FACTOR_WEIGHTS: dict[str, float] = {
+    "track_priority": 1.0,
+    "downstream_leverage": 0.5,
+    "micro_session_fit": 1.0,
+    "active_continuation": 0.5,
+    "remediation_priority": 0.0,
+    "blocker_penalty": 0.0,
+}
 
 
 @dataclass(frozen=True)
@@ -68,6 +77,8 @@ class Recommendation:
     fits_session: bool
     is_active: bool
     reason: str
+    remediation_boosted: bool = False
+    open_blocked: bool = False
 
 
 @dataclass(frozen=True)
@@ -130,7 +141,8 @@ def _fits_session(micro_session_fit: dict, minutes: int) -> bool:
 
 def _reason(
     track: str, weight: float, mapped: bool, leverage: int, fits: bool,
-    is_active: bool, minutes: int,
+    is_active: bool, minutes: int, boosted: bool, blocked: bool,
+    factor_weights: dict[str, float],
 ) -> str:
     if mapped:
         parts = [f"track {track!r} (weight {weight:g})"]
@@ -142,6 +154,15 @@ def _reason(
         parts.append(f"fits a {minutes}-min session")
     if is_active:
         parts.append("continues active work")
+    if boosted:
+        parts.append(
+            "active remediation edge "
+            f"(+{factor_weights['remediation_priority']:g} policy boost)"
+        )
+    if blocked:
+        parts.append(
+            f"open blocker ({factor_weights['blocker_penalty']:g} policy penalty)"
+        )
     return "; ".join(parts)
 
 
@@ -189,14 +210,19 @@ def recommend(
     minutes: int,
     limit: int,
     show_locked: bool = False,
+    factor_weights: dict[str, float] | None = None,
+    remediation_boosted: frozenset[str] | set[str] = frozenset(),
+    open_blocked: frozenset[str] | set[str] = frozenset(),
 ) -> RecommendationResult:
     """Rank `available`/`active` nodes for a `minutes`-long session.
 
-    Pure of I/O: the caller loads nodes, edges, the store, and the policy
-    track-weight map. Returns the top `limit` recommendations (ranked by score,
-    ties broken by node id), the locked appendix when `show_locked` is set, and
-    the set of candidate tracks missing from `track_weights`.
+    Pure of I/O: the caller loads nodes, edges, the store, the policy weight
+    maps, and derives which nodes carry remediation boosts or open-blocker
+    penalties. Returns the top `limit` recommendations (ranked by score, ties
+    broken by node id), the locked appendix when `show_locked` is set, and the
+    set of candidate tracks missing from `track_weights`.
     """
+    weights = DEFAULT_FACTOR_WEIGHTS | (factor_weights or {})
     leverage_counts = _outgoing_active_edge_counts(edges)
     recommendations: list[Recommendation] = []
     unmapped: set[str] = set()
@@ -214,12 +240,16 @@ def recommend(
         leverage = leverage_counts.get(node.id, 0)
         fits = _fits_session(node.micro_session_fit, minutes)
         is_active = state == "active"
+        boosted = node.id in remediation_boosted
+        blocked = node.id in open_blocked
 
         score = (
-            weight
-            + LEVERAGE_WEIGHT * leverage
-            + (FIT_WEIGHT if fits else 0.0)
-            + (ACTIVE_BONUS if is_active else 0.0)
+            weights["track_priority"] * weight
+            + weights["downstream_leverage"] * leverage
+            + (weights["micro_session_fit"] if fits else 0.0)
+            + (weights["active_continuation"] if is_active else 0.0)
+            + (weights["remediation_priority"] if boosted else 0.0)
+            + (weights["blocker_penalty"] if blocked else 0.0)
         )
         recommendations.append(
             Recommendation(
@@ -230,7 +260,12 @@ def recommend(
                 leverage=leverage,
                 fits_session=fits,
                 is_active=is_active,
-                reason=_reason(node.track, weight, mapped, leverage, fits, is_active, minutes),
+                remediation_boosted=boosted,
+                open_blocked=blocked,
+                reason=_reason(
+                    node.track, weight, mapped, leverage, fits, is_active,
+                    minutes, boosted, blocked, weights,
+                ),
             )
         )
 

@@ -21,6 +21,7 @@ from ..execution.validation import (
     load_and_validate_execution,
 )
 from ..graph.validation import ValidationResult, load_and_validate
+from ..policy.validation import PolicyValidationResult, load_and_validate_policy
 
 
 def _print_report(result: ValidationResult) -> None:
@@ -95,6 +96,26 @@ def validate_execution(ctx: Context) -> CommandResult:
     return CommandResult(exit_code=0 if result.ok else 1)
 
 
+def _print_policy_report(result: PolicyValidationResult) -> None:
+    print(f"policy: {result.file_count} policy file(s)")
+    for warning in result.warnings:
+        print(f"[warning] {warning}")
+    for error in result.errors:
+        print(f"[error] {error}")
+
+    if result.ok:
+        suffix = f" ({len(result.warnings)} warning(s))" if result.warnings else ""
+        print(f"validate policy: OK{suffix}.")
+    else:
+        print(f"validate policy: FAILED — {len(result.errors)} error(s).")
+
+
+def validate_policy(ctx: Context) -> CommandResult:
+    result = load_and_validate_policy(ctx.root)
+    _print_policy_report(result)
+    return CommandResult(exit_code=0 if result.ok else 1)
+
+
 def register(registry: Registry) -> None:
     registry.register(
         Command(
@@ -118,5 +139,13 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=validate_execution,
             help="Validate the execution history (sessions, work, blockers, actions, reviews).",
+        )
+    )
+    registry.register(
+        Command(
+            name="validate policy",
+            kind=Kind.READ_ONLY,
+            handler=validate_policy,
+            help="Validate the policy seed files (six documents, boundary agreement).",
         )
     )
