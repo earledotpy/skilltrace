@@ -9,8 +9,9 @@ registry is the *only* place a resource-to-node link is recorded.
 Closed schema, mirroring the evidence loaders (`artifact_specs.yaml` is the same
 shape — a single YAML list file, not markdown frontmatter): the allowed set is
 exactly the fields the registry uses, and anything else fails naming the
-resource. A later v0.7 slice widens `_ALLOWED_FIELDS` with verification metadata
-(`last_verified`, the broken marker); the claim fields land here.
+resource. The claim fields (cost, free tier, certificate, license) and the two
+verification facts (`last_verified` and the `broken` marker, set only by
+`verify-resource`) all live in `_ALLOWED_FIELDS`.
 
 Per-record semantics enforced here: the slug ID is a non-empty kebab string; a
 resource must point at *something* (URL or local path); `url`/`local_path` are
@@ -39,10 +40,31 @@ _REGISTRY_RELPATH = Path("graph") / "resources.yaml"
 _TOP_KEY = "resources"
 _KIND = "learning resource"
 
-# The closed schema: exactly the fields a resource may carry.
+# The closed schema: exactly the fields a resource may carry. `last_verified`
+# and `broken` are the two verification facts (v0.7 slice 4): the dated human
+# assertion that the resource resolves and its claims hold, and the dated broken
+# marker recording a failed check. Every other verification status (unverified,
+# verified, stale) is *derived* from `last_verified` against a policy window and
+# is never stored.
 _ALLOWED_FIELDS: frozenset[str] = frozenset(
-    {"id", "url", "local_path", "cost", "free_tier", "certificate", "license", "supports"}
+    {
+        "id",
+        "url",
+        "local_path",
+        "cost",
+        "free_tier",
+        "certificate",
+        "license",
+        "supports",
+        "last_verified",
+        "broken",
+    }
 )
+
+# The broken marker's closed sub-schema: exactly a date and a reason, both
+# required non-empty strings. Nested so it reads as one marker and clears with a
+# single key removal on a later successful verification.
+_BROKEN_FIELDS: frozenset[str] = frozenset({"date", "reason"})
 
 # Cost is a single claim with exactly two values — the only place cost lives, so
 # "free and paid at once" is unrepresentable, not merely rejected downstream.
@@ -64,6 +86,22 @@ class ResourceLoadError(Exception):
 
 
 @dataclass(frozen=True)
+class BrokenMarker:
+    """The one stored verification fact recording a *failed* check.
+
+    A dated human (or, per CONTEXT.md, at most an automated *flag*) observation
+    that the resource's URL no longer resolves or its claims no longer hold —
+    with the reason. Stored because it is an observation, not a derivation;
+    `verify-resource` clears it on a later successful verification. Broken
+    dominates the derived statuses in reports but, like every resource problem,
+    only warns — it never affects readiness, eligibility, or node state.
+    """
+
+    date: str
+    reason: str
+
+
+@dataclass(frozen=True)
 class LearningResource:
     """One curriculum pointer to study material.
 
@@ -77,6 +115,12 @@ class LearningResource:
     `free_tier` claim is only meaningful on a paid resource, so `free_tier` on a
     free one is a redundancy warning raised in `validation.py`. `license` is
     optional portfolio-relevant free text.
+
+    `last_verified` is the dated human assertion (an ISO date string) that the
+    resource resolves and its claims still hold; absent means unverified.
+    `broken` is the dated broken marker from a failed check; the two coexist (a
+    once-verified resource later found broken carries both), and no automation
+    ever sets `last_verified` — positive verification is a human act forever.
     """
 
     id: str
@@ -87,6 +131,8 @@ class LearningResource:
     certificate: bool = False
     license: str | None = None
     supports: tuple[str, ...] = ()
+    last_verified: str | None = None
+    broken: BrokenMarker | None = None
     source_path: Path | None = None
 
 
@@ -168,6 +214,17 @@ def load_resource(
 
     supports = _load_supports(data.get("supports"), where, ident)
 
+    last_verified = data.get("last_verified")
+    if last_verified is not None and (
+        not isinstance(last_verified, str) or not last_verified
+    ):
+        raise ResourceLoadError(
+            f"{where}{ident} has invalid last_verified {last_verified!r} — "
+            "expected a date string."
+        )
+
+    broken = _load_broken(data.get("broken"), where, ident)
+
     return LearningResource(
         id=resource_id,
         cost=cost,
@@ -177,6 +234,8 @@ def load_resource(
         certificate=certificate,
         license=license_,
         supports=supports,
+        last_verified=last_verified,
+        broken=broken,
         source_path=source_path,
     )
 
@@ -197,6 +256,40 @@ def _load_flag(raw: Any, field_name: str, where: str, ident: str) -> bool:
             "true or false."
         )
     return raw
+
+
+def _load_broken(raw: Any, where: str, ident: str) -> BrokenMarker | None:
+    """Validate the optional `broken` marker into a `BrokenMarker`, or `None`.
+
+    Absent means not-broken. When present it is a closed mapping of exactly a
+    non-empty `date` and a non-empty `reason` — the shape `verify-resource --broken`
+    writes. A malformed marker (non-mapping, missing key, extra key, empty value)
+    is a clean `ResourceLoadError`, never a traceback.
+    """
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ResourceLoadError(
+            f"{where}{ident} has a non-mapping broken marker {raw!r}."
+        )
+    unknown = sorted(set(raw) - _BROKEN_FIELDS)
+    if unknown:
+        raise ResourceLoadError(
+            f"{where}{ident} broken marker has unknown field(s): {', '.join(unknown)}."
+        )
+    date = raw.get("date")
+    reason = raw.get("reason")
+    if not isinstance(date, str) or not date:
+        raise ResourceLoadError(
+            f"{where}{ident} broken marker has invalid date {date!r} — "
+            "expected a date string."
+        )
+    if not isinstance(reason, str) or not reason:
+        raise ResourceLoadError(
+            f"{where}{ident} broken marker has invalid reason {reason!r} — "
+            "expected a non-empty reason."
+        )
+    return BrokenMarker(date=date, reason=reason)
 
 
 def _load_supports(raw: Any, where: str, ident: str) -> tuple[str, ...]:

@@ -40,6 +40,7 @@ def test_registry_has_the_expected_commands():
         "blockers",
         "reviews",
         "resources",
+        "verify-resource",
         "suggest remediation",
         "suggest reviews",
     }

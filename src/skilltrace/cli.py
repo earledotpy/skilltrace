@@ -307,6 +307,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     resources_listing_parser.set_defaults(_command_name="resources")
 
+    # verify-resource <resource_id> [--broken --reason ...]
+    verify_resource_parser = subcommands.add_parser(
+        "verify-resource",
+        help="Record a resource verification (success by default; --broken with --reason for a failed check).",
+    )
+    verify_resource_parser.add_argument(
+        "resource_id", help="Resource whose URL and claims were checked."
+    )
+    verify_resource_parser.add_argument(
+        "--broken",
+        action="store_true",
+        help="Record a failed check (the dated broken marker) instead of a verification; requires --reason.",
+    )
+    verify_resource_parser.add_argument(
+        "--reason",
+        default=None,
+        help="Why the resource is broken (required with --broken).",
+    )
+    verify_resource_parser.set_defaults(_command_name="verify-resource")
+
     # next
     next_parser = subcommands.add_parser(
         "next", help="Recommend prerequisite-safe nodes sized to available minutes."

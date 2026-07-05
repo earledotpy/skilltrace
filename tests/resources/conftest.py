@@ -38,6 +38,19 @@ def write_registry(root: Path, resources: list[dict]) -> None:
     _write_yaml(root, "graph/resources.yaml", {"resources": resources})
 
 
+def read_registry(root: Path) -> list[dict]:
+    """Return the resource entries as written on disk (`graph/resources.yaml`)."""
+    doc = yaml.safe_load((root / "graph" / "resources.yaml").read_text(encoding="utf-8"))
+    return doc["resources"]
+
+
+def resource_named(entries: list[dict], resource_id: str) -> dict:
+    """The one entry with `resource_id`; fails the test cleanly if absent."""
+    matches = [entry for entry in entries if entry.get("id") == resource_id]
+    assert matches, f"no resource {resource_id!r} in registry"
+    return matches[0]
+
+
 def write_node(root: Path, node_id: str, *, track: str = "foundational") -> None:
     """Write one minimal, load-clean node markdown file."""
     frontmatter = {

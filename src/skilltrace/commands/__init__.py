@@ -27,6 +27,7 @@ from . import (
     suggest,
     sync,
     validate,
+    verify_resource,
 )
 
 
@@ -46,6 +47,7 @@ def register_all(registry: Registry) -> Registry:
     review.register(registry)
     listings.register(registry)
     resource_listing.register(registry)
+    verify_resource.register(registry)
     check_automation.register(registry)
     suggest.register(registry)
     return registry
