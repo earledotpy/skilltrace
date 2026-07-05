@@ -48,6 +48,7 @@ def test_resource_with_url_and_supported_node_is_clean(resources_repo, capsys):
             {
                 "id": "python-crash-course",
                 "url": "https://example.com/course",
+                "cost": "free",
                 "supports": ["testing.res.subject_01"],
             }
         ],
@@ -68,6 +69,7 @@ def test_resource_with_only_local_path_is_clean(resources_repo, capsys):
             {
                 "id": "local-book",
                 "local_path": "resources/python-book.pdf",
+                "cost": "paid",
                 "supports": ["testing.res.subject_01"],
             }
         ],
@@ -88,11 +90,13 @@ def test_duplicate_resource_id_is_an_error(resources_repo, capsys):
             {
                 "id": "same-id",
                 "url": "https://example.com/a",
+                "cost": "free",
                 "supports": ["testing.res.subject_01"],
             },
             {
                 "id": "same-id",
                 "url": "https://example.com/b",
+                "cost": "free",
                 "supports": ["testing.res.subject_01"],
             },
         ],
@@ -114,6 +118,7 @@ def test_resource_with_neither_url_nor_path_is_an_error(resources_repo, capsys):
         [
             {
                 "id": "pointing-at-nothing",
+                "cost": "free",
                 "supports": ["testing.res.subject_01"],
             }
         ],
@@ -136,6 +141,7 @@ def test_resource_naming_unknown_node_is_an_error(resources_repo, capsys):
             {
                 "id": "dangling-link",
                 "url": "https://example.com/course",
+                "cost": "free",
                 "supports": ["testing.res.ghost_99"],
             }
         ],
@@ -157,6 +163,7 @@ def test_resource_supporting_no_node_warns_but_passes(resources_repo, capsys):
             {
                 "id": "orphan-resource",
                 "url": "https://example.com/unlinked",
+                "cost": "free",
                 "supports": [],
             }
         ],
@@ -172,7 +179,7 @@ def test_resource_supporting_no_node_warns_but_passes(resources_repo, capsys):
 def test_resource_with_absent_supports_warns_but_passes(resources_repo, capsys):
     write_registry(
         resources_repo,
-        [{"id": "no-supports-key", "url": "https://example.com/x"}],
+        [{"id": "no-supports-key", "url": "https://example.com/x", "cost": "free"}],
     )
     rc = cli.run(["validate", "resources"], root=resources_repo)
     out = capsys.readouterr().out
@@ -192,6 +199,7 @@ def test_validate_resources_is_read_only_and_logs_nothing(resources_repo):
             {
                 "id": "some-resource",
                 "url": "https://example.com/course",
+                "cost": "free",
                 "supports": ["testing.res.subject_01"],
             }
         ],

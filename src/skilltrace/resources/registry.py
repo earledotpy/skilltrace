@@ -8,16 +8,21 @@ registry is the *only* place a resource-to-node link is recorded.
 
 Closed schema, mirroring the evidence loaders (`artifact_specs.yaml` is the same
 shape — a single YAML list file, not markdown frontmatter): the allowed set is
-exactly the fields this slice uses, and anything else fails naming the resource.
-Later v0.7 slices widen `_ALLOWED_FIELDS` with cost, license, and verification
-metadata; this slice is deliberately minimal.
+exactly the fields the registry uses, and anything else fails naming the
+resource. A later v0.7 slice widens `_ALLOWED_FIELDS` with verification metadata
+(`last_verified`, the broken marker); the claim fields land here.
 
 Per-record semantics enforced here: the slug ID is a non-empty kebab string; a
 resource must point at *something* (URL or local path); `url`/`local_path` are
-strings; and `supports`, when present, is a list of node-ID strings. Whole-
-registry checks — duplicate IDs, dangling node references, and the orphan
-warning — belong to `validation.py`, not the loader, exactly as the evidence
-layer splits per-record shape from cross-record integrity.
+strings; `cost` is the required two-value enum `free`|`paid` — the only place
+cost lives, so a free/paid contradiction is unrepresentable rather than checked;
+`free_tier`/`certificate` are optional booleans and `license` optional free
+text; and `supports`, when present, is a list of node-ID strings. Whole-registry
+checks — duplicate IDs, dangling node references, the orphan warning, and the
+redundant free-tier-on-free-cost warning — belong to `validation.py`, not the
+loader, exactly as the evidence layer splits per-record shape from cross-record
+integrity. (The loader raises only errors; a warning like redundant free tier
+must stay representable, so it is judged in `validation.py`.)
 """
 
 from __future__ import annotations
@@ -33,8 +38,14 @@ _REGISTRY_RELPATH = Path("graph") / "resources.yaml"
 _TOP_KEY = "resources"
 _KIND = "learning resource"
 
-# The closed schema for this slice: exactly the fields it uses.
-_ALLOWED_FIELDS: frozenset[str] = frozenset({"id", "url", "local_path", "supports"})
+# The closed schema: exactly the fields a resource may carry.
+_ALLOWED_FIELDS: frozenset[str] = frozenset(
+    {"id", "url", "local_path", "cost", "free_tier", "certificate", "license", "supports"}
+)
+
+# Cost is a single claim with exactly two values — the only place cost lives, so
+# "free and paid at once" is unrepresentable, not merely rejected downstream.
+_COST_VALUES: frozenset[str] = frozenset({"free", "paid"})
 
 # A resource ID is a human-readable kebab slug — lowercase alphanumeric words
 # joined by hyphens. Deliberately looser than a node ID (no dots, no numeric
@@ -59,11 +70,21 @@ class LearningResource:
     one book can back several nodes without duplication); an empty list is a
     curriculum-quality warning, not an error. At least one of `url`/`local_path`
     is always set — a resource must point at something.
+
+    `cost` is always one of `free`/`paid` (the loader guarantees it). `free_tier`
+    and `certificate` are boolean claims (default `False` — unclaimed); a
+    `free_tier` claim is only meaningful on a paid resource, so `free_tier` on a
+    free one is a redundancy warning raised in `validation.py`. `license` is
+    optional portfolio-relevant free text.
     """
 
     id: str
+    cost: str
     url: str | None = None
     local_path: str | None = None
+    free_tier: bool = False
+    certificate: bool = False
+    license: str | None = None
     supports: tuple[str, ...] = ()
     source_path: Path | None = None
 
@@ -84,8 +105,9 @@ def load_resource(
 
     Raises `ResourceLoadError` (naming the resource) on a non-mapping, an unknown
     field, a missing/invalid slug ID, a non-string `url`/`local_path`, a resource
-    with neither URL nor local path, or a `supports` that is not a list of
-    non-empty strings.
+    with neither URL nor local path, a missing or unknown `cost`, a non-boolean
+    `free_tier`/`certificate`, a non-string `license`, or a `supports` that is
+    not a list of non-empty strings.
     """
     where = f"{source_path}: " if source_path is not None else ""
     ident = _ident(data, index)
@@ -120,15 +142,60 @@ def load_resource(
             "must point at something."
         )
 
+    cost = data.get("cost")
+    if cost is None:
+        raise ResourceLoadError(
+            f"{where}{ident} has no cost — every resource must claim a cost "
+            "(one of: free, paid)."
+        )
+    if not isinstance(cost, str) or cost not in _COST_VALUES:
+        # `isinstance` first so an unhashable cost (`cost: [free]`) is a clean
+        # error, not a TypeError from testing membership of a list in the set.
+        raise ResourceLoadError(
+            f"{where}{ident} has unknown cost {cost!r} — expected one of: "
+            f"{', '.join(sorted(_COST_VALUES))}."
+        )
+
+    free_tier = _load_flag(data.get("free_tier"), "free_tier", where, ident)
+    certificate = _load_flag(data.get("certificate"), "certificate", where, ident)
+
+    license_ = data.get("license")
+    if license_ is not None and not isinstance(license_, str):
+        raise ResourceLoadError(
+            f"{where}{ident} has non-string license {license_!r}."
+        )
+
     supports = _load_supports(data.get("supports"), where, ident)
 
     return LearningResource(
         id=resource_id,
+        cost=cost,
         url=url,
         local_path=local_path,
+        free_tier=free_tier,
+        certificate=certificate,
+        license=license_,
         supports=supports,
         source_path=source_path,
     )
+
+
+def _load_flag(raw: Any, field_name: str, where: str, ident: str) -> bool:
+    """Validate an optional boolean claim; absent means `False` (unclaimed).
+
+    Strict about type — a bare `bool`, never a truthy string or int — so a
+    malformed claim like ``free_tier: yes`` is a reported error, not a value
+    silently coerced true. (YAML's `1`/`0` are ints, not bools, and are
+    rejected here for the same reason `url: 3` is.)
+    """
+    if raw is None:
+        return False
+    if not isinstance(raw, bool):
+        raise ResourceLoadError(
+            f"{where}{ident} has non-boolean {field_name} {raw!r} — expected "
+            "true or false."
+        )
+    return raw
 
 
 def _load_supports(raw: Any, where: str, ident: str) -> tuple[str, ...]:

@@ -20,7 +20,10 @@ loader) from cross-record integrity (here):
 
 **Warnings** (advisory, exit 0):
 
-- an orphan resource — one supporting no node, like a gateless node.
+- an orphan resource — one supporting no node, like a gateless node;
+- a redundant free tier — `free_tier: true` on a `cost: free` resource, where
+  the free-tier claim (try before upgrading) says nothing. Representable, not
+  rejected: the loader keeps it loadable and this flags it for cleanup.
 
 Two design rules match the other layers: **state-independent** (never reads
 `graph/state.yaml`) and **deterministic order** (sets for membership only; every
@@ -74,9 +77,11 @@ def check_resources(
 ) -> ResourceValidationResult:
     """Validate an already-loaded registry against the graph's node IDs. Pure.
 
-    Reports *every* issue: duplicate IDs and dangling node references as errors,
-    orphan resources (supporting no node) as warnings. Each resource's shape is
-    assumed already validated by the loader.
+    Reports *every* issue: duplicate IDs and dangling node references as errors;
+    orphan resources (supporting no node) and redundant free-tier claims (a free
+    tier on a free resource) as warnings. Each resource's shape — including a
+    valid `cost` and boolean `free_tier` — is assumed already validated by the
+    loader.
     """
     result = ResourceValidationResult(resource_count=len(resources))
 
@@ -96,6 +101,11 @@ def check_resources(
             result.warnings.append(
                 f"resource {resource.id} supports no node — it is linked to nothing "
                 "and serves no node's study."
+            )
+        if resource.free_tier and resource.cost == "free":
+            result.warnings.append(
+                f"resource {resource.id} claims a free tier but is already free — "
+                "a free tier is meaningful only on a paid resource."
             )
 
     return result
