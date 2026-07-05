@@ -10,7 +10,20 @@ registered now with its final name and classification so the dispatcher contract
 from __future__ import annotations
 
 from ..dispatch import Registry
-from . import attempt, eligibility, pass_, recommend, submit, sync, validate
+from . import (
+    attempt,
+    blocker,
+    eligibility,
+    listings,
+    pass_,
+    recommend,
+    remediation,
+    review,
+    session,
+    submit,
+    sync,
+    validate,
+)
 
 
 def register_all(registry: Registry) -> Registry:
@@ -22,4 +35,9 @@ def register_all(registry: Registry) -> Registry:
     attempt.register(registry)
     eligibility.register(registry)
     pass_.register(registry)
+    session.register(registry)
+    blocker.register(registry)
+    remediation.register(registry)
+    review.register(registry)
+    listings.register(registry)
     return registry

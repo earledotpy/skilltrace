@@ -57,6 +57,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate the evidence trail (specs, gates, records, attempts).",
     )
     evidence_parser.set_defaults(_command_name="validate evidence")
+    execution_parser = validate_targets.add_parser(
+        "execution",
+        help="Validate the execution history (sessions, work, blockers, actions, reviews).",
+    )
+    execution_parser.set_defaults(_command_name="validate execution")
 
     # sync
     sync_parser = subcommands.add_parser(
@@ -127,6 +132,142 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pass_parser.add_argument("node_id", help="Node to assert as passed.")
     pass_parser.set_defaults(_command_name="pass")
+
+    # start <node_id>
+    start_parser = subcommands.add_parser(
+        "start",
+        help="Open a new session with its first work item on a node.",
+    )
+    start_parser.add_argument("node_id", help="Node to start working on.")
+    start_parser.add_argument(
+        "--template",
+        default=None,
+        help="Optional session template label (e.g. micro/standard/deep).",
+    )
+    start_parser.set_defaults(_command_name="start")
+
+    # work <node_id>
+    work_parser = subcommands.add_parser(
+        "work", help="Add a work item for a node to the open session."
+    )
+    work_parser.add_argument("node_id", help="Node the work item is about.")
+    work_parser.add_argument(
+        "--blocked",
+        action="store_true",
+        help="This stint ended stuck (session-scoped observation; requires --notes).",
+    )
+    work_parser.add_argument("--notes", default=None, help="Notes on the work item.")
+    work_parser.add_argument(
+        "--minutes", type=int, default=None, help="Optional minutes spent on this item."
+    )
+    work_parser.set_defaults(_command_name="work")
+
+    # blocker <command>
+    blocker_parser = subcommands.add_parser(
+        "blocker", help="Blocker commands (create, resolve)."
+    )
+    blocker_commands = blocker_parser.add_subparsers(dest="_blocker_cmd", metavar="<command>")
+    blocker_commands.required = True
+    blocker_create = blocker_commands.add_parser(
+        "create", help="Record persistent stuckness on a node."
+    )
+    blocker_create.add_argument("node_id", help="Node the learner is stuck on.")
+    blocker_create.add_argument(
+        "--description", required=True, help="The obstacle this blocker names."
+    )
+    blocker_create.set_defaults(_command_name="blocker create")
+    blocker_resolve = blocker_commands.add_parser(
+        "resolve", help="Resolve an open blocker."
+    )
+    blocker_resolve.add_argument("blocker_id", help="Blocker to resolve (blk.<node>.NNN).")
+    blocker_resolve.add_argument(
+        "--summary", required=True, help="How the blocker was resolved."
+    )
+    blocker_resolve.set_defaults(_command_name="blocker resolve")
+
+    # remediation <command>
+    remediation_parser = subcommands.add_parser(
+        "remediation", help="Remediation-action commands (create, complete)."
+    )
+    remediation_commands = remediation_parser.add_subparsers(
+        dest="_remediation_cmd", metavar="<command>"
+    )
+    remediation_commands.required = True
+    remediation_create = remediation_commands.add_parser(
+        "create", help="Log a deliberate corrective intervention for a node."
+    )
+    remediation_create.add_argument("node_id", help="Node the intervention targets.")
+    remediation_create.add_argument(
+        "--description", required=True, help="What the intervention is."
+    )
+    remediation_create.add_argument(
+        "--blocker", default=None, help="Blocker id this action addresses (optional)."
+    )
+    remediation_create.set_defaults(_command_name="remediation create")
+    remediation_complete = remediation_commands.add_parser(
+        "complete", help="Complete a remediation action."
+    )
+    remediation_complete.add_argument("action_id", help="Action to complete (rem.<node>.NNN).")
+    remediation_complete.add_argument(
+        "--summary", required=True, help="What the intervention produced."
+    )
+    remediation_complete.set_defaults(_command_name="remediation complete")
+
+    # review <command>
+    review_parser = subcommands.add_parser(
+        "review", help="Review commands (schedule, complete, cancel)."
+    )
+    review_commands = review_parser.add_subparsers(dest="_review_cmd", metavar="<command>")
+    review_commands.required = True
+    review_schedule = review_commands.add_parser(
+        "schedule", help="Schedule a retention check on a passed or mastered node."
+    )
+    review_schedule.add_argument("node_id", help="Node to schedule a review for.")
+    review_schedule.add_argument(
+        "--date", required=True, help="Date the review is due (YYYY-MM-DD)."
+    )
+    review_schedule.set_defaults(_command_name="review schedule")
+    review_complete = review_commands.add_parser(
+        "complete", help="Complete a scheduled review."
+    )
+    review_complete.add_argument("review_id", help="Review to complete (rev.<node>.NNN).")
+    review_complete.add_argument(
+        "--outcome", required=True, help="satisfactory or unsatisfactory."
+    )
+    review_complete.add_argument(
+        "--summary", required=True, help="Result summary of the retention check."
+    )
+    review_complete.set_defaults(_command_name="review complete")
+    review_cancel = review_commands.add_parser(
+        "cancel", help="Cancel a scheduled review (the record is kept)."
+    )
+    review_cancel.add_argument("review_id", help="Review to cancel (rev.<node>.NNN).")
+    review_cancel.add_argument(
+        "--reason", required=True, help="Why the review is cancelled."
+    )
+    review_cancel.set_defaults(_command_name="review cancel")
+
+    # session <command>
+    session_parser = subcommands.add_parser("session", help="Session commands (close).")
+    session_commands = session_parser.add_subparsers(dest="_session_cmd", metavar="<command>")
+    session_commands.required = True
+    close_parser = session_commands.add_parser(
+        "close", help="Complete the open session."
+    )
+    close_parser.add_argument(
+        "--end",
+        default=None,
+        help="Honest end timestamp for a forgotten session (after start, not in the future).",
+    )
+    close_parser.set_defaults(_command_name="session close")
+
+    # blockers / reviews (read-only listings)
+    blockers_parser = subcommands.add_parser("blockers", help="List open blockers.")
+    blockers_parser.set_defaults(_command_name="blockers")
+    reviews_parser = subcommands.add_parser(
+        "reviews", help="List scheduled reviews (overdue derived, never stored)."
+    )
+    reviews_parser.set_defaults(_command_name="reviews")
 
     # next
     next_parser = subcommands.add_parser(

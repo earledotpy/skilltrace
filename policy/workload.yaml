@@ -34,6 +34,14 @@ workload_policy:
       warning_threshold: 1
       hard_limit: false
       description: Avoid opening too many new nodes in one day.
+  stale_session_hours: 12
+  session_templates:
+    micro:
+      expected_minutes: 15
+    standard:
+      expected_minutes: 45
+    deep:
+      expected_minutes: 90
   prefer_micro_sessions_when_low_energy: true
   low_energy_threshold: 2
   avoid_new_nodes_when_open_blockers: true

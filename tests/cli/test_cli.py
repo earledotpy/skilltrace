@@ -16,12 +16,25 @@ def test_registry_has_the_expected_commands():
     assert set(cli.REGISTRY.names()) == {
         "validate graph",
         "validate evidence",
+        "validate execution",
         "sync",
         "next",
         "evidence submit",
         "attempt record",
         "eligibility",
         "pass",
+        "start",
+        "work",
+        "session close",
+        "blocker create",
+        "blocker resolve",
+        "remediation create",
+        "remediation complete",
+        "review schedule",
+        "review complete",
+        "review cancel",
+        "blockers",
+        "reviews",
     }
 
 

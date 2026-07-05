@@ -16,6 +16,10 @@ from ..evidence.validation import (
     EvidenceValidationResult,
     load_and_validate_evidence,
 )
+from ..execution.validation import (
+    ExecutionValidationResult,
+    load_and_validate_execution,
+)
 from ..graph.validation import ValidationResult, load_and_validate
 
 
@@ -67,6 +71,30 @@ def validate_evidence(ctx: Context) -> CommandResult:
     return CommandResult(exit_code=0 if result.ok else 1)
 
 
+def _print_execution_report(result: ExecutionValidationResult) -> None:
+    print(
+        f"execution: {result.session_count} sessions, {result.work_count} work items, "
+        f"{result.blocker_count} blockers, {result.remediation_count} remediation actions, "
+        f"{result.review_count} reviews"
+    )
+    for warning in result.warnings:
+        print(f"[warning] {warning}")
+    for error in result.errors:
+        print(f"[error] {error}")
+
+    if result.ok:
+        suffix = f" ({len(result.warnings)} warning(s))" if result.warnings else ""
+        print(f"validate execution: OK{suffix}.")
+    else:
+        print(f"validate execution: FAILED — {len(result.errors)} error(s).")
+
+
+def validate_execution(ctx: Context) -> CommandResult:
+    result = load_and_validate_execution(ctx.root)
+    _print_execution_report(result)
+    return CommandResult(exit_code=0 if result.ok else 1)
+
+
 def register(registry: Registry) -> None:
     registry.register(
         Command(
@@ -82,5 +110,13 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=validate_evidence,
             help="Validate the evidence trail (specs, gates, records, attempts).",
+        )
+    )
+    registry.register(
+        Command(
+            name="validate execution",
+            kind=Kind.READ_ONLY,
+            handler=validate_execution,
+            help="Validate the execution history (sessions, work, blockers, actions, reviews).",
         )
     )
