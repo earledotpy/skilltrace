@@ -295,6 +295,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     reviews_parser.set_defaults(_command_name="reviews")
 
+    # resources --node-id (per-node reverse index over the resource registry)
+    resources_listing_parser = subcommands.add_parser(
+        "resources",
+        help="List the resources supporting a node (the per-node reverse index).",
+    )
+    resources_listing_parser.add_argument(
+        "--node-id",
+        required=True,
+        help="Node whose supporting resources to list.",
+    )
+    resources_listing_parser.set_defaults(_command_name="resources")
+
     # next
     next_parser = subcommands.add_parser(
         "next", help="Recommend prerequisite-safe nodes sized to available minutes."

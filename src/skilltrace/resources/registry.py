@@ -28,6 +28,7 @@ must stay representable, so it is judged in `validation.py`.)
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -253,3 +254,17 @@ def load_resources(root: Path | str | None = None) -> list[LearningResource]:
     return [
         load_resource(item, source_path=path, index=i) for i, item in enumerate(raw)
     ]
+
+
+def resources_for_node(
+    node_id: str, resources: Iterable[LearningResource]
+) -> list[LearningResource]:
+    """The reverse index: every resource whose `supports` names `node_id`.
+
+    Derived on demand from the resource entries' `supports` lists — nothing
+    stored, consistent with the engine's derived-facts discipline. Registry
+    (file) order is preserved as the natural stable ordering; membership of
+    `node_id` in the graph is the caller's concern (an unknown node is an error
+    the CLI reports, not something this filter can tell from an empty result).
+    """
+    return [resource for resource in resources if node_id in resource.supports]

@@ -39,6 +39,7 @@ def test_registry_has_the_expected_commands():
         "review cancel",
         "blockers",
         "reviews",
+        "resources",
         "suggest remediation",
         "suggest reviews",
     }

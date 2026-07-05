@@ -2,7 +2,8 @@
 
 Resources are Curriculum (CONTEXT.md), so the registry is a single YAML list
 file in the graph area — `graph/resources.yaml` — alongside nodes and edges.
-This slice ships the registry skeleton and `validate resources`, the
-curriculum-integrity check. Verification metadata, the resource report, and the
-reverse index land in later v0.7 slices.
+Earlier slices shipped the registry skeleton, `validate resources` (the
+curriculum-integrity check), and the claim fields; `resources_for_node` derives
+the per-node reverse index that `resources --node-id` lists. Verification
+metadata and the resource report land in later v0.7 slices.
 """
