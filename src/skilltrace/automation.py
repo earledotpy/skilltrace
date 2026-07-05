@@ -25,7 +25,12 @@ FORBIDDEN_ACTIONS: frozenset[str] = frozenset(
     {"pass_node", "master_node", "delete_record"}
 )
 
-_ALLOWED_PERMISSIONS = frozenset({"allowed", "allowed_with_confirmation"})
+# Two permission levels only (CONTEXT.md): an action either may fire as an
+# automated side effect of another command ("allowed") or may not
+# ("forbidden" / unlisted, fail closed). There is no "with confirmation"
+# tier — an explicit learner command is by definition manual and never
+# consults this boundary.
+_ALLOWED_PERMISSIONS = frozenset({"allowed"})
 
 _POLICY_RELPATH = Path("policy") / "automation_boundary.yaml"
 
@@ -74,7 +79,7 @@ def check_automation(action: str, root: Path | str | None = None) -> AutomationV
 
     Order of authority:
     1. Code floor — the three hard-boundary actions are always forbidden.
-    2. Policy — an explicit `allowed` / `allowed_with_confirmation` permits.
+    2. Policy — an explicit `allowed` permits.
     3. Fail closed — anything else (policy `forbidden`, unknown action, or no
        policy file) is refused.
     """

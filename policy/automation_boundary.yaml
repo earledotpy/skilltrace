@@ -1,47 +1,34 @@
 automation_boundary_policy:
-  id: policy.automation.default_v0_1
+  id: policy.automation.default_v0_6
   status: active
-  title: Default automation boundary policy
-  description: Safety policy defining which actions may be automated, suggested, or forbidden.
+  title: Automation boundary
+  description: >
+    Which actions may fire as an automated side effect of another command.
+    Two permissions only — allowed / forbidden; an explicit learner command
+    is by definition manual and needs no rule here, and anything unlisted
+    fails closed. The forbidden trio mirrors the engine's hard-boundary
+    constants (ADR 0004): the engine refuses them unconditionally, and
+    `validate policy` fails if this file ever disagrees with the constants.
   rules:
     -
-      action: recommend_node
+      action: schedule_review
       permission: allowed
-      reason: Recommendations are advisory and do not mutate learning state.
+      reason: Review auto-scheduling on pass per the cadence policy is the one sanctioned automation.
     -
       action: sync_readiness
-      permission: allowed_with_confirmation
-      reason: Readiness sync updates safe availability states and should remain explicit.
-    -
-      action: create_review
-      permission: allowed_with_confirmation
-      reason: Review creation mutates execution logs and should remain user-confirmed.
-    -
-      action: create_remediation
-      permission: allowed_with_confirmation
-      reason: Remediation creation mutates execution logs and should remain user-confirmed.
-    -
-      action: start_node
-      permission: allowed_with_confirmation
-      reason: Starting a node changes graph state and must be explicit.
+      permission: allowed
+      reason: Sync writes only derived readiness (locked/available), never asserted progress.
     -
       action: pass_node
       permission: forbidden
-      reason: Passing nodes must remain an explicit evidence-backed user transition.
+      reason: Hard boundary — passing is an explicit, evidence-backed learner command.
     -
       action: master_node
       permission: forbidden
-      reason: Mastery must never be granted by automation in v0.1.
-    -
-      action: archive_node
-      permission: allowed_with_confirmation
-      reason: Archiving changes graph visibility and must require confirmation.
+      reason: Hard boundary — mastery is an explicit learner command gated by derived eligibility.
     -
       action: delete_record
       permission: forbidden
-      reason: Deleting learning records would damage auditability and is forbidden in v0.1.
-  require_confirmation_for_mutation: true
-  require_evidence_for_pass: true
-  require_review_for_mastery: true
-  created_at: 2026-06-28
-  updated_at: 2026-06-28
+      reason: Hard boundary — records are immutable; corrections supersede, never delete.
+  created_at: 2026-07-04
+  updated_at: 2026-07-04

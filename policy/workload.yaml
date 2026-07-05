@@ -1,39 +1,40 @@
 workload_policy:
-  id: policy.workload.default_v0_1
+  id: policy.workload.default_v0_6
   status: active
-  title: Default workload policy
-  description: Conservative workload limits for sustainable self-directed study.
+  title: Workload advisory limits
+  description: >
+    Advisory-only workload values: the engine warns as warning_threshold
+    and then value are crossed. There is deliberately no way to express a
+    blocking limit in this schema — advisory policies never block a
+    human-initiated action. Session templates are opaque labels whose
+    expected minutes exist only for advisory comparison; the session
+    envelope stays authoritative.
   limits:
     -
       limit_kind: daily_minutes
       value: 180
       warning_threshold: 120
-      hard_limit: false
-      description: Warn when daily planned study exceeds normal sustainable load.
+      description: Warn when daily study time exceeds sustainable load.
     -
       limit_kind: session_minutes
       value: 180
       warning_threshold: 90
-      hard_limit: false
-      description: Warn when a single session becomes long enough to require deep-work conditions.
+      description: Warn when a single session runs long enough to need deep-work conditions.
     -
       limit_kind: active_node_count
       value: 3
       warning_threshold: 2
-      hard_limit: false
-      description: Limit concurrent active nodes to reduce context switching.
+      description: Warn when concurrent active nodes invite context switching.
     -
       limit_kind: deep_work_blocks_per_week
       value: 2
       warning_threshold: 1
-      hard_limit: false
       description: Keep deep-work sessions scarce and deliberate.
     -
       limit_kind: new_nodes_per_day
       value: 2
       warning_threshold: 1
-      hard_limit: false
-      description: Avoid opening too many new nodes in one day.
+      description: Warn against opening too many new nodes in one day.
   stale_session_hours: 12
   session_templates:
     micro:
@@ -42,8 +43,5 @@ workload_policy:
       expected_minutes: 45
     deep:
       expected_minutes: 90
-  prefer_micro_sessions_when_low_energy: true
-  low_energy_threshold: 2
-  avoid_new_nodes_when_open_blockers: true
-  created_at: 2026-06-28
-  updated_at: 2026-06-28
+  created_at: 2026-07-04
+  updated_at: 2026-07-04

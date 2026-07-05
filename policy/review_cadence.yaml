@@ -1,27 +1,30 @@
 review_cadence_policy:
-  id: policy.review.default_v0_1
+  id: policy.review.default_v0_6
   status: active
-  title: Default review cadence policy
-  description: Fixed review cadence for converting passed nodes into durable knowledge.
+  title: Review cadence
+  description: >
+    Fixed post-pass review intervals. On pass, every interval is scheduled
+    at once, dated from the pass date — the one sanctioned automation; the
+    pass command's single audit event lists the created review ids.
+    Completing or cancelling reviews stays manual. No interval feeds mastery
+    eligibility specially — that derivation reads the mastery policy. After
+    mastery, scheduling is manual; automation stops.
   cadence_kind: fixed_intervals
   intervals:
     -
       label: first_recall
       days_after_pass: 1
       expected_minutes: 15
-      required_for_mastery: false
     -
-      label: mastery_recall
+      label: consolidation_recall
       days_after_pass: 3
       expected_minutes: 15
-      required_for_mastery: true
     -
       label: retention_recall
       days_after_pass: 7
       expected_minutes: 20
-      required_for_mastery: false
   schedule_reviews_after_pass: true
   schedule_reviews_after_mastery: false
   missed_review_grace_days: 2
-  created_at: 2026-06-28
-  updated_at: 2026-06-28
+  created_at: 2026-07-04
+  updated_at: 2026-07-04

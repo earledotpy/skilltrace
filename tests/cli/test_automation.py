@@ -46,10 +46,18 @@ def test_forbidden_action_refused_even_if_policy_says_allowed(tmp_path):
 
 
 def test_policy_may_permit_a_non_floor_action(tmp_path):
-    _write_policy(tmp_path, "sync_readiness", "allowed_with_confirmation")
+    _write_policy(tmp_path, "sync_readiness", "allowed")
     verdict = check_automation("sync_readiness", tmp_path)
     assert verdict.allowed
     assert verdict.source == "policy"
+
+
+def test_retired_confirmation_tier_fails_closed(tmp_path):
+    # The permission model is two-level (allowed/forbidden); the old
+    # `allowed_with_confirmation` tier is an unrecognized permission and
+    # must refuse, not permit.
+    _write_policy(tmp_path, "sync_readiness", "allowed_with_confirmation")
+    assert check_automation("sync_readiness", tmp_path).forbidden
 
 
 def test_policy_may_add_a_forbidden_action(tmp_path):
