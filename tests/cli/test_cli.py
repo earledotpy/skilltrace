@@ -18,6 +18,7 @@ def test_registry_has_the_expected_commands():
         "validate evidence",
         "validate execution",
         "validate policy",
+        "validate resources",
         "check-automation",
         "master",
         "sync",

@@ -22,6 +22,10 @@ from ..execution.validation import (
 )
 from ..graph.validation import ValidationResult, load_and_validate
 from ..policy.validation import PolicyValidationResult, load_and_validate_policy
+from ..resources.validation import (
+    ResourceValidationResult,
+    load_and_validate_resources,
+)
 
 
 def _print_report(result: ValidationResult) -> None:
@@ -116,6 +120,26 @@ def validate_policy(ctx: Context) -> CommandResult:
     return CommandResult(exit_code=0 if result.ok else 1)
 
 
+def _print_resources_report(result: ResourceValidationResult) -> None:
+    print(f"resources: {result.resource_count} resource(s)")
+    for warning in result.warnings:
+        print(f"[warning] {warning}")
+    for error in result.errors:
+        print(f"[error] {error}")
+
+    if result.ok:
+        suffix = f" ({len(result.warnings)} warning(s))" if result.warnings else ""
+        print(f"validate resources: OK{suffix}.")
+    else:
+        print(f"validate resources: FAILED — {len(result.errors)} error(s).")
+
+
+def validate_resources(ctx: Context) -> CommandResult:
+    result = load_and_validate_resources(ctx.root)
+    _print_resources_report(result)
+    return CommandResult(exit_code=0 if result.ok else 1)
+
+
 def register(registry: Registry) -> None:
     registry.register(
         Command(
@@ -147,5 +171,13 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=validate_policy,
             help="Validate the policy seed files (six documents, boundary agreement).",
+        )
+    )
+    registry.register(
+        Command(
+            name="validate resources",
+            kind=Kind.READ_ONLY,
+            handler=validate_resources,
+            help="Validate the resource registry (slug IDs, URL-or-path, node links).",
         )
     )

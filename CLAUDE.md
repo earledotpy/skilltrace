@@ -51,7 +51,8 @@ enter only as seed data and policy values, never as engine code.
 
 ## Repo layout
 
-- `graph/` — node markdown (curriculum) + `edges.yaml` + progress store
+- `graph/` — node markdown (curriculum) + `edges.yaml` + `resources.yaml`
+  (the LearningResource registry) + progress store
 - `evidence/` — artifact specs, gates, attempts, evidence records
 - `execution/` — sessions, work, blockers, remediation, reviews, event log
 - `policy/` — hard-boundary and advisory policy values (seed data)

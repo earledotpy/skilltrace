@@ -245,12 +245,30 @@ block anything.
 **LearningResource** — a pointer to study material (URL or local path) with
 provider, cost, license, and verification metadata. Resources are pure
 advice: their status never affects a node's readiness, eligibility, or
-state. Resource problems are warnings in health reports only.
+state. Resource problems are warnings in health reports only. A resource is
+part of the curriculum, identified by an immutable, never-reused ID; minor
+edits happen in place, and a genuinely different resource is a new entry.
+The resource names the nodes it supports (a dangling reference is a
+curriculum error); a resource supporting no node is a curriculum-quality
+warning, like a gateless node. Cost is a single claim — free or paid, never
+both; a free tier is a claim only a paid resource can make (try before
+upgrading).
 
 **Verified** — a dated human assertion that a resource's URL resolves and
 its recorded claims (cost, free tier, certificate, license) still hold.
-Staleness is derived by comparing `last_verified` to a policy-configured
-window; a replacement candidate is just an alternative resource linked to
+A resource's verification status (unverified, verified, stale) is always
+derived from the assertion date, never stored: staleness is derived by
+comparing `last_verified` to a policy-configured window. A failed check is
+not a verification: it records a dated **broken** marker with the reason —
+the one stored verification fact, because it is an observation, not a
+derivation. Broken dominates the derived statuses in reports and is cleared
+only by a later successful verification or a human curriculum edit; like
+all resource problems it warns and never blocks. Positive verification is a
+human act forever: no automation ever sets `last_verified`, because claims
+like a live free tier or an unchanged license need human judgment, and
+half-verification is not verification. Automation may at most *flag* — an
+automated check that fails is an objective observation and may set the
+broken marker, but a bot can never assert that a resource is good. A replacement candidate is just an alternative resource linked to
 the same node, promoted only by a human curriculum edit.
 
 **Export** — a derived artifact (SQLite database, Markdown report, backup

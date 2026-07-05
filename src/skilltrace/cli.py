@@ -70,6 +70,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate the policy seed files (six documents, boundary agreement).",
     )
     policy_parser.set_defaults(_command_name="validate policy")
+    resources_parser = validate_targets.add_parser(
+        "resources",
+        help="Validate the resource registry (slug IDs, URL-or-path, node links).",
+    )
+    resources_parser.set_defaults(_command_name="validate resources")
 
     # sync
     sync_parser = subcommands.add_parser(
