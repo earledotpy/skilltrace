@@ -117,7 +117,13 @@ def test_unmapped_track_warns_but_exits_zero(tmp_path, capsys):
 def test_load_track_weights_reads_the_shipped_map(tmp_path):
     root = _seed_repo(tmp_path)
     weights = load_track_weights(root)
-    assert weights == {"foundational": 3.0, "core": 2.0, "portfolio": 1.0}
+    assert weights == {
+        "foundational": 3.0,
+        "core": 2.0,
+        "consolidation": 2.0,
+        "portfolio": 1.0,
+        "remediation": 0.5,
+    }
 
 
 def test_load_track_weights_missing_policy_returns_empty(tmp_path):

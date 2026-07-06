@@ -4,36 +4,24 @@ title: Use basic Pandas DataFrame operations
 summary: Load, inspect, filter, and summarize tabular data with Pandas.
 domain: data
 track: core
-level: beginner
 roadmap_anchors:
-  -
-    phase: phase_1
-    phase_label: Programming Fundamentals
-    month_range: 9-12
-    roadmap_topic: Pandas
-    source_role: reference_only
+- phase: phase_1
+  phase_label: Programming Fundamentals
+  month_range: 9-12
+  roadmap_topic: Pandas
+  source_role: reference_only
 estimated_effort:
   min_minutes: 60
   max_minutes: 180
 micro_session_fit:
   can_fit_15_min: false
-  can_fit_30_min: true
-  requires_long_block: false
-competency_dimensions:
-  conceptual: Explain DataFrame, Series, rows, columns, and indexes.
-  practical: Load, filter, select, and summarize data using Pandas.
-  analytical: Diagnose common column-name, type, and missing-value issues.
-  contextual: Connect Pandas operations to ML preprocessing workflows.
-mastery_policy:
-  closure_authority: manual_with_objective_evidence
-  required_evidence_type: notebook
-  suggested_gate: Create a short notebook that loads, filters, and summarizes a dataset.
-  ai_review_is_advisory_only: true
+  can_fit_30_min: false
+  requires_long_block: true
 tags:
-  - data
-  - pandas
+- data
+- pandas
 created_at: 2026-06-28
-updated_at: 2026-06-28
+updated_at: 2026-07-06
 ---
 
 # Use basic Pandas DataFrame operations
@@ -42,10 +30,6 @@ updated_at: 2026-06-28
 
 Load, inspect, filter, and summarize tabular data with Pandas.
 
+## Study pointers
+
 ## Notes
-
-## Evidence
-
-## Blockers
-
-## Reflection

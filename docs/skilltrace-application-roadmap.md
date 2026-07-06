@@ -24,7 +24,7 @@ reliably answer —
 
 It includes real tested implementations for graph, evidence, execution,
 policy, and release validation, SQLite export, and the first
-production-quality seed graph for Phase 0–1. Roadmap anchors remain
+production-quality foundations seed graph. Roadmap anchors remain
 `reference_only` metadata, and `passed` stays distinct from `mastered`.
 
 ## Governing design decisions
@@ -104,7 +104,7 @@ Settled 2026-07-02 (grilling session); see `CONTEXT.md` for definitions and
 | **v0.5.0-rc1** | Weeks 7–8 | Execution workflow | Sessions, work items, blockers, remediation, reviews, audit event log, mutation commands. |
 | **v0.6.0-rc1** | Weeks 9–10 | Policy engine | Hard boundaries enforced; advisory policies warn; mastery eligibility and explicit master command. |
 | **v0.7.0-rc1** | Weeks 11–12 | Resource registry | Resource schema, verification workflow, replacement candidates, resource report. |
-| **v0.8.0-rc1** | Weeks 13–14 | Phase 0–1 seed graph | 60–90 production nodes with gates, resources, review cadence. |
+| **v0.8.0-rc1** | Weeks 13–14 | Foundations seed graph | ~70 production nodes (destination-backward rebuild) with gates, resources, review cadence. |
 | **v0.9.0-rc1** | Weeks 15–16 | Daily-use polish | Readable output, today/home views, reports, Markdown/SQLite export, backup. |
 | **v1.0.0-rc1** | Weeks 17–18 | Release hardening | Schema freeze, fixtures, docs, install/Windows pass, known limitations. |
 | **v1.0.0 final** | Weeks 19–20 | Stable release | Blocker fixes only; tag, freeze schema v1, publish docs, open post-v1 backlog. |
@@ -392,32 +392,58 @@ skilltrace validate resources
 skilltrace resource-report
 ```
 
-## v0.8.0-rc1 — Phase 0–1 production seed graph
+## v0.8.0-rc1 — Foundations production seed graph
 
-Purpose: make SkillTrace usable for the first year of the AI learning
-roadmap. This RC is **seed data**, not engine work.
+Purpose: give SkillTrace something worth studying on day one. This RC is
+**seed data and doctrine**, not engine work — the only non-data change is a
+seed-acceptance test suite and two added track weights.
+
+**Rebuild framing (not "Phase 0–1").** The curriculum is designed
+destination-backward from the learner's stated destination — a working AI/ML
+engineer-practitioner — not transcribed from the old AI learning roadmap's
+month partition. That old roadmap is `reference_only` even for curriculum
+*shape*: it contributes exactly three things — a candidate-topic checklist,
+already-seeded policy values, and `reference_only` anchor metadata on nodes
+with a genuine old-roadmap counterpart. The "Phase 0 / Phase 1" partition
+does not enter the graph's structure; `phase_*` survives only inside
+`roadmap_anchors`. The authoring doctrine that governs the rebuild lives in
+`docs/curriculum-authoring.md`.
 
 Scope:
 
-- 60–90 production-grade nodes
-- Phase 0: arithmetic review, algebra, functions, statistics, calculus
-  intuition, linear algebra
-- Phase 1: Python, CLI, Git, SQL, CSV, Pandas, visualization, README writing
-- first portfolio nodes, consolidation nodes (a track with seed priority,
-  not an engine concept), remediation nodes with remediation edges
-- resource registry entries; evidence gates for every node; review cadence
-  values
-- web verification of resources before they become seeded production data
+- ~70 production-grade nodes; the 24 existing draft nodes are retrofitted to
+  the same bar (lean template, edge audit, resources), never grandfathered
+- depth by ML load-bearingness: statistics/probability and linear algebra
+  deep (6–8 each); Python, Pandas/CSV, SQL, algebra/functions medium;
+  arithmetic, calculus intuition, CLI, Git, visualization, communication
+  shallow (2–4 each)
+- consolidation nodes (soft-edged, `track: consolidation`, weight 2.0),
+  portfolio nodes (hard-edged only from mechanically enabling nodes), and
+  4–6 remediation nodes at predictable fracture points with remediation edges
+- minimal-locking edge doctrine: `hard_prerequisite` only where the target is
+  incoherent without the source; all pedagogical ordering is soft edges plus
+  track weights; existing edges audited under the same test
+- resource registry entries at per-material grain, free-first, verified or
+  honestly unverified; evidence gates for every node (objective only where
+  exit-0 genuinely is the pass bar)
 
 Representative graph bands:
 
 ```text
 math.arithmetic.*        math.algebra.*         math.functions.*
-math.statistics.*        math.calculus_intuition.*  math.linear_algebra.*
+math.statistics.*        math.calculus.*        math.linear_algebra.*
 programming.python.*     tooling.cli.*          tooling.git.*
 data.sql.*               data.csv.*             data.pandas.*
-communication.readme.*   portfolio.phase1.*     consolidation.*
+data.visualization.*     communication.*        portfolio.project.*
+consolidation.*
 ```
+
+Delivery: six reviewable slices, each a PR passing the full validator suite —
+(1) doctrine + track weights + authoring guide + 24-node retrofit + edge
+audit, (2) math bands, (3) programming/tooling bands, (4) data/communication
+bands, (5) cross-cutting nodes (consolidation, portfolio, remediation),
+(6) resource verification worksheet + human verification sitting + acceptance
+audit.
 
 Exit gate:
 

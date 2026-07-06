@@ -3,20 +3,20 @@ edges:
     id: edge.math.arithmetic.order_operations_01__math.algebra.variables_expressions_01
     source: math.arithmetic.order_operations_01
     target: math.algebra.variables_expressions_01
-    edge_type: hard_prerequisite
-    reason: Algebraic expressions require reliable order-of-operations handling.
+    edge_type: soft_prerequisite
+    reason: Order-of-operations fluency makes expression evaluation reliable, but the concept of a variable and an expression stands without it — helpful ordering, not a hard dependency.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.math.algebra.variables_expressions_01__math.algebra.linear_equations_01
     source: math.algebra.variables_expressions_01
     target: math.algebra.linear_equations_01
     edge_type: hard_prerequisite
-    reason: Linear equations depend on manipulating variables and expressions.
+    reason: Solving ax + b = c is manipulating a variable expression; without the concept of a variable and expression the target is incoherent, not merely harder.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.math.algebra.linear_equations_01__math.algebra.inequalities_01
     source: math.algebra.linear_equations_01
@@ -40,28 +40,28 @@ edges:
     source: math.functions.coordinate_plane_01
     target: math.functions.slope_01
     edge_type: hard_prerequisite
-    reason: Slope requires reading points on the coordinate plane.
+    reason: Slope is the change between two points on the coordinate plane; without the plane and reading points on it, slope has nothing to be measured over.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.math.functions.slope_01__math.functions.linear_functions_01
     source: math.functions.slope_01
     target: math.functions.linear_functions_01
     edge_type: hard_prerequisite
-    reason: Linear functions require understanding slope.
+    reason: A linear function y = mx + b is defined by its slope m; understanding linear functions without any concept of slope is incoherent.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.math.functions.linear_functions_01__math.functions.graph_interpretation_01
     source: math.functions.linear_functions_01
     target: math.functions.graph_interpretation_01
-    edge_type: hard_prerequisite
-    reason: Graph interpretation builds on linear function fluency.
+    edge_type: soft_prerequisite
+    reason: Interpreting a plotted graph (trend, intercept, reading values) rests on coordinate-plane literacy; linear-function fluency deepens it but is not required to start — ordering, not dependency.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.tooling.cli.navigation_01__programming.python.environment_01
     source: tooling.cli.navigation_01
@@ -75,20 +75,20 @@ edges:
     id: edge.programming.python.environment_01__programming.python.variables_01
     source: programming.python.environment_01
     target: programming.python.variables_01
-    edge_type: hard_prerequisite
-    reason: Python variable practice requires a working Python environment.
+    edge_type: soft_prerequisite
+    reason: A working environment is an infrastructural precondition for running code, not a competence re-exercised in variable work; a learner who already has Python installed can legitimately start variables cold.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.programming.python.variables_01__programming.python.conditionals_01
     source: programming.python.variables_01
     target: programming.python.conditionals_01
     edge_type: hard_prerequisite
-    reason: Conditionals require basic variable and expression use.
+    reason: A conditional tests and branches on values held in variables; strip the concept of a variable entirely and there is nothing for the condition to operate on.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.programming.python.conditionals_01__programming.python.functions_01
     source: programming.python.conditionals_01
@@ -112,10 +112,10 @@ edges:
     source: programming.python.variables_01
     target: programming.python.lists_loops_01
     edge_type: hard_prerequisite
-    reason: Lists and loops require basic variable fluency.
+    reason: Loops bind a loop variable and accumulate into variables; without the concept of a variable, iterating and collecting results is incoherent.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.programming.python.lists_loops_01__programming.python.files_01
     source: programming.python.lists_loops_01
@@ -130,19 +130,19 @@ edges:
     source: programming.python.files_01
     target: data.csv.read_csv_01
     edge_type: hard_prerequisite
-    reason: CSV reading depends on understanding files.
+    reason: A CSV is a file; reading one with Python opens and reads file contents, so with no file-handling competence at all the target artifact cannot be produced.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.data.csv.read_csv_01__data.csv.clean_simple_dataset_01
     source: data.csv.read_csv_01
     target: data.csv.clean_simple_dataset_01
     edge_type: hard_prerequisite
-    reason: Cleaning a dataset requires reading it first.
+    reason: Cleaning a dataset operates on data that has first been loaded; you cannot clean a CSV you cannot read, so reading is constitutive of the cleaning artifact.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.data.csv.clean_simple_dataset_01__data.pandas.dataframe_basics_01
     source: data.csv.clean_simple_dataset_01
@@ -157,10 +157,10 @@ edges:
     source: tooling.git.repository_basics_01
     target: tooling.git.commit_workflow_01
     edge_type: hard_prerequisite
-    reason: Commit workflow requires an initialized or cloned repository.
+    reason: A commit records a change inside a repository; with no repository initialized or cloned there is nothing to commit to, so the commit workflow is incoherent without it.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.communication.notes.technical_summary_01__communication.readme.basic_readme_01
     source: communication.notes.technical_summary_01
@@ -175,19 +175,19 @@ edges:
     source: math.functions.slope_01
     target: portfolio.project.slope_calculator_01
     edge_type: hard_prerequisite
-    reason: The project requires calculating slope.
+    reason: The project's core function computes slope; without the slope skill there is no calculator to build. Mechanically enabling.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.programming.python.functions_01__portfolio.project.slope_calculator_01
     source: programming.python.functions_01
     target: portfolio.project.slope_calculator_01
     edge_type: hard_prerequisite
-    reason: The project requires writing a reusable Python function.
+    reason: The project is delivered as a reusable Python function; without the ability to define and call functions the deliverable cannot be built. Mechanically enabling.
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.programming.python.errors_debugging_01__portfolio.project.slope_calculator_01
     source: programming.python.errors_debugging_01
@@ -201,17 +201,17 @@ edges:
     id: edge.tooling.git.commit_workflow_01__portfolio.project.slope_calculator_01
     source: tooling.git.commit_workflow_01
     target: portfolio.project.slope_calculator_01
-    edge_type: hard_prerequisite
-    reason: The project should be versioned as portfolio evidence.
+    edge_type: soft_prerequisite
+    reason: Versioning the project is portfolio packaging around the deliverable, not a competence the working calculator is built from; demoted per the minimal-locking test (mechanically enabling edges only).
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: edge.communication.readme.basic_readme_01__portfolio.project.slope_calculator_01
     source: communication.readme.basic_readme_01
     target: portfolio.project.slope_calculator_01
-    edge_type: hard_prerequisite
-    reason: The portfolio project requires a readable README.
+    edge_type: soft_prerequisite
+    reason: The README is a parallel deliverable packaged with the project, not what makes the calculator run; demoted per the minimal-locking test (mechanically enabling edges only).
     active: true
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
