@@ -22,7 +22,7 @@ progress:
     changed_at: '2026-07-02'
   math.algebra.variables_expressions_01:
     state: available
-    changed_at: '2026-07-06T14:33:03+00:00'
+    changed_at: '2026-07-06'
   math.arithmetic.order_operations_01:
     state: available
     changed_at: '2026-07-02'
@@ -31,7 +31,7 @@ progress:
     changed_at: '2026-07-02'
   math.functions.graph_interpretation_01:
     state: available
-    changed_at: '2026-07-06T14:33:03+00:00'
+    changed_at: '2026-07-06'
   math.functions.linear_functions_01:
     state: locked
     changed_at: '2026-07-02'
@@ -61,7 +61,7 @@ progress:
     changed_at: '2026-07-02'
   programming.python.variables_01:
     state: available
-    changed_at: '2026-07-06T14:33:03+00:00'
+    changed_at: '2026-07-06'
   tooling.cli.navigation_01:
     state: available
     changed_at: '2026-07-02'

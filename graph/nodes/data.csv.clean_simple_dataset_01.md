@@ -3,7 +3,7 @@ id: data.csv.clean_simple_dataset_01
 title: Clean a simple CSV dataset
 summary: Handle missing or malformed values in a small CSV file.
 domain: data
-track: core
+track: foundational
 roadmap_anchors:
 - phase: phase_1
   phase_label: Programming Fundamentals

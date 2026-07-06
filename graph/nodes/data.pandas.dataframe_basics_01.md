@@ -3,7 +3,7 @@ id: data.pandas.dataframe_basics_01
 title: Use basic Pandas DataFrame operations
 summary: Load, inspect, filter, and summarize tabular data with Pandas.
 domain: data
-track: core
+track: foundational
 roadmap_anchors:
 - phase: phase_1
   phase_label: Programming Fundamentals

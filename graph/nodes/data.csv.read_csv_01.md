@@ -3,7 +3,7 @@ id: data.csv.read_csv_01
 title: Read a CSV file with Python
 summary: Load a simple CSV file and inspect rows and columns.
 domain: data
-track: core
+track: foundational
 roadmap_anchors:
 - phase: phase_1
   phase_label: Programming Fundamentals
