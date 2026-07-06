@@ -27,9 +27,10 @@ from skilltrace import cli
 from skilltrace.graph.nodes import load_nodes
 
 from .conftest import (
+    ACTIVE_RESOURCE_BANDS,
     NODE_IDS,
-    REGISTRY_IS_EMPTY,
     REPO_ROOT,
+    band_of,
     gates_by_node,
     node_paths,
     raw_frontmatter,
@@ -163,15 +164,18 @@ def test_next_yields_recommendations_with_reasons(capsys):
     )
 
 
-# --- Per-node resource coverage (staged until the registry has entries) -----
+# --- Per-node resource coverage (staged in per band) ------------------------
 
 
-@pytest.mark.skipif(
-    REGISTRY_IS_EMPTY,
-    reason="resource floor stages in as bands gain entries; registry is still empty",
-)
 @pytest.mark.parametrize("node_id", NODE_IDS)
 def test_every_node_has_a_supporting_resource(node_id):
+    # The floor stages in per band: a node is held to it only once its band has
+    # registry entries (resources land as each band is authored). By the final
+    # slice every band is active, so this reduces to the full "every node has a
+    # resource" bar with no band permanently exempt. See conftest.band_of.
+    band = band_of(node_id)
+    if band not in ACTIVE_RESOURCE_BANDS:
+        pytest.skip(f"resource floor not yet active for band {band!r} (no entries)")
     supported = {
         node
         for resource in registry_resources()

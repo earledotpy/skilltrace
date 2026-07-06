@@ -127,7 +127,7 @@ def test_non_mapping_fails_naming_index():
 
 def test_all_seed_specs_load():
     specs = load_artifact_specs(REPO_ROOT)
-    assert len(specs) == 24
+    assert len(specs) == 47
     assert all(s.minimum_count >= 1 for s in specs)
     assert all(s.required for s in specs)
     assert all(s.node_id for s in specs)

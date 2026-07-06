@@ -39,14 +39,14 @@ def test_seed_validates_clean_and_logs_no_event(tmp_path, capsys):
 
 
 def test_load_and_validate_seed_has_no_warnings():
-    # The seed covers all 24 nodes with a gate + required spec and ships no
+    # The seed covers all 47 nodes with a gate + required spec and ships no
     # records, so a correct run emits zero warnings — asserting that (not merely
     # `ok`) catches a coverage check that spuriously warns on covered nodes.
     result = load_and_validate_evidence(REPO_ROOT)
     assert result.ok
     assert result.warnings == []
-    assert result.spec_count == 24
-    assert result.gate_count == 24
+    assert result.spec_count == 47
+    assert result.gate_count == 47
 
 
 def test_output_is_independent_of_progress_store(tmp_path):

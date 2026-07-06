@@ -82,7 +82,28 @@ def state_by_node() -> dict[str, str]:
     return {node_id: entry.get("state") for node_id, entry in progress.items()}
 
 
+def band_of(node_id: str) -> str:
+    """A node's band namespace: its ID minus the final topic segment.
+
+    `math.statistics.expectation_01 -> math.statistics`;
+    `consolidation.math_foundations_01 -> consolidation`. Every shipped ID is
+    `<band>.<topic>_NN`, so stripping the last dot-segment is the band.
+    """
+    return node_id.rsplit(".", 1)[0]
+
+
 # Collection-time constants so tests can parametrize over the shipped node set
-# and skip the resource floor while the registry is still empty.
+# and stage the resource floor per band.
 NODE_IDS: list[str] = [raw_frontmatter(p)["id"] for p in node_paths()]
-REGISTRY_IS_EMPTY: bool = len(registry_resources()) == 0
+
+# Bands with at least one registered resource. The resource floor stages in
+# per band (issue #14/#15): a node must have a supporting resource only once its
+# band has gained registry entries — resources land as each band is authored,
+# not all at once. Empty registry -> no active bands -> every node deferred; by
+# the final slice every band is authored, so this reduces to the full bar
+# ("every node has a resource") with no band permanently carved out.
+ACTIVE_RESOURCE_BANDS: frozenset[str] = frozenset(
+    band_of(node)
+    for resource in registry_resources()
+    for node in resource.get("supports", [])
+)

@@ -199,7 +199,7 @@ def test_seed_store_loads_all_nodes_in_derived_states():
     node_ids = {node.id for node in load_nodes(REPO_ROOT)}
 
     assert set(store.entries) == node_ids  # every seed node present
-    assert len(store.entries) == 24
+    assert len(store.entries) == 47
     assert all(entry.state in DERIVED_STATES for entry in store.entries.values())
     # No asserted progress is seeded — passing/mastering are learner acts only.
     assert not any(entry.state in ASSERTED_STATES for entry in store.entries.values())

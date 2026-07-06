@@ -1,1 +1,95 @@
-resources: []
+resources:
+  - id: khan-arithmetic
+    url: https://www.khanacademy.org/math/arithmetic
+    cost: free
+    supports:
+      - math.arithmetic.order_operations_01
+      - math.arithmetic.percentages_ratios_01
+      - math.arithmetic.exponents_powers_01
+  - id: khan-algebra
+    url: https://www.khanacademy.org/math/algebra
+    cost: free
+    supports:
+      - math.algebra.variables_expressions_01
+      - math.algebra.linear_equations_01
+      - math.algebra.inequalities_01
+      - math.algebra.systems_equations_01
+      - math.algebra.logarithms_01
+      - math.arithmetic.exponents_powers_01
+      - math.functions.coordinate_plane_01
+      - math.functions.slope_01
+      - math.functions.linear_functions_01
+      - math.functions.graph_interpretation_01
+      - math.functions.nonlinear_functions_01
+  - id: khan-precalculus
+    url: https://www.khanacademy.org/math/precalculus
+    cost: free
+    supports:
+      - math.algebra.logarithms_01
+      - math.functions.nonlinear_functions_01
+  - id: khan-statistics-probability
+    url: https://www.khanacademy.org/math/statistics-probability
+    cost: free
+    supports:
+      - math.statistics.descriptive_stats_01
+      - math.statistics.distributions_01
+      - math.statistics.probability_basics_01
+      - math.statistics.expectation_01
+      - math.statistics.sampling_01
+      - math.statistics.hypothesis_testing_01
+      - math.statistics.bayes_intuition_01
+      - math.statistics.correlation_causation_01
+  - id: khan-linear-algebra
+    url: https://www.khanacademy.org/math/linear-algebra
+    cost: free
+    supports:
+      - math.linear_algebra.vectors_01
+      - math.linear_algebra.vector_operations_01
+      - math.linear_algebra.dot_product_01
+      - math.linear_algebra.matrices_01
+      - math.linear_algebra.matrix_vector_product_01
+      - math.linear_algebra.matrix_multiplication_01
+  - id: khan-differential-calculus
+    url: https://www.khanacademy.org/math/differential-calculus
+    cost: free
+    supports:
+      - math.calculus.derivative_intuition_01
+      - math.calculus.gradient_intuition_01
+      - math.calculus.optimization_intuition_01
+      - math.calculus.integral_intuition_01
+  - id: 3blue1brown-essence-linear-algebra
+    url: https://www.3blue1brown.com/topics/linear-algebra
+    cost: free
+    supports:
+      - math.linear_algebra.vectors_01
+      - math.linear_algebra.vector_operations_01
+      - math.linear_algebra.dot_product_01
+      - math.linear_algebra.matrices_01
+      - math.linear_algebra.matrix_vector_product_01
+      - math.linear_algebra.matrix_multiplication_01
+  - id: 3blue1brown-essence-calculus
+    url: https://www.3blue1brown.com/topics/calculus
+    cost: free
+    supports:
+      - math.calculus.derivative_intuition_01
+      - math.calculus.gradient_intuition_01
+      - math.calculus.optimization_intuition_01
+      - math.calculus.integral_intuition_01
+  - id: seeing-theory
+    url: https://seeing-theory.brown.edu
+    cost: free
+    supports:
+      - math.statistics.distributions_01
+      - math.statistics.probability_basics_01
+      - math.statistics.sampling_01
+      - math.statistics.bayes_intuition_01
+  - id: openintro-statistics
+    url: https://www.openintro.org/book/os/
+    cost: free
+    supports:
+      - math.statistics.descriptive_stats_01
+      - math.statistics.distributions_01
+      - math.statistics.probability_basics_01
+      - math.statistics.expectation_01
+      - math.statistics.hypothesis_testing_01
+      - math.statistics.correlation_causation_01
