@@ -449,3 +449,75 @@ edges:
     active: true
     created_at: 2026-07-06
     updated_at: 2026-07-06
+  -
+    id: edge.programming.python.variables_01__programming.python.dictionaries_01
+    source: programming.python.variables_01
+    target: programming.python.dictionaries_01
+    edge_type: hard_prerequisite
+    reason: Creating and indexing a dictionary is variable assignment and lookup — the values are held in and read from names; without the concept of a variable the target is incoherent, not merely harder.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.programming.python.lists_loops_01__programming.python.comprehensions_01
+    source: programming.python.lists_loops_01
+    target: programming.python.comprehensions_01
+    edge_type: hard_prerequisite
+    reason: A comprehension is a loop that builds a sequence; without the concept of iterating over a sequence the target is incoherent, not merely harder.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.programming.python.variables_01__programming.python.string_processing_01
+    source: programming.python.variables_01
+    target: programming.python.string_processing_01
+    edge_type: soft_prerequisite
+    reason: Composing string transformations is smoother once values live in variables, but a learner who knows strings from elsewhere can call string methods cold — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.programming.python.conditionals_01__programming.python.exceptions_01
+    source: programming.python.conditionals_01
+    target: programming.python.exceptions_01
+    edge_type: soft_prerequisite
+    reason: try/except is control flow that reads naturally after if/else, but catching a raised error can be taught without branching fluency — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.programming.python.functions_01__programming.python.modules_imports_01
+    source: programming.python.functions_01
+    target: programming.python.modules_imports_01
+    edge_type: soft_prerequisite
+    reason: Calling library functions echoes calling your own, so defining functions first helps, but import mechanics stand alone — a learner can import and use a module without having authored a function — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.tooling.cli.navigation_01__tooling.cli.file_management_01
+    source: tooling.cli.navigation_01
+    target: tooling.cli.file_management_01
+    edge_type: soft_prerequisite
+    reason: Managing files is easier once you can move around the filesystem, but a learner who can already navigate elsewhere can start cold — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.tooling.cli.navigation_01__tooling.cli.inspecting_files_01
+    source: tooling.cli.navigation_01
+    target: tooling.cli.inspecting_files_01
+    edge_type: soft_prerequisite
+    reason: Viewing a file's contents is easier once you can reach it by path, but the viewing commands stand on their own — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.tooling.git.commit_workflow_01__tooling.git.viewing_history_01
+    source: tooling.git.commit_workflow_01
+    target: tooling.git.viewing_history_01
+    edge_type: soft_prerequisite
+    reason: Reading history is most meaningful once you have made commits, but a learner can inspect any existing repository's log and diffs without having committed themselves — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06

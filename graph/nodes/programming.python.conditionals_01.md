@@ -28,8 +28,23 @@ updated_at: 2026-07-06
 
 ## Learning target
 
-Use if, elif, and else statements to control program flow.
+Use `if`, `elif`, and `else` to branch on values. For the objective gate, define
+three functions in your solution script with exactly this behavior:
+
+- `classify(n)` — return `"negative"`, `"zero"`, or `"positive"` for `n`.
+- `is_even(n)` — return `True` when `n` is even, else `False`.
+- `larger(a, b)` — return the larger of `a` and `b`.
+
+Save your script at `evidence/artifacts/programming/python_conditionals_solution.py`
+and submit it.
 
 ## Study pointers
 
+The Python Tutorial §4.1 "if Statements" and §4.4 on comparisons
+(docs.python.org/3/tutorial/controlflow.html); Real Python's "Conditional
+Statements in Python" for worked branching examples.
+
 ## Notes
+
+Objective-gated: the checker exercises every branch of each function, so a
+missed `elif` or a wrong comparison is rejected.

@@ -29,8 +29,17 @@ updated_at: 2026-07-06
 
 ## Learning target
 
-Use basic terminal commands to move through folders and run local commands.
+Use basic terminal commands to see where you are, list a folder's contents, move
+between folders, and run a local command.
 
 ## Study pointers
 
+The Missing Semester "The Shell" lecture (missing.csail.mit.edu/2020/course-shell)
+for `pwd`, `ls`, and `cd`; on Windows, the Microsoft "Windows commands" reference
+(learn.microsoft.com/windows-server/administration/windows-commands) for the
+PowerShell/cmd equivalents.
+
 ## Notes
+
+Manual-gated: "I can move around a filesystem" has no honest exit-0 artifact; the
+learner attests to the walkthrough.

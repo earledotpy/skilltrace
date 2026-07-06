@@ -94,6 +94,39 @@ AI review is never an acceptance authority; it may attach advisory commentary
 only. Passing and mastering are explicit learner commands (see the safety rules
 in `CLAUDE.md`).
 
+**Authoring an objective gate (the shipped-checker pattern).** The gate runner
+(`commands/submit.py`) runs the gate's `command` as `shlex.split(command)` →
+`subprocess.run(argv)` with `shell=False`, no cwd override, and no substitution
+of the submitted `--location`. The contract that follows from that:
+
+- **A checker ships; the solution does not.** Put a checker at
+  `evidence/checks/<node_id>_check.py` and point the gate `command` at
+  `python evidence/checks/<node_id>_check.py`. The learner writes their solution
+  to a fixed path under `evidence/artifacts/` (gitignored — the seed carries
+  checkers, never solutions), which the checker resolves *relative to its own
+  `__file__`*, not the cwd. Name that path in the node body and mirror it in the
+  spec's `expected_location_hint` / `example_filename` so the hashed `--location`
+  and the checked file coincide. Set the spec's `minimum_count: 1`.
+- **Forward slashes only.** `shlex.split` is POSIX; a backslash is an escape and
+  eats the path. Python and Git both accept `/` on Windows.
+- **The checker verifies stated behavior, never a proxy.** Exercise the actual
+  functions (or interrogate the actual repo with `git rev-parse`/`log`/`ls-tree`)
+  and compare against the contract the node body states. A file-exists or
+  line-count check is the proxy the honesty rule forbids.
+- **Decide the verdict with an explicit `raise SystemExit`, never `assert`.**
+  `python -O` / `PYTHONOPTIMIZE` strips `assert`, which would make the checker
+  exit 0 for a *wrong* solution and silently accept anything. The shared
+  `evidence/checks/_loader.py` exposes `check(cond, msg)` for exactly this.
+- **Smoke-test both directions on the real environment before shipping.** On a
+  disposable copy (never the real repo — a real submit writes an evidence record
+  and an audit event), submit a correct solution (→ ACCEPTED) *and* a deliberately
+  wrong one (→ REJECTED). The wrong-case rejection is what proves the gate
+  discriminates rather than passing vacuously.
+
+A shipped-test objective gate is inherently game-able by hardcoding to the
+visible cases; that is acceptable for a single honest self-learner. The honesty
+rule governs the *author* (ship no proxy), not adversarial-proofing the learner.
+
 ## Resources
 
 The LearningResource registry (`graph/resources.yaml`) is authored at

@@ -93,3 +93,68 @@ resources:
       - math.statistics.expectation_01
       - math.statistics.hypothesis_testing_01
       - math.statistics.correlation_causation_01
+  - id: python-tutorial
+    url: https://docs.python.org/3/tutorial/
+    cost: free
+    supports:
+      - programming.python.environment_01
+      - programming.python.variables_01
+      - programming.python.conditionals_01
+      - programming.python.functions_01
+      - programming.python.lists_loops_01
+      - programming.python.files_01
+      - programming.python.errors_debugging_01
+      - programming.python.dictionaries_01
+      - programming.python.comprehensions_01
+      - programming.python.string_processing_01
+      - programming.python.exceptions_01
+      - programming.python.modules_imports_01
+  - id: python-stdlib-reference
+    url: https://docs.python.org/3/library/
+    cost: free
+    supports:
+      - programming.python.string_processing_01
+      - programming.python.modules_imports_01
+  - id: real-python
+    url: https://realpython.com/
+    cost: free
+    supports:
+      - programming.python.environment_01
+      - programming.python.variables_01
+      - programming.python.conditionals_01
+      - programming.python.functions_01
+      - programming.python.lists_loops_01
+      - programming.python.files_01
+      - programming.python.errors_debugging_01
+      - programming.python.dictionaries_01
+      - programming.python.comprehensions_01
+      - programming.python.string_processing_01
+      - programming.python.exceptions_01
+  - id: missing-semester
+    url: https://missing.csail.mit.edu/
+    cost: free
+    supports:
+      - tooling.cli.navigation_01
+      - tooling.cli.file_management_01
+      - tooling.cli.inspecting_files_01
+  - id: microsoft-windows-commands
+    url: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/windows-commands
+    cost: free
+    supports:
+      - tooling.cli.navigation_01
+      - tooling.cli.file_management_01
+      - tooling.cli.inspecting_files_01
+  - id: pro-git-book
+    url: https://git-scm.com/book/en/v2
+    cost: free
+    supports:
+      - tooling.git.repository_basics_01
+      - tooling.git.commit_workflow_01
+      - tooling.git.viewing_history_01
+  - id: github-docs
+    url: https://docs.github.com/
+    cost: free
+    supports:
+      - tooling.git.repository_basics_01
+      - tooling.git.commit_workflow_01
+      - tooling.git.viewing_history_01

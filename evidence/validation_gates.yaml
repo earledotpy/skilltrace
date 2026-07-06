@@ -73,28 +73,33 @@ validation_gates:
   updated_at: 2026-07-03
 - id: gate.programming.python.variables.closure
   node_id: programming.python.variables_01
-  authority: manual
-  title: Closure gate for Python variables code evidence
-  description: Determines whether evidence for programming.python.variables_01 is
-    sufficient to pass the node.
+  authority: objective
+  command: python evidence/checks/programming.python.variables_check.py
+  title: Objective gate for Python variables code evidence
+  description: Runs the shipped checker, which imports the learner's solution and
+    asserts the computed values of seconds_per_day, total_cost, and average. Exit
+    0 is the pass bar.
   created_at: 2026-06-28
-  updated_at: 2026-07-03
+  updated_at: 2026-07-06
 - id: gate.programming.python.conditionals.closure
   node_id: programming.python.conditionals_01
-  authority: manual
-  title: Closure gate for Python conditionals code evidence
-  description: Determines whether evidence for programming.python.conditionals_01
-    is sufficient to pass the node.
+  authority: objective
+  command: python evidence/checks/programming.python.conditionals_check.py
+  title: Objective gate for Python conditionals code evidence
+  description: Runs the shipped checker, which imports the learner's solution and
+    asserts every branch of classify, is_even, and larger. Exit 0 is the pass bar.
   created_at: 2026-06-28
-  updated_at: 2026-07-03
+  updated_at: 2026-07-06
 - id: gate.programming.python.functions.closure
   node_id: programming.python.functions_01
-  authority: manual
-  title: Closure gate for Python functions code evidence
-  description: Determines whether evidence for programming.python.functions_01 is
-    sufficient to pass the node.
+  authority: objective
+  command: python evidence/checks/programming.python.functions_check.py
+  title: Objective gate for Python functions code evidence
+  description: Runs the shipped checker, which imports the learner's solution and
+    asserts the stated behavior of rectangle_area, celsius_to_fahrenheit, and
+    greet. Exit 0 is the pass bar.
   created_at: 2026-06-28
-  updated_at: 2026-07-03
+  updated_at: 2026-07-06
 - id: gate.programming.python.errors_debugging.closure
   node_id: programming.python.errors_debugging_01
   authority: manual
@@ -105,20 +110,23 @@ validation_gates:
   updated_at: 2026-07-03
 - id: gate.programming.python.lists_loops.closure
   node_id: programming.python.lists_loops_01
-  authority: manual
-  title: Closure gate for Python lists and loops code evidence
-  description: Determines whether evidence for programming.python.lists_loops_01 is
-    sufficient to pass the node.
+  authority: objective
+  command: python evidence/checks/programming.python.lists_loops_check.py
+  title: Objective gate for Python lists and loops code evidence
+  description: Runs the shipped checker, which imports the learner's solution and
+    asserts sum_list, count_evens, and squares_up_to over sample inputs. Exit 0 is
+    the pass bar.
   created_at: 2026-06-28
-  updated_at: 2026-07-03
+  updated_at: 2026-07-06
 - id: gate.programming.python.files.closure
   node_id: programming.python.files_01
-  authority: manual
-  title: Closure gate for Python file I/O code evidence
-  description: Determines whether evidence for programming.python.files_01 is sufficient
-    to pass the node.
+  authority: objective
+  command: python evidence/checks/programming.python.files_check.py
+  title: Objective gate for Python file I/O code evidence
+  description: Runs the shipped checker, which round-trips lines through a temp file
+    using the learner's write_lines and read_lines. Exit 0 is the pass bar.
   created_at: 2026-06-28
-  updated_at: 2026-07-03
+  updated_at: 2026-07-06
 - id: gate.tooling.cli.navigation.closure
   node_id: tooling.cli.navigation_01
   authority: manual
@@ -137,12 +145,14 @@ validation_gates:
   updated_at: 2026-07-03
 - id: gate.tooling.git.commit_workflow.closure
   node_id: tooling.git.commit_workflow_01
-  authority: manual
-  title: Closure gate for Git commit workflow checklist evidence
-  description: Determines whether evidence for tooling.git.commit_workflow_01 is sufficient
-    to pass the node.
+  authority: objective
+  command: python evidence/checks/tooling.git.commit_workflow_check.py
+  title: Objective gate for Git commit workflow evidence
+  description: Runs the shipped checker, which interrogates the learner's repository
+    artifact and confirms HEAD resolves to a commit that carries a message and
+    tracks a file. Exit 0 is the pass bar.
   created_at: 2026-06-28
-  updated_at: 2026-07-03
+  updated_at: 2026-07-06
 - id: gate.data.csv.read_csv.closure
   node_id: data.csv.read_csv_01
   authority: manual
@@ -185,13 +195,16 @@ validation_gates:
   updated_at: 2026-07-03
 - id: gate.portfolio.project.slope_calculator.closure
   node_id: portfolio.project.slope_calculator_01
-  authority: objective
-  command: pytest portfolio/slope-calculator/tests
+  authority: manual
   title: Closure gate for Slope calculator portfolio repository evidence
   description: Determines whether evidence for portfolio.project.slope_calculator_01
-    is sufficient to pass the node.
+    is sufficient to pass the node. Manual per doctrine — a portfolio project is
+    judged as working code plus a readable README plus an honest write-up, never
+    proxied by a single command. (Retrofit from a draft objective gate whose
+    command referenced tests that do not ship; the portfolio band is authored in
+    a later slice.)
   created_at: 2026-06-28
-  updated_at: 2026-07-03
+  updated_at: 2026-07-06
 - id: gate.math.linear_algebra.vectors.closure
   node_id: math.linear_algebra.vectors_01
   authority: manual
@@ -352,5 +365,79 @@ validation_gates:
   authority: manual
   title: Closure gate for Recognize nonlinear function shapes evidence
   description: Determines whether evidence for math.functions.nonlinear_functions_01 is sufficient to pass the node.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.programming.python.dictionaries.closure
+  node_id: programming.python.dictionaries_01
+  authority: objective
+  command: python evidence/checks/programming.python.dictionaries_check.py
+  title: Objective gate for Python dictionaries code evidence
+  description: Runs the shipped checker, which imports the learner's solution and
+    asserts word_count, get_or_default, and invert. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.programming.python.comprehensions.closure
+  node_id: programming.python.comprehensions_01
+  authority: objective
+  command: python evidence/checks/programming.python.comprehensions_check.py
+  title: Objective gate for Python comprehensions code evidence
+  description: Runs the shipped checker, which imports the learner's solution and
+    asserts evens, square_map, and long_words. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.programming.python.string_processing.closure
+  node_id: programming.python.string_processing_01
+  authority: objective
+  command: python evidence/checks/programming.python.string_processing_check.py
+  title: Objective gate for Python string processing code evidence
+  description: Runs the shipped checker, which imports the learner's solution and
+    asserts normalize, initials, and count_vowels. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.programming.python.exceptions.closure
+  node_id: programming.python.exceptions_01
+  authority: objective
+  command: python evidence/checks/programming.python.exceptions_check.py
+  title: Objective gate for Python exceptions code evidence
+  description: Runs the shipped checker, which confirms safe_divide and parse_int
+    catch the stated errors and return the fallback rather than raising. Exit 0 is
+    the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.programming.python.modules_imports.closure
+  node_id: programming.python.modules_imports_01
+  authority: objective
+  command: python evidence/checks/programming.python.modules_imports_check.py
+  title: Objective gate for Python standard-library code evidence
+  description: Runs the shipped checker, which asserts days_between, sqrt_floor, and
+    most_common_char — each requiring the right standard-library module. Exit 0 is
+    the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.tooling.cli.file_management.closure
+  node_id: tooling.cli.file_management_01
+  authority: manual
+  title: Closure gate for command-line file management evidence
+  description: Determines whether evidence for tooling.cli.file_management_01 is
+    sufficient to pass the node. Manual — the substance is choosing and sequencing
+    the right commands, which is judged, not exit-checked.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.tooling.cli.inspecting_files.closure
+  node_id: tooling.cli.inspecting_files_01
+  authority: manual
+  title: Closure gate for command-line file inspection evidence
+  description: Determines whether evidence for tooling.cli.inspecting_files_01 is
+    sufficient to pass the node. Manual — reading and interpreting what a file's
+    contents mean is judgment, not an exit code.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.tooling.git.viewing_history.closure
+  node_id: tooling.git.viewing_history_01
+  authority: manual
+  title: Closure gate for Git history inspection evidence
+  description: Determines whether evidence for tooling.git.viewing_history_01 is
+    sufficient to pass the node. Manual — the skill is reading a log or diff and
+    explaining what changed, which is judgment, not an exit code.
   created_at: 2026-07-06
   updated_at: 2026-07-06

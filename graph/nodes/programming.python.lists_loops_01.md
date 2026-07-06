@@ -29,8 +29,23 @@ updated_at: 2026-07-06
 
 ## Learning target
 
-Represent repeated values and process them with loops.
+Hold repeated values in a list and process them with a loop. For the objective
+gate, define three functions in your solution script with exactly this behavior:
+
+- `sum_list(nums)` — return the total of the numbers (`0` for an empty list).
+- `count_evens(nums)` — return how many of the numbers are even.
+- `squares_up_to(n)` — return `[1, 4, 9, ..., n*n]` for `1` through `n`.
+
+Save your script at `evidence/artifacts/programming/python_lists_loops_solution.py`
+and submit it.
 
 ## Study pointers
 
+The Python Tutorial §4.2–4.3 "for Statements" and "range", and §5.1 on lists
+(docs.python.org/3/tutorial/controlflow.html); Real Python's "Python for Loops"
+for accumulation patterns.
+
 ## Notes
+
+Objective-gated: `evidence/checks/programming.python.lists_loops_check.py` asserts
+each function over sample inputs, including the empty-list edge case.

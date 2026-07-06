@@ -29,8 +29,16 @@ updated_at: 2026-07-06
 
 ## Learning target
 
-Initialize or clone a repository and inspect its status.
+Initialize a new repository or clone an existing one, and read `git status` to
+see what state the working tree is in.
 
 ## Study pointers
 
+Pro Git chapter 2.1 "Getting a Git Repository" (git-scm.com/book/en/v2) for
+`git init` and `git clone`, and 1.7 for first-time setup; GitHub Docs "About
+remote repositories" for cloning from GitHub.
+
 ## Notes
+
+Manual-gated: initializing or cloning is a setup step the learner attests to; the
+committing skill it precedes is where the objective gate lands.

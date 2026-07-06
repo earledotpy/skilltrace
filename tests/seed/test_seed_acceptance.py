@@ -5,6 +5,9 @@ the shipped repo rather than eyeballed:
 
   - every node has exactly one ValidationGate and at least one required
     ArtifactSpec;
+  - every objective gate's command is well-formed — it shlex-splits to a
+    non-empty argv that runs a shipped `evidence/checks/*_check.py` checker (the
+    learner's solution is not shipped and is not asserted);
   - every track a node uses is mapped in the recommendation policy;
   - the effort claim and the session-fit flags agree (a node cannot advertise a
     window its minimum effort overshoots), and no retrofitted-away frontmatter
@@ -20,6 +23,8 @@ here — this suite enforces the structural bar, not the shape of the curriculum
 """
 
 from __future__ import annotations
+
+import shlex
 
 import pytest
 
@@ -63,6 +68,37 @@ def test_every_node_has_exactly_one_gate(node_id):
 def test_every_node_has_a_required_artifact_spec(node_id):
     specs = required_specs_by_node().get(node_id, [])
     assert specs, f"{node_id}: expected at least one required artifact spec, found none"
+
+
+# --- Objective gate commands are well-formed and reference shipped checkers --
+
+_OBJECTIVE_GATES = [
+    gate
+    for gates in gates_by_node().values()
+    for gate in gates
+    if gate.get("authority") == "objective"
+]
+
+
+@pytest.mark.parametrize("gate", _OBJECTIVE_GATES, ids=lambda g: g["id"])
+def test_objective_gate_command_runs_a_shipped_checker(gate):
+    # Mirror the engine's own parsing (submit.py uses shlex.split): the command
+    # must split to a non-empty argv and invoke a checker that ships in the repo.
+    # The learner's solution is deliberately NOT asserted — it is not shipped.
+    argv = shlex.split(gate.get("command") or "")
+    assert argv, f"{gate['id']}: objective gate command is empty"
+    checkers = [
+        tok
+        for tok in argv
+        if tok.startswith("evidence/checks/") and tok.endswith(".py")
+    ]
+    assert checkers, (
+        f"{gate['id']}: command runs no evidence/checks/*.py checker: {argv}"
+    )
+    for tok in checkers:
+        assert (REPO_ROOT / tok).is_file(), (
+            f"{gate['id']}: checker {tok} is not shipped in the repo"
+        )
 
 
 # --- Every track in use is weight-mapped ------------------------------------

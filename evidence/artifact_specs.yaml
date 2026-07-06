@@ -119,42 +119,42 @@ artifact_specs:
   -
     id: spec.programming.python.variables
     node_id: programming.python.variables_01
-    title: Python variables code evidence
+    title: Python variables solution script
     artifact_kind: code_snippet
-    description: "Required evidence for programming.python.variables_01: python variables code evidence."
+    description: "Required evidence for programming.python.variables_01: a solution script assigning seconds_per_day, total_cost, and average from expressions with the stated values."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/programming/
-    example_filename: programming_python_variables_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_variables_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each variable holds the stated result. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.programming.python.conditionals
     node_id: programming.python.conditionals_01
-    title: Python conditionals code evidence
+    title: Python conditionals solution script
     artifact_kind: code_snippet
-    description: "Required evidence for programming.python.conditionals_01: python conditionals code evidence."
+    description: "Required evidence for programming.python.conditionals_01: a solution script defining classify, is_even, and larger with the stated branching behavior."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/programming/
-    example_filename: programming_python_conditionals_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_conditionals_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts every branch of each function. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.programming.python.functions
     node_id: programming.python.functions_01
-    title: Python functions code evidence
+    title: Python functions solution script
     artifact_kind: code_snippet
-    description: "Required evidence for programming.python.functions_01: python functions code evidence."
+    description: "Required evidence for programming.python.functions_01: a solution script defining rectangle_area, celsius_to_fahrenheit, and greet with the stated behavior."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/programming/
-    example_filename: programming_python_functions_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_functions_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each function returns the stated result. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.programming.python.errors_debugging
     node_id: programming.python.errors_debugging_01
@@ -171,29 +171,29 @@ artifact_specs:
   -
     id: spec.programming.python.lists_loops
     node_id: programming.python.lists_loops_01
-    title: Python lists and loops code evidence
+    title: Python lists and loops solution script
     artifact_kind: code_snippet
-    description: "Required evidence for programming.python.lists_loops_01: python lists and loops code evidence."
+    description: "Required evidence for programming.python.lists_loops_01: a solution script defining sum_list, count_evens, and squares_up_to with the stated behavior."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/programming/
-    example_filename: programming_python_lists_loops_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_lists_loops_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each function over sample inputs. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.programming.python.files
     node_id: programming.python.files_01
-    title: Python file I/O code evidence
+    title: Python file I/O solution script
     artifact_kind: code_snippet
-    description: "Required evidence for programming.python.files_01: python file i/o code evidence."
+    description: "Required evidence for programming.python.files_01: a solution script defining write_lines and read_lines that persist and recover a list of lines."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/programming/
-    example_filename: programming_python_files_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_files_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it round-trips lines through a temp file using write_lines and read_lines. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.tooling.cli.navigation
     node_id: tooling.cli.navigation_01
@@ -223,16 +223,16 @@ artifact_specs:
   -
     id: spec.tooling.git.commit_workflow
     node_id: tooling.git.commit_workflow_01
-    title: Git commit workflow checklist evidence
-    artifact_kind: checklist
-    description: "Required evidence for tooling.git.commit_workflow_01: git commit workflow checklist evidence."
+    title: Git repository artifact with a first commit
+    artifact_kind: git_repository
+    description: "Required evidence for tooling.git.commit_workflow_01: a Git repository at evidence/artifacts/git_repo/ containing at least one commit that carries a message and tracks a file."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/tooling/
-    example_filename: tooling_git_commit_workflow_checklist_001.md
-    acceptance_summary: Checklist is completed with command or action notes sufficient to reproduce the procedure.
+    expected_location_hint: evidence/artifacts/git_repo/
+    example_filename: .git
+    acceptance_summary: The objective gate runs the shipped checker; it asks Git whether HEAD resolves to a commit with a message and a tracked file. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.data.csv.read_csv
     node_id: data.csv.read_csv_01
@@ -608,5 +608,109 @@ artifact_specs:
     expected_location_hint: evidence/math/
     example_filename: math_functions_nonlinear_functions_set_001.md
     acceptance_summary: Quadratic and exponential graphs/tables are correctly identified and contrasted with linear (constant-rate) behavior, and where each grows fastest is described correctly — no linear/nonlinear or quadratic/exponential confusion across the examples.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.programming.python.dictionaries
+    node_id: programming.python.dictionaries_01
+    title: Python dictionaries solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.dictionaries_01: a solution script defining word_count, get_or_default, and invert with the stated behavior."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_dictionaries_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each dictionary function. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.programming.python.comprehensions
+    node_id: programming.python.comprehensions_01
+    title: Python comprehensions solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.comprehensions_01: a solution script defining evens, square_map, and long_words with the stated behavior."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_comprehensions_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each comprehension result. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.programming.python.string_processing
+    node_id: programming.python.string_processing_01
+    title: Python string processing solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.string_processing_01: a solution script defining normalize, initials, and count_vowels with the stated behavior."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_string_processing_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each string transformation. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.programming.python.exceptions
+    node_id: programming.python.exceptions_01
+    title: Python exceptions solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.exceptions_01: a solution script defining safe_divide and parse_int that catch the stated errors and return a fallback."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_exceptions_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it confirms each function catches its error and returns the fallback rather than raising. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.programming.python.modules_imports
+    node_id: programming.python.modules_imports_01
+    title: Python standard-library solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.modules_imports_01: a solution script defining days_between, sqrt_floor, and most_common_char using the standard library."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_modules_imports_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; each stated result requires reaching for the right standard-library module. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.tooling.cli.file_management
+    node_id: tooling.cli.file_management_01
+    title: Command-line file management checklist evidence
+    artifact_kind: checklist
+    description: "Required evidence for tooling.cli.file_management_01: a short transcript or checklist showing files created, copied, moved, and removed from the command line."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/tooling/
+    example_filename: tooling_cli_file_management_checklist_001.md
+    acceptance_summary: The transcript shows the learner creating, copying, moving, and removing files or folders with the right commands, with notes sufficient to reproduce the sequence.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.tooling.cli.inspecting_files
+    node_id: tooling.cli.inspecting_files_01
+    title: Command-line file inspection checklist evidence
+    artifact_kind: checklist
+    description: "Required evidence for tooling.cli.inspecting_files_01: a short transcript or checklist showing a file's contents viewed and searched from the command line."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/tooling/
+    example_filename: tooling_cli_inspecting_files_checklist_001.md
+    acceptance_summary: The transcript shows the learner viewing a file's contents and searching within it, and correctly stating what was found.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.tooling.git.viewing_history
+    node_id: tooling.git.viewing_history_01
+    title: Git history inspection evidence
+    artifact_kind: checklist
+    description: "Required evidence for tooling.git.viewing_history_01: a short write-up reading a repository's log and a diff and explaining what changed between two commits."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/tooling/
+    example_filename: tooling_git_viewing_history_writeup_001.md
+    acceptance_summary: The write-up correctly reads the commit log and a diff and explains, in the learner's words, what changed between two commits and why.
     created_at: 2026-07-06
     updated_at: 2026-07-06

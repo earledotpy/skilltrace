@@ -29,8 +29,16 @@ updated_at: 2026-07-06
 
 ## Learning target
 
-Confirm Python runs locally and execute a simple script.
+Confirm Python runs on your machine and execute a simple script from the command
+line.
 
 ## Study pointers
 
+The Python Tutorial §1–2 "Whetting Your Appetite" and "Using the Python
+Interpreter" (docs.python.org/3/tutorial/interpreter.html); Real Python's "Python
+Development Setup" for installing and running Python on Windows.
+
 ## Notes
+
+Manual-gated: confirming your own environment runs is a setup step you attest to,
+not a behavior a shipped command can check for you.

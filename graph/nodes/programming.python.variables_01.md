@@ -28,8 +28,25 @@ updated_at: 2026-07-06
 
 ## Learning target
 
-Create variables, assign values, and use expressions to compute simple results.
+Create variables, assign values, and compute results with expressions. For the
+objective gate, define three module-level variables in your solution script,
+each the result of an expression:
+
+- `seconds_per_day` — the number of seconds in a day (`24 * 60 * 60` → `86400`).
+- `total_cost` — for a price of `4.90`, quantity `5`, and tax `2.00`, the total
+  `price * quantity + tax` (`26.5`).
+- `average` — the mean of `10`, `20`, and `30` (`20.0`).
+
+Save your script at `evidence/artifacts/programming/python_variables_solution.py`
+and submit it.
 
 ## Study pointers
 
+The Python Tutorial §3.1.1 "Numbers" and §3.1.3 "Using Python as a Calculator"
+(docs.python.org/3/tutorial/introduction.html); Real Python's "Variables in
+Python" for naming and assignment.
+
 ## Notes
+
+Objective-gated: `evidence/checks/programming.python.variables_check.py` imports
+the solution and asserts each variable holds the stated value.

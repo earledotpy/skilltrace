@@ -28,8 +28,26 @@ updated_at: 2026-07-06
 
 ## Learning target
 
-Use Python to read from and write to local text files.
+Write data to a text file and read it back. For the objective gate, define two
+functions in your solution script with exactly this behavior:
+
+- `write_lines(path, lines)` — write each string in `lines` to the file at
+  `path`, one per line.
+- `read_lines(path)` — return the file's lines as a list of strings, without
+  trailing newlines.
+
+Save your script at `evidence/artifacts/programming/python_files_solution.py` and
+submit it. The gate round-trips a list of lines through a temporary file using
+your two functions, so they must agree: what `write_lines` writes, `read_lines`
+must recover exactly.
 
 ## Study pointers
 
+The Python Tutorial §7.2 "Reading and Writing Files"
+(docs.python.org/3/tutorial/inputoutput.html) for `open`, `with`, and the read/
+write methods; Real Python's "Reading and Writing Files in Python" for patterns.
+
 ## Notes
+
+Objective-gated: the checker asserts a write→read round-trip, so a mismatched
+newline or encoding choice between the two functions is rejected.

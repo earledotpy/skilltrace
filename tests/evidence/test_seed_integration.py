@@ -25,18 +25,22 @@ def test_full_seed_evidence_trail_loads():
     records = load_evidence_records(REPO_ROOT)
     attempts = load_assessment_attempts(REPO_ROOT)
 
-    assert len(specs) == 47
-    assert len(gates) == 47
+    assert len(specs) == 55
+    assert len(gates) == 55
     assert records == []
     assert attempts == []
 
 
-def test_seed_has_one_objective_gate_rest_manual():
-    # The slope-calculator portfolio node is the only objective gate; every other
-    # seed gate is manual review. A regression that dropped `command` handling
-    # would flip this.
+def test_seed_objective_gates_carry_a_command():
+    # v0.8 slice 3 made objective gates real on the programming/tooling code and
+    # Git nodes (the slope-calculator portfolio gate was demoted to manual — a
+    # project is judged, never proxied). Every objective gate must carry the
+    # `command` its authority runs; a regression that dropped `command` handling
+    # would flip this. The exact count is a curriculum choice, not asserted here.
     gates = load_validation_gates(REPO_ROOT)
     objective = [g for g in gates if g.authority == "objective"]
-    assert len(objective) == 1
-    assert objective[0].node_id == "portfolio.project.slope_calculator_01"
-    assert objective[0].command
+    assert objective, "the seed should carry objective gates on its code/Git nodes"
+    assert all(g.command for g in objective)
+    # The portfolio project is judged manually, not by an exit code.
+    portfolio = [g for g in gates if g.node_id == "portfolio.project.slope_calculator_01"]
+    assert portfolio and portfolio[0].authority == "manual"

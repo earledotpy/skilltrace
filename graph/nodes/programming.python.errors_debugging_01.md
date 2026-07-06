@@ -28,8 +28,16 @@ updated_at: 2026-07-06
 
 ## Learning target
 
-Use Python error messages to identify and fix simple bugs.
+Read a Python traceback, locate the failing line, name the error, and describe
+the fix — a repeatable debugging method, not a guess-and-check habit.
 
 ## Study pointers
 
+The Python Tutorial §8.1–8.2 "Syntax Errors" and "Exceptions"
+(docs.python.org/3/tutorial/errors.html) for reading tracebacks; Real Python's
+"Understanding the Python Traceback" for how to read one top to bottom.
+
 ## Notes
+
+Manual-gated: explaining a debugging approach is judgment; no exit code proves
+you understood *why* the error occurred, which is the skill.
