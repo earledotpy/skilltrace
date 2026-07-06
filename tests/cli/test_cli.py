@@ -41,6 +41,7 @@ def test_registry_has_the_expected_commands():
         "reviews",
         "resources",
         "verify-resource",
+        "resource-report",
         "suggest remediation",
         "suggest reviews",
     }

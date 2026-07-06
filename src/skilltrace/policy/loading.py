@@ -1,4 +1,4 @@
-"""Load the six policy seed documents.
+"""Load the policy seed documents.
 
 Each file carries one top-level key naming its policy document. Loading is
 strict about shape (file exists, parses, top key is a mapping) and agnostic
@@ -14,12 +14,13 @@ import yaml
 
 _POLICY_DIR = "policy"
 
-# filename -> required top-level key. The six seed documents of the layer.
+# filename -> required top-level key. The seed documents of the layer.
 POLICY_FILES: dict[str, str] = {
     "automation_boundary.yaml": "automation_boundary_policy",
     "mastery_promotion.yaml": "mastery_promotion_policy",
     "recommendation.yaml": "recommendation_policy",
     "remediation.yaml": "remediation_policy",
+    "resource_verification.yaml": "resource_verification_policy",
     "review_cadence.yaml": "review_cadence_policy",
     "workload.yaml": "workload_policy",
 }
@@ -47,5 +48,5 @@ def load_policy_doc(root: Path | str, filename: str) -> dict:
 
 
 def load_policy_docs(root: Path | str) -> dict[str, dict]:
-    """Load all six policy documents, keyed by filename."""
+    """Load every policy document, keyed by filename."""
     return {filename: load_policy_doc(root, filename) for filename in POLICY_FILES}

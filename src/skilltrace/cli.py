@@ -67,7 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
     execution_parser.set_defaults(_command_name="validate execution")
     policy_parser = validate_targets.add_parser(
         "policy",
-        help="Validate the policy seed files (six documents, boundary agreement).",
+        help="Validate the policy seed files (boundary agreement, structural shape).",
     )
     policy_parser.set_defaults(_command_name="validate policy")
     resources_parser = validate_targets.add_parser(
@@ -326,6 +326,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Why the resource is broken (required with --broken).",
     )
     verify_resource_parser.set_defaults(_command_name="verify-resource")
+
+    # resource-report (whole-registry verification status snapshot)
+    resource_report_parser = subcommands.add_parser(
+        "resource-report",
+        help="Report every resource's derived verification status (always exit 0, read-only).",
+    )
+    resource_report_parser.set_defaults(_command_name="resource-report")
 
     # next
     next_parser = subcommands.add_parser(

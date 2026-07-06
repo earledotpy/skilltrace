@@ -21,6 +21,7 @@ from . import (
     recommend,
     remediation,
     resource_listing,
+    resource_report,
     review,
     session,
     submit,
@@ -47,6 +48,7 @@ def register_all(registry: Registry) -> Registry:
     review.register(registry)
     listings.register(registry)
     resource_listing.register(registry)
+    resource_report.register(registry)
     verify_resource.register(registry)
     check_automation.register(registry)
     suggest.register(registry)

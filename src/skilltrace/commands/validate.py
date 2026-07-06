@@ -170,7 +170,7 @@ def register(registry: Registry) -> None:
             name="validate policy",
             kind=Kind.READ_ONLY,
             handler=validate_policy,
-            help="Validate the policy seed files (six documents, boundary agreement).",
+            help="Validate the policy seed files (boundary agreement, structural shape).",
         )
     )
     registry.register(

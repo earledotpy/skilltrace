@@ -1,0 +1,16 @@
+resource_verification_policy:
+  id: policy.resource_verification.default_v0_7
+  status: active
+  title: Resource verification advisory
+  description: >
+    Advisory-only staleness window for resource verification (CONTEXT.md).
+    A resource's verification status is always derived, never stored:
+    unverified with no last_verified, verified within this window, stale once
+    last_verified is older than it. The stored broken marker dominates all
+    three in resource-report. This is the lowest advisory tier: resource
+    trouble warns in resource-report only — it never blocks a command, never
+    changes node readiness/eligibility/state, and never feeds recommendation
+    ordering. The window is seed data; the staleness mechanism is engine.
+  stale_after_days: 180
+  created_at: 2026-07-05
+  updated_at: 2026-07-05

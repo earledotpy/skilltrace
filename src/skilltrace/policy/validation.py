@@ -1,6 +1,6 @@
 """`validate policy` — structural truth for the policy layer.
 
-Checks that the six seed documents load and hold together. Like the other
+Checks that the seed documents load and hold together. Like the other
 layers' validators this is read-only and never blocks on advisory content;
 errors are structural (a file that cannot serve its readers).
 """
