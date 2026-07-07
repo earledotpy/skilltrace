@@ -127,14 +127,15 @@ def test_non_mapping_edge_fails_naming_index():
 
 def test_all_seed_edges_load():
     edges = load_edges(REPO_ROOT)
-    assert len(edges) == 80
+    assert len(edges) == 124
     ids = [edge.id for edge in edges]
     assert len(set(ids)) == len(ids)  # loader hands #5 the raw list; no dedupe here
     assert all(edge.edge_type in EDGE_TYPES for edge in edges)
     assert all(edge.reason for edge in edges)
-    # Every seed edge keeps its current type; both types in use are present.
+    # Every seed edge keeps its current type; all three types are now in use —
+    # remediation edges entered the seed in v0.8 slice 5 (cross-cutting nodes).
     types = {edge.edge_type for edge in edges}
-    assert types == {"hard_prerequisite", "soft_prerequisite"}
+    assert types == {"hard_prerequisite", "soft_prerequisite", "remediation"}
 
 
 def test_seed_edges_carry_no_pruned_fields():

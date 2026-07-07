@@ -122,7 +122,7 @@ def test_invalid_node_id_fails():
 
 def test_all_seed_gates_load():
     gates = load_validation_gates(REPO_ROOT)
-    assert len(gates) == 69
+    assert len(gates) == 81
     assert all(g.authority in AUTHORITIES for g in gates)
     objective = [g for g in gates if g.authority == "objective"]
     assert all(g.command for g in objective)

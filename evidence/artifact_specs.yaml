@@ -896,3 +896,159 @@ artifact_specs:
     acceptance_summary: The write-up leads with the finding, shows the evidence behind it, names the caveats and what the data does not support, and states a next step — clear and honest, not overclaiming.
     created_at: 2026-07-06
     updated_at: 2026-07-06
+  -
+    id: spec.consolidation.math_foundations
+    node_id: consolidation.math_foundations_01
+    title: Mixed math-foundations problem-set evidence
+    artifact_kind: problem_set
+    description: "Required evidence for consolidation.math_foundations_01: a worked mixed problem set drawing on arithmetic, algebra, and functions, with reasoning shown."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/consolidation/
+    example_filename: consolidation_math_foundations_set_001.md
+    acceptance_summary: The set mixes percentages/ratios, linear equations, and linear-function reading without section labels; each problem is solved with the right technique and visible reasoning, and there is no recurring confusion about which foundation a problem calls for.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.consolidation.python_fundamentals
+    node_id: consolidation.python_fundamentals_01
+    title: Python fundamentals integration script
+    artifact_kind: code_snippet
+    description: "Required evidence for consolidation.python_fundamentals_01: one script that reads input into variables, branches, loops, defines and calls a function, and reads or writes a file."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/consolidation/
+    example_filename: consolidation_python_fundamentals_snippet_001.py
+    acceptance_summary: One coherent program where variables, a conditional, a loop, a defined function, and a file read or write cooperate to do real work — not five isolated snippets.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.consolidation.data_roundtrip
+    node_id: consolidation.data_roundtrip_01
+    title: CSV-SQL-Pandas round-trip script
+    artifact_kind: code_snippet
+    description: "Required evidence for consolidation.data_roundtrip_01: a script or notebook that loads a CSV, answers a question in SQL, answers the same question in Pandas, and shows the two agree."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/consolidation/
+    example_filename: consolidation_data_roundtrip_snippet_001.py
+    acceptance_summary: The same filter-group-aggregate question is answered via SQL and via Pandas over one small CSV, the two results are shown to match, and any discrepancy is explained — demonstrating that the three tools are views of one dataset.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.consolidation.dataset_interpretation
+    node_id: consolidation.dataset_interpretation_01
+    title: Honest dataset interpretation write-up
+    artifact_kind: results_writeup
+    description: "Required evidence for consolidation.dataset_interpretation_01: a descriptive summary of a real dataset plus a written interpretation separating what the numbers show from what they do not license."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/consolidation/
+    example_filename: consolidation_dataset_interpretation_writeup_001.md
+    acceptance_summary: The write-up reads the central tendency and spread correctly, flags where an outlier or skew changes the story, and explicitly states what the summary does not license (no causation from correlation, no population claim from a biased sample).
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.portfolio.project.data_cleaning_tool
+    node_id: portfolio.project.data_cleaning_tool_01
+    title: Data-cleaning tool portfolio repository
+    artifact_kind: portfolio_repo
+    description: "Required evidence for portfolio.project.data_cleaning_tool_01: a small repository with a working CSV-cleaning tool, a README, and a write-up justifying the cleaning rules."
+    required: true
+    minimum_count: 1
+    expected_location_hint: portfolio/data-cleaning-tool/
+    example_filename: README.md
+    acceptance_summary: Repository holds a tool that reads a messy CSV, applies documented cleaning rules, and writes a clean CSV; a README another person can follow to run it; and a write-up defending each drop/fill/coerce choice and its trade-offs.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.portfolio.project.dataset_analysis_report
+    node_id: portfolio.project.dataset_analysis_report_01
+    title: Dataset analysis report portfolio repository
+    artifact_kind: portfolio_repo
+    description: "Required evidence for portfolio.project.dataset_analysis_report_01: a repository with a reproducible Pandas analysis, at least one chart, and a written report of the findings."
+    required: true
+    minimum_count: 1
+    expected_location_hint: portfolio/dataset-analysis-report/
+    example_filename: README.md
+    acceptance_summary: Repository holds a reproducible notebook or script that answers a real question with a Pandas group-and-aggregate analysis, at least one chart that earns its place, and a report stating the finding and honestly bounding what the data supports.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.portfolio.project.stats_simulation
+    node_id: portfolio.project.stats_simulation_01
+    title: Statistical simulation portfolio repository
+    artifact_kind: portfolio_repo
+    description: "Required evidence for portfolio.project.stats_simulation_01: a repository with a working simulation of a random process, an estimate from many trials, and a comparison to the theoretical value."
+    required: true
+    minimum_count: 1
+    expected_location_hint: portfolio/stats-simulation/
+    example_filename: README.md
+    acceptance_summary: Repository holds a program that simulates a random process over many trials and estimates a probability or expectation, a README to run it, and a write-up comparing the simulated estimate to the theoretical answer and noting convergence as trials grow.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.math.arithmetic.fractions
+    node_id: math.arithmetic.fractions_01
+    title: Fraction and negative-number fluency problem set
+    artifact_kind: problem_set
+    description: "Required evidence for math.arithmetic.fractions_01: a worked set of mixed fraction and signed-number problems demonstrating slip-free fluency."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/math/
+    example_filename: math_arithmetic_fractions_set_001.md
+    acceptance_summary: The set covers adding, subtracting, multiplying, dividing, and simplifying fractions and signed-number arithmetic, including mixed cases (a negative fraction), worked correctly and without recurring sign slips.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.programming.python.reading_errors
+    node_id: programming.python.reading_errors_01
+    title: Traceback-reading rescue exercise
+    artifact_kind: debugging_exercise
+    description: "Required evidence for programming.python.reading_errors_01: for several real tracebacks, the named error type, the failing line, and the next debugging step."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/programming/
+    example_filename: programming_python_reading_errors_exercise_001.md
+    acceptance_summary: For at least three real tracebacks spanning distinct error types, the learner names the exception, points to the exact failing line and call, and states a sound next step — reading the interpreter's message rather than guessing.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.math.algebra.notation_literacy
+    node_id: math.algebra.notation_literacy_01
+    title: Notation-literacy translation exercise
+    artifact_kind: notation_exercise
+    description: "Required evidence for math.algebra.notation_literacy_01: dense expressions (function notation, subscripts, summation, Greek letters) each translated into plain language."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/math/
+    example_filename: math_algebra_notation_literacy_exercise_001.md
+    acceptance_summary: Several formulas using function notation, indices, summation, and common Greek letters are each rewritten as a correct plain-language sentence, showing the notation is read rather than skipped.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.programming.python.environment_troubleshooting
+    node_id: programming.python.environment_troubleshooting_01
+    title: Environment-troubleshooting rescue notes
+    artifact_kind: troubleshooting_notes
+    description: "Required evidence for programming.python.environment_troubleshooting_01: a diagnosed and fixed environment failure, showing which interpreter and environment was actually running."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/programming/
+    example_filename: programming_python_environment_troubleshooting_notes_001.md
+    acceptance_summary: The notes reproduce or capture a real environment failure (module not found, wrong interpreter, unactivated venv, PATH), show the diagnostic steps that located it (which python, which environment, pip show), and record the fix.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.data.sql.join_mental_models
+    node_id: data.sql.join_mental_models_01
+    title: SQL join mental-model reasoning exercise
+    artifact_kind: reasoning_exercise
+    description: "Required evidence for data.sql.join_mental_models_01: for several joins, the predicted result rows stated before running, then confirmed."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/data/
+    example_filename: data_sql_join_mental_models_exercise_001.md
+    acceptance_summary: For several joins over two small tables, the learner predicts which rows survive (inner vs left, missing and duplicate keys, fan-out) before running the query, then confirms against the actual result — reasoning, not trial and error.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07

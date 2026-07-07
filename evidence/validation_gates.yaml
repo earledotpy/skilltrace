@@ -575,3 +575,89 @@ validation_gates:
     about what the evidence supports is judged by a reader, not an exit code.
   created_at: 2026-07-06
   updated_at: 2026-07-06
+- id: gate.consolidation.math_foundations.closure
+  node_id: consolidation.math_foundations_01
+  authority: manual
+  title: Closure gate for mixed math-foundations problem-set evidence
+  description: Determines whether evidence for consolidation.math_foundations_01 is
+    sufficient to pass the node. Manual — the skill is choosing the right foundation
+    for each problem and reasoning cleanly, which a reader judges, not an exit code.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07
+- id: gate.consolidation.python_fundamentals.closure
+  node_id: consolidation.python_fundamentals_01
+  authority: manual
+  title: Closure gate for Python fundamentals integration evidence
+  description: Determines whether evidence for consolidation.python_fundamentals_01 is sufficient to pass the node. Manual — whether the pieces genuinely cooperate in one working program is judged by a reader, not an exit code.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07
+- id: gate.consolidation.data_roundtrip.closure
+  node_id: consolidation.data_roundtrip_01
+  authority: manual
+  title: Closure gate for CSV-SQL-Pandas round-trip evidence
+  description: Determines whether evidence for consolidation.data_roundtrip_01 is sufficient to pass the node. Manual — whether the two paths were made to genuinely agree, and the discrepancies understood, is judgment.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07
+- id: gate.consolidation.dataset_interpretation.closure
+  node_id: consolidation.dataset_interpretation_01
+  authority: manual
+  title: Closure gate for honest dataset-interpretation evidence
+  description: Determines whether evidence for consolidation.dataset_interpretation_01 is sufficient to pass the node. Manual — honest interpretation is the whole point and is judged by a reader, never by a command.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07
+- id: gate.portfolio.project.data_cleaning_tool.closure
+  node_id: portfolio.project.data_cleaning_tool_01
+  authority: manual
+  title: Closure gate for data-cleaning tool portfolio evidence
+  description: Determines whether evidence for portfolio.project.data_cleaning_tool_01 is sufficient to pass the node. Manual per doctrine — working code plus a readable README plus an honest write-up of the cleaning choices is judged, never proxied by a single command.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07
+- id: gate.portfolio.project.dataset_analysis_report.closure
+  node_id: portfolio.project.dataset_analysis_report_01
+  authority: manual
+  title: Closure gate for dataset analysis report portfolio evidence
+  description: Determines whether evidence for portfolio.project.dataset_analysis_report_01 is sufficient to pass the node. Manual per doctrine — a working analysis plus a readable report plus an honest reading of the findings is judged, never proxied.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07
+- id: gate.portfolio.project.stats_simulation.closure
+  node_id: portfolio.project.stats_simulation_01
+  authority: manual
+  title: Closure gate for statistical simulation portfolio evidence
+  description: Determines whether evidence for portfolio.project.stats_simulation_01 is sufficient to pass the node. Manual per doctrine — working code plus a readable README plus an honest comparison to the theoretical value is judged, never proxied.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07
+- id: gate.math.arithmetic.fractions.closure
+  node_id: math.arithmetic.fractions_01
+  authority: manual
+  title: Closure gate for fraction and negative-number fluency evidence
+  description: Determines whether evidence for math.arithmetic.fractions_01 is sufficient to pass the node. Manual — reliable, slip-free fluency across mixed fraction and signed-number work is judged, not an exit code.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07
+- id: gate.programming.python.reading_errors.closure
+  node_id: programming.python.reading_errors_01
+  authority: manual
+  title: Closure gate for traceback-reading rescue evidence
+  description: Determines whether evidence for programming.python.reading_errors_01 is sufficient to pass the node. Manual — whether the learner correctly names the error type, failing line, and next step across real tracebacks is judged by a reader.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07
+- id: gate.math.algebra.notation_literacy.closure
+  node_id: math.algebra.notation_literacy_01
+  authority: manual
+  title: Closure gate for notation-literacy rescue evidence
+  description: Determines whether evidence for math.algebra.notation_literacy_01 is sufficient to pass the node. Manual — whether the learner correctly translates dense notation into plain language is judged by a reader, not a command.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07
+- id: gate.programming.python.environment_troubleshooting.closure
+  node_id: programming.python.environment_troubleshooting_01
+  authority: manual
+  title: Closure gate for environment-troubleshooting rescue evidence
+  description: Determines whether evidence for programming.python.environment_troubleshooting_01 is sufficient to pass the node. Manual — whether the learner correctly diagnoses which interpreter and environment is running and fixes the failure is judged by a reader.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07
+- id: gate.data.sql.join_mental_models.closure
+  node_id: data.sql.join_mental_models_01
+  authority: manual
+  title: Closure gate for SQL join mental-model rescue evidence
+  description: Determines whether evidence for data.sql.join_mental_models_01 is sufficient to pass the node. Manual — whether the learner can predict which rows a join keeps or drops before running it is judged by a reader, not an exit code.
+  created_at: 2026-07-07
+  updated_at: 2026-07-07

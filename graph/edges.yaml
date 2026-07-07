@@ -719,3 +719,399 @@ edges:
     active: true
     created_at: 2026-07-06
     updated_at: 2026-07-06
+  -
+    id: edge.math.arithmetic.percentages_ratios_01__consolidation.math_foundations_01
+    source: math.arithmetic.percentages_ratios_01
+    target: consolidation.math_foundations_01
+    edge_type: soft_prerequisite
+    reason: The set includes percentage and ratio problems, so this foundation is one of the tools being selected among — pedagogical rather than constitutive, and a learner who has it from anywhere can pass directly.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.algebra.linear_equations_01__consolidation.math_foundations_01
+    source: math.algebra.linear_equations_01
+    target: consolidation.math_foundations_01
+    edge_type: soft_prerequisite
+    reason: The set includes linear equations to solve; weaves this band in as one of the techniques to recognise, but does not lock — prior fluency passes it directly.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.functions.linear_functions_01__consolidation.math_foundations_01
+    source: math.functions.linear_functions_01
+    target: consolidation.math_foundations_01
+    edge_type: soft_prerequisite
+    reason: The set includes reading linear functions; a woven band, informing recommendation order without gating.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.variables_01__consolidation.python_fundamentals_01
+    source: programming.python.variables_01
+    target: consolidation.python_fundamentals_01
+    edge_type: soft_prerequisite
+    reason: The script holds its data in variables, so this band is one of the pieces being integrated — pedagogical ordering, and a learner already fluent passes it directly.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.functions_01__consolidation.python_fundamentals_01
+    source: programming.python.functions_01
+    target: consolidation.python_fundamentals_01
+    edge_type: soft_prerequisite
+    reason: The script factors work into a function it defines and calls; a woven piece, not a lock, since prior fluency passes it directly.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.files_01__consolidation.python_fundamentals_01
+    source: programming.python.files_01
+    target: consolidation.python_fundamentals_01
+    edge_type: soft_prerequisite
+    reason: The script reads or writes a file as one of the integrated pieces; informs recommendation order without gating.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.data.csv.read_csv_01__consolidation.data_roundtrip_01
+    source: data.csv.read_csv_01
+    target: consolidation.data_roundtrip_01
+    edge_type: soft_prerequisite
+    reason: The round-trip starts by reading a CSV, so this band is one of the three views being woven — pedagogical ordering, passable directly with prior fluency.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.data.sql.select_basics_01__consolidation.data_roundtrip_01
+    source: data.sql.select_basics_01
+    target: consolidation.data_roundtrip_01
+    edge_type: soft_prerequisite
+    reason: The round-trip answers the question in SQL as its middle leg; a woven band, informing order without locking.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.data.pandas.dataframe_basics_01__consolidation.data_roundtrip_01
+    source: data.pandas.dataframe_basics_01
+    target: consolidation.data_roundtrip_01
+    edge_type: soft_prerequisite
+    reason: The round-trip reproduces the answer in Pandas as its third leg; a woven piece, not a wall.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.statistics.descriptive_stats_01__consolidation.dataset_interpretation_01
+    source: math.statistics.descriptive_stats_01
+    target: consolidation.dataset_interpretation_01
+    edge_type: soft_prerequisite
+    reason: The interpretation reads a descriptive summary, so this band is woven in — pedagogical ordering, passable directly by a learner who already reasons this way.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.statistics.correlation_causation_01__consolidation.dataset_interpretation_01
+    source: math.statistics.correlation_causation_01
+    target: consolidation.dataset_interpretation_01
+    edge_type: soft_prerequisite
+    reason: The honest-reading discipline leans on the correlation-is-not-causation caution; a woven band, informing order without gating.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.communication.reports.results_summary_01__consolidation.dataset_interpretation_01
+    source: communication.reports.results_summary_01
+    target: consolidation.dataset_interpretation_01
+    edge_type: soft_prerequisite
+    reason: The deliverable is a written interpretation, which the results-summary writing habit shapes; woven, not locking.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.data.csv.clean_simple_dataset_01__portfolio.project.data_cleaning_tool_01
+    source: data.csv.clean_simple_dataset_01
+    target: portfolio.project.data_cleaning_tool_01
+    edge_type: hard_prerequisite
+    reason: The tool's core is applying cleaning rules to a CSV; strip the cleaning skill and there is no cleaning tool to build. Mechanically enabling.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.files_01__portfolio.project.data_cleaning_tool_01
+    source: programming.python.files_01
+    target: portfolio.project.data_cleaning_tool_01
+    edge_type: hard_prerequisite
+    reason: The tool reads a messy CSV and writes a clean one, so file reading and writing is the mechanism the deliverable is built from. Mechanically enabling.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.tooling.git.commit_workflow_01__portfolio.project.data_cleaning_tool_01
+    source: tooling.git.commit_workflow_01
+    target: portfolio.project.data_cleaning_tool_01
+    edge_type: soft_prerequisite
+    reason: Versioning the tool is portfolio packaging around the deliverable, not a competence the working tool is built from.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.communication.readme.basic_readme_01__portfolio.project.data_cleaning_tool_01
+    source: communication.readme.basic_readme_01
+    target: portfolio.project.data_cleaning_tool_01
+    edge_type: soft_prerequisite
+    reason: The README is a parallel deliverable packaged with the tool, not what makes it clean a CSV.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.data.pandas.dataframe_basics_01__portfolio.project.dataset_analysis_report_01
+    source: data.pandas.dataframe_basics_01
+    target: portfolio.project.dataset_analysis_report_01
+    edge_type: hard_prerequisite
+    reason: The report's substance is a Pandas analysis of a DataFrame; strip DataFrame handling and there is nothing to analyse or report. Mechanically enabling.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.data.pandas.groupby_aggregation_01__portfolio.project.dataset_analysis_report_01
+    source: data.pandas.groupby_aggregation_01
+    target: portfolio.project.dataset_analysis_report_01
+    edge_type: hard_prerequisite
+    reason: The finding comes from grouping and aggregating the data, so the group-and-aggregate skill is the code the analysis is built from. Mechanically enabling.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.data.visualization.plotting_basics_01__portfolio.project.dataset_analysis_report_01
+    source: data.visualization.plotting_basics_01
+    target: portfolio.project.dataset_analysis_report_01
+    edge_type: soft_prerequisite
+    reason: The chart strengthens the report but the analysis stands with tables alone; packaging around the deliverable, not what makes it exist.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.communication.reports.results_summary_01__portfolio.project.dataset_analysis_report_01
+    source: communication.reports.results_summary_01
+    target: portfolio.project.dataset_analysis_report_01
+    edge_type: soft_prerequisite
+    reason: The written report is the deliverable's prose packaging; the results-summary habit shapes it but does not make the analysis run.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.statistics.descriptive_stats_01__portfolio.project.dataset_analysis_report_01
+    source: math.statistics.descriptive_stats_01
+    target: portfolio.project.dataset_analysis_report_01
+    edge_type: soft_prerequisite
+    reason: Statistical literacy makes the reading honest but the report can be built without a separate stats node; pedagogical, not constitutive.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.statistics.probability_basics_01__portfolio.project.stats_simulation_01
+    source: math.statistics.probability_basics_01
+    target: portfolio.project.stats_simulation_01
+    edge_type: hard_prerequisite
+    reason: The project's core estimates a probability or expectation; without probability the simulation has nothing meaningful to estimate. Mechanically enabling, mirroring the slope calculator's math core.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.lists_loops_01__portfolio.project.stats_simulation_01
+    source: programming.python.lists_loops_01
+    target: portfolio.project.stats_simulation_01
+    edge_type: hard_prerequisite
+    reason: The estimate is produced by looping over many trials and tallying outcomes, so looping is the code the simulation is built from. Mechanically enabling.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.functions_01__portfolio.project.stats_simulation_01
+    source: programming.python.functions_01
+    target: portfolio.project.stats_simulation_01
+    edge_type: soft_prerequisite
+    reason: Factoring the trial into a function tidies the code but the simulation runs without it; pedagogical, not constitutive.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.statistics.expectation_01__portfolio.project.stats_simulation_01
+    source: math.statistics.expectation_01
+    target: portfolio.project.stats_simulation_01
+    edge_type: soft_prerequisite
+    reason: Expectation deepens the write-up's comparison to theory but the simulation can estimate a plain probability; woven, not locking.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.arithmetic.fractions_01__math.algebra.variables_expressions_01
+    source: math.arithmetic.fractions_01
+    target: math.algebra.variables_expressions_01
+    edge_type: remediation
+    reason: Manipulating expressions with fractional or negative coefficients breaks when signed-number fluency wobbles, so this rescue surfaces when the learner stalls here.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.arithmetic.fractions_01__math.algebra.linear_equations_01
+    source: math.arithmetic.fractions_01
+    target: math.algebra.linear_equations_01
+    edge_type: remediation
+    reason: Solving equations with fractional and negative terms is a common fracture point; the fraction drill is the rescue when attempts keep failing here.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.arithmetic.fractions_01__math.functions.slope_01
+    source: math.arithmetic.fractions_01
+    target: math.functions.slope_01
+    edge_type: remediation
+    reason: Slope is a signed ratio of differences, so sign and fraction slips derail it; this drill rescues a learner stuck computing slope.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.arithmetic.fractions_01__math.statistics.probability_basics_01
+    source: math.arithmetic.fractions_01
+    target: math.statistics.probability_basics_01
+    edge_type: remediation
+    reason: Probabilities are fractions to combine and simplify, so fraction fluency is the rescue when probability work keeps going wrong.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.reading_errors_01__programming.python.conditionals_01
+    source: programming.python.reading_errors_01
+    target: programming.python.conditionals_01
+    edge_type: remediation
+    reason: Beginners stall on conditionals when a traceback goes unread; this drill rescues them by teaching the message to be read.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.reading_errors_01__programming.python.functions_01
+    source: programming.python.reading_errors_01
+    target: programming.python.functions_01
+    edge_type: remediation
+    reason: Function work throws TypeErrors and NameErrors that block progress until the traceback is understood; the rescue surfaces here on repeated failure.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.reading_errors_01__programming.python.files_01
+    source: programming.python.reading_errors_01
+    target: programming.python.files_01
+    edge_type: remediation
+    reason: File code raises path and IO errors whose tracebacks say exactly what went wrong; this drill rescues a learner stuck guessing.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.reading_errors_01__programming.python.exceptions_01
+    source: programming.python.reading_errors_01
+    target: programming.python.exceptions_01
+    edge_type: remediation
+    reason: Exception handling cannot be learned while tracebacks are opaque, so this reading drill is the natural rescue when the learner is stuck.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.algebra.notation_literacy_01__math.statistics.expectation_01
+    source: math.algebra.notation_literacy_01
+    target: math.statistics.expectation_01
+    edge_type: remediation
+    reason: Expectation is stated with summation and subscript notation that walls off the idea; this rescue translates the symbols so the concept lands.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.algebra.notation_literacy_01__math.statistics.probability_basics_01
+    source: math.algebra.notation_literacy_01
+    target: math.statistics.probability_basics_01
+    edge_type: remediation
+    reason: Probability notation (conditionals, unions, subscripts) blocks beginners more than the ideas do; the rescue surfaces when they stall here.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.algebra.notation_literacy_01__math.linear_algebra.vectors_01
+    source: math.algebra.notation_literacy_01
+    target: math.linear_algebra.vectors_01
+    edge_type: remediation
+    reason: Vector notation with subscripts and index ranges is a common wall; this drill rescues a learner stuck on the symbols rather than the geometry.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.math.algebra.notation_literacy_01__math.calculus.derivative_intuition_01
+    source: math.algebra.notation_literacy_01
+    target: math.calculus.derivative_intuition_01
+    edge_type: remediation
+    reason: Derivative notation and function notation together can stall the intuition; the rescue translates them into plain language.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.environment_troubleshooting_01__programming.python.environment_01
+    source: programming.python.environment_troubleshooting_01
+    target: programming.python.environment_01
+    edge_type: remediation
+    reason: Initial setup fails on interpreter and PATH confusion; this troubleshooting drill rescues a learner blocked before any code runs.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.environment_troubleshooting_01__programming.python.modules_imports_01
+    source: programming.python.environment_troubleshooting_01
+    target: programming.python.modules_imports_01
+    edge_type: remediation
+    reason: Import work throws ModuleNotFoundError that is an environment problem in disguise; the rescue surfaces when imports keep failing.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.environment_troubleshooting_01__data.pandas.dataframe_basics_01
+    source: programming.python.environment_troubleshooting_01
+    target: data.pandas.dataframe_basics_01
+    edge_type: remediation
+    reason: Pandas work stalls first on a failed import of the library; this drill rescues the environment failure blocking the data node.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.programming.python.environment_troubleshooting_01__tooling.cli.navigation_01
+    source: programming.python.environment_troubleshooting_01
+    target: tooling.cli.navigation_01
+    edge_type: remediation
+    reason: PATH and working-directory confusion at the shell blocks CLI navigation; the rescue surfaces when the learner is lost in paths.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.data.sql.join_mental_models_01__data.sql.joins_01
+    source: data.sql.join_mental_models_01
+    target: data.sql.joins_01
+    edge_type: remediation
+    reason: Joins are where SQL learners get the wrong rows without knowing why; this mental-model drill is the rescue when join attempts keep failing.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.data.sql.join_mental_models_01__data.sql.subqueries_01
+    source: data.sql.join_mental_models_01
+    target: data.sql.subqueries_01
+    edge_type: remediation
+    reason: Subqueries compound join confusion, so the join mental model is the rescue when a learner stalls on nested queries.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: edge.data.sql.join_mental_models_01__consolidation.data_roundtrip_01
+    source: data.sql.join_mental_models_01
+    target: consolidation.data_roundtrip_01
+    edge_type: remediation
+    reason: The round-trip's SQL leg leans on joins, so a learner stuck there is rescued by the join mental model.
+    active: true
+    created_at: 2026-07-07
+    updated_at: 2026-07-07

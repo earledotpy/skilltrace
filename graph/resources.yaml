@@ -6,6 +6,8 @@ resources:
       - math.arithmetic.order_operations_01
       - math.arithmetic.percentages_ratios_01
       - math.arithmetic.exponents_powers_01
+      - consolidation.math_foundations_01
+      - math.arithmetic.fractions_01
   - id: khan-algebra
     url: https://www.khanacademy.org/math/algebra
     cost: free
@@ -21,6 +23,8 @@ resources:
       - math.functions.linear_functions_01
       - math.functions.graph_interpretation_01
       - math.functions.nonlinear_functions_01
+      - consolidation.math_foundations_01
+      - math.algebra.notation_literacy_01
   - id: khan-precalculus
     url: https://www.khanacademy.org/math/precalculus
     cost: free
@@ -94,6 +98,9 @@ resources:
       - math.statistics.hypothesis_testing_01
       - math.statistics.correlation_causation_01
       - communication.reports.results_summary_01
+      - consolidation.dataset_interpretation_01
+      - math.algebra.notation_literacy_01
+      - portfolio.project.stats_simulation_01
   - id: python-tutorial
     url: https://docs.python.org/3/tutorial/
     cost: free
@@ -110,6 +117,9 @@ resources:
       - programming.python.string_processing_01
       - programming.python.exceptions_01
       - programming.python.modules_imports_01
+      - consolidation.python_fundamentals_01
+      - programming.python.reading_errors_01
+      - programming.python.environment_troubleshooting_01
   - id: python-stdlib-reference
     url: https://docs.python.org/3/library/
     cost: free
@@ -141,6 +151,13 @@ resources:
       - data.pandas.groupby_aggregation_01
       - data.pandas.transform_columns_01
       - data.pandas.merge_join_01
+      - consolidation.python_fundamentals_01
+      - portfolio.project.data_cleaning_tool_01
+      - portfolio.project.dataset_analysis_report_01
+      - portfolio.project.stats_simulation_01
+      - portfolio.project.slope_calculator_01
+      - programming.python.reading_errors_01
+      - programming.python.environment_troubleshooting_01
   - id: missing-semester
     url: https://missing.csail.mit.edu/
     cost: free
@@ -162,6 +179,7 @@ resources:
       - tooling.git.repository_basics_01
       - tooling.git.commit_workflow_01
       - tooling.git.viewing_history_01
+      - portfolio.project.slope_calculator_01
   - id: github-docs
     url: https://docs.github.com/
     cost: free
@@ -179,6 +197,8 @@ resources:
       - data.sql.aggregation_01
       - data.sql.joins_01
       - data.sql.subqueries_01
+      - consolidation.data_roundtrip_01
+      - data.sql.join_mental_models_01
   - id: mode-sql-tutorial
     url: https://mode.com/sql-tutorial/
     cost: free
@@ -188,6 +208,7 @@ resources:
       - data.sql.aggregation_01
       - data.sql.joins_01
       - data.sql.subqueries_01
+      - data.sql.join_mental_models_01
   - id: sqlite-docs
     url: https://www.sqlite.org/lang.html
     cost: free
@@ -207,6 +228,8 @@ resources:
       - data.pandas.groupby_aggregation_01
       - data.pandas.transform_columns_01
       - data.pandas.merge_join_01
+      - consolidation.data_roundtrip_01
+      - portfolio.project.data_cleaning_tool_01
   - id: matplotlib-docs
     url: https://matplotlib.org/stable/
     cost: free
@@ -226,12 +249,15 @@ resources:
       - data.visualization.choosing_charts_01
       - data.visualization.plotting_basics_01
       - data.visualization.honest_visuals_01
+      - portfolio.project.dataset_analysis_report_01
   - id: google-tech-writing
     url: https://developers.google.com/tech-writing
     cost: free
     supports:
       - communication.notes.technical_summary_01
       - communication.reports.results_summary_01
+      - consolidation.dataset_interpretation_01
+      - portfolio.project.dataset_analysis_report_01
   - id: make-a-readme
     url: https://www.makeareadme.com/
     cost: free
