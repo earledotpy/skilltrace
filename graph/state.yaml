@@ -5,15 +5,57 @@ progress:
   communication.readme.basic_readme_01:
     state: available
     changed_at: '2026-07-02'
+  communication.reports.results_summary_01:
+    state: available
+    changed_at: '2026-07-07T00:04:19+00:00'
   data.csv.clean_simple_dataset_01:
     state: locked
     changed_at: '2026-07-02'
   data.csv.read_csv_01:
     state: locked
     changed_at: '2026-07-02'
+  data.csv.write_csv_01:
+    state: locked
+    changed_at: '2026-07-07T00:14:54+00:00'
   data.pandas.dataframe_basics_01:
     state: available
     changed_at: '2026-07-02'
+  data.pandas.filtering_selection_01:
+    state: locked
+    changed_at: '2026-07-07T00:14:54+00:00'
+  data.pandas.groupby_aggregation_01:
+    state: locked
+    changed_at: '2026-07-07T00:14:54+00:00'
+  data.pandas.merge_join_01:
+    state: locked
+    changed_at: '2026-07-07T00:14:54+00:00'
+  data.pandas.transform_columns_01:
+    state: locked
+    changed_at: '2026-07-07T00:14:54+00:00'
+  data.sql.aggregation_01:
+    state: locked
+    changed_at: '2026-07-07T00:14:54+00:00'
+  data.sql.filtering_sorting_01:
+    state: locked
+    changed_at: '2026-07-07T00:14:54+00:00'
+  data.sql.joins_01:
+    state: locked
+    changed_at: '2026-07-07T00:14:54+00:00'
+  data.sql.select_basics_01:
+    state: available
+    changed_at: '2026-07-07T00:04:19+00:00'
+  data.sql.subqueries_01:
+    state: locked
+    changed_at: '2026-07-07T00:14:54+00:00'
+  data.visualization.choosing_charts_01:
+    state: available
+    changed_at: '2026-07-07T00:04:19+00:00'
+  data.visualization.honest_visuals_01:
+    state: available
+    changed_at: '2026-07-07T00:04:19+00:00'
+  data.visualization.plotting_basics_01:
+    state: available
+    changed_at: '2026-07-07T00:04:19+00:00'
   math.algebra.inequalities_01:
     state: available
     changed_at: '2026-07-02'

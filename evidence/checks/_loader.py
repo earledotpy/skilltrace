@@ -33,14 +33,25 @@ def check(condition: object, message: str) -> None:
     if not condition:
         raise SystemExit(f"FAILED: {message}")
 
-# Every objective-gated programming node points its learner solution here; the
-# dir is gitignored, so the shipped seed carries checkers but never solutions.
-_ARTIFACTS = Path(__file__).resolve().parents[1] / "artifacts" / "programming"
+# Every objective-gated node points its learner solution under here; the dir is
+# gitignored, so the shipped seed carries checkers but never solutions. Bands
+# home their solutions in a subdirectory (`programming/`, `data/`, …) so a node's
+# artifacts never collide with another band's.
+_ARTIFACTS_ROOT = Path(__file__).resolve().parents[1] / "artifacts"
 
 
-def load_solution(filename: str) -> ModuleType:
-    """Import and return the learner's solution module `filename`."""
-    path = _ARTIFACTS / filename
+def solution_path(filename: str, subdir: str = "programming") -> Path:
+    """The fixed artifacts path a learner writes `filename` to, for band `subdir`.
+
+    Resolved relative to *this file*, not the cwd — the SQL harness and the CSV
+    checkers reuse this so every band names its solution the same way.
+    """
+    return _ARTIFACTS_ROOT / subdir / filename
+
+
+def load_solution(filename: str, subdir: str = "programming") -> ModuleType:
+    """Import and return the learner's solution module `filename` from `subdir`."""
+    path = solution_path(filename, subdir)
     if not path.exists():
         raise SystemExit(
             f"no solution found at {path} — write your solution there first "

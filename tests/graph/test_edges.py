@@ -127,7 +127,7 @@ def test_non_mapping_edge_fails_naming_index():
 
 def test_all_seed_edges_load():
     edges = load_edges(REPO_ROOT)
-    assert len(edges) == 58
+    assert len(edges) == 80
     ids = [edge.id for edge in edges]
     assert len(set(ids)) == len(ids)  # loader hands #5 the raw list; no dedupe here
     assert all(edge.edge_type in EDGE_TYPES for edge in edges)

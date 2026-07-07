@@ -236,42 +236,42 @@ artifact_specs:
   -
     id: spec.data.csv.read_csv
     node_id: data.csv.read_csv_01
-    title: CSV reading code evidence
+    title: CSV reading solution script
     artifact_kind: code_snippet
-    description: "Required evidence for data.csv.read_csv_01: csv reading code evidence."
+    description: "Required evidence for data.csv.read_csv_01: a solution script defining read_rows(path) that returns the CSV's data rows as header-keyed dicts."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/data/
-    example_filename: data_csv_read_csv_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: csv_read_csv_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it calls read_rows on the shipped people.csv and asserts one header-keyed dict per data row. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.data.csv.clean_simple_dataset
     node_id: data.csv.clean_simple_dataset_01
     title: Simple dataset cleaning evidence
     artifact_kind: code_snippet
-    description: "Required evidence for data.csv.clean_simple_dataset_01: simple dataset cleaning evidence."
+    description: "Required evidence for data.csv.clean_simple_dataset_01: a cleaning script plus a short note on the drop/fill/coerce choices made."
     required: true
     minimum_count: 1
     expected_location_hint: evidence/data/
     example_filename: data_csv_clean_simple_dataset_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    acceptance_summary: The cleaning script runs on the messy CSV and produces a defensible clean result, and the note justifies each drop/fill/coerce choice — the judgment is the substance, so this gate is manual, not a comparison to one blessed output.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.data.pandas.dataframe_basics
     node_id: data.pandas.dataframe_basics_01
-    title: Pandas DataFrame notebook evidence
-    artifact_kind: notebook
-    description: "Required evidence for data.pandas.dataframe_basics_01: pandas dataframe notebook evidence."
+    title: Pandas DataFrame basics solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.pandas.dataframe_basics_01: a solution script defining column_names, total_revenue, and region_rows over a DataFrame."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/data/
-    example_filename: data_pandas_dataframe_basics_notebook_001.ipynb
-    acceptance_summary: Notebook loads data, shows relevant operations, includes short explanations, and can be rerun top to bottom.
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: pandas_dataframe_basics_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it asserts column_names, total_revenue, and region_rows on a fixed sales DataFrame. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.communication.notes.technical_summary
     node_id: communication.notes.technical_summary_01
@@ -712,5 +712,187 @@ artifact_specs:
     expected_location_hint: evidence/tooling/
     example_filename: tooling_git_viewing_history_writeup_001.md
     acceptance_summary: The write-up correctly reads the commit log and a diff and explains, in the learner's words, what changed between two commits and why.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.sql.select_basics
+    node_id: data.sql.select_basics_01
+    title: Basic SELECT query solution
+    artifact_kind: code_snippet
+    description: "Required evidence for data.sql.select_basics_01: one SQL statement returning the name and salary of every employee in the seeded dataset."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: sql_select_basics_solution.sql
+    acceptance_summary: The objective gate runs the shipped checker; it executes this query against a seeded database and asserts it returns (name, salary) for all eight employees. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.sql.filtering_sorting
+    node_id: data.sql.filtering_sorting_01
+    title: WHERE / ORDER BY query solution
+    artifact_kind: code_snippet
+    description: "Required evidence for data.sql.filtering_sorting_01: one SQL statement returning names earning over 90000, highest salary first."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: sql_filtering_sorting_solution.sql
+    acceptance_summary: The objective gate runs the shipped checker; it asserts the query returns the correct names in descending salary order. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.sql.aggregation
+    node_id: data.sql.aggregation_01
+    title: GROUP BY aggregation query solution
+    artifact_kind: code_snippet
+    description: "Required evidence for data.sql.aggregation_01: one SQL statement returning per-department employee count and average salary."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: sql_aggregation_solution.sql
+    acceptance_summary: The objective gate runs the shipped checker; it asserts the query returns the three per-department summary rows. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.sql.joins
+    node_id: data.sql.joins_01
+    title: INNER JOIN query solution
+    artifact_kind: code_snippet
+    description: "Required evidence for data.sql.joins_01: one SQL statement pairing each employee's name with their department's name via the join key."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: sql_joins_solution.sql
+    acceptance_summary: The objective gate runs the shipped checker; it asserts the query returns the eight (employee, department) pairs. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.sql.subqueries
+    node_id: data.sql.subqueries_01
+    title: Subquery-filtered query solution
+    artifact_kind: code_snippet
+    description: "Required evidence for data.sql.subqueries_01: one SQL statement returning employees earning above the company-average salary, the threshold computed by a subquery."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: sql_subqueries_solution.sql
+    acceptance_summary: The objective gate runs the shipped checker; it asserts the query returns the four names above the company average. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.csv.write_csv
+    node_id: data.csv.write_csv_01
+    title: CSV writing solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.csv.write_csv_01: a solution script defining write_rows(path, rows) that writes a header and the records to a CSV."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: csv_write_csv_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it writes with write_rows and reads the file back with csv.DictReader to confirm the rows round-trip. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.pandas.filtering_selection
+    node_id: data.pandas.filtering_selection_01
+    title: Pandas filtering and selection solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.pandas.filtering_selection_01: a solution script defining high_revenue(df) that filters rows and selects columns."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: pandas_filtering_selection_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it asserts high_revenue returns the rows with revenue at least 100 and the selected columns. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.pandas.groupby_aggregation
+    node_id: data.pandas.groupby_aggregation_01
+    title: Pandas groupby aggregation solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.pandas.groupby_aggregation_01: a solution script defining revenue_by_region(df) that totals revenue per region."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: pandas_groupby_aggregation_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it asserts revenue_by_region totals revenue per region. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.pandas.transform_columns
+    node_id: data.pandas.transform_columns_01
+    title: Pandas derived-column solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.pandas.transform_columns_01: a solution script defining add_unit_price(df) that appends unit_price = revenue / units."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: pandas_transform_columns_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it asserts every row's unit_price equals revenue / units and the original columns are intact. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.pandas.merge_join
+    node_id: data.pandas.merge_join_01
+    title: Pandas merge solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.pandas.merge_join_01: a solution script defining attach_manager(sales, regions) that merges the manager onto each sales row by region."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: pandas_merge_join_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it asserts each sales row carries its region's manager and the column set is correct. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.visualization.choosing_charts
+    node_id: data.visualization.choosing_charts_01
+    title: Chart-choice write-up evidence
+    artifact_kind: chart_selection
+    description: "Required evidence for data.visualization.choosing_charts_01: a short write-up choosing a chart type for three question/data pairs and justifying each."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/data/
+    example_filename: data_visualization_choosing_charts_writeup_001.md
+    acceptance_summary: For each pair the chosen chart type answers the question and the justification names why the plausible alternatives are worse — the choice, not merely a chart, is the substance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.visualization.plotting_basics
+    node_id: data.visualization.plotting_basics_01
+    title: Labeled-plot evidence
+    artifact_kind: chart
+    description: "Required evidence for data.visualization.plotting_basics_01: a plot the learner produced, with the code that made it and a sentence on what it shows."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/data/
+    example_filename: data_visualization_plotting_basics_plot_001.png
+    acceptance_summary: The chart has a descriptive title, labeled axes with units, a legend where there is more than one series, and a sensible scale, so a reader understands it without help.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.visualization.honest_visuals
+    node_id: data.visualization.honest_visuals_01
+    title: Chart-critique evidence
+    artifact_kind: chart_critique
+    description: "Required evidence for data.visualization.honest_visuals_01: a critique of two or three misleading charts naming the distortion and the honest alternative."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/data/
+    example_filename: data_visualization_honest_visuals_critique_001.md
+    acceptance_summary: Each critique correctly names the distortion (e.g. truncated axis, dual scale, cherry-picked range) and describes the honest fix, with no misleading chart passed off as fine.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.communication.reports.results_summary
+    node_id: communication.reports.results_summary_01
+    title: Analysis write-up evidence
+    artifact_kind: results_writeup
+    description: "Required evidence for communication.reports.results_summary_01: a one-page write-up of an analysis leading with the claim and honest about its limits."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/communication/
+    example_filename: communication_reports_results_summary_writeup_001.md
+    acceptance_summary: The write-up leads with the finding, shows the evidence behind it, names the caveats and what the data does not support, and states a next step — clear and honest, not overclaiming.
     created_at: 2026-07-06
     updated_at: 2026-07-06

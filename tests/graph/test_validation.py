@@ -194,7 +194,7 @@ def test_summary_counts_states_and_edges():
 def test_seed_graph_validates_clean():
     result = load_and_validate(REPO_ROOT)
     assert result.ok, f"seed graph should validate; errors: {result.errors}"
-    assert result.node_count == 55
+    assert result.node_count == 69
 
 
 def test_empty_repo_validates_clean(tmp_path):

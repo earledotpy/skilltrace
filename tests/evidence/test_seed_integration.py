@@ -25,8 +25,8 @@ def test_full_seed_evidence_trail_loads():
     records = load_evidence_records(REPO_ROOT)
     attempts = load_assessment_attempts(REPO_ROOT)
 
-    assert len(specs) == 55
-    assert len(gates) == 55
+    assert len(specs) == 69
+    assert len(gates) == 69
     assert records == []
     assert attempts == []
 

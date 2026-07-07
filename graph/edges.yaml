@@ -521,3 +521,201 @@ edges:
     active: true
     created_at: 2026-07-06
     updated_at: 2026-07-06
+  -
+    id: edge.data.sql.select_basics_01__data.sql.filtering_sorting_01
+    source: data.sql.select_basics_01
+    target: data.sql.filtering_sorting_01
+    edge_type: hard_prerequisite
+    reason: Filtering and sorting are clauses added to a SELECT that projects columns from a table; strip the ability to write that SELECT and there is no query for WHERE and ORDER BY to modify, so the target is incoherent.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.sql.select_basics_01__data.sql.aggregation_01
+    source: data.sql.select_basics_01
+    target: data.sql.aggregation_01
+    edge_type: hard_prerequisite
+    reason: An aggregation is a SELECT with grouping and aggregate functions over projected columns; with no ability to write a SELECT against a table there is nothing to group, so the target is incoherent.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.sql.select_basics_01__data.sql.joins_01
+    source: data.sql.select_basics_01
+    target: data.sql.joins_01
+    edge_type: hard_prerequisite
+    reason: A join is a single SELECT drawing columns from more than one table; without the ability to write a SELECT and name columns the joined query has no form, so the target is incoherent.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.sql.select_basics_01__data.sql.subqueries_01
+    source: data.sql.select_basics_01
+    target: data.sql.subqueries_01
+    edge_type: hard_prerequisite
+    reason: A subquery is a SELECT nested inside another SELECT; strip the ability to write a SELECT at all and neither the inner nor the outer query exists, so the target is incoherent.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.sql.filtering_sorting_01__data.sql.aggregation_01
+    source: data.sql.filtering_sorting_01
+    target: data.sql.aggregation_01
+    edge_type: soft_prerequisite
+    reason: Grouped summaries often filter rows before or after aggregating, so WHERE fluency helps, but GROUP BY with COUNT/AVG is taught and computed without ever filtering — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.sql.aggregation_01__data.sql.joins_01
+    source: data.sql.aggregation_01
+    target: data.sql.joins_01
+    edge_type: soft_prerequisite
+    reason: Real analyses often aggregate across joined tables, so meeting aggregation first motivates joins, but an inner join of two tables is coherent with no aggregate function in sight — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.sql.joins_01__data.sql.subqueries_01
+    source: data.sql.joins_01
+    target: data.sql.subqueries_01
+    edge_type: soft_prerequisite
+    reason: Subqueries and joins are alternative ways to combine information, so seeing joins first frames the contrast, but a scalar subquery in a WHERE clause stands without any join — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.programming.python.files_01__data.csv.write_csv_01
+    source: programming.python.files_01
+    target: data.csv.write_csv_01
+    edge_type: hard_prerequisite
+    reason: Writing a CSV opens a file and writes its contents; with no file-handling competence at all there is no file for the rows to be written to, so the target artifact cannot be produced. Mirrors the shipped files -> read_csv edge.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.csv.read_csv_01__data.csv.write_csv_01
+    source: data.csv.read_csv_01
+    target: data.csv.write_csv_01
+    edge_type: soft_prerequisite
+    reason: Reading CSVs first makes the row-and-header model concrete before writing them, but a learner can write a CSV without ever having read one — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.pandas.dataframe_basics_01__data.pandas.filtering_selection_01
+    source: data.pandas.dataframe_basics_01
+    target: data.pandas.filtering_selection_01
+    edge_type: hard_prerequisite
+    reason: Boolean-indexing rows and selecting columns are operations on a DataFrame; strip the concept of a DataFrame entirely and there is nothing to filter or select, so the target is incoherent.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.pandas.dataframe_basics_01__data.pandas.groupby_aggregation_01
+    source: data.pandas.dataframe_basics_01
+    target: data.pandas.groupby_aggregation_01
+    edge_type: hard_prerequisite
+    reason: Grouping and aggregating are operations on a DataFrame's rows and columns; with no concept of a DataFrame there is nothing to group, so the target is incoherent.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.pandas.dataframe_basics_01__data.pandas.transform_columns_01
+    source: data.pandas.dataframe_basics_01
+    target: data.pandas.transform_columns_01
+    edge_type: hard_prerequisite
+    reason: Deriving a new column assigns a computed Series back into a DataFrame; strip the concept of a DataFrame and its columns and there is nothing to derive from or assign to, so the target is incoherent.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.pandas.dataframe_basics_01__data.pandas.merge_join_01
+    source: data.pandas.dataframe_basics_01
+    target: data.pandas.merge_join_01
+    edge_type: hard_prerequisite
+    reason: A merge combines two DataFrames on a key; with no concept of a DataFrame there is nothing to merge, so the target is incoherent.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.pandas.filtering_selection_01__data.pandas.groupby_aggregation_01
+    source: data.pandas.filtering_selection_01
+    target: data.pandas.groupby_aggregation_01
+    edge_type: soft_prerequisite
+    reason: Analyses often filter rows before grouping, so selection fluency smooths aggregation, but a group-by sum is coherent with no prior filtering — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.pandas.transform_columns_01__data.pandas.merge_join_01
+    source: data.pandas.transform_columns_01
+    target: data.pandas.merge_join_01
+    edge_type: soft_prerequisite
+    reason: Derived columns and merges are both DataFrame reshaping, so meeting column derivation first builds familiarity, but a merge on a key stands without ever adding a column — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.sql.aggregation_01__data.pandas.groupby_aggregation_01
+    source: data.sql.aggregation_01
+    target: data.pandas.groupby_aggregation_01
+    edge_type: soft_prerequisite
+    reason: SQL GROUP BY and Pandas groupby are the same split-apply-combine idea in two tools, so meeting it in SQL first transfers, but the Pandas version is teachable to someone who has never written SQL — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.sql.joins_01__data.pandas.merge_join_01
+    source: data.sql.joins_01
+    target: data.pandas.merge_join_01
+    edge_type: soft_prerequisite
+    reason: A Pandas merge is the join concept in another tool, so a SQL join builds the mental model, but merge is teachable from scratch to someone who has never joined tables in SQL — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.visualization.choosing_charts_01__data.visualization.plotting_basics_01
+    source: data.visualization.choosing_charts_01
+    target: data.visualization.plotting_basics_01
+    edge_type: soft_prerequisite
+    reason: Knowing which chart answers the question makes the plotting purposeful, but a learner can practice the mechanics of a labeled plot without the chart-choice framing — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.visualization.plotting_basics_01__data.visualization.honest_visuals_01
+    source: data.visualization.plotting_basics_01
+    target: data.visualization.honest_visuals_01
+    edge_type: soft_prerequisite
+    reason: Having made a few charts makes the distortions concrete, but spotting a truncated axis or a misleading dual scale needs no plotting skill of your own — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.pandas.dataframe_basics_01__data.visualization.plotting_basics_01
+    source: data.pandas.dataframe_basics_01
+    target: data.visualization.plotting_basics_01
+    edge_type: soft_prerequisite
+    reason: You usually plot data you have loaded and summarized, so DataFrame basics supply the material, but a learner can plot hand-entered numbers without any Pandas — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.communication.notes.technical_summary_01__communication.reports.results_summary_01
+    source: communication.notes.technical_summary_01
+    target: communication.reports.results_summary_01
+    edge_type: soft_prerequisite
+    reason: A results write-up is a longer, structured technical summary, so the shorter form builds the habit, but a learner who can already write clearly can start the write-up cold — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: edge.data.visualization.honest_visuals_01__communication.reports.results_summary_01
+    source: data.visualization.honest_visuals_01
+    target: communication.reports.results_summary_01
+    edge_type: soft_prerequisite
+    reason: Honest reporting and honest visuals are the same not-overclaiming discipline in prose and pictures, so one reinforces the other, but a written result can be honest with no chart in it — ordering, not dependency.
+    active: true
+    created_at: 2026-07-06
+    updated_at: 2026-07-06

@@ -127,6 +127,31 @@ A shipped-test objective gate is inherently game-able by hardcoding to the
 visible cases; that is acceptable for a single honest self-learner. The honesty
 rule governs the *author* (ship no proxy), not adversarial-proofing the learner.
 
+**Checker shapes beyond a Python module.** The same contract holds whatever the
+artifact is; the seed carries three shared harnesses under `evidence/checks/`
+(all leading-underscore, so `pytest` never collects them):
+
+- *Python solution* (`_loader.py`): `load_solution(filename, subdir=…)` imports
+  the learner's module from `evidence/artifacts/<subdir>/`. The checker calls the
+  functions the node names and compares results.
+- *SQL query* (`_sql.py`): the learner writes one statement to a `.sql` file;
+  `run_learner_query` executes it against a fixed in-memory SQLite database
+  (schema + seed embedded in the harness, so nothing hits disk) and returns the
+  rows. The checker compares them to the task's exact expected rows —
+  order-sensitively only when `ORDER BY` is itself the skill, else sort both
+  sides first (SQLite's row order is otherwise arbitrary).
+- *Pandas frame* (`_pandas.py`): the checker builds a fixed input DataFrame in
+  code (the node body shows the learner the same data), calls the learner's
+  function, and compares via `canonical_rows` (a sorted list of row tuples) plus
+  a column-identity check. Choose the seed numbers so every derived value is
+  exact — a correct answer must never fail on floating-point noise.
+
+The determinacy test decides *whether* a data node is objective at all: it is
+objective only when the task has one correct output to compare. "Your cleaning
+script runs" is not that — "runs" is the file-exists proxy in disguise — so a
+cleaning node whose choices (drop vs fill vs coerce) are judgment stays `manual`
+while a node that returns exactly these rows is `objective`.
+
 ## Resources
 
 The LearningResource registry (`graph/resources.yaml`) is authored at
@@ -243,7 +268,8 @@ only for a genuinely new band:
 - Minted for the foundations rebuild: `math.statistics.*` (probability is part
   of this band, not a separate one), `math.linear_algebra.*`, `math.calculus.*`
   (named for the topic — depth is a curriculum choice that can deepen later, so
-  not `calculus_intuition`), `data.visualization.*`, `consolidation.*`.
+  not `calculus_intuition`), `data.sql.*`, `data.visualization.*`,
+  `consolidation.*`.
 
 **A node's namespace says what the skill *is*; `track` and edges say what role
 it *plays*.**

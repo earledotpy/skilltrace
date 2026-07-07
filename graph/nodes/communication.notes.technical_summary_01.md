@@ -29,8 +29,17 @@ updated_at: 2026-07-06
 
 ## Learning target
 
-Summarize a concept, procedure, or blocker in clear technical notes.
+Summarize a concept, procedure, or blocker in clear technical notes: state the
+claim, the supporting evidence, the remaining uncertainty, and the next action,
+in language a future you (or a teammate) can act on.
 
 ## Study pointers
 
+Google's Technical Writing One course (developers.google.com/tech-writing) for
+short, clear sentences and leading with the point; the same course's summary
+guidance for the claim → evidence → next-step shape.
+
 ## Notes
+
+Manual-gated: clarity and honesty are judgments a reader makes, not an exit code.
+

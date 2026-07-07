@@ -45,8 +45,8 @@ def test_load_and_validate_seed_has_no_warnings():
     result = load_and_validate_evidence(REPO_ROOT)
     assert result.ok
     assert result.warnings == []
-    assert result.spec_count == 55
-    assert result.gate_count == 55
+    assert result.spec_count == 69
+    assert result.gate_count == 69
 
 
 def test_output_is_independent_of_progress_store(tmp_path):

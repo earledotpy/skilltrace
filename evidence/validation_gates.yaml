@@ -155,12 +155,15 @@ validation_gates:
   updated_at: 2026-07-06
 - id: gate.data.csv.read_csv.closure
   node_id: data.csv.read_csv_01
-  authority: manual
-  title: Closure gate for CSV reading code evidence
-  description: Determines whether evidence for data.csv.read_csv_01 is sufficient
-    to pass the node.
+  authority: objective
+  command: python evidence/checks/data.csv.read_csv_check.py
+  title: Objective gate for CSV reading code evidence
+  description: Runs the shipped checker, which calls the learner's read_rows on a
+    shipped people.csv and confirms it returns one header-keyed dict per data row.
+    Exit 0 is the pass bar. (Retrofit from a manual gate — reading a CSV into
+    records has one correct result.)
   created_at: 2026-06-28
-  updated_at: 2026-07-03
+  updated_at: 2026-07-06
 - id: gate.data.csv.clean_simple_dataset.closure
   node_id: data.csv.clean_simple_dataset_01
   authority: manual
@@ -171,12 +174,15 @@ validation_gates:
   updated_at: 2026-07-03
 - id: gate.data.pandas.dataframe_basics.closure
   node_id: data.pandas.dataframe_basics_01
-  authority: manual
-  title: Closure gate for Pandas DataFrame notebook evidence
-  description: Determines whether evidence for data.pandas.dataframe_basics_01 is
-    sufficient to pass the node.
+  authority: objective
+  command: python evidence/checks/data.pandas.dataframe_basics_check.py
+  title: Objective gate for Pandas DataFrame basics evidence
+  description: Runs the shipped checker, which asserts column_names, total_revenue,
+    and region_rows on a fixed sales DataFrame. Exit 0 is the pass bar. (Retrofit
+    from a manual gate — each operation has one correct result; it also anchors
+    the Pandas hard-chain.)
   created_at: 2026-06-28
-  updated_at: 2026-07-03
+  updated_at: 2026-07-06
 - id: gate.communication.notes.technical_summary.closure
   node_id: communication.notes.technical_summary_01
   authority: manual
@@ -439,5 +445,133 @@ validation_gates:
   description: Determines whether evidence for tooling.git.viewing_history_01 is
     sufficient to pass the node. Manual — the skill is reading a log or diff and
     explaining what changed, which is judgment, not an exit code.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.sql.select_basics.closure
+  node_id: data.sql.select_basics_01
+  authority: objective
+  command: python evidence/checks/data.sql.select_basics_check.py
+  title: Objective gate for basic SELECT query evidence
+  description: Runs the shipped checker, which executes the learner's SQL against a
+    seeded in-memory database and confirms it returns (name, salary) for all eight
+    employees. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.sql.filtering_sorting.closure
+  node_id: data.sql.filtering_sorting_01
+  authority: objective
+  command: python evidence/checks/data.sql.filtering_sorting_check.py
+  title: Objective gate for WHERE / ORDER BY query evidence
+  description: Runs the shipped checker, which confirms the learner's query returns
+    the names earning over 90000 in descending salary order. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.sql.aggregation.closure
+  node_id: data.sql.aggregation_01
+  authority: objective
+  command: python evidence/checks/data.sql.aggregation_check.py
+  title: Objective gate for GROUP BY aggregation query evidence
+  description: Runs the shipped checker, which confirms the learner's query returns
+    per-department employee count and average salary. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.sql.joins.closure
+  node_id: data.sql.joins_01
+  authority: objective
+  command: python evidence/checks/data.sql.joins_check.py
+  title: Objective gate for INNER JOIN query evidence
+  description: Runs the shipped checker, which confirms the learner's query pairs
+    each employee with their department name via the join key. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.sql.subqueries.closure
+  node_id: data.sql.subqueries_01
+  authority: objective
+  command: python evidence/checks/data.sql.subqueries_check.py
+  title: Objective gate for subquery-filtered query evidence
+  description: Runs the shipped checker, which confirms the learner's query returns
+    the employees earning above the company-average salary. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.csv.write_csv.closure
+  node_id: data.csv.write_csv_01
+  authority: objective
+  command: python evidence/checks/data.csv.write_csv_check.py
+  title: Objective gate for CSV writing code evidence
+  description: Runs the shipped checker, which writes with the learner's write_rows
+    and reads the file back with csv.DictReader to confirm the rows round-trip.
+    Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.pandas.filtering_selection.closure
+  node_id: data.pandas.filtering_selection_01
+  authority: objective
+  command: python evidence/checks/data.pandas.filtering_selection_check.py
+  title: Objective gate for Pandas filtering and selection evidence
+  description: Runs the shipped checker, which confirms high_revenue returns the
+    rows with revenue at least 100 and the selected columns. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.pandas.groupby_aggregation.closure
+  node_id: data.pandas.groupby_aggregation_01
+  authority: objective
+  command: python evidence/checks/data.pandas.groupby_aggregation_check.py
+  title: Objective gate for Pandas groupby aggregation evidence
+  description: Runs the shipped checker, which confirms revenue_by_region totals
+    revenue per region. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.pandas.transform_columns.closure
+  node_id: data.pandas.transform_columns_01
+  authority: objective
+  command: python evidence/checks/data.pandas.transform_columns_check.py
+  title: Objective gate for Pandas derived-column evidence
+  description: Runs the shipped checker, which confirms add_unit_price appends
+    unit_price = revenue / units per row. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.pandas.merge_join.closure
+  node_id: data.pandas.merge_join_01
+  authority: objective
+  command: python evidence/checks/data.pandas.merge_join_check.py
+  title: Objective gate for Pandas merge evidence
+  description: Runs the shipped checker, which confirms attach_manager merges the
+    manager onto each sales row by region. Exit 0 is the pass bar.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.visualization.choosing_charts.closure
+  node_id: data.visualization.choosing_charts_01
+  authority: manual
+  title: Closure gate for chart-choice write-up evidence
+  description: Determines whether evidence for data.visualization.choosing_charts_01
+    is sufficient to pass the node. Manual — whether a chart type answers the
+    question is judgment, not an exit code.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.visualization.plotting_basics.closure
+  node_id: data.visualization.plotting_basics_01
+  authority: manual
+  title: Closure gate for labeled-plot evidence
+  description: Determines whether evidence for data.visualization.plotting_basics_01
+    is sufficient to pass the node. Manual — clarity and correct labeling are read,
+    not exit-checked; a file-exists check would be the proxy the honesty rule forbids.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.data.visualization.honest_visuals.closure
+  node_id: data.visualization.honest_visuals_01
+  authority: manual
+  title: Closure gate for chart-critique evidence
+  description: Determines whether evidence for data.visualization.honest_visuals_01
+    is sufficient to pass the node. Manual — naming a distortion and its honest fix
+    is a judgment about whether a chart tells the truth.
+  created_at: 2026-07-06
+  updated_at: 2026-07-06
+- id: gate.communication.reports.results_summary.closure
+  node_id: communication.reports.results_summary_01
+  authority: manual
+  title: Closure gate for analysis write-up evidence
+  description: Determines whether evidence for communication.reports.results_summary_01
+    is sufficient to pass the node. Manual — whether a write-up is clear and honest
+    about what the evidence supports is judged by a reader, not an exit code.
   created_at: 2026-07-06
   updated_at: 2026-07-06

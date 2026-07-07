@@ -192,7 +192,7 @@ def test_missing_required_field_fails(tmp_path, field):
 
 def test_all_seed_nodes_load():
     nodes = load_nodes(REPO_ROOT)
-    assert len(nodes) == 55
+    assert len(nodes) == 69
     ids = [node.id for node in nodes]
     assert len(set(ids)) == len(ids)  # loader hands #5 the raw list; no dedupe here
     assert "math.algebra.linear_equations_01" in ids

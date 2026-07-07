@@ -29,8 +29,18 @@ updated_at: 2026-07-06
 
 ## Learning target
 
-Create a README that explains what a project does and how to run it.
+Create a README that lets another person run your project: what it does, how to
+set it up, how to run it, what files matter, and what output to expect — clear
+enough that someone who has never seen the code can follow it.
 
 ## Study pointers
 
+Make a README (makeareadme.com) for a well-explained minimal template and section
+checklist; GitHub's "About READMEs" docs (docs.github.com) for what a project's
+landing document should contain.
+
 ## Notes
+
+Manual-gated: "could a stranger run this from the README?" is a judgment about
+clarity, read rather than exit-checked.
+

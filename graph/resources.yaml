@@ -93,6 +93,7 @@ resources:
       - math.statistics.expectation_01
       - math.statistics.hypothesis_testing_01
       - math.statistics.correlation_causation_01
+      - communication.reports.results_summary_01
   - id: python-tutorial
     url: https://docs.python.org/3/tutorial/
     cost: free
@@ -115,6 +116,8 @@ resources:
     supports:
       - programming.python.string_processing_01
       - programming.python.modules_imports_01
+      - data.csv.read_csv_01
+      - data.csv.write_csv_01
   - id: real-python
     url: https://realpython.com/
     cost: free
@@ -130,6 +133,14 @@ resources:
       - programming.python.comprehensions_01
       - programming.python.string_processing_01
       - programming.python.exceptions_01
+      - data.csv.read_csv_01
+      - data.csv.write_csv_01
+      - data.csv.clean_simple_dataset_01
+      - data.pandas.dataframe_basics_01
+      - data.pandas.filtering_selection_01
+      - data.pandas.groupby_aggregation_01
+      - data.pandas.transform_columns_01
+      - data.pandas.merge_join_01
   - id: missing-semester
     url: https://missing.csail.mit.edu/
     cost: free
@@ -158,3 +169,71 @@ resources:
       - tooling.git.repository_basics_01
       - tooling.git.commit_workflow_01
       - tooling.git.viewing_history_01
+      - communication.readme.basic_readme_01
+  - id: sqlbolt
+    url: https://sqlbolt.com/
+    cost: free
+    supports:
+      - data.sql.select_basics_01
+      - data.sql.filtering_sorting_01
+      - data.sql.aggregation_01
+      - data.sql.joins_01
+      - data.sql.subqueries_01
+  - id: mode-sql-tutorial
+    url: https://mode.com/sql-tutorial/
+    cost: free
+    supports:
+      - data.sql.select_basics_01
+      - data.sql.filtering_sorting_01
+      - data.sql.aggregation_01
+      - data.sql.joins_01
+      - data.sql.subqueries_01
+  - id: sqlite-docs
+    url: https://www.sqlite.org/lang.html
+    cost: free
+    supports:
+      - data.sql.select_basics_01
+      - data.sql.filtering_sorting_01
+      - data.sql.aggregation_01
+      - data.sql.joins_01
+      - data.sql.subqueries_01
+  - id: pandas-docs
+    url: https://pandas.pydata.org/docs/
+    cost: free
+    supports:
+      - data.csv.clean_simple_dataset_01
+      - data.pandas.dataframe_basics_01
+      - data.pandas.filtering_selection_01
+      - data.pandas.groupby_aggregation_01
+      - data.pandas.transform_columns_01
+      - data.pandas.merge_join_01
+  - id: matplotlib-docs
+    url: https://matplotlib.org/stable/
+    cost: free
+    supports:
+      - data.visualization.plotting_basics_01
+  - id: data-to-viz
+    url: https://www.data-to-viz.com/
+    cost: free
+    supports:
+      - data.visualization.choosing_charts_01
+      - data.visualization.plotting_basics_01
+      - data.visualization.honest_visuals_01
+  - id: fundamentals-of-dataviz
+    url: https://clauswilke.com/dataviz/
+    cost: free
+    supports:
+      - data.visualization.choosing_charts_01
+      - data.visualization.plotting_basics_01
+      - data.visualization.honest_visuals_01
+  - id: google-tech-writing
+    url: https://developers.google.com/tech-writing
+    cost: free
+    supports:
+      - communication.notes.technical_summary_01
+      - communication.reports.results_summary_01
+  - id: make-a-readme
+    url: https://www.makeareadme.com/
+    cost: free
+    supports:
+      - communication.readme.basic_readme_01
