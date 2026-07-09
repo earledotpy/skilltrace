@@ -1,16 +1,22 @@
 # Resource verification worksheet — v0.8 slice 6
 
-**Web pass performed:** 2026-07-07 (agent fetched every registry URL, confirmed it
-resolves, read the provider's current terms, reconciled the drafted `cost: free`
-claim). **Verification itself is yours to run** — click each URL, confirm the
-page and its claim with your own eyes, then run the `verify-resource` block at the
-bottom. The agent never runs `verify-resource` (held in the spirit of
-pass/master).
+**Web pass performed:** 2026-07-07 (all 26 original entries) and 2026-07-08
+(replacement candidates). **Verification itself is yours to run** — click each
+URL, confirm the page and its claim with your own eyes, then run the
+`verify-resource` block at the bottom. The agent never runs `verify-resource`
+(held in the spirit of pass/master).
 
-Every entry currently claims exactly `cost: free` and sets no `free_tier`,
-`certificate`, or `license`. So the reconciliation below is: *does the URL still
-resolve, and is "free" still honest?* Loud flags are called out; two entries need
-a **judgment call from you** before (or instead of) verifying.
+**2026-07-08 sitting update — both DECIDE items are resolved.** Your eyes-on
+finding (both sites' useful tutorial content sits behind paywalls) settled them
+as *misrepresented → replaced by curriculum edit*: `real-python` and
+`mode-sql-tutorial` were removed from the registry and five free replacements
+added (rows 27–31 below). The registry is now 29 entries; no DECIDE items
+remain. New entries carry their own web-pass flags and appear in the command
+block for your verification like any other.
+
+Every entry claims exactly `cost: free` and sets no `free_tier`, `certificate`,
+or `license`. So the reconciliation below is: *does the URL still resolve, and
+is "free" still honest?*
 
 ## What you must do to close slice 6 (the checklist)
 
@@ -21,10 +27,11 @@ green). These steps are **yours**, in order:
    block below yourself. The agent never runs it. Each run appends one audit event
    to `execution/events.yaml` and stamps `last_verified` (or a `broken` marker)
    into `graph/resources.yaml`.
-2. **Resolve the 2 DECIDE items** (`real-python`, `mode-sql-tutorial`). These are
-   *known* problems — unlike the OK / READ-INCOMPLETE entries they may **not** ship
-   as silent "unverified". Pick verify, `--broken`, or a curriculum edit for each.
-   (A `--broken` marker fails no test.)
+2. ~~Resolve the 2 DECIDE items~~ — **done 2026-07-08**: both resolved by
+   curriculum edit (retired + replaced; see the Decisions section). One residue
+   for you: confirm the `runestone-py4e` URL lands on the interactive PY4E book
+   you actually use — if your bookmark differs, say so and the registry URL gets
+   fixed before you verify it.
 3. **Confirm the exit gate still passes** on your now-modified repo:
    ```powershell
    pytest
@@ -69,13 +76,13 @@ Everything below is the reference material for step 1.
 | 10 | [openintro-statistics](https://www.openintro.org/book/os/) | free | Resolves; free PDF (pay-what-you-want, $0 option); paid print also exists — `cost: free` is honest for the free PDF | OK |
 | 11 | [python-tutorial](https://docs.python.org/3/tutorial/) | free | Resolves; free (PSF License) | OK |
 | 12 | [python-stdlib-reference](https://docs.python.org/3/library/) | free | Resolves; free (PSF License) | OK |
-| 13 | [real-python](https://realpython.com/) | free | 403 to the bot (site is live); Real Python is **freemium** — free articles, but courses/learning paths are paid membership | **DECIDE** |
+| 13 | ~~real-python~~ | — | Learner confirmed useful tutorials paywalled → **retired by curriculum edit 2026-07-08** (replaced by rows 27–29) | RESOLVED |
 | 14 | [missing-semester](https://missing.csail.mit.edu/) | free | Resolves; free (CC BY-NC-SA) | OK |
 | 15 | [microsoft-windows-commands](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/windows-commands) | free | Resolves & readable; free | OK |
 | 16 | [pro-git-book](https://git-scm.com/book/en/v2) | free | Resolves; free (CC BY-NC-SA 3.0); paid print optional | OK |
 | 17 | [github-docs](https://docs.github.com/) | free | Resolves; free | OK |
 | 18 | [sqlbolt](https://sqlbolt.com/) | free | Resolves; free (ad-supported) | OK |
-| 19 | [mode-sql-tutorial](https://mode.com/sql-tutorial/) | free | **301 → thoughtspot.com/sql-tutorial** — Mode was acquired by ThoughtSpot; the stable root URL has moved and the destination is now a marketing-wrapped page | **DECIDE** |
+| 19 | ~~mode-sql-tutorial~~ | — | 301 → thoughtspot.com; learner confirmed useful parts paywalled → **retired by curriculum edit 2026-07-08** (replaced by row 31) | RESOLVED |
 | 20 | [sqlite-docs](https://www.sqlite.org/lang.html) | free | Resolves; free (public domain) | OK |
 | 21 | [pandas-docs](https://pandas.pydata.org/docs/) | free | Resolves; free (BSD-licensed) | OK |
 | 22 | [matplotlib-docs](https://matplotlib.org/stable/) | free | 403 to the bot (site is live); Matplotlib docs are well-known free (BSD-style) | READ-INCOMPLETE |
@@ -83,57 +90,58 @@ Everything below is the reference material for step 1.
 | 24 | [fundamentals-of-dataviz](https://clauswilke.com/dataviz/) | free | Resolves; free online (CC BY-NC-ND 4.0); paid print optional | OK |
 | 25 | [google-tech-writing](https://developers.google.com/tech-writing) | free | Resolves; free | OK |
 | 26 | [make-a-readme](https://www.makeareadme.com/) | free | Resolves; free (MIT) | OK |
+| 27 | [automate-the-boring-stuff](https://automatetheboringstuff.com/) | free | Resolves & readable; free (CC BY-NC-SA), 3rd edition free online; paid Udemy course optional | OK |
+| 28 | [runestone-py4e](https://runestone.academy/ns/books/published/py4e-int/index.html) | free | 403 to the bot; Runestone is free — **confirm the URL lands on the book you use** | READ-INCOMPLETE |
+| 29 | [python-tutor](https://pythontutor.com/) | free | Resolves & readable; free (donation-supported), no account needed | OK |
+| 30 | [python-for-data-analysis](https://wesmckinney.com/book/) | free | 403 to the bot; author documents the 3E online edition as open-access free; paid print/ebook optional | READ-INCOMPLETE |
+| 31 | [select-star-sql](https://selectstarsql.com/) | free | Resolves & readable; free ("free of charge, free of ads, no registration"), CC BY-SA | OK |
 
-**Tally:** 18 OK · 6 READ-INCOMPLETE (Khan ×5, Matplotlib) · 2 DECIDE.
+**Tally (29 entries):** 20 OK · 9 READ-INCOMPLETE (Khan ×6, Matplotlib, Runestone,
+PyDA 3E) · 0 DECIDE (both resolved by curriculum edit; rows 13/19 retired).
+*(Corrects the earlier "18 OK · 6 READ-INCOMPLETE" tally — the table always had
+6 Khan rows + Matplotlib flagged, i.e. 17 OK · 7 READ-INCOMPLETE of the 26.)*
 
-> **Ship-unverified vs. must-resolve.** The 18 OK and 6 READ-INCOMPLETE entries may
-> ship *honestly unverified* if you don't get to them — a warning in
-> `resource-report`, never a blocker (the 180-day window catches them). The **2
-> DECIDE entries are different**: they are *known* problems, so leaving them as
-> silent "unverified" does **not** satisfy the slice — each needs a decision
-> (verify, mark broken, or edit) before seeding is called done. A `--broken`
-> marker fails no test: coverage counts linkage, not health, and both DECIDE
-> resources' nodes keep other resources.
+> **Ship-unverified is honest.** Any OK or READ-INCOMPLETE entry you don't get to
+> may ship *honestly unverified* — a warning in `resource-report`, never a
+> blocker (the 180-day window catches them). With the two DECIDE items resolved
+> by edit, nothing left in the registry is a known problem.
 
-## Decisions (yours — not the agent's to resolve)
+## Decisions — RESOLVED 2026-07-08
 
-### 13 · real-python — freemium vs. free-first doctrine
-`cost: free` is defensible *only* for Real Python's free articles; its courses and
-learning paths sit behind paid membership. `docs/curriculum-authoring.md` says
-"every primary resource is free. No paid materials." Real Python is a secondary
-resource on all 26 of its nodes (each also has python.org / a free primary), so it
-isn't anyone's only path. Your call:
-- **Keep + verify** if you're treating it as "the free-article slice of Real
-  Python" and are comfortable that `cost: free` reads that way; or
-- **Mark broken** (`--reason "freemium; courses paywalled — conflicts with
-  free-first"`) to surface it for later replacement; or
-- **Curriculum edit** to drop it / swap the link to a specific free article root.
+Both DECIDE items were settled at the sitting after the learner's eyes-on check
+found that each site's genuinely useful tutorial content sits behind a paywall.
+Both were **misrepresented → replaced by curriculum edit** (the issue's
+alternative to a `--broken` marker); neither needs a `verify-resource` line.
 
-Recommendation: keep and verify — it's never a sole path and its free tutorials are
-genuinely free — but that's a doctrine judgment I shouldn't make for you.
+### 13 · real-python — RETIRED (freemium; useful tutorials paywalled)
+Removed from the registry. Its practical-tutorial role is taken over by three
+new entries drawn from the learner's proven materials plus one gap-filler:
+- **automate-the-boring-stuff** → the python fundamentals, CSV, and
+  data-cleaning-tool nodes;
+- **runestone-py4e** (interactive PY4E, already in the learner's use) → the
+  core python fundamentals nodes;
+- **python-tutor** → the reading-errors and errors-debugging nodes;
+- **python-for-data-analysis** (Wes McKinney 3E, open access) → the pandas
+  nodes, whose only tutorial-layer resource had been real-python.
+Two portfolio nodes that would have dropped to a single resource were patched
+with apt existing entries: `python-stdlib-reference` (the `random`/`statistics`
+modules) now supports `portfolio.project.stats_simulation_01`, and
+`python-tutorial` supports `portfolio.project.slope_calculator_01`.
 
-### 19 · mode-sql-tutorial — root URL moved (Mode acquired by ThoughtSpot)
-The registered root `https://mode.com/sql-tutorial/` now 301-redirects to
-`https://www.thoughtspot.com/sql-tutorial`. The tutorial content still appears to
-exist under the new host but is now marketing-wrapped. This is exactly the
-"provider URL-stability" case the doctrine warns about. Its 6 nodes are all also
-covered by **sqlbolt** and/or **sqlite-docs**, so nothing is orphaned if it goes.
-Your call:
-- **Mark broken** (`--reason "mode.com/sql-tutorial 301s to thoughtspot.com;
-  root URL moved after acquisition"`); or
-- **Curriculum edit** the `url` to the ThoughtSpot destination and then verify; or
-- **Curriculum edit** to retire it (sqlbolt + sqlite-docs already cover its nodes).
-
-Recommendation: mark broken now (honest, reversible), decide replacement later —
-the staleness/broken report will keep reminding you.
+### 19 · mode-sql-tutorial — RETIRED (URL moved to thoughtspot.com; useful parts paywalled)
+Removed from the registry. Its 6 nodes were already covered by **sqlbolt** and
+**sqlite-docs**; **select-star-sql** (free, interactive, no registration) was
+added to the select/filtering/aggregation/joins/join-mental-models nodes to
+restore the tutorial slot. `data.sql.subqueries_01` keeps sqlbolt + sqlite-docs
+(Select Star SQL doesn't clearly cover subqueries, so it isn't claimed).
 
 ## The `verify-resource` command block
 
-Run this yourself, in the repo root. The 20 OK entries are ready to fire. The 4
+Run this yourself, in the repo root. The 20 OK entries are ready to fire. The 9
 READ-INCOMPLETE entries are included but **you must eyeball the page first** — they
-are one line each, unblock them by looking. The 2 DECIDE entries are left
-**commented out** with their broken-form pre-filled; uncomment the line matching
-your decision.
+are one line each, unblock them by looking. (You've already confirmed the Khan
+courses from your Algebra 1 seat, so those are just a click-and-run.) No DECIDE
+entries remain.
 
 ```powershell
 # --- OK: confirmed free, URL resolves ---
@@ -154,6 +162,9 @@ skilltrace verify-resource data-to-viz
 skilltrace verify-resource fundamentals-of-dataviz
 skilltrace verify-resource google-tech-writing
 skilltrace verify-resource make-a-readme
+skilltrace verify-resource automate-the-boring-stuff
+skilltrace verify-resource python-tutor
+skilltrace verify-resource select-star-sql
 
 # --- READ-INCOMPLETE: eyeball the page, then run (well-known free) ---
 skilltrace verify-resource khan-arithmetic
@@ -163,15 +174,10 @@ skilltrace verify-resource khan-statistics-probability
 skilltrace verify-resource khan-linear-algebra
 skilltrace verify-resource khan-differential-calculus
 skilltrace verify-resource matplotlib-docs
-
-# --- DECIDE: uncomment ONE line per resource after you choose ---
-# real-python (13): keep+verify, OR mark broken:
-# skilltrace verify-resource real-python
-# skilltrace verify-resource real-python --broken --reason "freemium; courses paywalled — conflicts with free-first"
-
-# mode-sql-tutorial (19): mark broken, OR verify after a URL edit:
-# skilltrace verify-resource mode-sql-tutorial --broken --reason "mode.com/sql-tutorial 301s to thoughtspot.com; root URL moved after acquisition"
-# skilltrace verify-resource mode-sql-tutorial
+skilltrace verify-resource python-for-data-analysis
+# runestone-py4e: FIRST confirm the URL opens the interactive PY4E book you use;
+# if your bookmark differs, get the registry URL fixed before verifying:
+skilltrace verify-resource runestone-py4e
 ```
 
 After running the batch, `skilltrace resource-report` will show the verified

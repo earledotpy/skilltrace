@@ -120,6 +120,7 @@ resources:
       - consolidation.python_fundamentals_01
       - programming.python.reading_errors_01
       - programming.python.environment_troubleshooting_01
+      - portfolio.project.slope_calculator_01
   - id: python-stdlib-reference
     url: https://docs.python.org/3/library/
     cost: free
@@ -128,8 +129,9 @@ resources:
       - programming.python.modules_imports_01
       - data.csv.read_csv_01
       - data.csv.write_csv_01
-  - id: real-python
-    url: https://realpython.com/
+      - portfolio.project.stats_simulation_01
+  - id: automate-the-boring-stuff
+    url: https://automatetheboringstuff.com/
     cost: free
     supports:
       - programming.python.environment_01
@@ -140,24 +142,32 @@ resources:
       - programming.python.files_01
       - programming.python.errors_debugging_01
       - programming.python.dictionaries_01
-      - programming.python.comprehensions_01
       - programming.python.string_processing_01
       - programming.python.exceptions_01
+      - programming.python.reading_errors_01
+      - programming.python.environment_troubleshooting_01
       - data.csv.read_csv_01
       - data.csv.write_csv_01
       - data.csv.clean_simple_dataset_01
-      - data.pandas.dataframe_basics_01
-      - data.pandas.filtering_selection_01
-      - data.pandas.groupby_aggregation_01
-      - data.pandas.transform_columns_01
-      - data.pandas.merge_join_01
       - consolidation.python_fundamentals_01
       - portfolio.project.data_cleaning_tool_01
-      - portfolio.project.dataset_analysis_report_01
-      - portfolio.project.stats_simulation_01
-      - portfolio.project.slope_calculator_01
+  - id: runestone-py4e
+    url: https://runestone.academy/ns/books/published/py4e-int/index.html
+    cost: free
+    supports:
+      - programming.python.variables_01
+      - programming.python.conditionals_01
+      - programming.python.functions_01
+      - programming.python.lists_loops_01
+      - programming.python.files_01
+      - programming.python.dictionaries_01
+      - consolidation.python_fundamentals_01
+  - id: python-tutor
+    url: https://pythontutor.com/
+    cost: free
+    supports:
       - programming.python.reading_errors_01
-      - programming.python.environment_troubleshooting_01
+      - programming.python.errors_debugging_01
   - id: missing-semester
     url: https://missing.csail.mit.edu/
     cost: free
@@ -199,15 +209,14 @@ resources:
       - data.sql.subqueries_01
       - consolidation.data_roundtrip_01
       - data.sql.join_mental_models_01
-  - id: mode-sql-tutorial
-    url: https://mode.com/sql-tutorial/
+  - id: select-star-sql
+    url: https://selectstarsql.com/
     cost: free
     supports:
       - data.sql.select_basics_01
       - data.sql.filtering_sorting_01
       - data.sql.aggregation_01
       - data.sql.joins_01
-      - data.sql.subqueries_01
       - data.sql.join_mental_models_01
   - id: sqlite-docs
     url: https://www.sqlite.org/lang.html
@@ -230,6 +239,18 @@ resources:
       - data.pandas.merge_join_01
       - consolidation.data_roundtrip_01
       - portfolio.project.data_cleaning_tool_01
+  - id: python-for-data-analysis
+    url: https://wesmckinney.com/book/
+    cost: free
+    supports:
+      - data.pandas.dataframe_basics_01
+      - data.pandas.filtering_selection_01
+      - data.pandas.groupby_aggregation_01
+      - data.pandas.transform_columns_01
+      - data.pandas.merge_join_01
+      - data.csv.clean_simple_dataset_01
+      - portfolio.project.data_cleaning_tool_01
+      - portfolio.project.dataset_analysis_report_01
   - id: matplotlib-docs
     url: https://matplotlib.org/stable/
     cost: free
