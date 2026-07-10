@@ -64,14 +64,12 @@ enter only as seed data and policy values, never as engine code.
 
 ## Working conventions
 
-- Current phase: v0.7.0-rc1 complete (resource registry and verification
-  workflow); graph, evidence, execution, and policy cores also complete.
-  v0.8 (foundations production seed graph — a curriculum rebuild designed
-  destination-backward from "working AI/ML engineer-practitioner") is next.
-  The old AI learning roadmap is `reference_only` even for curriculum shape:
-  a candidate-topic checklist and anchor metadata, never a phase partition to
-  transcribe. Follow the roadmap's RC scope and the doctrine in
-  `docs/curriculum-authoring.md`; don't build ahead of the current slice.
+- Current phase: v0.8.0-rc1 complete (foundations production seed graph —
+  81 nodes / 124 edges / 29 verified resources, all six slices merged;
+  curriculum doctrine lives in `docs/curriculum-authoring.md`). Next per the
+  roadmap: v0.9.0-rc1 — daily-use polish and reports. The old AI learning
+  roadmap remains `reference_only` even for curriculum shape. Follow the
+  roadmap's RC scope; don't build ahead of the current slice.
 - Tests: `pytest` (per-layer suites under `tests/<layer>` as RCs land).
   Every RC's exit-gate commands must pass before it's done.
 - When a domain term is added or changed, update `CONTEXT.md` in the same
