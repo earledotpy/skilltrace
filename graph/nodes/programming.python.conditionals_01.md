@@ -4,48 +4,47 @@ title: Use conditionals in Python
 summary: Use if, elif, and else statements to control program flow.
 domain: programming
 track: foundational
-level: beginner
 roadmap_anchors:
-  -
-    phase: phase_1
-    phase_label: Programming Fundamentals
-    month_range: 5-12
-    roadmap_topic: Python Foundations
-    source_role: reference_only
+- phase: phase_1
+  phase_label: Programming Fundamentals
+  month_range: 5-12
+  roadmap_topic: Python Foundations
+  source_role: reference_only
 estimated_effort:
   min_minutes: 45
   max_minutes: 120
 micro_session_fit:
-  can_fit_15_min: true
-  can_fit_30_min: true
-  requires_long_block: false
-competency_dimensions:
-  conceptual: Explain conditional branching.
-  practical: Write scripts that choose behavior based on conditions.
-  analytical: Fix indentation, comparison, and branch-order errors.
-  contextual: Connect conditionals to rules, thresholds, and validation checks.
-mastery_policy:
-  closure_authority: manual_with_objective_evidence
-  required_evidence_type: code_snippet
-  suggested_gate: Write a working conditional script with at least three branches.
-  ai_review_is_advisory_only: true
+  can_fit_15_min: false
+  can_fit_30_min: false
+  requires_long_block: true
 tags:
-  - python
-  - conditionals
+- python
+- conditionals
 created_at: 2026-06-28
-updated_at: 2026-06-28
+updated_at: 2026-07-06
 ---
 
 # Use conditionals in Python
 
 ## Learning target
 
-Use if, elif, and else statements to control program flow.
+Use `if`, `elif`, and `else` to branch on values. For the objective gate, define
+three functions in your solution script with exactly this behavior:
+
+- `classify(n)` — return `"negative"`, `"zero"`, or `"positive"` for `n`.
+- `is_even(n)` — return `True` when `n` is even, else `False`.
+- `larger(a, b)` — return the larger of `a` and `b`.
+
+Save your script at `evidence/artifacts/programming/python_conditionals_solution.py`
+and submit it.
+
+## Study pointers
+
+The Python Tutorial §4.1 "if Statements" and §4.4 on comparisons
+(docs.python.org/3/tutorial/controlflow.html); Real Python's "Conditional
+Statements in Python" for worked branching examples.
 
 ## Notes
 
-## Evidence
-
-## Blockers
-
-## Reflection
+Objective-gated: the checker exercises every branch of each function, so a
+missed `elif` or a wrong comparison is rejected.

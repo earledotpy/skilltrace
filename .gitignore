@@ -8,3 +8,10 @@ dist/
 
 # Derived, disposable data (invariant / decision 12): never read back by the engine
 data/*.db
+
+# Learner-produced solution artifacts for objective-gated nodes. The learner
+# writes their solution here (the path each objective spec/checker points at) and
+# submits it; the shipped seed carries no solutions, only the checkers that run
+# against them. Keeping this untracked stops smoke-test and study artifacts from
+# ever landing in the curriculum.
+evidence/artifacts/

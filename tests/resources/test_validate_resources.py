@@ -20,7 +20,8 @@ from .conftest import REPO_ROOT, write_node, write_registry
 
 
 def test_shipped_registry_validates_clean(capsys):
-    # The shipped repo ships an empty-but-valid registry in the curriculum area.
+    # The shipped repo ships a valid registry in the curriculum area (the math
+    # bands populate it in v0.8 slice 2; earlier it was empty-but-valid).
     rc = cli.run(["validate", "resources"], root=REPO_ROOT)
     assert rc == 0
     assert "validate resources: OK" in capsys.readouterr().out

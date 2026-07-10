@@ -4,37 +4,25 @@ title: Work with variables and algebraic expressions
 summary: Translate between words, symbols, and algebraic expressions.
 domain: mathematics
 track: foundational
-level: beginner
 roadmap_anchors:
-  -
-    phase: phase_0
-    phase_label: Mathematical Literacy
-    month_range: 1-3
-    roadmap_topic: Algebra Revival
-    source_role: reference_only
+- phase: phase_0
+  phase_label: Mathematical Literacy
+  month_range: 1-3
+  roadmap_topic: Algebra Revival
+  source_role: reference_only
 estimated_effort:
   min_minutes: 45
   max_minutes: 120
 micro_session_fit:
-  can_fit_15_min: true
-  can_fit_30_min: true
-  requires_long_block: false
-competency_dimensions:
-  conceptual: Explain what a variable represents in an expression.
-  practical: Simplify and evaluate algebraic expressions.
-  analytical: Identify invalid simplification or substitution steps.
-  contextual: Connect algebraic expressions to later formulas and Python variables.
-mastery_policy:
-  closure_authority: manual_with_objective_evidence
-  required_evidence_type: problem_set
-  suggested_gate: Complete expression translation, simplification, and evaluation exercises across separate sessions.
-  ai_review_is_advisory_only: true
+  can_fit_15_min: false
+  can_fit_30_min: false
+  requires_long_block: true
 tags:
-  - math
-  - algebra
-  - variables
+- math
+- algebra
+- variables
 created_at: 2026-06-28
-updated_at: 2026-06-28
+updated_at: 2026-07-06
 ---
 
 # Work with variables and algebraic expressions
@@ -43,10 +31,6 @@ updated_at: 2026-06-28
 
 Translate between words, symbols, and algebraic expressions.
 
+## Study pointers
+
 ## Notes
-
-## Evidence
-
-## Blockers
-
-## Reflection

@@ -119,42 +119,42 @@ artifact_specs:
   -
     id: spec.programming.python.variables
     node_id: programming.python.variables_01
-    title: Python variables code evidence
+    title: Python variables solution script
     artifact_kind: code_snippet
-    description: "Required evidence for programming.python.variables_01: python variables code evidence."
+    description: "Required evidence for programming.python.variables_01: a solution script assigning seconds_per_day, total_cost, and average from expressions with the stated values."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/programming/
-    example_filename: programming_python_variables_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_variables_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each variable holds the stated result. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.programming.python.conditionals
     node_id: programming.python.conditionals_01
-    title: Python conditionals code evidence
+    title: Python conditionals solution script
     artifact_kind: code_snippet
-    description: "Required evidence for programming.python.conditionals_01: python conditionals code evidence."
+    description: "Required evidence for programming.python.conditionals_01: a solution script defining classify, is_even, and larger with the stated branching behavior."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/programming/
-    example_filename: programming_python_conditionals_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_conditionals_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts every branch of each function. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.programming.python.functions
     node_id: programming.python.functions_01
-    title: Python functions code evidence
+    title: Python functions solution script
     artifact_kind: code_snippet
-    description: "Required evidence for programming.python.functions_01: python functions code evidence."
+    description: "Required evidence for programming.python.functions_01: a solution script defining rectangle_area, celsius_to_fahrenheit, and greet with the stated behavior."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/programming/
-    example_filename: programming_python_functions_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_functions_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each function returns the stated result. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.programming.python.errors_debugging
     node_id: programming.python.errors_debugging_01
@@ -171,29 +171,29 @@ artifact_specs:
   -
     id: spec.programming.python.lists_loops
     node_id: programming.python.lists_loops_01
-    title: Python lists and loops code evidence
+    title: Python lists and loops solution script
     artifact_kind: code_snippet
-    description: "Required evidence for programming.python.lists_loops_01: python lists and loops code evidence."
+    description: "Required evidence for programming.python.lists_loops_01: a solution script defining sum_list, count_evens, and squares_up_to with the stated behavior."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/programming/
-    example_filename: programming_python_lists_loops_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_lists_loops_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each function over sample inputs. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.programming.python.files
     node_id: programming.python.files_01
-    title: Python file I/O code evidence
+    title: Python file I/O solution script
     artifact_kind: code_snippet
-    description: "Required evidence for programming.python.files_01: python file i/o code evidence."
+    description: "Required evidence for programming.python.files_01: a solution script defining write_lines and read_lines that persist and recover a list of lines."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/programming/
-    example_filename: programming_python_files_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_files_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it round-trips lines through a temp file using write_lines and read_lines. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.tooling.cli.navigation
     node_id: tooling.cli.navigation_01
@@ -223,55 +223,55 @@ artifact_specs:
   -
     id: spec.tooling.git.commit_workflow
     node_id: tooling.git.commit_workflow_01
-    title: Git commit workflow checklist evidence
-    artifact_kind: checklist
-    description: "Required evidence for tooling.git.commit_workflow_01: git commit workflow checklist evidence."
+    title: Git repository artifact with a first commit
+    artifact_kind: git_repository
+    description: "Required evidence for tooling.git.commit_workflow_01: a Git repository at evidence/artifacts/git_repo/ containing at least one commit that carries a message and tracks a file."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/tooling/
-    example_filename: tooling_git_commit_workflow_checklist_001.md
-    acceptance_summary: Checklist is completed with command or action notes sufficient to reproduce the procedure.
+    expected_location_hint: evidence/artifacts/git_repo/
+    example_filename: .git
+    acceptance_summary: The objective gate runs the shipped checker; it asks Git whether HEAD resolves to a commit with a message and a tracked file. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.data.csv.read_csv
     node_id: data.csv.read_csv_01
-    title: CSV reading code evidence
+    title: CSV reading solution script
     artifact_kind: code_snippet
-    description: "Required evidence for data.csv.read_csv_01: csv reading code evidence."
+    description: "Required evidence for data.csv.read_csv_01: a solution script defining read_rows(path) that returns the CSV's data rows as header-keyed dicts."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/data/
-    example_filename: data_csv_read_csv_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: csv_read_csv_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it calls read_rows on the shipped people.csv and asserts one header-keyed dict per data row. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.data.csv.clean_simple_dataset
     node_id: data.csv.clean_simple_dataset_01
     title: Simple dataset cleaning evidence
     artifact_kind: code_snippet
-    description: "Required evidence for data.csv.clean_simple_dataset_01: simple dataset cleaning evidence."
+    description: "Required evidence for data.csv.clean_simple_dataset_01: a cleaning script plus a short note on the drop/fill/coerce choices made."
     required: true
     minimum_count: 1
     expected_location_hint: evidence/data/
     example_filename: data_csv_clean_simple_dataset_snippet_001.py
-    acceptance_summary: Code runs locally, solves the stated task, and includes a brief explanation of the important lines.
+    acceptance_summary: The cleaning script runs on the messy CSV and produces a defensible clean result, and the note justifies each drop/fill/coerce choice — the judgment is the substance, so this gate is manual, not a comparison to one blessed output.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.data.pandas.dataframe_basics
     node_id: data.pandas.dataframe_basics_01
-    title: Pandas DataFrame notebook evidence
-    artifact_kind: notebook
-    description: "Required evidence for data.pandas.dataframe_basics_01: pandas dataframe notebook evidence."
+    title: Pandas DataFrame basics solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.pandas.dataframe_basics_01: a solution script defining column_names, total_revenue, and region_rows over a DataFrame."
     required: true
     minimum_count: 1
-    expected_location_hint: evidence/data/
-    example_filename: data_pandas_dataframe_basics_notebook_001.ipynb
-    acceptance_summary: Notebook loads data, shows relevant operations, includes short explanations, and can be rerun top to bottom.
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: pandas_dataframe_basics_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it asserts column_names, total_revenue, and region_rows on a fixed sales DataFrame. Exit 0 is acceptance.
     created_at: 2026-06-28
-    updated_at: 2026-06-28
+    updated_at: 2026-07-06
   -
     id: spec.communication.notes.technical_summary
     node_id: communication.notes.technical_summary_01
@@ -311,3 +311,744 @@ artifact_specs:
     acceptance_summary: Repository includes working code, simple tests or manual test cases, commit history, and a usable README.
     created_at: 2026-06-28
     updated_at: 2026-06-28
+  -
+    id: spec.math.linear_algebra.vectors
+    node_id: math.linear_algebra.vectors_01
+    title: Represent and combine vectors problem-set evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.linear_algebra.vectors_01: vectors problem-set evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_linear_algebra_vectors_set_001.md
+    acceptance_summary: Work adds and scales vectors component-by-component with correct results and states, for at least one case, what addition and scaling do to the arrow — no recurring sign or component-alignment error across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.statistics.descriptive_stats
+    node_id: math.statistics.descriptive_stats_01
+    title: Summarize a dataset with descriptive statistics evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.statistics.descriptive_stats_01: summarize a dataset with descriptive statistics evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_statistics_descriptive_stats_set_001.md
+    acceptance_summary: Center and spread are computed correctly for the dataset and the choice of mean vs median is justified by the data's shape (e.g. an outlier pulling the mean) — no arithmetic or measure-confusion error across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.statistics.distributions
+    node_id: math.statistics.distributions_01
+    title: Read and describe a distribution evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.statistics.distributions_01: read and describe a distribution evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_statistics_distributions_set_001.md
+    acceptance_summary: Each histogram's shape, center, and spread are described in plain language that matches the plot, and a roughly-normal case is correctly identified — no shape-vs-skew confusion across the described distributions.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.statistics.probability_basics
+    node_id: math.statistics.probability_basics_01
+    title: Compute basic probabilities evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.statistics.probability_basics_01: compute basic probabilities evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_statistics_probability_basics_set_001.md
+    acceptance_summary: Each probability is a value in [0,1] computed with the correct rule (complement / addition / multiplication), and independence is correctly assumed or rejected before multiplying — no rule-misapplication error across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.statistics.expectation
+    node_id: math.statistics.expectation_01
+    title: Compute expected value evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.statistics.expectation_01: compute expected value evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_statistics_expectation_set_001.md
+    acceptance_summary: Expected value is computed as the correct probability-weighted sum and interpreted as a long-run average (not a most-likely outcome) — the probabilities used sum to 1 and no weighting or interpretation error recurs.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.statistics.sampling
+    node_id: math.statistics.sampling_01
+    title: Reason about samples and sampling variability evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.statistics.sampling_01: reason about samples and sampling variability evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_statistics_sampling_set_001.md
+    acceptance_summary: The sample-vs-population distinction is stated correctly and the explanation of why estimates stabilize with larger samples is coherent and evidence-based (not merely asserted) — no population/sample conflation across the reasoning.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.statistics.hypothesis_testing
+    node_id: math.statistics.hypothesis_testing_01
+    title: Interpret a hypothesis test and p-value evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.statistics.hypothesis_testing_01: interpret a hypothesis test and p-value evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_statistics_hypothesis_testing_set_001.md
+    acceptance_summary: The p-value is interpreted correctly against the stated significance level, the conclusion is phrased in plain language, and the common misreadings (p as P(H0 true); non-significance as proof of no effect) are explicitly avoided — no inversion of the conditional across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.statistics.bayes_intuition
+    node_id: math.statistics.bayes_intuition_01
+    title: Update beliefs with Bayes' rule evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.statistics.bayes_intuition_01: update beliefs with bayes' rule evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_statistics_bayes_intuition_set_001.md
+    acceptance_summary: The posterior is computed correctly from prior, likelihood, and evidence, and the base-rate effect is explained in words for at least one case — no confusion of P(A|B) with P(B|A) across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.statistics.correlation_causation
+    node_id: math.statistics.correlation_causation_01
+    title: Distinguish correlation from causation evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.statistics.correlation_causation_01: distinguish correlation from causation evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_statistics_correlation_causation_set_001.md
+    acceptance_summary: Correlation strength and direction are read correctly from the plot/coefficient, and a plausible confounder or reverse-causation mechanism is named for at least one case — no claim of causation from correlation alone across the examples.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.linear_algebra.vector_operations
+    node_id: math.linear_algebra.vector_operations_01
+    title: Measure vector length and distance evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.linear_algebra.vector_operations_01: measure vector length and distance evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_linear_algebra_vector_operations_set_001.md
+    acceptance_summary: Magnitude and distance are computed with the Pythagorean/Euclidean formula and correct arithmetic, and each is explained as length vs dissimilarity — no squaring or square-root slip across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.linear_algebra.dot_product
+    node_id: math.linear_algebra.dot_product_01
+    title: Compute the dot product and cosine similarity evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.linear_algebra.dot_product_01: compute the dot product and cosine similarity evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_linear_algebra_dot_product_set_001.md
+    acceptance_summary: The dot product is computed correctly component-by-component and cosine similarity is derived and interpreted (aligned near 1, orthogonal near 0, opposite near -1) — no component-pairing or normalization error across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.linear_algebra.matrices
+    node_id: math.linear_algebra.matrices_01
+    title: Read a matrix as a transformation evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.linear_algebra.matrices_01: read a matrix as a transformation evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_linear_algebra_matrices_set_001.md
+    acceptance_summary: The matrix's columns are correctly read as the images of the basis vectors and the resulting transformation (e.g. rotation, scaling, shear) is described accurately for at least one 2x2 case — no column/row transposition error across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.linear_algebra.matrix_vector_product
+    node_id: math.linear_algebra.matrix_vector_product_01
+    title: Apply a matrix to a vector evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.linear_algebra.matrix_vector_product_01: apply a matrix to a vector evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_linear_algebra_matrix_vector_product_set_001.md
+    acceptance_summary: The product is computed with correctly aligned rows and columns and the result is interpreted as the transformed vector for at least one case — no dimension-mismatch or row/column misalignment error across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.linear_algebra.matrix_multiplication
+    node_id: math.linear_algebra.matrix_multiplication_01
+    title: Multiply two matrices evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.linear_algebra.matrix_multiplication_01: multiply two matrices evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_linear_algebra_matrix_multiplication_set_001.md
+    acceptance_summary: Dimension compatibility is checked before multiplying, entries are computed by correct row-column pairing, and the product is read as composition for at least one case — no conformability or ordering (AB vs BA) error across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.calculus.derivative_intuition
+    node_id: math.calculus.derivative_intuition_01
+    title: Read a derivative as sensitivity evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.calculus.derivative_intuition_01: read a derivative as sensitivity evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_calculus_derivative_intuition_set_001.md
+    acceptance_summary: The derivative is interpreted as rate of change / tangent slope (not a formula recited), and increasing/decreasing/flat regions are read correctly from its sign for a given function — no slope-sign confusion across the examples.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.calculus.gradient_intuition
+    node_id: math.calculus.gradient_intuition_01
+    title: Read a gradient as steepest ascent evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.calculus.gradient_intuition_01: read a gradient as steepest ascent evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_calculus_gradient_intuition_set_001.md
+    acceptance_summary: The gradient is described as the vector of partial sensitivities pointing uphill, with its magnitude read as steepness, for at least one two-input case — no confusion of gradient direction (ascent vs descent) across the reasoning.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.calculus.optimization_intuition
+    node_id: math.calculus.optimization_intuition_01
+    title: Explain optimization by following the gradient evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.calculus.optimization_intuition_01: explain optimization by following the gradient evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_calculus_optimization_intuition_set_001.md
+    acceptance_summary: Descent by negative-gradient steps is explained correctly, the effect of step size is described, and at least one failure mode (local minimum or overshoot from a large step) is named — no reversal of the descent direction across the explanation.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.calculus.integral_intuition
+    node_id: math.calculus.integral_intuition_01
+    title: Read an integral as accumulation evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.calculus.integral_intuition_01: read an integral as accumulation evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_calculus_integral_intuition_set_001.md
+    acceptance_summary: The integral is interpreted as accumulated area / total-from-a-rate (not a rule recited), and the sign of area below the axis is explained for a given curve — no area/slope conflation across the examples.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.arithmetic.percentages_ratios
+    node_id: math.arithmetic.percentages_ratios_01
+    title: Work with percentages, ratios, and proportions evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.arithmetic.percentages_ratios_01: work with percentages, ratios, and proportions evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_arithmetic_percentages_ratios_set_001.md
+    acceptance_summary: Conversions among fraction/decimal/percent are correct, percentage change is computed with the right base, and proportions are solved correctly — no base-of-percentage or cross-multiplication error across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.arithmetic.exponents_powers
+    node_id: math.arithmetic.exponents_powers_01
+    title: Compute with exponents and scientific notation evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.arithmetic.exponents_powers_01: compute with exponents and scientific notation evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_arithmetic_exponents_powers_set_001.md
+    acceptance_summary: Powers are evaluated correctly, the product/quotient/power rules are applied without error, and scientific-notation conversions preserve magnitude — no exponent-rule or decimal-point-placement error across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.algebra.systems_equations
+    node_id: math.algebra.systems_equations_01
+    title: Solve a system of two linear equations evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.algebra.systems_equations_01: solve a system of two linear equations evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_algebra_systems_equations_set_001.md
+    acceptance_summary: The system is solved correctly by at least one method with the answer checked in both original equations, and the solution is interpreted geometrically — no arithmetic-of-elimination error and correct handling of any no/infinite-solution case across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.algebra.logarithms
+    node_id: math.algebra.logarithms_01
+    title: Evaluate and apply logarithms evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.algebra.logarithms_01: evaluate and apply logarithms evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_algebra_logarithms_set_001.md
+    acceptance_summary: Logarithms are evaluated correctly via the exponent relationship, exponential/logarithmic forms are converted without error, and the log rules are applied correctly — no inversion of the base-exponent relationship across attempts.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.math.functions.nonlinear_functions
+    node_id: math.functions.nonlinear_functions_01
+    title: Recognize nonlinear function shapes evidence
+    artifact_kind: problem_set
+    description: "Required evidence for math.functions.nonlinear_functions_01: recognize nonlinear function shapes evidence."
+    required: true
+    minimum_count: 3
+    expected_location_hint: evidence/math/
+    example_filename: math_functions_nonlinear_functions_set_001.md
+    acceptance_summary: Quadratic and exponential graphs/tables are correctly identified and contrasted with linear (constant-rate) behavior, and where each grows fastest is described correctly — no linear/nonlinear or quadratic/exponential confusion across the examples.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.programming.python.dictionaries
+    node_id: programming.python.dictionaries_01
+    title: Python dictionaries solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.dictionaries_01: a solution script defining word_count, get_or_default, and invert with the stated behavior."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_dictionaries_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each dictionary function. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.programming.python.comprehensions
+    node_id: programming.python.comprehensions_01
+    title: Python comprehensions solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.comprehensions_01: a solution script defining evens, square_map, and long_words with the stated behavior."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_comprehensions_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each comprehension result. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.programming.python.string_processing
+    node_id: programming.python.string_processing_01
+    title: Python string processing solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.string_processing_01: a solution script defining normalize, initials, and count_vowels with the stated behavior."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_string_processing_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it imports this solution and asserts each string transformation. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.programming.python.exceptions
+    node_id: programming.python.exceptions_01
+    title: Python exceptions solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.exceptions_01: a solution script defining safe_divide and parse_int that catch the stated errors and return a fallback."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_exceptions_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it confirms each function catches its error and returns the fallback rather than raising. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.programming.python.modules_imports
+    node_id: programming.python.modules_imports_01
+    title: Python standard-library solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for programming.python.modules_imports_01: a solution script defining days_between, sqrt_floor, and most_common_char using the standard library."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/programming/
+    example_filename: python_modules_imports_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; each stated result requires reaching for the right standard-library module. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.tooling.cli.file_management
+    node_id: tooling.cli.file_management_01
+    title: Command-line file management checklist evidence
+    artifact_kind: checklist
+    description: "Required evidence for tooling.cli.file_management_01: a short transcript or checklist showing files created, copied, moved, and removed from the command line."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/tooling/
+    example_filename: tooling_cli_file_management_checklist_001.md
+    acceptance_summary: The transcript shows the learner creating, copying, moving, and removing files or folders with the right commands, with notes sufficient to reproduce the sequence.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.tooling.cli.inspecting_files
+    node_id: tooling.cli.inspecting_files_01
+    title: Command-line file inspection checklist evidence
+    artifact_kind: checklist
+    description: "Required evidence for tooling.cli.inspecting_files_01: a short transcript or checklist showing a file's contents viewed and searched from the command line."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/tooling/
+    example_filename: tooling_cli_inspecting_files_checklist_001.md
+    acceptance_summary: The transcript shows the learner viewing a file's contents and searching within it, and correctly stating what was found.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.tooling.git.viewing_history
+    node_id: tooling.git.viewing_history_01
+    title: Git history inspection evidence
+    artifact_kind: checklist
+    description: "Required evidence for tooling.git.viewing_history_01: a short write-up reading a repository's log and a diff and explaining what changed between two commits."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/tooling/
+    example_filename: tooling_git_viewing_history_writeup_001.md
+    acceptance_summary: The write-up correctly reads the commit log and a diff and explains, in the learner's words, what changed between two commits and why.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.sql.select_basics
+    node_id: data.sql.select_basics_01
+    title: Basic SELECT query solution
+    artifact_kind: code_snippet
+    description: "Required evidence for data.sql.select_basics_01: one SQL statement returning the name and salary of every employee in the seeded dataset."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: sql_select_basics_solution.sql
+    acceptance_summary: The objective gate runs the shipped checker; it executes this query against a seeded database and asserts it returns (name, salary) for all eight employees. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.sql.filtering_sorting
+    node_id: data.sql.filtering_sorting_01
+    title: WHERE / ORDER BY query solution
+    artifact_kind: code_snippet
+    description: "Required evidence for data.sql.filtering_sorting_01: one SQL statement returning names earning over 90000, highest salary first."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: sql_filtering_sorting_solution.sql
+    acceptance_summary: The objective gate runs the shipped checker; it asserts the query returns the correct names in descending salary order. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.sql.aggregation
+    node_id: data.sql.aggregation_01
+    title: GROUP BY aggregation query solution
+    artifact_kind: code_snippet
+    description: "Required evidence for data.sql.aggregation_01: one SQL statement returning per-department employee count and average salary."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: sql_aggregation_solution.sql
+    acceptance_summary: The objective gate runs the shipped checker; it asserts the query returns the three per-department summary rows. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.sql.joins
+    node_id: data.sql.joins_01
+    title: INNER JOIN query solution
+    artifact_kind: code_snippet
+    description: "Required evidence for data.sql.joins_01: one SQL statement pairing each employee's name with their department's name via the join key."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: sql_joins_solution.sql
+    acceptance_summary: The objective gate runs the shipped checker; it asserts the query returns the eight (employee, department) pairs. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.sql.subqueries
+    node_id: data.sql.subqueries_01
+    title: Subquery-filtered query solution
+    artifact_kind: code_snippet
+    description: "Required evidence for data.sql.subqueries_01: one SQL statement returning employees earning above the company-average salary, the threshold computed by a subquery."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: sql_subqueries_solution.sql
+    acceptance_summary: The objective gate runs the shipped checker; it asserts the query returns the four names above the company average. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.csv.write_csv
+    node_id: data.csv.write_csv_01
+    title: CSV writing solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.csv.write_csv_01: a solution script defining write_rows(path, rows) that writes a header and the records to a CSV."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: csv_write_csv_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it writes with write_rows and reads the file back with csv.DictReader to confirm the rows round-trip. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.pandas.filtering_selection
+    node_id: data.pandas.filtering_selection_01
+    title: Pandas filtering and selection solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.pandas.filtering_selection_01: a solution script defining high_revenue(df) that filters rows and selects columns."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: pandas_filtering_selection_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it asserts high_revenue returns the rows with revenue at least 100 and the selected columns. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.pandas.groupby_aggregation
+    node_id: data.pandas.groupby_aggregation_01
+    title: Pandas groupby aggregation solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.pandas.groupby_aggregation_01: a solution script defining revenue_by_region(df) that totals revenue per region."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: pandas_groupby_aggregation_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it asserts revenue_by_region totals revenue per region. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.pandas.transform_columns
+    node_id: data.pandas.transform_columns_01
+    title: Pandas derived-column solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.pandas.transform_columns_01: a solution script defining add_unit_price(df) that appends unit_price = revenue / units."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: pandas_transform_columns_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it asserts every row's unit_price equals revenue / units and the original columns are intact. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.pandas.merge_join
+    node_id: data.pandas.merge_join_01
+    title: Pandas merge solution script
+    artifact_kind: code_snippet
+    description: "Required evidence for data.pandas.merge_join_01: a solution script defining attach_manager(sales, regions) that merges the manager onto each sales row by region."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/artifacts/data/
+    example_filename: pandas_merge_join_solution.py
+    acceptance_summary: The objective gate runs the shipped checker; it asserts each sales row carries its region's manager and the column set is correct. Exit 0 is acceptance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.visualization.choosing_charts
+    node_id: data.visualization.choosing_charts_01
+    title: Chart-choice write-up evidence
+    artifact_kind: chart_selection
+    description: "Required evidence for data.visualization.choosing_charts_01: a short write-up choosing a chart type for three question/data pairs and justifying each."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/data/
+    example_filename: data_visualization_choosing_charts_writeup_001.md
+    acceptance_summary: For each pair the chosen chart type answers the question and the justification names why the plausible alternatives are worse — the choice, not merely a chart, is the substance.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.visualization.plotting_basics
+    node_id: data.visualization.plotting_basics_01
+    title: Labeled-plot evidence
+    artifact_kind: chart
+    description: "Required evidence for data.visualization.plotting_basics_01: a plot the learner produced, with the code that made it and a sentence on what it shows."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/data/
+    example_filename: data_visualization_plotting_basics_plot_001.png
+    acceptance_summary: The chart has a descriptive title, labeled axes with units, a legend where there is more than one series, and a sensible scale, so a reader understands it without help.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.data.visualization.honest_visuals
+    node_id: data.visualization.honest_visuals_01
+    title: Chart-critique evidence
+    artifact_kind: chart_critique
+    description: "Required evidence for data.visualization.honest_visuals_01: a critique of two or three misleading charts naming the distortion and the honest alternative."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/data/
+    example_filename: data_visualization_honest_visuals_critique_001.md
+    acceptance_summary: Each critique correctly names the distortion (e.g. truncated axis, dual scale, cherry-picked range) and describes the honest fix, with no misleading chart passed off as fine.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.communication.reports.results_summary
+    node_id: communication.reports.results_summary_01
+    title: Analysis write-up evidence
+    artifact_kind: results_writeup
+    description: "Required evidence for communication.reports.results_summary_01: a one-page write-up of an analysis leading with the claim and honest about its limits."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/communication/
+    example_filename: communication_reports_results_summary_writeup_001.md
+    acceptance_summary: The write-up leads with the finding, shows the evidence behind it, names the caveats and what the data does not support, and states a next step — clear and honest, not overclaiming.
+    created_at: 2026-07-06
+    updated_at: 2026-07-06
+  -
+    id: spec.consolidation.math_foundations
+    node_id: consolidation.math_foundations_01
+    title: Mixed math-foundations problem-set evidence
+    artifact_kind: problem_set
+    description: "Required evidence for consolidation.math_foundations_01: a worked mixed problem set drawing on arithmetic, algebra, and functions, with reasoning shown."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/consolidation/
+    example_filename: consolidation_math_foundations_set_001.md
+    acceptance_summary: The set mixes percentages/ratios, linear equations, and linear-function reading without section labels; each problem is solved with the right technique and visible reasoning, and there is no recurring confusion about which foundation a problem calls for.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.consolidation.python_fundamentals
+    node_id: consolidation.python_fundamentals_01
+    title: Python fundamentals integration script
+    artifact_kind: code_snippet
+    description: "Required evidence for consolidation.python_fundamentals_01: one script that reads input into variables, branches, loops, defines and calls a function, and reads or writes a file."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/consolidation/
+    example_filename: consolidation_python_fundamentals_snippet_001.py
+    acceptance_summary: One coherent program where variables, a conditional, a loop, a defined function, and a file read or write cooperate to do real work — not five isolated snippets.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.consolidation.data_roundtrip
+    node_id: consolidation.data_roundtrip_01
+    title: CSV-SQL-Pandas round-trip script
+    artifact_kind: code_snippet
+    description: "Required evidence for consolidation.data_roundtrip_01: a script or notebook that loads a CSV, answers a question in SQL, answers the same question in Pandas, and shows the two agree."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/consolidation/
+    example_filename: consolidation_data_roundtrip_snippet_001.py
+    acceptance_summary: The same filter-group-aggregate question is answered via SQL and via Pandas over one small CSV, the two results are shown to match, and any discrepancy is explained — demonstrating that the three tools are views of one dataset.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.consolidation.dataset_interpretation
+    node_id: consolidation.dataset_interpretation_01
+    title: Honest dataset interpretation write-up
+    artifact_kind: results_writeup
+    description: "Required evidence for consolidation.dataset_interpretation_01: a descriptive summary of a real dataset plus a written interpretation separating what the numbers show from what they do not license."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/consolidation/
+    example_filename: consolidation_dataset_interpretation_writeup_001.md
+    acceptance_summary: The write-up reads the central tendency and spread correctly, flags where an outlier or skew changes the story, and explicitly states what the summary does not license (no causation from correlation, no population claim from a biased sample).
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.portfolio.project.data_cleaning_tool
+    node_id: portfolio.project.data_cleaning_tool_01
+    title: Data-cleaning tool portfolio repository
+    artifact_kind: portfolio_repo
+    description: "Required evidence for portfolio.project.data_cleaning_tool_01: a small repository with a working CSV-cleaning tool, a README, and a write-up justifying the cleaning rules."
+    required: true
+    minimum_count: 1
+    expected_location_hint: portfolio/data-cleaning-tool/
+    example_filename: README.md
+    acceptance_summary: Repository holds a tool that reads a messy CSV, applies documented cleaning rules, and writes a clean CSV; a README another person can follow to run it; and a write-up defending each drop/fill/coerce choice and its trade-offs.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.portfolio.project.dataset_analysis_report
+    node_id: portfolio.project.dataset_analysis_report_01
+    title: Dataset analysis report portfolio repository
+    artifact_kind: portfolio_repo
+    description: "Required evidence for portfolio.project.dataset_analysis_report_01: a repository with a reproducible Pandas analysis, at least one chart, and a written report of the findings."
+    required: true
+    minimum_count: 1
+    expected_location_hint: portfolio/dataset-analysis-report/
+    example_filename: README.md
+    acceptance_summary: Repository holds a reproducible notebook or script that answers a real question with a Pandas group-and-aggregate analysis, at least one chart that earns its place, and a report stating the finding and honestly bounding what the data supports.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.portfolio.project.stats_simulation
+    node_id: portfolio.project.stats_simulation_01
+    title: Statistical simulation portfolio repository
+    artifact_kind: portfolio_repo
+    description: "Required evidence for portfolio.project.stats_simulation_01: a repository with a working simulation of a random process, an estimate from many trials, and a comparison to the theoretical value."
+    required: true
+    minimum_count: 1
+    expected_location_hint: portfolio/stats-simulation/
+    example_filename: README.md
+    acceptance_summary: Repository holds a program that simulates a random process over many trials and estimates a probability or expectation, a README to run it, and a write-up comparing the simulated estimate to the theoretical answer and noting convergence as trials grow.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.math.arithmetic.fractions
+    node_id: math.arithmetic.fractions_01
+    title: Fraction and negative-number fluency problem set
+    artifact_kind: problem_set
+    description: "Required evidence for math.arithmetic.fractions_01: a worked set of mixed fraction and signed-number problems demonstrating slip-free fluency."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/math/
+    example_filename: math_arithmetic_fractions_set_001.md
+    acceptance_summary: The set covers adding, subtracting, multiplying, dividing, and simplifying fractions and signed-number arithmetic, including mixed cases (a negative fraction), worked correctly and without recurring sign slips.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.programming.python.reading_errors
+    node_id: programming.python.reading_errors_01
+    title: Traceback-reading rescue exercise
+    artifact_kind: debugging_exercise
+    description: "Required evidence for programming.python.reading_errors_01: for several real tracebacks, the named error type, the failing line, and the next debugging step."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/programming/
+    example_filename: programming_python_reading_errors_exercise_001.md
+    acceptance_summary: For at least three real tracebacks spanning distinct error types, the learner names the exception, points to the exact failing line and call, and states a sound next step — reading the interpreter's message rather than guessing.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.math.algebra.notation_literacy
+    node_id: math.algebra.notation_literacy_01
+    title: Notation-literacy translation exercise
+    artifact_kind: notation_exercise
+    description: "Required evidence for math.algebra.notation_literacy_01: dense expressions (function notation, subscripts, summation, Greek letters) each translated into plain language."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/math/
+    example_filename: math_algebra_notation_literacy_exercise_001.md
+    acceptance_summary: Several formulas using function notation, indices, summation, and common Greek letters are each rewritten as a correct plain-language sentence, showing the notation is read rather than skipped.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.programming.python.environment_troubleshooting
+    node_id: programming.python.environment_troubleshooting_01
+    title: Environment-troubleshooting rescue notes
+    artifact_kind: troubleshooting_notes
+    description: "Required evidence for programming.python.environment_troubleshooting_01: a diagnosed and fixed environment failure, showing which interpreter and environment was actually running."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/programming/
+    example_filename: programming_python_environment_troubleshooting_notes_001.md
+    acceptance_summary: The notes reproduce or capture a real environment failure (module not found, wrong interpreter, unactivated venv, PATH), show the diagnostic steps that located it (which python, which environment, pip show), and record the fix.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07
+  -
+    id: spec.data.sql.join_mental_models
+    node_id: data.sql.join_mental_models_01
+    title: SQL join mental-model reasoning exercise
+    artifact_kind: reasoning_exercise
+    description: "Required evidence for data.sql.join_mental_models_01: for several joins, the predicted result rows stated before running, then confirmed."
+    required: true
+    minimum_count: 1
+    expected_location_hint: evidence/data/
+    example_filename: data_sql_join_mental_models_exercise_001.md
+    acceptance_summary: For several joins over two small tables, the learner predicts which rows survive (inner vs left, missing and duplicate keys, fan-out) before running the query, then confirms against the actual result — reasoning, not trial and error.
+    created_at: 2026-07-07
+    updated_at: 2026-07-07

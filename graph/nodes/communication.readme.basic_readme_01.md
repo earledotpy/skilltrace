@@ -4,49 +4,43 @@ title: Write a basic project README
 summary: Create a README that explains what a project does and how to run it.
 domain: communication
 track: portfolio
-level: beginner
 roadmap_anchors:
-  -
-    phase: phase_4
-    phase_label: Career Launch and Portfolio
-    month_range: 29-36
-    roadmap_topic: GitHub Portfolio
-    source_role: reference_only
+- phase: phase_4
+  phase_label: Career Launch and Portfolio
+  month_range: 29-36
+  roadmap_topic: GitHub Portfolio
+  source_role: reference_only
 estimated_effort:
   min_minutes: 45
   max_minutes: 120
 micro_session_fit:
   can_fit_15_min: false
-  can_fit_30_min: true
-  requires_long_block: false
-competency_dimensions:
-  conceptual: Explain what a README must communicate.
-  practical: Write installation, usage, and project-description sections.
-  analytical: Identify missing run instructions or unclear project purpose.
-  contextual: Connect README quality to external credibility.
-mastery_policy:
-  closure_authority: manual_with_objective_evidence
-  required_evidence_type: technical_writeup
-  suggested_gate: Produce a README that another person could use to understand and run the project.
-  ai_review_is_advisory_only: true
+  can_fit_30_min: false
+  requires_long_block: true
 tags:
-  - readme
-  - communication
-  - portfolio
+- readme
+- communication
+- portfolio
 created_at: 2026-06-28
-updated_at: 2026-06-28
+updated_at: 2026-07-06
 ---
 
 # Write a basic project README
 
 ## Learning target
 
-Create a README that explains what a project does and how to run it.
+Create a README that lets another person run your project: what it does, how to
+set it up, how to run it, what files matter, and what output to expect — clear
+enough that someone who has never seen the code can follow it.
+
+## Study pointers
+
+Make a README (makeareadme.com) for a well-explained minimal template and section
+checklist; GitHub's "About READMEs" docs (docs.github.com) for what a project's
+landing document should contain.
 
 ## Notes
 
-## Evidence
+Manual-gated: "could a stranger run this from the README?" is a judgment about
+clarity, read rather than exit-checked.
 
-## Blockers
-
-## Reflection

@@ -20,6 +20,8 @@ recommendation_policy:
   track_weights:
     foundational: 3.0
     core: 2.0
+    consolidation: 2.0
     portfolio: 1.0
+    remediation: 0.5
   created_at: 2026-07-04
-  updated_at: 2026-07-04
+  updated_at: 2026-07-06

@@ -4,49 +4,47 @@ title: Use the basic Git commit workflow
 summary: Stage, commit, and inspect changes in a local repository.
 domain: tooling
 track: foundational
-level: beginner
 roadmap_anchors:
-  -
-    phase: phase_1
-    phase_label: Programming Fundamentals
-    month_range: 5-12
-    roadmap_topic: Git and GitHub
-    source_role: reference_only
+- phase: phase_1
+  phase_label: Programming Fundamentals
+  month_range: 5-12
+  roadmap_topic: Git and GitHub
+  source_role: reference_only
 estimated_effort:
   min_minutes: 45
   max_minutes: 120
 micro_session_fit:
-  can_fit_15_min: true
-  can_fit_30_min: true
-  requires_long_block: false
-competency_dimensions:
-  conceptual: Explain staging, commits, and commit messages.
-  practical: Stage and commit changes with meaningful messages.
-  analytical: Use status and log output to inspect repository state.
-  contextual: Connect commit history to reproducibility and portfolio credibility.
-mastery_policy:
-  closure_authority: manual_with_objective_evidence
-  required_evidence_type: checklist
-  suggested_gate: Make at least three meaningful commits in a practice repository.
-  ai_review_is_advisory_only: true
+  can_fit_15_min: false
+  can_fit_30_min: false
+  requires_long_block: true
 tags:
-  - git
-  - commits
-  - tooling
+- git
+- commits
+- tooling
 created_at: 2026-06-28
-updated_at: 2026-06-28
+updated_at: 2026-07-06
 ---
 
 # Use the basic Git commit workflow
 
 ## Learning target
 
-Stage, commit, and inspect changes in a local repository.
+Stage a change and record it as a commit with a message. For the objective gate,
+build a Git repository at `evidence/artifacts/git_repo/`: initialize it, add a
+file, and commit it with a real message. Submit the repository (point
+`--location` at `evidence/artifacts/git_repo/`).
+
+The gate asks Git whether `HEAD` resolves to a commit that carries a message and
+tracks a file — the mechanical result of the workflow, not that a `.git` folder
+merely exists.
+
+## Study pointers
+
+Pro Git chapter 2.2 "Recording Changes to the Repository" (git-scm.com/book/en/v2)
+for `git add`, `git status`, and `git commit`; GitHub Docs "Committing and
+reviewing changes to your project" for the same in practice.
 
 ## Notes
 
-## Evidence
-
-## Blockers
-
-## Reflection
+Objective-gated: `evidence/checks/tooling.git.commit_workflow_check.py` interrogates
+the repository artifact with `git rev-parse`, `git log`, and `git ls-tree`.

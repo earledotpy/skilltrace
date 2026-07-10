@@ -44,10 +44,11 @@ def test_sync_flips_target_available_after_source_passed(tmp_path):
     root = _seed_repo(tmp_path)
 
     # Pass a source out-of-band by editing the store directly (a fixture stand-in
-    # for the pass command, which lands in v0.4). variables_expressions has a
-    # single hard prereq: order_operations.
+    # for the pass command, which lands in v0.4). linear_equations has a single
+    # hard prereq: variables_expressions (order_operations was demoted to a soft
+    # prereq in the v0.8 edge audit).
     store = load_state(root)
-    store.write_asserted("math.arithmetic.order_operations_01", "passed")
+    store.write_asserted("math.algebra.variables_expressions_01", "passed")
     from skilltrace.graph.state import save_state
 
     save_state(store, root)
@@ -57,14 +58,14 @@ def test_sync_flips_target_available_after_source_passed(tmp_path):
 
     # The target is persisted as available in state.yaml.
     persisted = _read_state_yaml(root)["progress"]
-    assert persisted["math.algebra.variables_expressions_01"]["state"] == "available"
+    assert persisted["math.algebra.linear_equations_01"]["state"] == "available"
     # The passed source is untouched (asserted progress preserved).
-    assert persisted["math.arithmetic.order_operations_01"]["state"] == "passed"
+    assert persisted["math.algebra.variables_expressions_01"]["state"] == "passed"
 
     # Exactly one sync event names the flipped node.
     events = [e for e in load_events(root) if e["command"] == "sync"]
     assert len(events) == 1
-    assert events[0]["records_touched"] == ["math.algebra.variables_expressions_01"]
+    assert events[0]["records_touched"] == ["math.algebra.linear_equations_01"]
 
 
 def test_sync_reload_reflects_persisted_readiness(tmp_path):

@@ -4,49 +4,42 @@ title: Write a concise technical summary
 summary: Summarize a concept, procedure, or blocker in clear technical notes.
 domain: communication
 track: foundational
-level: beginner
 roadmap_anchors:
-  -
-    phase: phase_4
-    phase_label: Career Launch and Portfolio
-    month_range: 29-36
-    roadmap_topic: Technical Communication
-    source_role: reference_only
+- phase: phase_4
+  phase_label: Career Launch and Portfolio
+  month_range: 29-36
+  roadmap_topic: Technical Communication
+  source_role: reference_only
 estimated_effort:
   min_minutes: 20
   max_minutes: 60
 micro_session_fit:
-  can_fit_15_min: true
+  can_fit_15_min: false
   can_fit_30_min: true
   requires_long_block: false
-competency_dimensions:
-  conceptual: Explain the difference between notes, summary, and reflection.
-  practical: Write a short summary with claim, evidence, and next action.
-  analytical: Identify vague or unsupported statements in a note.
-  contextual: Connect technical summaries to portfolio writing and debugging records.
-mastery_policy:
-  closure_authority: manual_with_objective_evidence
-  required_evidence_type: technical_writeup
-  suggested_gate: Write three concise summaries of different learning tasks.
-  ai_review_is_advisory_only: true
 tags:
-  - communication
-  - notes
-  - writing
+- communication
+- notes
+- writing
 created_at: 2026-06-28
-updated_at: 2026-06-28
+updated_at: 2026-07-06
 ---
 
 # Write a concise technical summary
 
 ## Learning target
 
-Summarize a concept, procedure, or blocker in clear technical notes.
+Summarize a concept, procedure, or blocker in clear technical notes: state the
+claim, the supporting evidence, the remaining uncertainty, and the next action,
+in language a future you (or a teammate) can act on.
+
+## Study pointers
+
+Google's Technical Writing One course (developers.google.com/tech-writing) for
+short, clear sentences and leading with the point; the same course's summary
+guidance for the claim → evidence → next-step shape.
 
 ## Notes
 
-## Evidence
+Manual-gated: clarity and honesty are judgments a reader makes, not an exit code.
 
-## Blockers
-
-## Reflection
