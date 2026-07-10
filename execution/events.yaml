@@ -1,1 +1,233 @@
-events: []
+events:
+- timestamp: '2026-07-10T00:26:45+00:00'
+  command: verify-resource
+  args:
+    resource_id: 3blue1brown-essence-linear-algebra
+    broken: false
+    reason: null
+  records_touched:
+  - 3blue1brown-essence-linear-algebra
+- timestamp: '2026-07-10T00:26:45+00:00'
+  command: verify-resource
+  args:
+    resource_id: 3blue1brown-essence-calculus
+    broken: false
+    reason: null
+  records_touched:
+  - 3blue1brown-essence-calculus
+- timestamp: '2026-07-10T00:26:46+00:00'
+  command: verify-resource
+  args:
+    resource_id: seeing-theory
+    broken: false
+    reason: null
+  records_touched:
+  - seeing-theory
+- timestamp: '2026-07-10T00:26:46+00:00'
+  command: verify-resource
+  args:
+    resource_id: openintro-statistics
+    broken: false
+    reason: null
+  records_touched:
+  - openintro-statistics
+- timestamp: '2026-07-10T00:26:46+00:00'
+  command: verify-resource
+  args:
+    resource_id: python-tutorial
+    broken: false
+    reason: null
+  records_touched:
+  - python-tutorial
+- timestamp: '2026-07-10T00:26:47+00:00'
+  command: verify-resource
+  args:
+    resource_id: python-stdlib-reference
+    broken: false
+    reason: null
+  records_touched:
+  - python-stdlib-reference
+- timestamp: '2026-07-10T00:26:47+00:00'
+  command: verify-resource
+  args:
+    resource_id: missing-semester
+    broken: false
+    reason: null
+  records_touched:
+  - missing-semester
+- timestamp: '2026-07-10T00:26:47+00:00'
+  command: verify-resource
+  args:
+    resource_id: microsoft-windows-commands
+    broken: false
+    reason: null
+  records_touched:
+  - microsoft-windows-commands
+- timestamp: '2026-07-10T00:26:48+00:00'
+  command: verify-resource
+  args:
+    resource_id: pro-git-book
+    broken: false
+    reason: null
+  records_touched:
+  - pro-git-book
+- timestamp: '2026-07-10T00:26:48+00:00'
+  command: verify-resource
+  args:
+    resource_id: github-docs
+    broken: false
+    reason: null
+  records_touched:
+  - github-docs
+- timestamp: '2026-07-10T00:26:48+00:00'
+  command: verify-resource
+  args:
+    resource_id: sqlbolt
+    broken: false
+    reason: null
+  records_touched:
+  - sqlbolt
+- timestamp: '2026-07-10T00:26:48+00:00'
+  command: verify-resource
+  args:
+    resource_id: sqlite-docs
+    broken: false
+    reason: null
+  records_touched:
+  - sqlite-docs
+- timestamp: '2026-07-10T00:26:49+00:00'
+  command: verify-resource
+  args:
+    resource_id: pandas-docs
+    broken: false
+    reason: null
+  records_touched:
+  - pandas-docs
+- timestamp: '2026-07-10T00:26:49+00:00'
+  command: verify-resource
+  args:
+    resource_id: data-to-viz
+    broken: false
+    reason: null
+  records_touched:
+  - data-to-viz
+- timestamp: '2026-07-10T00:26:49+00:00'
+  command: verify-resource
+  args:
+    resource_id: fundamentals-of-dataviz
+    broken: false
+    reason: null
+  records_touched:
+  - fundamentals-of-dataviz
+- timestamp: '2026-07-10T00:26:50+00:00'
+  command: verify-resource
+  args:
+    resource_id: google-tech-writing
+    broken: false
+    reason: null
+  records_touched:
+  - google-tech-writing
+- timestamp: '2026-07-10T00:26:50+00:00'
+  command: verify-resource
+  args:
+    resource_id: make-a-readme
+    broken: false
+    reason: null
+  records_touched:
+  - make-a-readme
+- timestamp: '2026-07-10T00:26:50+00:00'
+  command: verify-resource
+  args:
+    resource_id: automate-the-boring-stuff
+    broken: false
+    reason: null
+  records_touched:
+  - automate-the-boring-stuff
+- timestamp: '2026-07-10T00:26:51+00:00'
+  command: verify-resource
+  args:
+    resource_id: python-tutor
+    broken: false
+    reason: null
+  records_touched:
+  - python-tutor
+- timestamp: '2026-07-10T00:26:51+00:00'
+  command: verify-resource
+  args:
+    resource_id: select-star-sql
+    broken: false
+    reason: null
+  records_touched:
+  - select-star-sql
+- timestamp: '2026-07-10T00:26:51+00:00'
+  command: verify-resource
+  args:
+    resource_id: khan-arithmetic
+    broken: false
+    reason: null
+  records_touched:
+  - khan-arithmetic
+- timestamp: '2026-07-10T00:26:52+00:00'
+  command: verify-resource
+  args:
+    resource_id: khan-algebra
+    broken: false
+    reason: null
+  records_touched:
+  - khan-algebra
+- timestamp: '2026-07-10T00:26:52+00:00'
+  command: verify-resource
+  args:
+    resource_id: khan-precalculus
+    broken: false
+    reason: null
+  records_touched:
+  - khan-precalculus
+- timestamp: '2026-07-10T00:26:52+00:00'
+  command: verify-resource
+  args:
+    resource_id: khan-statistics-probability
+    broken: false
+    reason: null
+  records_touched:
+  - khan-statistics-probability
+- timestamp: '2026-07-10T00:26:52+00:00'
+  command: verify-resource
+  args:
+    resource_id: khan-linear-algebra
+    broken: false
+    reason: null
+  records_touched:
+  - khan-linear-algebra
+- timestamp: '2026-07-10T00:26:53+00:00'
+  command: verify-resource
+  args:
+    resource_id: khan-differential-calculus
+    broken: false
+    reason: null
+  records_touched:
+  - khan-differential-calculus
+- timestamp: '2026-07-10T00:26:53+00:00'
+  command: verify-resource
+  args:
+    resource_id: matplotlib-docs
+    broken: false
+    reason: null
+  records_touched:
+  - matplotlib-docs
+- timestamp: '2026-07-10T00:26:53+00:00'
+  command: verify-resource
+  args:
+    resource_id: python-for-data-analysis
+    broken: false
+    reason: null
+  records_touched:
+  - python-for-data-analysis
+- timestamp: '2026-07-10T00:26:54+00:00'
+  command: verify-resource
+  args:
+    resource_id: runestone-py4e
+    broken: false
+    reason: null
+  records_touched:
+  - runestone-py4e

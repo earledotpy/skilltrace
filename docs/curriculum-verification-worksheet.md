@@ -6,6 +6,14 @@ URL, confirm the page and its claim with your own eyes, then run the
 `verify-resource` block at the bottom. The agent never runs `verify-resource`
 (held in the spirit of pass/master).
 
+**2026-07-10 — SITTING COMPLETE.** The learner eyes-on confirmed every entry
+(including the Khan courses from his Algebra 1 seat, the Runestone PY4E URL,
+and PyDA 3E) and personally ran the full batch: all 29 resources verified
+2026-07-10, `resource-report` green, coverage 81/81, exit gate green
+(pytest 1012 passed, all validators OK). Verification events committed in
+`execution/events.yaml` per acceptance criterion #3. This document remains as
+the sitting record.
+
 **2026-07-08 sitting update — both DECIDE items are resolved.** Your eyes-on
 finding (both sites' useful tutorial content sits behind paywalls) settled them
 as *misrepresented → replaced by curriculum edit*: `real-python` and
