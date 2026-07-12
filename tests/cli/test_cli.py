@@ -44,6 +44,9 @@ def test_registry_has_the_expected_commands():
         "resource-report",
         "suggest remediation",
         "suggest reviews",
+        "export markdown",
+        "export sqlite",
+        "backup",
     }
 
 

@@ -5,8 +5,9 @@ command to the dispatcher (which owns audit logging and the automation
 boundary). The full surface is pinned by tests/cli — graph (`validate`,
 `sync`, `next`), evidence (`evidence submit`, `attempt record`,
 `eligibility`, `pass`, `master`), execution (`start`, `work`, `session
-close`, blockers/remediation/reviews), and policy (`validate policy`,
-`check-automation`, `suggest`).
+close`, blockers/remediation/reviews), policy (`validate policy`,
+`check-automation`, `suggest`), and data-out (`export markdown`,
+`export sqlite`, `backup`).
 """
 
 from __future__ import annotations
@@ -333,6 +334,28 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report every resource's derived verification status (always exit 0, read-only).",
     )
     resource_report_parser.set_defaults(_command_name="resource-report")
+
+    # export <target>
+    export_parser = subcommands.add_parser(
+        "export", help="Export a disposable data snapshot (markdown, sqlite)."
+    )
+    export_targets = export_parser.add_subparsers(dest="_export_target", metavar="<target>")
+    export_targets.required = True
+    export_markdown_parser = export_targets.add_parser(
+        "markdown", help="Write a compact Markdown snapshot to data/export.md."
+    )
+    export_markdown_parser.set_defaults(_command_name="export markdown")
+    export_sqlite_parser = export_targets.add_parser(
+        "sqlite", help="Rebuild the SQLite mirror at data/skilltrace.db."
+    )
+    export_sqlite_parser.set_defaults(_command_name="export sqlite")
+
+    # backup
+    backup_parser = subcommands.add_parser(
+        "backup",
+        help="Zip graph/evidence/execution/policy/release into a timestamped archive under backups/.",
+    )
+    backup_parser.set_defaults(_command_name="backup")
 
     # next
     next_parser = subcommands.add_parser(

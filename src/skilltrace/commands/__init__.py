@@ -12,9 +12,11 @@ from __future__ import annotations
 from ..dispatch import Registry
 from . import (
     attempt,
+    backup,
     blocker,
     check_automation,
     eligibility,
+    export,
     listings,
     master,
     pass_,
@@ -52,4 +54,6 @@ def register_all(registry: Registry) -> Registry:
     verify_resource.register(registry)
     check_automation.register(registry)
     suggest.register(registry)
+    export.register(registry)
+    backup.register(registry)
     return registry

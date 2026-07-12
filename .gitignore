@@ -7,7 +7,12 @@ dist/
 .pytest_cache/
 
 # Derived, disposable data (invariant / decision 12): never read back by the engine
-data/*.db
+data/
+
+# Timestamped backup archives (issue #38): the one artifact meant to outlive
+# an accidental repo delete, deliberately not under data/ (which means "safe
+# to delete"). No pruning; deleting an archive is a human act.
+backups/
 
 # Learner-produced solution artifacts for objective-gated nodes. The learner
 # writes their solution here (the path each objective spec/checker points at) and
