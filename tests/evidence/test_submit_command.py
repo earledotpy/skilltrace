@@ -205,3 +205,24 @@ def test_appended_record_revalidates_clean(tmp_path):
     # The record we just wrote must pass validate evidence (shape + cross-record).
     rc = cli.run(["validate", "evidence"], root=root)
     assert rc == 0
+
+
+# --- `submit` alias ----------------------------------------------------------
+
+
+def test_submit_alias_behaves_like_evidence_submit_and_audits_canonical(tmp_path):
+    root = _seed_repo(tmp_path)
+    loc = _make_artifact(root)
+    rc = cli.run(["submit", NODE, "--location", loc, "--accept"], root=root)
+    assert rc == 0
+
+    records = load_evidence_records(root)
+    assert len(records) == 1
+    assert records[0].accepted is True
+    assert records[0].accepted_by == "learner_manual"
+
+    events = load_events(root)
+    assert len(events) == 1
+    # Audited under the canonical command name regardless of the form typed.
+    assert events[0]["command"] == "evidence submit"
+    assert events[0]["records_touched"] == [records[0].id]

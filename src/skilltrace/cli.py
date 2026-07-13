@@ -7,7 +7,11 @@ boundary). The full surface is pinned by tests/cli — graph (`validate`,
 `eligibility`, `pass`, `master`), execution (`start`, `work`, `session
 close`, blockers/remediation/reviews), policy (`validate policy`,
 `check-automation`, `suggest`), data-out (`export markdown`,
-`export sqlite`, `backup`), and the cross-layer roll-up (`health`).
+`export sqlite`, `backup`), and the cross-layer roll-up (`health`). Top-level
+aliases `submit` and `close` wrap `evidence submit` and `session close`
+respectively, sharing the same handler and `_command_name`; the `st`
+console-script entry point (see `pyproject.toml`) is a second name for this
+same `main`.
 """
 
 from __future__ import annotations
@@ -22,6 +26,44 @@ from .paths import find_root
 # The process-wide command registry. Handlers are placeholders in this issue;
 # the dispatcher contract they exercise is final.
 REGISTRY: Registry = register_all(Registry())
+
+
+def _add_evidence_submit_arguments(parser: argparse.ArgumentParser) -> None:
+    """Attach `evidence submit`'s arguments to `parser`.
+
+    Shared by the canonical `evidence submit` parser and the top-level
+    `submit` alias so the two stay in lockstep.
+    """
+    parser.add_argument("node_id", help="Node the evidence is submitted against.")
+    parser.add_argument(
+        "--spec", default=None, help="Artifact spec id (optional when the node has exactly one)."
+    )
+    parser.add_argument(
+        "--location", required=True, help="Repo-relative path or URL of the artifact."
+    )
+    parser.add_argument("--note", default=None, help="Optional note attached to the record.")
+    verdict = parser.add_mutually_exclusive_group()
+    verdict.add_argument(
+        "--accept", action="store_true", help="Manual-gate verdict: accept (refused on objective nodes)."
+    )
+    verdict.add_argument(
+        "--reject", action="store_true", help="Manual-gate verdict: reject (refused on objective nodes)."
+    )
+    parser.add_argument(
+        "--supersedes", default=None, help="Evidence record id this submission corrects."
+    )
+    parser.add_argument(
+        "--reason", default=None, help="Why the correction supersedes (required with --supersedes)."
+    )
+
+
+def _add_session_close_arguments(parser: argparse.ArgumentParser) -> None:
+    """Attach `session close`'s arguments to `parser` (canonical + `close` alias)."""
+    parser.add_argument(
+        "--end",
+        default=None,
+        help="Honest end timestamp for a forgotten session (after start, not in the future).",
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -99,27 +141,7 @@ def build_parser() -> argparse.ArgumentParser:
     submit_parser = evidence_commands.add_parser(
         "submit", help="Submit one item of evidence against a node (judged at submission)."
     )
-    submit_parser.add_argument("node_id", help="Node the evidence is submitted against.")
-    submit_parser.add_argument(
-        "--spec", default=None, help="Artifact spec id (optional when the node has exactly one)."
-    )
-    submit_parser.add_argument(
-        "--location", required=True, help="Repo-relative path or URL of the artifact."
-    )
-    submit_parser.add_argument("--note", default=None, help="Optional note attached to the record.")
-    verdict = submit_parser.add_mutually_exclusive_group()
-    verdict.add_argument(
-        "--accept", action="store_true", help="Manual-gate verdict: accept (refused on objective nodes)."
-    )
-    verdict.add_argument(
-        "--reject", action="store_true", help="Manual-gate verdict: reject (refused on objective nodes)."
-    )
-    submit_parser.add_argument(
-        "--supersedes", default=None, help="Evidence record id this submission corrects."
-    )
-    submit_parser.add_argument(
-        "--reason", default=None, help="Why the correction supersedes (required with --supersedes)."
-    )
+    _add_evidence_submit_arguments(submit_parser)
     submit_parser.set_defaults(_command_name="evidence submit")
 
     # attempt <command>
@@ -288,11 +310,7 @@ def build_parser() -> argparse.ArgumentParser:
     close_parser = session_commands.add_parser(
         "close", help="Complete the open session."
     )
-    close_parser.add_argument(
-        "--end",
-        default=None,
-        help="Honest end timestamp for a forgotten session (after start, not in the future).",
-    )
+    _add_session_close_arguments(close_parser)
     close_parser.set_defaults(_command_name="session close")
 
     # blockers / reviews (read-only listings)
@@ -406,6 +424,22 @@ def build_parser() -> argparse.ArgumentParser:
         "action", help="Automation action label, e.g. pass_node or schedule_review."
     )
     check_parser.set_defaults(_command_name="check-automation")
+
+    # top-level aliases (resolution of #32: cheap keystroke wins for the
+    # most-typed multi-word commands, wired to the same handler and
+    # `_command_name` as their canonical form so the audit log records
+    # only canonical command names)
+    submit_alias_parser = subcommands.add_parser(
+        "submit", help="Alias for `evidence submit`."
+    )
+    _add_evidence_submit_arguments(submit_alias_parser)
+    submit_alias_parser.set_defaults(_command_name="evidence submit")
+
+    close_alias_parser = subcommands.add_parser(
+        "close", help="Alias for `session close`."
+    )
+    _add_session_close_arguments(close_alias_parser)
+    close_alias_parser.set_defaults(_command_name="session close")
 
     return parser
 

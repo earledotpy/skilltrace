@@ -68,6 +68,20 @@ def test_retroactive_close_records_the_honest_end(exec_repo):
     assert session.ended_at == end
 
 
+def test_close_alias_behaves_like_session_close_and_audits_canonical(exec_repo):
+    root = exec_repo({NODE: "available"})
+    assert cli.run(["start", NODE], root=root) == 0
+
+    rc = cli.run(["close"], root=root)
+    assert rc == 0
+
+    session = load_sessions(root)[0]
+    assert session.status == "completed"
+    assert session.ended_at is not None
+    # Audited under the canonical command name regardless of the form typed.
+    assert [e["command"] for e in load_events(root)] == ["start", "session close"]
+
+
 def test_close_refuses_an_end_before_the_start(exec_repo):
     root = exec_repo({NODE: "available"})
     assert cli.run(["start", NODE], root=root) == 0

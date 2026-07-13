@@ -12,6 +12,12 @@ def test_help_lists_the_command_surface():
         assert name in help_text
 
 
+def test_help_lists_aliases_as_alias_for_canonical():
+    help_text = cli.build_parser().format_help()
+    assert "Alias for `evidence submit`." in help_text
+    assert "Alias for `session close`." in help_text
+
+
 def test_registry_has_the_expected_commands():
     assert set(cli.REGISTRY.names()) == {
         "validate graph",

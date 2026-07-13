@@ -11,6 +11,7 @@ dependencies = ["PyYAML>=6.0"]
 
 [project.scripts]
 skilltrace = "skilltrace.cli:main"
+st = "skilltrace.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
