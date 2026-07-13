@@ -6,8 +6,8 @@ boundary). The full surface is pinned by tests/cli — graph (`validate`,
 `sync`, `next`), evidence (`evidence submit`, `attempt record`,
 `eligibility`, `pass`, `master`), execution (`start`, `work`, `session
 close`, blockers/remediation/reviews), policy (`validate policy`,
-`check-automation`, `suggest`), and data-out (`export markdown`,
-`export sqlite`, `backup`).
+`check-automation`, `suggest`), data-out (`export markdown`,
+`export sqlite`, `backup`), and the cross-layer roll-up (`health`).
 """
 
 from __future__ import annotations
@@ -76,6 +76,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate the resource registry (slug IDs, URL-or-path, node links).",
     )
     resources_parser.set_defaults(_command_name="validate resources")
+
+    # health
+    health_parser = subcommands.add_parser(
+        "health",
+        help="Roll up the five validate targets plus liveness facts (read-only).",
+    )
+    health_parser.set_defaults(_command_name="health")
 
     # sync
     sync_parser = subcommands.add_parser(

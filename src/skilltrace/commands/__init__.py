@@ -17,6 +17,7 @@ from . import (
     check_automation,
     eligibility,
     export,
+    health,
     listings,
     master,
     pass_,
@@ -37,6 +38,7 @@ from . import (
 def register_all(registry: Registry) -> Registry:
     """Register every command onto `registry` and return it."""
     validate.register(registry)
+    health.register(registry)
     sync.register(registry)
     recommend.register(registry)
     submit.register(registry)
