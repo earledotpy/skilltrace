@@ -19,4 +19,13 @@ backups/
 # submits it; the shipped seed carries no solutions, only the checkers that run
 # against them. Keeping this untracked stops smoke-test and study artifacts from
 # ever landing in the curriculum.
-evidence/artifacts/
+evidence/artifacts/*
+
+# Carve-out (issue #28): prior-learning progress captures and cover sheets are
+# committed evidence, not learner-produced solution scratch. Raw study notes
+# never land here (kept privately outside the repo per the #27 amendment).
+# (A directory-exclusion pattern here — `evidence/artifacts/` — can't be
+# re-included by a negation below it; git won't descend into an excluded
+# directory. `evidence/artifacts/*` excludes each entry individually instead,
+# so the negation can un-ignore this one.)
+!evidence/artifacts/prior_learning/
