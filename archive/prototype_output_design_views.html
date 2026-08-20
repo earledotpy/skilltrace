@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SkillTrace — What should today’s screens say?</title>
+<style>
+  :root {
+    --ink: #1a1f1c;
+    --muted: #5a635c;
+    --paper: #f6f3eb;
+    --panel: #fffdf8;
+    --line: #d5d0c4;
+    --accent: #0f6b4c;
+    --accent-soft: #e3f2ec;
+    --warn: #8a4b12;
+    --warn-soft: #f8ead8;
+    --locked: #5c5a6a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.45;
+    padding: 1.5rem 1.25rem 7rem;
+  }
+  .wrap { max-width: 42rem; margin: 0 auto; }
+  h1 { font-size: 1.45rem; margin: 0 0 0.4rem; font-weight: 700; }
+  .lede { color: var(--muted); margin: 0 0 1.25rem; font-size: 0.98rem; }
+  .badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.75rem;
+  }
+  section.block {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    padding: 1rem 1.1rem 1.15rem;
+    margin-bottom: 1rem;
+  }
+  section.block h2 {
+    margin: 0 0 0.65rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.35rem; }
+  button.chip, button.step {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 0.4rem 0.85rem;
+    font: inherit;
+    font-size: 0.92rem;
+    cursor: pointer;
+  }
+  button.chip[aria-pressed="true"], button.step[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  button.chip:hover, button.step:hover { border-color: var(--accent); }
+  button.step { border-radius: 0.4rem; text-align: left; width: 100%; }
+  button.step:disabled { opacity: 0.45; cursor: default; }
+  .hint { font-size: 0.85rem; color: var(--muted); margin: 0.35rem 0 0; }
+  .tabs { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .tabs button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    padding: 0.35rem 0.5rem;
+    font: inherit;
+    font-size: 0.92rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .tabs button[aria-selected="true"] {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+  }
+  .scenario-copy { font-size: 0.92rem; color: var(--muted); margin: 0 0 0.75rem; }
+  .steps { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  /* The mock “screen” the learner judges */
+  .screen {
+    background: #111814;
+    color: #e8efe9;
+    border-radius: 0.7rem;
+    padding: 1.1rem 1.15rem 1.25rem;
+    font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    min-height: 14rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  }
+  .screen .plain {
+    font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+    font-size: 0.98rem;
+    white-space: normal;
+  }
+  .screen .kicker {
+    color: #8fb9a6;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.55rem;
+  }
+  .screen .action {
+    background: #1c3d30;
+    border-left: 3px solid #3ecf8e;
+    padding: 0.55rem 0.7rem;
+    margin: 0.6rem 0 0.85rem;
+    border-radius: 0 0.35rem 0.35rem 0;
+  }
+  .screen .action strong { color: #3ecf8e; display: block; font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.2rem; }
+  .screen .title { font-size: 1.15rem; font-weight: 700; margin: 0 0 0.15rem; font-family: "Segoe UI", sans-serif; }
+  .screen .meta { color: #9bb0a4; font-size: 0.88rem; margin-bottom: 0.75rem; font-family: "Segoe UI", sans-serif; }
+  .screen .field { margin: 0.45rem 0; font-family: "Segoe UI", sans-serif; }
+  .screen .field b { color: #b7d4c6; font-weight: 600; display: inline-block; min-width: 7.5rem; }
+  .screen .muted { color: #8a9b92; }
+  .screen .pill {
+    display: inline-block;
+    font-size: 0.72rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: #24352d;
+    color: #b7d4c6;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .screen .pill.warn { background: #3a2a16; color: #f0c090; }
+  .screen .pill.lock { background: #2a2a36; color: #c5c3d6; }
+  .screen .list { margin: 0.4rem 0 0; padding: 0; list-style: none; font-family: "Segoe UI", sans-serif; }
+  .screen .list li { padding: 0.45rem 0; border-top: 1px solid #24352d; }
+  .screen .list li:first-child { border-top: none; }
+  .screen p.story { font-family: "Segoe UI", sans-serif; margin: 0 0 0.75rem; color: #d5e4db; }
+
+  /* Floating variant bar */
+  .switcher {
+    position: fixed;
+    left: 50%;
+    bottom: 1.1rem;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    background: #111;
+    color: #fff;
+    padding: 0.55rem 0.75rem;
+    border-radius: 999px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.28);
+    z-index: 20;
+    max-width: calc(100% - 1.5rem);
+  }
+  .switcher button {
+    appearance: none;
+    border: none;
+    background: #2a2a2a;
+    color: #fff;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 999px;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  .switcher .label {
+    font-size: 0.86rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 16rem;
+  }
+  .switcher .label small { display: block; color: #aaa; font-size: 0.72rem; }
+  .reaction {
+    margin-top: 0.85rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="badge">Prototype — not the real app</div>
+  <h1>What should today’s screens say?</h1>
+  <p class="lede">
+    Flip layouts with the bar at the bottom. The proposed voice is
+    <strong>M — Mentor</strong>: a natural conversation (Short story), a clear next step
+    (Do this first), and guided <em>Where to learn</em> / <em>How to proceed</em> cues
+    inspired by Labeled card — without adopting that card’s rigid four-field checklist.
+  </p>
+
+  <section class="block">
+    <h2>1. Which screen?</h2>
+    <div class="row" id="view-row" role="group" aria-label="Which screen"></div>
+    <p class="hint">Start with <strong>This skill</strong> — that’s the screen you’ll use most when deciding what to study.</p>
+  </section>
+
+  <section class="block" id="situation-block">
+    <h2>2. What’s your situation?</h2>
+    <div class="row" id="situation-row" role="group" aria-label="Situation"></div>
+  </section>
+
+  <section class="block">
+    <h2>3. Guided walkthroughs</h2>
+    <div class="tabs" id="walk-tabs" role="tablist"></div>
+    <p class="scenario-copy" id="walk-copy"></p>
+    <div class="steps" id="walk-steps"></div>
+  </section>
+
+  <section class="block">
+    <h2>The screen</h2>
+    <div class="screen plain" id="screen" aria-live="polite"></div>
+    <p class="reaction">
+      <strong>M — Mentor</strong> is the proposed voice (story flow + direct next step).
+      Flip to A/B/C to compare. Tell us what still feels off — tone, length, or missing facts.
+    </p>
+  </section>
+</div>
+
+<div class="switcher" role="toolbar" aria-label="Layout style">
+  <button type="button" id="prev" aria-label="Previous layout">←</button>
+  <div class="label" id="variant-label"></div>
+  <button type="button" id="next" aria-label="Next layout">→</button>
+</div>
+
+<script>
+/* PROTOTYPE #30 — throwaway. Question: what should the three daily views say
+   (content / order / what earns space) for a learner who is not operating the CLI. */
+
+const VIEWS = [
+  { id: "node", label: "This skill", blurb: "One skill you’re looking up" },
+  { id: "today", label: "Today", blurb: "What matters on this study day" },
+  { id: "next", label: "What next", blurb: "Why these skills, not others" },
+];
+
+const VARIANTS = [
+  { id: "M", name: "Mentor", blurb: "Conversation + where to learn + how to proceed + one next step (proposed)" },
+  { id: "A", name: "Do this first", blurb: "Biggest next step on top; details underneath" },
+  { id: "B", name: "Labeled card", blurb: "Why / What’s needed / Where to learn / What to do" },
+  { id: "C", name: "Short story", blurb: "A short paragraph, then one clear move" },
+];
+
+const SITUATIONS = [
+  { id: "available", label: "Ready to start" },
+  { id: "locked", label: "Still locked" },
+  { id: "active", label: "Already working" },
+];
+
+const SKILLS = {
+  available: {
+    title: "Apply order of operations",
+    state: "Ready to start",
+    stateKind: "ok",
+    why: "You’ve finished everything this skill depends on.",
+    needed: "3 accepted problem sets (you have 0 so far). You decide when the work is good enough — not an AI.",
+    learn: "Khan Academy — Arithmetic",
+    learnUrl: "https://www.khanacademy.org/math/arithmetic",
+    action: "Start studying Apply order of operations",
+    extra: "Opens the door to Variables & expressions and a few other algebra skills.",
+    mentor: "You’re clear to begin Apply order of operations — nothing is blocking you. When a problem set feels solid, bring it back here; you decide when the work is good enough, not an AI.",
+  },
+  locked: {
+    title: "Filter and select DataFrame rows",
+    state: "Locked",
+    stateKind: "lock",
+    why: "Still waiting on DataFrame basics (that one is ready to start).",
+    needed: "Pass DataFrame basics first. Until then this skill stays closed — no evidence can be submitted here.",
+    learn: "Pandas user guide (saved for when this unlocks)",
+    learnUrl: null,
+    action: "Open DataFrame basics first — that’s the unlock path",
+    extra: "Locked means a hard dependency isn’t done yet. Nothing here can skip that.",
+    mentor: "Filter and select DataFrame rows is locked for a good reason: DataFrame basics still comes first (and that one is ready whenever you are). We can’t skip that step.",
+  },
+  active: {
+    title: "Define and call functions",
+    state: "In progress",
+    stateKind: "warn",
+    why: "You already started. A study session has been open about 42 minutes.",
+    needed: "You have 1 of 3 accepted problem sets. Two more, then you can decide whether to mark this passed.",
+    learn: "Python for Everybody — Functions",
+    learnUrl: "https://www.py4e.com/lessons/functions",
+    action: "Submit your next problem set for Define and call functions",
+    extra: "Session still open on this skill.",
+    mentor: "You’re already in the middle of Define and call functions — session open about 42 minutes. Keep the momentum; don’t start a new thread until this one has its evidence in.",
+  },
+};
+
+const TODAY = {
+  session: "Study session open · ~42 min · working on Define and call functions",
+  reviews: [
+    { text: "Review Apply order of operations", note: "Overdue since Aug 18" },
+    { text: "Review Variables in Python", note: "Due today" },
+  ],
+  blockers: [
+    { text: "Stuck on DataFrame basics", note: "MultiIndex docs are confusing" },
+  ],
+  recs: [
+    {
+      title: "Define and call functions",
+      why: "Already in progress; session open; fits a 60-minute block",
+      action: "Keep going — submit the next problem set",
+    },
+    {
+      title: "DataFrame basics",
+      why: "Ready to start; you logged a blocker on it",
+      action: "Clear the blocker, or study the skill anyway",
+    },
+    {
+      title: "SQL SELECT basics",
+      why: "Ready to start; unlocks several SQL skills; fits 60 minutes",
+      action: "Start studying SQL SELECT basics",
+    },
+  ],
+};
+
+const NEXT = {
+  minutes: 60,
+  items: [
+    {
+      title: "Define and call functions",
+      why: "You’re mid-session on it, it’s a foundation skill, and it unlocks five skills after it.",
+      contrast: "Ranks above brand-new skills because finishing what you started beats starting something new.",
+      needed: "1 of 3 problem sets done",
+      proceed: "Keep the open session. Study the lesson, then bring the next problem set back when it’s ready.",
+      learn: "Python for Everybody — Functions",
+      action: "Submit your next problem set",
+    },
+    {
+      title: "DataFrame basics",
+      why: "Ready to start, unlocks seven skills, and your open blocker is a gentle nudge — not a lock.",
+      contrast: "A blocker never blocks you from studying; it only reorders suggestions.",
+      needed: "0 of 3 problem sets done",
+      proceed: "Either clear the MultiIndex blocker first, or start the skill anyway — your call.",
+      learn: "Pandas user guide",
+      action: "Clear the blocker, or start the skill",
+    },
+    {
+      title: "SQL SELECT basics",
+      why: "Ready to start, foundation track, unlocks five SQL skills, fits an hour.",
+      contrast: "Same unlock count as Functions, but no open session — so it sits lower.",
+      needed: "0 of 3 problem sets done",
+      proceed: "Open the lesson, work a first set, then come back to submit it.",
+      learn: "SQLBolt",
+      action: "Start studying SQL SELECT basics",
+    },
+  ],
+  lockedNote: "Still locked (examples): Filter DataFrame rows waits on DataFrame basics; SQL joins wait on SELECT basics.",
+};
+
+const WALKS = [
+  {
+    id: "lookup",
+    title: "Looking up one skill",
+    copy: "You want to know: can I start this, what’s in the way, and what do I do next?",
+    steps: [
+      { label: "Open This skill · Ready to start", apply: { view: "node", situation: "available" } },
+      { label: "Same skill, but Locked", apply: { view: "node", situation: "locked" } },
+      { label: "Same idea, Already working", apply: { view: "node", situation: "active" } },
+    ],
+  },
+  {
+    id: "morning",
+    title: "Starting a study day",
+    copy: "You sit down for an hour. What should the first screen hand you?",
+    steps: [
+      { label: "Open Today", apply: { view: "today" } },
+      { label: "Then What next (why these picks)", apply: { view: "next" } },
+      { label: "Drill into the top pick", apply: { view: "node", situation: "active" } },
+    ],
+  },
+  {
+    id: "stuck",
+    title: "Something’s in the way",
+    copy: "There’s an overdue review and a blocker. Watch whether the screen helps you act — or just lists problems.",
+    steps: [
+      { label: "Today with pressure", apply: { view: "today" } },
+      { label: "The locked skill behind the blocker", apply: { view: "node", situation: "locked" } },
+    ],
+  },
+];
+
+const state = {
+  view: "node",
+  variant: "M",
+  situation: "available",
+  walkId: "lookup",
+  walkStep: 0,
+};
+
+function pill(skill) {
+  const cls = skill.stateKind === "lock" ? "lock" : skill.stateKind === "warn" ? "warn" : "";
+  return `<span class="pill ${cls}">${escapeHtml(skill.state)}</span>`;
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderNode(variant, situation) {
+  const s = SKILLS[situation];
+  if (variant === "M") {
+    return `
+      <div class="kicker">This skill</div>
+      <div class="title">${escapeHtml(s.title)}</div>
+      <div class="meta">${pill(s)}</div>
+      <p class="story">${escapeHtml(s.mentor)}</p>
+      <div class="field">
+        <span class="muted">Where to learn</span><br>
+        ${escapeHtml(s.learn)}
+      </div>
+      <div class="field">
+        <span class="muted">How to proceed</span><br>
+        ${escapeHtml(s.needed)}
+      </div>
+      <div class="action"><strong>Do this next</strong>${escapeHtml(s.action)}</div>
+      <div class="field muted">${escapeHtml(s.extra)}</div>
+    `;
+  }
+  if (variant === "A") {
+    return `
+      <div class="kicker">This skill</div>
+      <div class="title">${escapeHtml(s.title)}</div>
+      <div class="meta">${pill(s)}</div>
+      <div class="action"><strong>Do this next</strong>${escapeHtml(s.action)}</div>
+      <div class="field"><span class="muted">Why this status</span><br>${escapeHtml(s.why)}</div>
+      <div class="field"><span class="muted">What’s needed to pass</span><br>${escapeHtml(s.needed)}</div>
+      <div class="field"><span class="muted">Where to learn</span><br>${escapeHtml(s.learn)}</div>
+    `;
+  }
+  if (variant === "B") {
+    return `
+      <div class="kicker">This skill</div>
+      <div class="title">${escapeHtml(s.title)}</div>
+      <div class="meta">${pill(s)}</div>
+      <div class="field"><b>Why</b> ${escapeHtml(s.why)}</div>
+      <div class="field"><b>What’s needed</b> ${escapeHtml(s.needed)}</div>
+      <div class="field"><b>Where to learn</b> ${escapeHtml(s.learn)}</div>
+      <div class="field"><b>What to do</b> ${escapeHtml(s.action)}</div>
+      <div class="field muted">${escapeHtml(s.extra)}</div>
+    `;
+  }
+  return `
+    <div class="kicker">This skill</div>
+    <div class="title">${escapeHtml(s.title)}</div>
+    <div class="meta">${pill(s)}</div>
+    <p class="story">${escapeHtml(s.title)} is <strong>${escapeHtml(s.state.toLowerCase())}</strong>. ${escapeHtml(s.why)} ${escapeHtml(s.needed)} Learn from: ${escapeHtml(s.learn)}.</p>
+    <div class="action"><strong>Your move</strong>${escapeHtml(s.action)}</div>
+  `;
+}
+
+function renderToday(variant) {
+  const t = TODAY;
+  if (variant === "M") {
+    return `
+      <div class="kicker">Today</div>
+      <p class="story">You’ve still got a session open on <strong>Define and call functions</strong> (~42 min) — that’s the thread I’d pick up. There’s also a review that’s overdue (Apply order of operations) and one due today, plus you’re stuck on DataFrame basics (MultiIndex docs). Those can wait a beat; finishing the open work matters more than starting something new.</p>
+      <div class="field">
+        <span class="muted">Where to learn (top focus)</span><br>
+        Python for Everybody — Functions
+      </div>
+      <div class="field">
+        <span class="muted">How to proceed</span><br>
+        Stay with the open session. Submit the next problem set when it’s ready (1 of 3 done). After that, clear the overdue review, then the DataFrame basics blocker.
+      </div>
+      <div class="action"><strong>Do this next</strong>${escapeHtml(t.recs[0].action)}
+        <div class="muted" style="margin-top:0.25rem">${escapeHtml(t.recs[0].title)}</div>
+      </div>
+      <div class="field muted">Also in range if you switch focus: ${t.recs.slice(1).map(r => r.title).join("; ")}.</div>
+    `;
+  }
+  if (variant === "A") {
+    return `
+      <div class="kicker">Today</div>
+      <div class="action"><strong>Do this next</strong>${escapeHtml(t.recs[0].action)}
+        <div class="muted" style="margin-top:0.25rem">${escapeHtml(t.recs[0].title)}</div>
+      </div>
+      <div class="field"><span class="muted">Then</span><br>
+        2. ${escapeHtml(t.reviews[0].text)} (${escapeHtml(t.reviews[0].note)})<br>
+        3. ${escapeHtml(t.blockers[0].text)} (${escapeHtml(t.blockers[0].note)})
+      </div>
+      <div class="field muted">${escapeHtml(t.session)}</div>
+      <div class="field"><span class="muted">Also worth considering</span>
+        <ul class="list">
+          ${t.recs.slice(1).map(r => `<li><strong>${escapeHtml(r.title)}</strong><br><span class="muted">${escapeHtml(r.why)}</span></li>`).join("")}
+        </ul>
+      </div>
+    `;
+  }
+  if (variant === "B") {
+    return `
+      <div class="kicker">Today</div>
+      <div class="field"><b>Open session</b> ${escapeHtml(t.session)}</div>
+      <div class="field"><b>Due reviews</b>
+        <ul class="list">${t.reviews.map(r => `<li>${escapeHtml(r.text)} — <span class="muted">${escapeHtml(r.note)}</span></li>`).join("")}</ul>
+      </div>
+      <div class="field"><b>Blockers</b>
+        <ul class="list">${t.blockers.map(b => `<li>${escapeHtml(b.text)} — <span class="muted">${escapeHtml(b.note)}</span></li>`).join("")}</ul>
+      </div>
+      <div class="field"><b>Suggestions</b>
+        <ul class="list">${t.recs.map((r,i) => `<li>${i+1}. <strong>${escapeHtml(r.title)}</strong><br>Why: ${escapeHtml(r.why)}<br>What to do: ${escapeHtml(r.action)}</li>`).join("")}</ul>
+      </div>
+    `;
+  }
+  return `
+    <div class="kicker">Today</div>
+    <p class="story">You still have a session open on <strong>Define and call functions</strong> (~42 min). ${t.reviews.length} reviews need attention (${t.reviews[0].note.toLowerCase()}), and there’s 1 open blocker.</p>
+    <p class="story">Best focus right now: <strong>${escapeHtml(t.recs[0].title)}</strong> — ${escapeHtml(t.recs[0].why)}</p>
+    <div class="action"><strong>Your move</strong>${escapeHtml(t.recs[0].action)}</div>
+    <p class="story muted">Also in range: ${t.recs.slice(1).map(r => r.title).join("; ")}.</p>
+  `;
+}
+
+function renderNext(variant) {
+  const n = NEXT;
+  if (variant === "M") {
+    return `
+      <div class="kicker">What next · ${n.minutes}-minute session</div>
+      <p class="story">For the next hour, I’d stay with what you already started — then branch only if you want a fresh thread. Here’s the order I’d offer, and why each one sits where it does:</p>
+      <ul class="list">
+        ${n.items.map((item, i) => `
+          <li>
+            <strong>${i + 1}. ${escapeHtml(item.title)}</strong>
+            <p class="story" style="margin:0.35rem 0">${escapeHtml(item.why)} ${escapeHtml(item.contrast)}</p>
+            <div class="field"><span class="muted">Where to learn</span><br>${escapeHtml(item.learn)}</div>
+            <div class="field"><span class="muted">How to proceed</span><br>${escapeHtml(item.proceed)}</div>
+            <div class="action" style="margin:0.4rem 0"><strong>Do this next</strong>${escapeHtml(item.action)}</div>
+          </li>`).join("")}
+      </ul>
+      <div class="field muted">${escapeHtml(n.lockedNote)}</div>
+    `;
+  }
+  if (variant === "A") {
+    return `
+      <div class="kicker">What next · ${n.minutes}-minute session</div>
+      <ul class="list">
+        ${n.items.map((item, i) => `
+          <li>
+            <strong>${i + 1}. ${escapeHtml(item.title)}</strong>
+            <div class="action" style="margin:0.4rem 0"><strong>Do this next</strong>${escapeHtml(item.action)}</div>
+            <span class="muted">${escapeHtml(item.why)}</span>
+          </li>`).join("")}
+      </ul>
+      <div class="field muted">${escapeHtml(n.lockedNote)}</div>
+    `;
+  }
+  if (variant === "B") {
+    return `
+      <div class="kicker">What next · ${n.minutes}-minute session</div>
+      <ul class="list">
+        ${n.items.map((item, i) => `
+          <li>
+            <strong>${i + 1}. ${escapeHtml(item.title)}</strong>
+            <div class="field"><b>Why</b> ${escapeHtml(item.why)}</div>
+            <div class="field"><b>What’s needed</b> ${escapeHtml(item.needed)}</div>
+            <div class="field"><b>Where to learn</b> ${escapeHtml(item.learn)}</div>
+            <div class="field"><b>What to do</b> ${escapeHtml(item.action)}</div>
+          </li>`).join("")}
+      </ul>
+      <div class="field muted">${escapeHtml(n.lockedNote)}</div>
+    `;
+  }
+  return `
+    <div class="kicker">What next · ${n.minutes}-minute session</div>
+    <p class="story">Here’s what fits an hour — and why these over the rest.</p>
+    <ul class="list">
+      ${n.items.map((item, i) => `
+        <li>
+          <strong>${i + 1}. ${escapeHtml(item.title)}</strong>
+          <p class="story" style="margin:0.35rem 0">${escapeHtml(item.why)} ${escapeHtml(item.contrast)}</p>
+          <div class="action"><strong>Your move</strong>${escapeHtml(item.action)}</div>
+        </li>`).join("")}
+    </ul>
+    <div class="field muted">${escapeHtml(n.lockedNote)}</div>
+  `;
+}
+
+function renderScreen() {
+  const el = document.getElementById("screen");
+  if (state.view === "node") el.innerHTML = renderNode(state.variant, state.situation);
+  else if (state.view === "today") el.innerHTML = renderToday(state.variant);
+  else el.innerHTML = renderNext(state.variant);
+}
+
+function renderChrome() {
+  const viewRow = document.getElementById("view-row");
+  viewRow.innerHTML = VIEWS.map(v =>
+    `<button type="button" class="chip" data-view="${v.id}" aria-pressed="${state.view === v.id}">${escapeHtml(v.label)}</button>`
+  ).join("");
+  viewRow.querySelectorAll("button").forEach(btn => {
+    btn.onclick = () => { state.view = btn.dataset.view; renderAll(); };
+  });
+
+  const sitBlock = document.getElementById("situation-block");
+  sitBlock.style.display = state.view === "node" ? "" : "none";
+  const sitRow = document.getElementById("situation-row");
+  sitRow.innerHTML = SITUATIONS.map(s =>
+    `<button type="button" class="chip" data-sit="${s.id}" aria-pressed="${state.situation === s.id}">${escapeHtml(s.label)}</button>`
+  ).join("");
+  sitRow.querySelectorAll("button").forEach(btn => {
+    btn.onclick = () => { state.situation = btn.dataset.sit; state.view = "node"; renderAll(); };
+  });
+
+  const v = VARIANTS.find(x => x.id === state.variant);
+  document.getElementById("variant-label").innerHTML =
+    `<strong>${escapeHtml(v.id)} — ${escapeHtml(v.name)}</strong><small>${escapeHtml(v.blurb)}</small>`;
+
+  const tabs = document.getElementById("walk-tabs");
+  tabs.innerHTML = WALKS.map(w =>
+    `<button type="button" role="tab" aria-selected="${state.walkId === w.id}" data-walk="${w.id}">${escapeHtml(w.title)}</button>`
+  ).join("");
+  tabs.querySelectorAll("button").forEach(btn => {
+    btn.onclick = () => {
+      state.walkId = btn.dataset.walk;
+      state.walkStep = 0;
+      const walk = WALKS.find(w => w.id === state.walkId);
+      Object.assign(state, walk.steps[0].apply);
+      renderAll();
+    };
+  });
+
+  const walk = WALKS.find(w => w.id === state.walkId);
+  document.getElementById("walk-copy").textContent = walk.copy;
+  const steps = document.getElementById("walk-steps");
+  steps.innerHTML = walk.steps.map((step, i) => {
+    const done = i < state.walkStep;
+    const current = i === state.walkStep;
+    return `<button type="button" class="step" data-step="${i}" aria-pressed="${current}" ${i > state.walkStep ? "disabled" : ""}>${done ? "✓ " : current ? "→ " : ""}${escapeHtml(step.label)}</button>`;
+  }).join("");
+  steps.querySelectorAll("button").forEach(btn => {
+    btn.onclick = () => {
+      const i = Number(btn.dataset.step);
+      if (i > state.walkStep) return;
+      state.walkStep = i;
+      Object.assign(state, walk.steps[i].apply);
+      if (i < walk.steps.length - 1) {
+        /* advance highlight to next after applying */
+      }
+      renderAll();
+      /* after clicking current, unlock next by bumping if it was the current step */
+      if (i === state.walkStep && i < walk.steps.length - 1) {
+        /* keep step index on the one just pressed; user presses next when ready */
+      }
+    };
+  });
+}
+
+function renderAll() {
+  renderChrome();
+  renderScreen();
+  const url = new URL(location.href);
+  url.searchParams.set("variant", state.variant);
+  url.searchParams.set("view", state.view);
+  url.searchParams.set("situation", state.situation);
+  history.replaceState(null, "", url);
+}
+
+function shiftVariant(delta) {
+  const idx = VARIANTS.findIndex(v => v.id === state.variant);
+  const next = (idx + delta + VARIANTS.length) % VARIANTS.length;
+  state.variant = VARIANTS[next].id;
+  renderAll();
+}
+
+document.getElementById("prev").onclick = () => shiftVariant(-1);
+document.getElementById("next").onclick = () => shiftVariant(1);
+
+document.addEventListener("keydown", (e) => {
+  const tag = (e.target && e.target.tagName) || "";
+  if (tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable) return;
+  if (e.key === "ArrowLeft") { e.preventDefault(); shiftVariant(-1); }
+  if (e.key === "ArrowRight") { e.preventDefault(); shiftVariant(1); }
+});
+
+/* Advance walkthrough: clicking the current step moves highlight forward after apply */
+document.getElementById("walk-steps").addEventListener("click", (e) => {
+  const btn = e.target.closest("button.step");
+  if (!btn) return;
+  const i = Number(btn.dataset.step);
+  const walk = WALKS.find(w => w.id === state.walkId);
+  if (i === state.walkStep && i < walk.steps.length - 1) {
+    /* defer bump so renderAll in button handler sees pressed step; bump after */
+    setTimeout(() => {
+      state.walkStep = i + 1;
+      renderChrome();
+    }, 0);
+  }
+});
+
+(function init() {
+  const params = new URLSearchParams(location.search);
+  if (VARIANTS.some(v => v.id === params.get("variant"))) state.variant = params.get("variant");
+  if (VIEWS.some(v => v.id === params.get("view"))) state.view = params.get("view");
+  if (SITUATIONS.some(s => s.id === params.get("situation"))) state.situation = params.get("situation");
+  renderAll();
+})();
+</script>
+</body>
+</html>
