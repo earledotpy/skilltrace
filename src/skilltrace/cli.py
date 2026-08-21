@@ -126,6 +126,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     health_parser.set_defaults(_command_name="health")
 
+    # node <node_id>
+    node_parser = subcommands.add_parser(
+        "node", help="Show the Mentor-voice detail view for one node."
+    )
+    node_parser.add_argument("node_id", help="Node to show the detail view for.")
+    node_parser.set_defaults(_command_name="node")
+
     # sync
     sync_parser = subcommands.add_parser(
         "sync", help="Recompute derived readiness (locked/available) for every node."
@@ -360,6 +367,43 @@ def build_parser() -> argparse.ArgumentParser:
     )
     resource_report_parser.set_defaults(_command_name="resource-report")
 
+    # report <target>
+    report_parser = subcommands.add_parser(
+        "report", help="Generate learning and diagnostic reports."
+    )
+    report_targets = report_parser.add_subparsers(dest="_report_target", metavar="<target>")
+    report_targets.required = True
+
+    report_progress_parser = report_targets.add_parser(
+        "progress", help="Curriculum progress and track completion roll-up."
+    )
+    report_progress_parser.set_defaults(_command_name="report progress")
+
+    report_blockers_parser = report_targets.add_parser(
+        "blockers", help="Obstacles, open remediation, and rescue nodes."
+    )
+    report_blockers_parser.set_defaults(_command_name="report blockers")
+
+    report_reviews_parser = report_targets.add_parser(
+        "reviews", help="Retention checks, overdue reviews, and mastery candidates."
+    )
+    report_reviews_parser.set_defaults(_command_name="report reviews")
+
+    report_evidence_parser = report_targets.add_parser(
+        "evidence", help="Proof trail audit, gates, specs, and supersession chains."
+    )
+    report_evidence_parser.add_argument(
+        "--node-id",
+        default=None,
+        help="Optional node ID to filter evidence trail.",
+    )
+    report_evidence_parser.set_defaults(_command_name="report evidence")
+
+    report_resources_parser = report_targets.add_parser(
+        "resources", help="Resource verification status snapshot."
+    )
+    report_resources_parser.set_defaults(_command_name="report resources")
+
     # export <target>
     export_parser = subcommands.add_parser(
         "export", help="Export a disposable data snapshot (markdown, sqlite)."
@@ -398,6 +442,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Also show locked nodes (never recommended as available).",
     )
     next_parser.set_defaults(_command_name="next")
+
+    # today
+    today_parser = subcommands.add_parser(
+        "today", help="Show the Mentor-voice daily study view (read-only)."
+    )
+    today_parser.add_argument(
+        "--minutes",
+        type=int,
+        default=30,
+        help="Minutes available this session, used to size the top recommendation.",
+    )
+    today_parser.set_defaults(_command_name="today")
 
     # suggest <topic>
     suggest_parser = subcommands.add_parser(

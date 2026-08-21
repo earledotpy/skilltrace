@@ -20,9 +20,11 @@ from . import (
     health,
     listings,
     master,
+    node_detail,
     pass_,
     recommend,
     remediation,
+    report,
     resource_listing,
     resource_report,
     review,
@@ -30,6 +32,7 @@ from . import (
     submit,
     suggest,
     sync,
+    today,
     validate,
     verify_resource,
 )
@@ -39,6 +42,7 @@ def register_all(registry: Registry) -> Registry:
     """Register every command onto `registry` and return it."""
     validate.register(registry)
     health.register(registry)
+    node_detail.register(registry)
     sync.register(registry)
     recommend.register(registry)
     submit.register(registry)
@@ -50,12 +54,14 @@ def register_all(registry: Registry) -> Registry:
     blocker.register(registry)
     remediation.register(registry)
     review.register(registry)
+    report.register(registry)
     listings.register(registry)
     resource_listing.register(registry)
     resource_report.register(registry)
     verify_resource.register(registry)
     check_automation.register(registry)
     suggest.register(registry)
+    today.register(registry)
     export.register(registry)
     backup.register(registry)
     return registry
