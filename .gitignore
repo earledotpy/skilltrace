@@ -20,3 +20,5 @@ backups/
 # from landing in the curriculum.
 evidence/artifacts/*
 
+
+.vscode/

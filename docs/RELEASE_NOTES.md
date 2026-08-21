@@ -1,6 +1,6 @@
 # Release Notes
 
-## v1.0.0-rc1 (upcoming)
+## v1.0.0 (released)
 
 Release candidate for the first stable release. See
 [POST_V1_BACKLOG.md](POST_V1_BACKLOG.md) for deferred work.
@@ -18,6 +18,17 @@ Release candidate for the first stable release. See
 - Clean-install-from-fresh-clone-on-Windows pass.
 - Clean repo structure.
 - Schema reference documentation.
+
+### Release assets
+
+Attached assets in the v1.0.0 GitHub release:
+
+- release/manifest.yaml — release manifest
+- release/test_results.yaml — test run summary
+- release/skilltrace-v1.0.0-release-assets.zip — complete release artifacts (tests, smoke outputs, manifests)
+
+These assets are attached to the release: https://github.com/earledotpy/skilltrace/releases/tag/v1.0.0
+
 
 ## v0.9.0-rc1
 
