@@ -61,6 +61,7 @@ enter only as seed data and policy values, never as engine code.
   The v0.1 `compiler/` scaffold it replaced was retired in v0.4; its
   interface-layer history lives in ADR 0002 and the roadmap.
 - `docs/` — roadmap, ADRs, framework references (background reading)
+- `archive/scaffold-v0.1/` — read-only scaffold history (`interface/`, `generation_manifest.json`, `web-app-vision/`, `templates/`, `examples/`, `schemas/`, `research/`, `issues/`) per ADR 0005; never read by the engine — see `archive/scaffold-v0.1/README.md`
 
 
 

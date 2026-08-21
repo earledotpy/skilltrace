@@ -1,8 +1,8 @@
 criteria:
 - id: criterion.layers.present
-  title: All six layers present
-  description: The release candidate includes graph, evidence, execution, interface,
-    policy, and release layers.
+  title: All five layers present
+  description: The release candidate includes graph, evidence, execution, policy,
+    and release layers (interface layer cut per ADR 0002, archived at archive/scaffold-v0.1/).
   required: true
   severity_if_unmet: blocker
   verification_method: release_test_matrix
@@ -33,14 +33,6 @@ criteria:
   verification_method: release_test_matrix
   related_test_ids:
   - test.execution.validate
-- id: criterion.interface.valid
-  title: Interface validates
-  description: The CLI-first interface registry validates.
-  required: true
-  severity_if_unmet: blocker
-  verification_method: release_test_matrix
-  related_test_ids:
-  - test.interface.validate
 - id: criterion.policy.valid
   title: Policy validates
   description: Policy safety checks validate.

@@ -1,5 +1,7 @@
 # AI Engineering Roadmap with Agentic Coding Emphasis
 
+> **Scope:** Canonical index to `roadmap/*` (`reference_only` per `docs/curriculum-authoring.md:12-13`). Roadmap anchors never control locking — see `graph/edges.yaml`. Phases 2–5 are post-v1 reference (PRD:52, backlog v1.2/v1.3). Detail lives in `roadmap/phase-0:prerequisites` → `phase-5` + `capstone-projects.md`; annexes in `resources/*`.
+
 **Version:** 1.0 (August 2026)  
 **Audience:** Complete beginners  
 **Pace:** Self-paced, 6–8 hours/week  

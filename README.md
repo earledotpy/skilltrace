@@ -45,7 +45,7 @@ skilltrace pass <node_id>                              # explicit learner pass a
 ## Layers
 
 Five layers: **graph**, **evidence**, **execution**, **policy**, **release**. The
-scaffold's original interface layer was cut from v1 (see `docs/adr/`).
+scaffold's original interface layer was cut from v1 (see `docs/adr/`; archived at `archive/scaffold-v0.1/interface/` per ADR 0005).
 
 - `graph/` — node markdown (curriculum) + `edges.yaml` + the progress store
 - `evidence/` — artifact specs, gates, attempts, evidence records
