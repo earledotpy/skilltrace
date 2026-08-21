@@ -11,13 +11,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from ._store import ExecutionLoadError, append_record, read_records, write_records
+from ._store import ExecutionLoadError, append_record, check_record_shape, read_records, write_records
 
 _BLOCKERS_RELPATH = Path("execution") / "blockers.yaml"
 _TOP_KEY = "blockers"
 _KIND = "blocker"
 
 STATUSES = ("open", "resolved")
+_ALLOWED_FIELDS: frozenset[str] = frozenset(
+    {"id", "node_id", "status", "description", "created_at",
+     "resolved_at", "resolution_summary"}
+)
+_REQUIRED_FIELDS: tuple[str, ...] = ("id", "node_id", "status", "description", "created_at")
 
 
 @dataclass
@@ -37,13 +42,14 @@ def load_blockers(root: Path | str) -> list[Blocker]:
     raw = read_records(root, _BLOCKERS_RELPATH, top_key=_TOP_KEY, kind=_KIND)
     path = Path(root) / _BLOCKERS_RELPATH
     for index, data in enumerate(raw):
-        if not isinstance(data, dict):
-            raise ExecutionLoadError(f"{path}: blocker #{index} is not a mapping.")
-        for field in ("id", "node_id", "status", "description", "created_at"):
-            if field not in data:
-                raise ExecutionLoadError(
-                    f"{path}: blocker #{index} is missing required field {field!r}."
-                )
+        check_record_shape(
+            data,
+            kind=_KIND,
+            allowed=_ALLOWED_FIELDS,
+            required=_REQUIRED_FIELDS,
+            path=path,
+            index=index,
+        )
         if data["status"] not in STATUSES:
             raise ExecutionLoadError(
                 f"{path}: blocker {data['id']!r} has invalid status {data['status']!r} "

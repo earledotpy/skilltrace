@@ -304,8 +304,8 @@ def test_validate_resources_ignores_a_missing_local_file(resources_repo, capsys)
 
 
 def test_resource_status_does_not_affect_recommend(resources_repo, capsys):
-    # `next` output is byte-for-byte identical whether or not a broken resource is
-    # linked to the recommended node — resource status never feeds recommendation.
+    # Resource status never feeds the recommendation ranking — a broken resource
+    # linked to the recommended node doesn't change which node is top-ranked.
     node = "testing.res.subject_01"
     write_node(resources_repo, node)
     _write_state(resources_repo, {node: "available"})
@@ -323,8 +323,11 @@ def test_resource_status_does_not_affect_recommend(resources_repo, capsys):
     assert rc == 0
     with_broken_resource = capsys.readouterr().out
 
-    assert without_resource == with_broken_resource
-    assert node in with_broken_resource
+    # Both runs recommend the same node — resource status doesn't affect ranking.
+    # (Mentor-voice output now surfaces resources in Where to learn, so the
+    # full output is no longer byte-for-byte identical; the ranking is what matters.)
+    assert f"--node {node}" in without_resource
+    assert f"--node {node}" in with_broken_resource
 
 
 def _write_state(root: Path, states: dict[str, str]) -> None:

@@ -11,13 +11,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from ._store import ExecutionLoadError, append_record, read_records, write_records
+from ._store import ExecutionLoadError, append_record, check_record_shape, read_records, write_records
 
 _SESSIONS_RELPATH = Path("execution") / "sessions.yaml"
 _TOP_KEY = "sessions"
 _KIND = "session"
 
 STATUSES = ("open", "completed")
+_ALLOWED_FIELDS: frozenset[str] = frozenset(
+    {"id", "status", "started_at", "ended_at", "template"}
+)
+_REQUIRED_FIELDS: tuple[str, ...] = ("id", "status", "started_at")
 
 
 @dataclass
@@ -35,13 +39,14 @@ def load_sessions(root: Path | str) -> list[Session]:
     raw = read_records(root, _SESSIONS_RELPATH, top_key=_TOP_KEY, kind=_KIND)
     path = Path(root) / _SESSIONS_RELPATH
     for index, data in enumerate(raw):
-        if not isinstance(data, dict):
-            raise ExecutionLoadError(f"{path}: session #{index} is not a mapping.")
-        for field in ("id", "status", "started_at"):
-            if field not in data:
-                raise ExecutionLoadError(
-                    f"{path}: session #{index} is missing required field {field!r}."
-                )
+        check_record_shape(
+            data,
+            kind=_KIND,
+            allowed=_ALLOWED_FIELDS,
+            required=_REQUIRED_FIELDS,
+            path=path,
+            index=index,
+        )
         if data["status"] not in STATUSES:
             raise ExecutionLoadError(
                 f"{path}: session {data['id']!r} has invalid status {data['status']!r} "

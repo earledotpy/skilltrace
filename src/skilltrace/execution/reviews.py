@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from ._store import ExecutionLoadError, append_record, read_records, write_records
+from ._store import ExecutionLoadError, append_record, check_record_shape, read_records, write_records
 
 _REVIEWS_RELPATH = Path("execution") / "reviews.yaml"
 _TOP_KEY = "reviews"
@@ -19,6 +19,11 @@ _KIND = "review"
 
 STATUSES = ("scheduled", "completed", "cancelled")
 OUTCOMES = ("satisfactory", "unsatisfactory")
+_ALLOWED_FIELDS: frozenset[str] = frozenset(
+    {"id", "node_id", "status", "scheduled_for", "created_at",
+     "completed_at", "outcome", "result_summary", "cancelled_at", "cancel_reason"}
+)
+_REQUIRED_FIELDS: tuple[str, ...] = ("id", "node_id", "status", "scheduled_for", "created_at")
 
 
 @dataclass
@@ -41,13 +46,14 @@ def load_reviews(root: Path | str) -> list[Review]:
     raw = read_records(root, _REVIEWS_RELPATH, top_key=_TOP_KEY, kind=_KIND)
     path = Path(root) / _REVIEWS_RELPATH
     for index, data in enumerate(raw):
-        if not isinstance(data, dict):
-            raise ExecutionLoadError(f"{path}: review #{index} is not a mapping.")
-        for field in ("id", "node_id", "status", "scheduled_for", "created_at"):
-            if field not in data:
-                raise ExecutionLoadError(
-                    f"{path}: review #{index} is missing required field {field!r}."
-                )
+        check_record_shape(
+            data,
+            kind=_KIND,
+            allowed=_ALLOWED_FIELDS,
+            required=_REQUIRED_FIELDS,
+            path=path,
+            index=index,
+        )
         if data["status"] not in STATUSES:
             raise ExecutionLoadError(
                 f"{path}: review {data['id']!r} has invalid status {data['status']!r} "

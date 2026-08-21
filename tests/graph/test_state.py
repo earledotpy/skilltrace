@@ -211,3 +211,19 @@ def test_seed_store_references_are_all_known():
     store = load_state(REPO_ROOT)
     node_ids = {node.id for node in load_nodes(REPO_ROOT)}
     assert check_state_references(store, node_ids) is store
+
+
+# --- Closed schema enforcement (v1.0 freeze) --------------------------------
+
+def test_unknown_entry_field_fails(tmp_path):
+    """ProgressEntry rejects unknown fields (closed schema)."""
+    _write_state(tmp_path, {"a.b.node_01": {"state": "locked", "bogus": True}})
+    with pytest.raises(ProgressStoreError, match="unknown field"):
+        load_state(tmp_path)
+
+
+def test_valid_entry_loads(tmp_path):
+    """ProgressEntry with only known fields loads cleanly."""
+    _write_state(tmp_path, {"a.b.node_01": {"state": "locked"}})
+    store = load_state(tmp_path)
+    assert store.entries["a.b.node_01"].state == "locked"

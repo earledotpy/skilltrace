@@ -20,6 +20,33 @@ class ExecutionLoadError(Exception):
     """An execution-layer record could not be loaded or violates its schema."""
 
 
+def check_record_shape(
+    data: Any,
+    *,
+    kind: str,
+    allowed: frozenset[str],
+    required: tuple[str, ...],
+    path: Path,
+    index: int,
+) -> None:
+    """Reject non-mappings, unknown fields (closed schema), and missing requireds.
+
+    Mirrors the evidence layer's ``check_shape()`` in ``evidence/_schema.py``.
+    """
+    if not isinstance(data, dict):
+        raise ExecutionLoadError(f"{path}: {kind} #{index} is not a mapping.")
+    unknown = sorted(set(data) - allowed)
+    if unknown:
+        raise ExecutionLoadError(
+            f"{path}: {kind} #{index} has unknown field(s): {', '.join(unknown)}."
+        )
+    missing = [key for key in required if key not in data]
+    if missing:
+        raise ExecutionLoadError(
+            f"{path}: {kind} #{index} is missing required field(s): {', '.join(missing)}."
+        )
+
+
 def read_records(root: Path | str, relpath: Path, *, top_key: str, kind: str) -> list[Any]:
     """Read a `<top_key>:` list; a missing file is an empty history."""
     path = Path(root) / relpath

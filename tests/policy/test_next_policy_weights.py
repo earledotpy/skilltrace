@@ -4,7 +4,7 @@ With the shipped seeds, score = Σ factor_weight × factor_value: the track
 term is track_priority × the node's track weight, an active remediation
 edge boosts its remediation node by remediation_priority, and an open
 blocker drags its node down by blocker_penalty — and every policy effect
-is named in the recommendation's reason line.
+is reflected in the candidate's ordering and Mentor-voice prose.
 """
 
 from __future__ import annotations
@@ -70,7 +70,22 @@ def _weighted_repo(root, *, blocker_open: bool):
 
 
 def _ranked_ids(out: str) -> list[str]:
-    return re.findall(r"^\s*\d+\. (\S+)", out, flags=re.MULTILINE)
+    """Extract node IDs in rank order from Mentor-voice output.
+
+    Mentor-voice (issue #44): node IDs appear in the DO THIS NEXT action line
+    as '--node <node_id>'. One per OPTION block, in kicker order.
+    """
+    return re.findall(r"--node\s+([^\s`]+)", out)
+
+
+def _block_for(out: str, node_id: str) -> str:
+    """Return the text of the OPTION block that contains node_id's action line."""
+    # Split on the separator between options and find the block containing node_id.
+    blocks = re.split(r"\n---\n", out)
+    for block in blocks:
+        if f"--node {node_id}" in block:
+            return block
+    raise AssertionError(f"{node_id} not found in any OPTION block:\n{out}")
 
 
 def test_policy_pressure_reorders_the_ranking(policy_repo, capsys):
@@ -83,12 +98,11 @@ def test_policy_pressure_reorders_the_ranking(policy_repo, capsys):
     # Shipped seeds: REM = 3.0*2 + 2.0*1 + 1.0 + 4.0 = 13;
     # OTHER = 3.0*3 + 1.0 = 10; TARGET = 10 - 3.0 = 7.
     assert _ranked_ids(out) == [REM, OTHER, TARGET]
-    assert "(score 13)" in out
-    assert "(score 7)" in out
 
-    # The reasons name the policy effects.
-    assert "remediation" in _reason_of(out, REM)
-    assert "blocker" in _reason_of(out, TARGET)
+    # The Mentor-voice block for the remediation-boosted node names the boost.
+    assert "remediation" in _block_for(out, REM).lower()
+    # The block for the blocker-penalized node mentions the blocker.
+    assert "blocker" in _block_for(out, TARGET).lower()
 
 
 def test_without_pressure_the_boost_and_penalty_vanish(policy_repo, capsys):
@@ -102,13 +116,5 @@ def test_without_pressure_the_boost_and_penalty_vanish(policy_repo, capsys):
     ranked = _ranked_ids(out)
     assert ranked.index(OTHER) < ranked.index(REM)
     assert ranked.index(TARGET) < ranked.index(REM)
-    assert "remediation" not in _reason_of(out, REM)
-    assert "blocker" not in _reason_of(out, TARGET)
-
-
-def _reason_of(out: str, node_id: str) -> str:
-    lines = out.splitlines()
-    for index, line in enumerate(lines):
-        if re.match(rf"\s*\d+\. {re.escape(node_id)}\s", line):
-            return lines[index + 1]
-    raise AssertionError(f"{node_id} not ranked in output:\n{out}")
+    assert "remediation" not in _block_for(out, REM).lower()
+    assert "blocker" not in _block_for(out, TARGET).lower()

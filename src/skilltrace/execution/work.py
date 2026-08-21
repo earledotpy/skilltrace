@@ -11,11 +11,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from ._store import ExecutionLoadError, append_record, read_records
+from ._store import ExecutionLoadError, append_record, check_record_shape, read_records
 
 _WORK_RELPATH = Path("execution") / "session_work.yaml"
 _TOP_KEY = "session_work"
 _KIND = "work item"
+
+_ALLOWED_FIELDS: frozenset[str] = frozenset(
+    {"id", "session_id", "node_id", "created_at", "blocked", "notes", "minutes"}
+)
+_REQUIRED_FIELDS: tuple[str, ...] = ("id", "session_id", "node_id", "created_at")
 
 
 @dataclass
@@ -35,13 +40,14 @@ def load_session_work(root: Path | str) -> list[SessionWork]:
     raw = read_records(root, _WORK_RELPATH, top_key=_TOP_KEY, kind=_KIND)
     path = Path(root) / _WORK_RELPATH
     for index, data in enumerate(raw):
-        if not isinstance(data, dict):
-            raise ExecutionLoadError(f"{path}: work item #{index} is not a mapping.")
-        for field in ("id", "session_id", "node_id", "created_at"):
-            if field not in data:
-                raise ExecutionLoadError(
-                    f"{path}: work item #{index} is missing required field {field!r}."
-                )
+        check_record_shape(
+            data,
+            kind=_KIND,
+            allowed=_ALLOWED_FIELDS,
+            required=_REQUIRED_FIELDS,
+            path=path,
+            index=index,
+        )
         items.append(
             SessionWork(
                 id=str(data["id"]),

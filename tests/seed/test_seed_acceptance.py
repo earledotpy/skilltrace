@@ -191,10 +191,10 @@ def test_next_yields_recommendations_with_reasons(capsys):
     )
     out = capsys.readouterr().out
     assert rc == 0, out
-    assert "next: top" in out, f"expected recommendations, got:\n{out}"
-    # Each recommendation prints a reason line naming its track; with every track
-    # now mapped, no unmapped-track warning should appear.
-    assert "track '" in out, f"expected a reason naming the track, got:\n{out}"
+    # Mentor-voice output (issue #44): kicker opens each candidate block.
+    assert "OPTION 1" in out, f"expected recommendations, got:\n{out}"
+    # Each candidate's brief names its track; with every track mapped, no warning.
+    assert "track" in out, f"expected a brief naming the track, got:\n{out}"
     assert "not in policy/recommendation.yaml" not in out, (
         f"an in-use track is unmapped:\n{out}"
     )

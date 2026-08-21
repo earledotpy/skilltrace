@@ -524,4 +524,11 @@ def run(argv: list[str] | None = None, root: Path | str | None = None) -> int:
 
 def main() -> None:
     """Console-script entry point."""
+    import io
+    import sys
+
+    # Ensure UTF-8 output on Windows consoles (cp1252 default) so em dashes
+    # and other Unicode characters render correctly.
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
     raise SystemExit(run())

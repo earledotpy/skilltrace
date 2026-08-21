@@ -47,6 +47,8 @@ _RANK: dict[str, int] = {state: i for i, state in enumerate(_STATE_ORDER)}
 
 _STATE_RELPATH = Path("graph") / "state.yaml"
 
+_ALLOWED_ENTRY_FIELDS: frozenset[str] = frozenset({"state", "changed_at", "transitions"})
+
 
 class ProgressStoreError(Exception):
     """The progress store could not be loaded, or a write violated its rules.
@@ -154,6 +156,11 @@ class ProgressStore:
 def _load_entry(node_id: str, data: Any, path: Path) -> ProgressEntry:
     if not isinstance(data, dict):
         raise ProgressStoreError(f"{path}: progress entry for {node_id!r} is not a mapping.")
+    unknown = sorted(set(data) - _ALLOWED_ENTRY_FIELDS)
+    if unknown:
+        raise ProgressStoreError(
+            f"{path}: node {node_id!r} has unknown field(s): {', '.join(unknown)}."
+        )
     state = data.get("state")
     if not isinstance(state, str) or state not in STATES:
         raise ProgressStoreError(

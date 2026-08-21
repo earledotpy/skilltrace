@@ -100,7 +100,8 @@ def test_open_blocker_activates_the_edge(policy_repo, capsys):
     advisories = [l for l in out.splitlines() if "remediation" in l]
     assert any(REM in a and TARGET in a for a in advisories)
     # Activation never locks the target — it stays a ranked candidate.
-    assert any(TARGET in line and "score" in line for line in out.splitlines())
+    # Mentor-voice output (issue #44): TARGET appears in its DO THIS NEXT action line.
+    assert f"--node {TARGET}" in out
 
 
 def test_failed_attempt_threshold_activates_the_edge(policy_repo, capsys):

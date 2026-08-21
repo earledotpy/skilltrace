@@ -47,7 +47,9 @@ def test_exit_gate_sequence_all_exit_zero(seed_repo, capsys):
 
     out = capsys.readouterr().out
     # Each command announced itself in the combined output.
-    assert "next:" in out
+    # `next` uses Mentor-voice output (issue #44): no "next:" prefix, but every
+    # run opens with a kicker line in the form "OPTION N — <N>-MIN SESSION".
+    assert "OPTION 1" in out
 
 
 def test_exit_gate_sequence_logs_exactly_one_event(seed_repo):

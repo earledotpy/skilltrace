@@ -40,14 +40,18 @@ def _set_track_weights(root: Path, weights: dict) -> None:
 
 
 def _recommended_order(capsys) -> list[str]:
-    """Parse the numbered recommendation ids out of captured stdout, in order."""
+    """Parse the ranked node IDs from Mentor-voice stdout, in order.
+
+    Mentor-voice kicker lines look like:  OPTION 1 — 60-MIN SESSION
+    The node ID appears in the DO THIS NEXT action line:
+      Start studying <node_id>: `skilltrace session start --node <node_id>`
+    or Continue <node_id>: ...
+    We extract the node ID from the --node argument in the action line.
+    """
+    import re
     out = capsys.readouterr().out
-    ids = []
-    for line in out.splitlines():
-        stripped = line.strip()
-        # Recommendation lines look like: "1. some.node.id  (score 4)"
-        if stripped[:1].isdigit() and ". " in stripped:
-            ids.append(stripped.split(". ", 1)[1].split("  ", 1)[0].strip())
+    # Match "--node <node_id>" where node_id ends before a backtick, whitespace, or end.
+    ids = re.findall(r"--node\s+([^\s`]+)", out)
     return ids
 
 
@@ -60,7 +64,8 @@ def test_next_on_seed_exits_zero_and_logs_no_event(tmp_path, capsys):
     # Read-only: the dispatcher appends no audit event.
     assert load_events(root) == []
     out = capsys.readouterr().out
-    assert "next:" in out
+    # Mentor-voice output (issue #44): kicker opens each candidate block.
+    assert "OPTION 1" in out
 
 
 def test_next_seed_emits_no_unmapped_track_warning(tmp_path, capsys):
@@ -96,11 +101,13 @@ def test_next_seed_recommendations_all_have_reason_lines(tmp_path, capsys):
     root = _seed_repo(tmp_path)
     cli.run(["next", "--minutes", "60", "--limit", "5"], root=root)
     out = capsys.readouterr().out.splitlines()
-    numbered = [i for i, ln in enumerate(out) if ln.strip()[:1].isdigit() and ". " in ln]
-    assert numbered
-    for i in numbered:
-        # Each numbered node line is followed by a non-empty indented reason line.
-        assert out[i + 1].strip()
+    # Mentor-voice output (issue #44): each candidate opens with "OPTION N — ..."
+    # followed by a non-empty title line.
+    option_indices = [i for i, ln in enumerate(out) if ln.startswith("OPTION ")]
+    assert option_indices, "Expected at least one OPTION kicker in next output"
+    for i in option_indices:
+        # The line after the kicker is the node title (non-empty).
+        assert i + 1 < len(out) and out[i + 1].strip()
 
 
 def test_unmapped_track_warns_but_exits_zero(tmp_path, capsys):
