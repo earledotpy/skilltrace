@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Python >= 3.11
+- Python >= 3.14
 - pip
 - Git
 
@@ -55,7 +55,7 @@ directories as Markdown and YAML files.
 **`skilltrace` is not recognized** -- make sure the virtual environment is
 activated and you ran `pip install -e .` from the repo root.
 
-**Python version errors** -- SkillTrace requires Python >= 3.11. Check with
+**Python version errors** -- SkillTrace requires Python >= 3.14. Check with
 `python --version`.
 
 **PyYAML import errors** -- run `pip install PyYAML>=6.0` inside the active

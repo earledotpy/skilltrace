@@ -15,7 +15,7 @@ and YAML files on disk, with no network access.
 pip install -e .
 ```
 
-Python ≥ 3.11; the only runtime dependency is PyYAML. Installing exposes the
+Python ≥ 3.14; the only runtime dependency is PyYAML. Installing exposes the
 `skilltrace` console script (equivalently, `python -m skilltrace`).
 
 ## Commands
