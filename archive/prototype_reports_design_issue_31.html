@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkillTrace — Reports Design Prototype (Issue #31)</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-hover: #1f242c;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --heading: #f0f6fc;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --accent-bg: rgba(56, 139, 253, 0.12);
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    padding: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h1 { font-size: 1.4rem; color: var(--heading); margin-bottom: 0.25rem; font-weight: 600; }
+  .subtitle { color: var(--muted); font-size: 0.9rem; }
+
+  .control-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .control-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  button.chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: var(--font-sans);
+  }
+  button.chip:hover {
+    background: var(--surface-hover);
+    border-color: var(--muted);
+  }
+  button.chip[aria-pressed="true"] {
+    background: var(--accent-bg);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .cli-syntax-banner {
+    background: #090d13;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cli-cmd { color: var(--green); }
+  .cli-flags { color: var(--yellow); }
+
+  .terminal-window {
+    background: #06090e;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .terminal-titlebar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .terminal-dots { display: flex; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.red { background: #ff5f56; }
+  .dot.yellow { background: #ffbd2e; }
+  .dot.green { background: #27c93f; }
+
+  .terminal-body {
+    padding: 1.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--text);
+    white-space: pre-wrap;
+    overflow-x: auto;
+    line-height: 1.45;
+  }
+
+  .section-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .section-title {
+    font-size: 1.05rem;
+    color: var(--heading);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 768px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+  }
+  .card h3 { font-size: 0.95rem; color: var(--heading); margin-bottom: 0.35rem; }
+  .card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.5rem; }
+  .card code { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); }
+
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+  .badge.rec { background: rgba(63, 185, 80, 0.15); color: var(--green); border: 1px solid var(--green); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SkillTrace Reports Design Prototype <span style="font-size: 0.9rem; color: var(--accent); font-weight: normal;">(Issue #31)</span></h1>
+  <div class="subtitle">Exploring report content, information design variants, and CLI invocation architectures.</div>
+</header>
+
+<div class="control-panel">
+  <div class="control-group">
+    <div class="control-label">Select Report</div>
+    <div class="btn-group" id="report-buttons">
+      <button class="chip" data-report="progress" aria-pressed="true">Progress Report</button>
+      <button class="chip" data-report="blockers">Blocker Report</button>
+      <button class="chip" data-report="reviews">Review Report</button>
+      <button class="chip" data-report="evidence">Evidence Report</button>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <div class="control-label">Information Design Variant</div>
+    <div class="btn-group" id="variant-buttons">
+      <button class="chip" data-variant="A" aria-pressed="true">A: Actionable Diagnostic</button>
+      <button class="chip" data-variant="B">B: Mentor Voice</button>
+      <button class="chip" data-variant="C">C: Structural Ledger</button>
+    </div>
+  </div>
+</div>
+
+<div class="cli-syntax-banner">
+  <div>
+    <span>Invoked as: </span>
+    <span class="cli-cmd" id="cli-banner-cmd">skilltrace report progress</span>
+  </div>
+  <span style="color: var(--muted); font-size: 0.75rem;">Read-only • Exit 0 • No audit event</span>
+</div>
+
+<div class="terminal-window">
+  <div class="terminal-titlebar">
+    <div class="terminal-dots">
+      <div class="dot red"></div>
+      <div class="dot yellow"></div>
+      <div class="dot green"></div>
+    </div>
+    <div id="terminal-tab-title">skilltrace report progress (Variant A)</div>
+    <div>stdout (stdlib pure)</div>
+  </div>
+  <div class="terminal-body" id="terminal-output"></div>
+</div>
+
+<div class="section-box">
+  <div class="section-title">CLI Invocation Architecture Trade-offs</div>
+  <div class="grid-2">
+    <div class="card" style="border-left: 3px solid var(--green);">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <h3>Option 1: Unified Subcommand Family</h3>
+        <span class="badge rec">RECOMMENDED</span>
+      </div>
+      <p>Group all analytical views under <code>skilltrace report &lt;target&gt;</code>.</p>
+      <code>skilltrace report progress</code><br>
+      <code>skilltrace report blockers</code><br>
+      <code>skilltrace report reviews</code><br>
+      <code>skilltrace report evidence [--node-id &lt;id&gt;]</code><br>
+      <code>skilltrace report resources</code>
+      <p style="margin-top: 0.5rem;">
+        <b>Pros:</b> Mirrors <code>validate &lt;layer&gt;</code> and <code>export &lt;target&gt;</code>. Clear distinction between daily fast listings (<code>skilltrace blockers</code>) and deep analytical reports. Top-level aliases like <code>st progress</code> can be added cleanly via #32 alias policy.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Option 2: Flags on Existing Listings & Top-Level</h3>
+      <p>Spread across listing flags and top-level domain commands.</p>
+      <code>skilltrace progress</code><br>
+      <code>skilltrace blockers --report</code> (or <code>--all</code>)<br>
+      <code>skilltrace reviews --report</code> (or <code>--all</code>)<br>
+      <code>skilltrace evidence report [--node-id &lt;id&gt;]</code><br>
+      <code>skilltrace resource-report</code>
+      <p style="margin-top: 0.5rem;">
+        <b>Cons:</b> Inconsistent mental model. Mixes top-level commands, subcommands, and flags. Harder to discover in <code>--help</code>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  progress: {
+    A: `============================================================
+  SKILLTRACE CURRICULUM PROGRESS REPORT
+============================================================
+Overall: 20/81 nodes completed (24.7%) | 24 sessions (22h 20m studied)
+
+--- [NODE STATE ROLL-UP] -----------------------------------
+  Mastered:    8 (10%)  [Permanent retention confirmed]
+  Passed:     12 (15%)  [Evidence requirements met]
+  Active:      3 (4%)   [Currently in progress in sessions]
+  Available:  18 (22%)  [Prerequisites satisfied, ready to start]
+  Locked:     40 (49%)  [Hard prerequisites pending]
+
+--- [TRACK & BAND PROGRESS] --------------------------------
+Math Foundations           [============--------]  60% (12/20)
+  Mastered: 6 | Passed: 6 | Active: 1 | Ready: 3 | Locked: 4
+
+Programming & Tooling      [========------------]  44% (8/18)
+  Mastered: 2 | Passed: 4 | Active: 1 | Ready: 5 | Locked: 6
+
+Data & Communication       [==------------------]   8% (2/24)
+  Mastered: 0 | Passed: 2 | Active: 1 | Ready: 6 | Locked: 15
+
+Cross-Cutting & Portfolio  [--------------------]   0% (0/19)
+  Mastered: 0 | Passed: 0 | Active: 0 | Ready: 4 | Locked: 15
+
+Next milestone: 3 available nodes ready to unlock Pandas Data Exploration band.`,
+
+    B: `Your Learning Journey
+---------------------
+You have completed 20 of 81 skills (8 mastered, 12 passed) across 24 study sessions (22.3 hours).
+
+Track Breakdown
+---------------
+1. Math Foundations — 60% complete (12/20 nodes)
+   You have solid coverage in algebra and arithmetic. Next up: calculus derivative intuition.
+
+2. Programming & Tooling — 44% complete (8/18 nodes)
+   Core Python and virtual environments are solid. Next up: automated test writing.
+
+3. Data & Communication — 8% complete (2/24 nodes)
+   CSV parsing complete; pandas dataframes available to start.
+
+4. Cross-Cutting & Portfolio — 0% complete (0/19 nodes)
+   Capstones unlock as you complete data analysis and modeling tracks.
+
+Mentor Note: Great momentum on math and programming fundamentals. Starting the pandas track will unlock your first data analysis capstone.`,
+
+    C: `+-----------------------------------------------------------------------------+
+| CURRICULUM PROGRESS LEDGER                                                  |
++-----------------------------------------------------------------------------+
+| TOTAL NODES: 81 | COMPLETED: 20 (24.7%) | STUDY TIME: 22.3 hrs | SESSIONS: 24 |
++-----------------------------------------------------------------------------+
+| TRACK                      | MAST | PASS | ACTV | AVAIL | LOCK | TOTAL | DONE |
++-----------------------------------------------------------------------------+
+| Math Foundations           |    6 |    6 |    1 |     3 |    4 |    20 |  60% |
+| Programming & Tooling      |    2 |    4 |    1 |     5 |    6 |    18 |  44% |
+| Data & Communication       |    0 |    2 |    1 |     6 |   15 |    24 |   8% |
+| Cross-Cutting & Portfolio  |    0 |    0 |    0 |     4 |   15 |    19 |   0% |
++-----------------------------------------------------------------------------+
+| TOTAL                      |    8 |   12 |    3 |    18 |   40 |    81 | 24.7%|
++-----------------------------------------------------------------------------+`
+  },
+
+  blockers: {
+    A: `============================================================
+  SKILLTRACE BLOCKER REPORT — Actionable View
+============================================================
+Status: 2 open blocker(s) | 1 resolved in history
+
+--- [OPEN BLOCKERS] (Sorted oldest first) --------------------
+● blk.data.pandas.groupby_aggregation_01.001 [4d open since 2026-08-16]
+  Node:        data.pandas.groupby_aggregation_01 (Pandas: GroupBy and Aggregation)
+  Obstacle:    Multi-level index aggregation and custom transform functions failing on missing date ranges.
+  Action:      [open] rem.data.pandas.groupby_aggregation_01.001 — Work through 5 custom aggregation exercises on Kaggle pandas tutorial.
+  Rescue Node: data.pandas.dataframe_basics_01 (Remediation edge ACTIVE)
+
+● blk.math.calculus.derivative_intuition_01.001 [2d open since 2026-08-18]
+  Node:        math.calculus.derivative_intuition_01 (Calculus: Derivative Intuition)
+  Obstacle:    Geometric rate-of-change vs instantaneous slope intuition still hazy on polynomial curves.
+  Action:      [none logged] -> Run: \`skilltrace remediation create\`
+  Rescue Node: math.functions.slope_01 (Remediation edge ACTIVE)
+
+--- [RESOLVED HISTORY] -------------------------------------
+✓ blk.math.algebra.systems_equations_01.001 [resolved 2026-07-14 | was stuck 2d]
+  Node:        math.algebra.systems_equations_01 (Algebra: Systems of Linear Equations)
+  Obstacle:    Matrix substitution method producing arithmetic sign errors.
+  Resolution:  Completed 10 Khan Academy practice problems on elimination method.
+
+Next move: Address blk.data.pandas.groupby_aggregation_01.001 or study rescue node.`,
+
+    B: `Where you are stuck
+-------------------
+You have 2 open blockers holding back your progress. One has an active rescue node ready in your graph.
+
+Current Obstacles
+-----------------
+1. Pandas: GroupBy and Aggregation (4 days open)
+   Obstacle: Multi-level index aggregation and custom transform functions failing on missing date ranges.
+   Where to turn: Rescue node 'data.pandas.dataframe_basics_01' is now prioritized in \`skilltrace next\`.
+   Intervention: Work through 5 custom aggregation exercises on Kaggle pandas tutorial.
+   How to proceed: Finish your remediation action or resolve once clear.
+   Do this next: \`skilltrace blocker resolve blk.data.pandas.groupby_aggregation_01.001 --summary "..."\`
+
+2. Calculus: Derivative Intuition (2 days open)
+   Obstacle: Geometric rate-of-change vs instantaneous slope intuition still hazy on polynomial curves.
+   Where to turn: Rescue node 'math.functions.slope_01' is now prioritized in \`skilltrace next\`.
+   Do this next: \`skilltrace remediation create math.calculus.derivative_intuition_01 --description "..."\`
+
+Resolved History
+----------------
+1. Algebra: Systems of Linear Equations — stuck 2 days; resolved via Completed 10 Khan Academy practice problems on elimination method.
+
+Mentor Note: Don't let pandas groupby sit past a week — switch to the rescue node if you're hitting a wall.`,
+
+    C: `+-----------------------------------------------------------------------------+
+| BLOCKER LEDGER                                                              |
++-----------------------------------------------------------------------------+
+| Open: 2  | Resolved: 1  | Remediation Edges Active: 2                          |
++-----------------------------------------------------------------------------+
+| ID / NODE                                 | AGE | STATUS | ACTIONS | RESCUE |
++-----------------------------------------------------------------------------+
+| data.pandas.groupby_aggregation_01        | 4d  | OPEN   | 1 act   | YES    |
+|   Desc: Multi-level index aggregation and custom transform functions...     |
+| math.calculus.derivative_intuition_01     | 2d  | OPEN   | 0 act   | YES    |
+|   Desc: Geometric rate-of-change vs instantaneous slope intuition...        |
+| math.algebra.systems_equations_01         | 2d  | CLOSED | 1 act   | -      |
++-----------------------------------------------------------------------------+`
+  },
+
+  reviews: {
+    A: `============================================================
+  SKILLTRACE REVIEW & RETENTION REPORT
+============================================================
+Scheduled: 2 (1 overdue) | Completed: 2 (50% satisfactory) | Cancelled: 1
+
+--- [DUE & OVERDUE RETENTION CHECKS] -----------------------
+● rev.math.algebra.linear_equations_01.001 [OVERDUE - 5d LATE] -> [ELIGIBLE FOR MASTERY UPON SATISFACTORY REVIEW]
+  Node:          math.algebra.linear_equations_01 (Algebra: Linear Equations)
+  Scheduled:     2026-08-15 (Passed on 2026-07-14)
+  Command:       \`skilltrace review complete rev.math.algebra.linear_equations_01.001 --outcome satisfactory --summary "..."\`
+
+● rev.prog.python.functions_01.001 [DUE IN 2d]
+  Node:          prog.python.functions_01 (Python: Functions & Scope)
+  Scheduled:     2026-08-22 (Passed on 2026-08-08)
+  Command:       \`skilltrace review complete rev.prog.python.functions_01.001 --outcome satisfactory --summary "..."\`
+
+--- [COMPLETED REVIEWS] ------------------------------------
+✓ PASS rev.math.arithmetic.fractions_01.001 [SATISFACTORY] on 2026-07-21
+  Node:          math.arithmetic.fractions_01 (State: mastered)
+  Summary:       15/15 mental fraction conversions without lookup table.
+
+✗ RE-STUDY rev.data.csv.read_csv_01.001 [UNSATISFACTORY] on 2026-08-02
+  Node:          data.csv.read_csv_01 (State: passed)
+  Summary:       Stumbled on dialect parsing with custom delimiter and header skipping.
+
+--- [CANCELLED REVIEWS] ------------------------------------
+⊘ rev.math.algebra.variables_expressions_01.001 cancelled 2026-07-17: Rescheduled into comprehensive math foundations consolidation sitting.
+
+Retention Summary: 1 mastery promotion ready to unlock; 1 failed retention check needs review.`,
+
+    B: `Retention & Mastery Health
+--------------------------
+Your retention checks keep passed skills from fading. You have 1 overdue review that can unlock mastery.
+
+Ready for Mastery Verification
+------------------------------
+1. Algebra: Linear Equations (Due 2026-08-15 · 5 days overdue)
+   Why this matters: Passed 30+ days ago. A satisfactory review today promotes this node to permanent mastery.
+   Where to check: Review your algebraic equation solutions without scratch notes.
+   Do this next: \`skilltrace review complete rev.math.algebra.linear_equations_01.001 --outcome satisfactory --summary "..."\`
+
+Recent Review Outcomes
+----------------------
+✓ Arithmetic: Fractions & Decimals — Satisfactory! Promoted to mastered.
+⚠ Data: Reading CSV Files — Unsatisfactory. Dialect parsing slipped; added to study suggestions.`,
+
+    C: `+-----------------------------------------------------------------------------+
+| REVIEW AUDIT REGISTER                                                       |
++-----------------------------------------------------------------------------+
+| Overdue: 1 | Scheduled: 2 | Completed: 2 (1 pass, 1 fail) | Cancelled: 1     |
++-----------------------------------------------------------------------------+
+| ID / NODE                             | DUE DATE   | STATUS       | OUTCOME |
++-----------------------------------------------------------------------------+
+| math.algebra.linear_equations_01      | 2026-08-15 | OVERDUE (5d) | PENDING |
+| prog.python.functions_01              | 2026-08-22 | SCHEDULED    | PENDING |
+| math.arithmetic.fractions_01          | 2026-07-20 | COMPLETED    | SATIS   |
+| data.csv.read_csv_01                  | 2026-08-01 | COMPLETED    | UNSATIS |
+| math.algebra.variables_expressions_01 | 2026-07-18 | CANCELLED    | -       |
++-----------------------------------------------------------------------------+`
+  },
+
+  evidence: {
+    A: `============================================================
+  SKILLTRACE EVIDENCE & PROOF TRAIL REPORT
+============================================================
+Proof records: 3 submitted (2 accepted, 0 rejected, 1 superseded) across 2 nodes
+
+NODE: data.csv.read_csv_01 [PASSED] — Data: Reading CSV Files
+Gate Authority: Objective Gate
+Gate Command:   \`python checks/data.csv.read_csv_check.py artifacts/data/csv_read_csv_solution.py\`
+  Spec: spec.data.csv.read_csv_01.code — Working read_csv implementation with error handling (REQUIRED, min 1) [SATISFIED]
+    [SUPERSEDED] ev.data.csv.read_csv_01.001 submitted 2026-07-10
+      File:       artifacts/data/csv_read_csv_v1.py
+      Superseded by: ev.data.csv.read_csv_01.002 (Reason: Fixed delimiter sniffing and newline stripping.)
+    [ACCEPTED]   ev.data.csv.read_csv_01.002 submitted 2026-07-11 (accepted)
+      File:       artifacts/data/csv_read_csv_solution.py
+      Note:       Passed objective check (10/10 test assertions passed).
+
+NODE: communication.reports.results_summary_01 [ACTIVE] — Communication: Technical Results Summary
+Gate Authority: Learner Manual Review
+Gate Rubric:    \`rubrics/communication/results_summary_rubric.md\`
+  Spec: spec.comm.results_summary.pdf — One-page executive findings brief (REQUIRED, min 1) [INCOMPLETE]
+    (no evidence submitted yet)
+  Spec: spec.comm.results_summary.notes — Draft observations and raw tables (OPTIONAL SLOT) [ATTACHED]
+    [ACCEPTED]   ev.comm.results_summary.001 submitted 2026-08-19 (accepted)
+      File:       evidence/artifacts/notes_draft.md
+      Note:       Optional raw notes attached as reference slot.`,
+
+    B: `Evidence & Proof Trail
+----------------------
+Every pass is backed by verified artifacts. Here is how your proof records stand:
+
+1. Reading CSV Files (\`data.csv.read_csv_01\`) · State: PASSED
+   Gate: Objective verification command (\`python checks/data.csv.read_csv_check.py\`)
+   Proof chain:
+   - ev.001 (superseded): initial solution failed trailing comma check
+   - ev.002 (accepted): fixed delimiter sniffing; 10/10 automated assertions passed
+   Status: Fully satisfied and verified.
+
+2. Technical Results Summary (\`communication.reports.results_summary_01\`) · State: ACTIVE
+   Gate: Learner manual review against rubric
+   Proof chain:
+   - Required one-page executive brief: NOT YET SUBMITTED
+   - Optional draft notes: attached as reference
+   Do this next: Submit your final one-page brief to become pass-eligible:
+   \`skilltrace submit communication.reports.results_summary_01 --location artifacts/summary.pdf --accept\``,
+
+    C: `+-----------------------------------------------------------------------------+
+| EVIDENCE TRAIL REGISTER                                                     |
++-----------------------------------------------------------------------------+
+| NODE / SPEC ID                        | GATE TYPE | RECORDS | STATUS        |
++-----------------------------------------------------------------------------+
+| data.csv.read_csv_01                  | OBJECTIVE | 2 recs  | SATISFIED     |
+|   spec.data.csv.read_csv_01.code      | Required  | 1 head  | 1/1 accepted  |
+|     ev.001 (superseded) -> ev.002 (accepted on 2026-07-11)                  |
+| communication.reports.results_summary | MANUAL    | 1 rec   | INCOMPLETE    |
+|   spec.comm.results_summary.pdf       | Required  | 0 recs  | 0/1 missing   |
+|   spec.comm.results_summary.notes     | Optional  | 1 rec   | 1/0 attached  |
++-----------------------------------------------------------------------------+`
+  }
+};
+
+let currentReport = "progress";
+let currentVariant = "A";
+
+function render() {
+  document.getElementById("terminal-output").textContent = DATA[currentReport][currentVariant];
+  document.getElementById("terminal-tab-title").textContent = `skilltrace report ${currentReport} (Variant ${currentVariant})`;
+  document.getElementById("cli-banner-cmd").textContent = `skilltrace report ${currentReport}`;
+
+  document.querySelectorAll("#report-buttons button").forEach(btn => {
+    btn.setAttribute("aria-pressed", btn.dataset.report === currentReport);
+  });
+  document.querySelectorAll("#variant-buttons button").forEach(btn => {
+    btn.setAttribute("aria-pressed", btn.dataset.variant === currentVariant);
+  });
+}
+
+document.querySelectorAll("#report-buttons button").forEach(btn => {
+  btn.onclick = () => { currentReport = btn.dataset.report; render(); };
+});
+
+document.querySelectorAll("#variant-buttons button").forEach(btn => {
+  btn.onclick = () => { currentVariant = btn.dataset.variant; render(); };
+});
+
+render();
+</script>
+</body>
+</html>

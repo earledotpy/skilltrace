@@ -559,13 +559,30 @@ v1.0.0-rc1; no new features.
 
 Final acceptance criteria:
 
-- all tests and smoke tests pass
-- seed graph, evidence, resources, policy, and release metadata validate
-- install docs, daily workflow, and backup/restore tested
-- no hidden AI-only grading path; no automated pass/master/delete path
-- asserted progress is never moved backward by any code path
-- exports are never read back by the engine
-- roadmap anchors remain `reference_only`
+- **Real-use soak period**: at least 7 distinct study days with logged
+  sessions completed within a maximum 14-day window. Across the soak
+  period, the full daily lifecycle is exercised in real study (`today`,
+  `next`, `node`, session start/work/close, objective and manual evidence
+  submission, learner pass, review completion/mastery, exports, backup,
+  health).
+- **Zero critical/high defects**: no safety boundary violations, no data
+  loss/corruption, no unhandled crashes in daily CLI workflows. Any
+  critical/high defect fix resets the soak clock to day 0 (cosmetic/text
+  polish patches do not reset it).
+- **Automated & operational gates**: all tests pass (`pytest`), `skilltrace
+  health` exits 0 with 0 errors and 0 warnings on seed data,
+  `skilltrace check-automation` passes for all 3 boundaries (`pass_node`,
+  `master_node`, `delete_record`).
+- **Offline clean-install on Windows**: fresh clone installs and runs
+  offline without network access.
+- **Backup & restore drill**: timestamped archive generated and restored per
+  `docs/RUNBOOK.md`.
+- **Documentation & schema freeze**: YAML/frontmatter schemas frozen; all
+  10 required release docs complete and verified.
+- **Invariants preserved**: no hidden AI-only grading path, no automated
+  pass/master/delete path, asserted progress is never moved backward by any
+  code path, exports are never read back by the engine, roadmap anchors
+  remain `reference_only`.
 
 Tag:
 

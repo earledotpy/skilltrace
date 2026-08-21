@@ -62,6 +62,25 @@ enter only as seed data and policy values, never as engine code.
   interface-layer history lives in ADR 0002 and the roadmap.
 - `docs/` — roadmap, ADRs, framework references (background reading)
 
+
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked on GitHub using the \gh\ CLI. See \docs/agents/issue-tracker.md\.
+
+### Triage labels
+
+The five canonical triage roles map to label strings eeds-triage\,
+eeds-info\, eady-for-agent\, eady-for-human\, \wontfix\. See
+\docs/agents/triage-labels.md\.
+
+### Domain docs
+
+Single-context layout: one \CONTEXT.md\ at the repo root plus \docs/adr\.
+See \docs/agents/domain.md\.
+
 ## Working conventions
 
 - Current phase: v0.8.0-rc1 complete (foundations production seed graph —
