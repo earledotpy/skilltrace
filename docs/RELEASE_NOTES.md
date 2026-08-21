@@ -9,7 +9,7 @@ Release candidate for the first stable release. See
 
 - Rewritten INSTALL.md and RUNBOOK.md for current CLI.
 - New docs: USER_GUIDE.md, SAFETY_BOUNDARIES.md, POST_V1_BACKLOG.md.
-- Version bumped to 1.0.0rc1.
+- Version bumped to 1.0.0.
 
 ### Release hardening (in progress)
 
