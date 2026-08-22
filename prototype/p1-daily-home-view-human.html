@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE — Daily Home — Human Friendly — THROWAWAY</title>
+<style>
+  :root{--bg:#fdfcfb;--fg:#1c1917;--mut:#78716c;--line:#e7e5e4;--card:#ffffff;--accent:#0f766e;--accent2:#fef3c7;--ready:#dcfce7;--locked:#fee2e2;--active:#e0f2fe;--passed:#ede9fe}
+  *{box-sizing:border-box} body{margin:0;font:15px/1.6 ui-sans,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:var(--fg);background:var(--bg)}
+  .throwaway{text-align:center;background:#422006;color:#ffedd5;font-size:12px;padding:6px 10px;letter-spacing:.02em}
+  header{position:sticky;top:0;z-index:10;background:rgba(253,252,251,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 18px}
+  h1{font-size:19px;margin:10px 0 2px;font-weight:800} .sub{color:var(--mut);font-size:13px;margin-bottom:10px}
+  .health{display:flex;gap:8px;flex-wrap:wrap;padding:8px 0 12px;font-size:12px}
+  .health span{border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--card)}
+  .health .ok{background:var(--ready);border-color:#86efac}
+  .pill{font-size:11px;font-weight:700;letter-spacing:.02em;border-radius:999px;padding:3px 9px;border:1px solid var(--line);display:inline-block;background:var(--card)}
+  .pill.ready{background:var(--ready);border-color:#86efac}.pill.locked{background:var(--locked);border-color:#fca5a5}.pill.active{background:var(--active);border-color:#7dd3fc}.pill.passed{background:var(--passed);border-color:#c4b5fd}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:10px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .title{font-size:22px;font-weight:800;margin:6px 0 2px;line-height:1.2}
+  .kicker{font-size:11px;font-weight:800;letter-spacing:.09em;color:var(--mut);text-transform:uppercase;margin:14px 0 6px}
+  .kicker:first-child{margin-top:0}
+  .mut{color:var(--mut)} .big{font-size:15px}
+  .btn{appearance:none;border-radius:999px;padding:10px 16px;font-weight:700;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.ghost{background:#fff;color:var(--fg);border-color:var(--line)}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  .grid2{display:grid;grid-template-columns:1.25fr .75fr;gap:16px} .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:1fr}}
+  .list{list-style:none;padding:0;margin:8px 0}
+  .list li{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--card);margin-bottom:8px}
+  .small{font-size:12px;color:var(--mut);line-height:1.4}
+  details{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fcfcfc} details summary{cursor:pointer;font-weight:700}
+  .banner{border-radius:12px;padding:12px 14px;font-size:14px;border:1px dashed var(--line);background:#fff}
+  .banner.warm{background:var(--accent2);border-style:solid;border-color:#fde68a}
+  .split{display:grid;grid-template-columns:360px 1fr;gap:16px} @media(max-width:900px){.split{grid-template-columns:1fr}}
+  .rail{position:sticky;top:92px;align-self:start}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .tab{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#f5f5f4;font-size:12px;font-weight:700;cursor:pointer}
+  .tab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .bar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:#1c1917;color:#fff;border-radius:999px;padding:8px 10px;display:flex;gap:8px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.3);z-index:50}
+  .bar button{border-radius:999px;border:1px solid #444;background:#292524;color:#fff;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer}
+  .bar button.on{background:#fff;color:#1c1917;border-color:#fff}
+  .hidden{display:none}
+  .note{font-size:11px;background:var(--accent2);border:1px solid #fde68a;border-radius:8px;padding:5px 8px;display:inline-block;margin:6px 0}
+  hr{border:none;border-top:1px solid var(--line);margin:12px 0}
+</style>
+
+<div class="throwaway">PROTOTYPE — THROWAWAY — This file is not the product. It shows one idea for the daily home page. — <b>Human-friendly version</b> of P1 — made for the <b>Learner</b></div>
+
+<header>
+  <div class="wrap">
+    <h1>SkillTrace — Your study home</h1>
+    <div class="sub">This prototype shows the same daily view in three different forms. Use the bar at the bottom to change the form. All data is real example data.</div>
+    <div class="health" aria-label="system check">
+      <span class="ok">✓ Skills: 81</span>
+      <span class="ok">✓ Links between skills: 124</span>
+      <span class="ok">✓ Your progress is safe</span>
+      <span class="ok">✓ Study materials: 29 — all checked</span>
+      <span class="ok">45 ready · 36 waiting for earlier skills</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="padding:14px 18px 88px">
+
+  <!-- Common context strip in human words -->
+  <div class="card" style="background:#fffbeb;border-color:#fde68a">
+    <div class="kicker">How to read this page</div>
+    <p class="small" style="margin:0">Each <b>SkillNode</b> is one skill you can learn. Each SkillNode has a <b>Node state</b>: <span class="pill ready">Ready to start</span> <span class="pill locked">Locked</span> <span class="pill active">In progress</span> <span class="pill passed">Passed</span> <span class="pill passed">Mastered</span>. The Engine shows readiness. You show progress. The page never starts, passes or masters a SkillNode for you — you do that with a clear action. This is a <b>Hard boundary</b>. Hints and order are <b>Advisory policy</b> — they help, they never block you.</p>
+  </div>
+
+  <!-- VARIANT A -->
+  <section id="var-a">
+    <div class="kicker">Form A — The mentor letter (read from top to bottom)</div>
+    <div class="note">Best if you like one clear story. Least visual noise.</div>
+
+    <div class="banner">No study block is open now. Your best focus today is <b>Use basic Pandas DataFrame operations</b>.<br><span class="small">Also good today: Query rows and columns with SELECT · Use variables and expressions in Python.</span></div>
+
+    <div class="card">
+      <div class="kicker" style="margin:0;color:var(--accent)">Your focus today</div>
+      <div class="title">Use basic Pandas DataFrame operations</div>
+      <div><span class="pill ready">Ready to start</span> <span class="small">Foundational · About 1 to 3 hours</span></div>
+      <p class="big">You can start this skill now. Nothing blocks you. To pass, you need 1 approved piece of work. You decide when your work is good — not the computer.</p>
+
+      <div class="kicker">Where to learn</div>
+      <p class="small">We found 2 trusted <b>LearningResource</b>s for this SkillNode:</p>
+      <ul class="small" style="margin:6px 0 0 18px">
+        <li><b>Pandas Docs</b> — pandas.pydata.org/docs — free, checked and Verified</li>
+        <li><b>Python for Data Analysis</b> — wesmckinney.com/book — free introduction available</li>
+      </ul>
+
+      <div class="kicker">How to proceed</div>
+      <p><b>Evidence:</b> 0 of 1 piece approved. <span class="small">Pass eligibility is not yet met. Pass eligibility means every required piece has enough approved work. We check this each time you ask — we never store it as truth.</span></p>
+      <p class="small">No <b>Review</b> is set yet. The first Review is set for you when you pass.</p>
+
+      <div class="kicker">Do this next</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn">Start this skill</button>
+        <button class="btn ghost" disabled title="You will confirm here. This needs your clear Pass action.">Mark as passed — not ready (needs approved work)</button>
+      </div>
+      <p class="small">If you pass this skill, you will open 5 other skills, including <b>Filter rows and select columns in Pandas</b>.</p>
+
+      <details style="margin-top:10px"><summary>Why we suggest this one?</summary>
+        <p class="small">This is the best fit for 30 minutes. It opens many next skills. It has no open <b>Blocker</b>. It is not waiting for remediation help. Hard prerequisites are done — soft hints do not block you. This is advisory only — you can choose a different SkillNode.</p>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="kicker">Other good choices for today</div>
+      <ul class="list">
+        <li><b>Query rows and columns with SELECT</b> <span class="pill ready">Ready</span><br><span class="small">20–45 min · Opens 5 skills · 3 LearningResources</span> — <a href="#">View skill →</a></li>
+        <li><b>Define and call Python functions</b> <span class="pill ready">Ready</span><br><span class="small">1–3 hours · Opens 5 skills</span></li>
+        <li><b>Use variables and expressions in Python</b> <span class="pill ready">Ready</span> <span class="small">30–90 min</span></li>
+      </ul>
+      <div class="note">Later you can ask to also see <b>locked</b> skills — we show why they are locked and what to do first. Locked skills are never in the top suggestion.</div>
+    </div>
+
+    <div class="card">
+      <div class="kicker">What is not active today (placeholders — you will see these later)</div>
+      <div class="grid3">
+        <div><b>Master this skill</b><br><button class="btn ghost" disabled>Master — needs a Review on a different day</button><p class="small">Mastery eligibility needs: passed + one good Review on a different day.</p></div>
+        <div><b>Show your work</b><br><button class="btn ghost" disabled>Add evidence</button> <button class="btn ghost" disabled>I am stuck — add Blocker</button><p class="small">You add EvidenceRecord and Blocker yourself. The Engine never makes them for you.</p></div>
+        <div><b>Your materials</b><br><span class="small">All 29 LearningResources are Verified. A stale or broken Resource only shows a warning — it never blocks a SkillNode.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VARIANT B -->
+  <section id="var-b" class="hidden">
+    <div class="kicker">Form B — At-a-glance dashboard (boxes)</div>
+    <div class="note">Best if you want a fast scan before you start.</div>
+
+    <div class="grid2">
+      <div>
+        <div class="banner warm">Good morning — no block is open. <b>0 Reviews waiting · 0 Blockers open.</b> Nothing needs urgent action today.</div>
+        <div class="card">
+          <div class="kicker" style="margin:0;color:var(--accent)">Focus for today</div>
+          <div class="title">Use basic Pandas DataFrame operations</div>
+          <div><span class="pill ready">Ready to start</span> <span class="small">Foundational</span></div>
+          <p>You are free to start. 1 approved piece of work will make you pass-eligible.</p>
+          <div class="grid2">
+            <div>
+              <div class="kicker">Where to learn</div>
+              <ul class="small" style="margin:6px 0 0 18px"><li>Pandas Docs</li><li>Python for Data Analysis</li></ul>
+            </div>
+            <div>
+              <div class="kicker">Your evidence</div>
+              <p class="small"><b>0 / 1 approved</b> — not yet pass-eligible. ValidationGate is present (we check your work with a small test or your own judgment — never AI alone).</p>
+              <p class="small">Next Review: none yet — set after you pass.</p>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px"><button class="btn">Start</button><button class="btn ghost" disabled>Mark as passed — confirm step comes later</button></div>
+          <details style="margin-top:10px"><summary>Why this?</summary><p class="small">Best score for available time. Opens many next skills. No remediation help active. No Blocker penalty. Hard GraphEdge prerequisites are satisfied.</p></details>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="kicker">Today — needs your eye (advisory only)</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="pill">0 Reviews waiting</span><span class="pill">0 Blockers open</span><span class="pill">45 ready · 36 locked</span></div>
+          <p class="small">Reviews that are overdue and Blockers that are open only change the order — they never block you. Only a <b>locked</b> SkillNode is a wall.</p>
+          <div class="kicker">Top suggestions — 60 minutes</div>
+          <ul class="list">
+            <li><b>1 · Pandas DataFrames</b> <span class="pill ready">Ready</span><br><span class="small">Opens 7 skills · 2 materials</span></li>
+            <li><b>2 · SELECT basics</b> <span class="pill ready">Ready</span><br><span class="small">Opens 5 skills</span></li>
+            <li><b>3 · Python functions</b> <span class="pill ready">Ready</span></li>
+          </ul>
+          <p class="small"><b>Inside the Skill detail:</b> first you see title, state, simple next step. Deeper you see evidence, materials, history, and links.</p>
+        </div>
+        <div class="card">
+          <div class="kicker">Health — quick check</div>
+          <p class="small">All 5 checks are OK: Skills, evidence, study blocks, rules, and materials. This check is read-only — it never changes your progress.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VARIANT C -->
+  <section id="var-c" class="hidden">
+    <div class="kicker">Form C — List + detail (two panels)</div>
+    <div class="note">Best if you want to browse and compare skills fast.</div>
+
+    <div class="split">
+      <div class="rail">
+        <div class="banner" style="margin-bottom:8px">No block open — focus stays on the top suggestion.</div>
+        <div class="card" style="margin:0">
+          <div class="kicker">Suggestions — 60 minutes</div>
+          <p class="small">We order by what fits your time and what opens next. Blocked time and remediation help only change the order.</p>
+          <ul class="list" style="margin-top:8px">
+            <li style="border-color:var(--accent);background:#f0fdfa"><b>★ Use basic Pandas DataFrame operations</b><br><span class="pill ready">Ready to start</span> <span class="small">Foundational · 1–3h · Opens 7</span>
+              <details style="margin-top:6px"><summary class="small">Why top?</summary><p class="small">Most next skills opened for the time you have. No Blocker. No extra help needed.</p></details>
+            </li>
+            <li><b>Query rows and columns with SELECT</b><br><span class="pill ready">Ready</span> <span class="small">20–45 min · Opens 5</span></li>
+            <li><b>Define and call Python functions</b><br><span class="pill ready">Ready</span> <span class="small">1–3h</span></li>
+            <li><b>Use variables and expressions</b><br><span class="pill ready">Ready</span></li>
+            <li><b>Summarize with descriptive statistics</b><br><span class="pill ready">Ready</span></li>
+          </ul>
+          <label class="small"><input type="checkbox" disabled> Also show locked skills (we would show which earlier skill you need first)</label>
+          <p class="small" style="margin-top:6px"><b>Locked</b> means a hard prerequisite is not yet <b>passed</b> or <b>mastered</b>. Locked is the only wall.</p>
+        </div>
+        <div class="card">
+          <div class="kicker">Waiting for you</div>
+          <p class="small">0 Reviews waiting · 0 Blockers open · No remediation help active.<br>Hints about workload and Review dates only warn — they never refuse your action.</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="kicker" style="margin:0">Skill detail</div>
+          <div class="title">Use basic Pandas DataFrame operations</div>
+          <div><span class="pill ready">Ready to start</span> <span class="small">ID: data.pandas.dataframe_basics_01 — one SkillNode</span></div>
+
+          <div class="tabs">
+            <span class="tab on">Overview</span><span class="tab">Evidence</span><span class="tab">Materials</span><span class="tab">History</span>
+          </div>
+
+          <div class="card" style="background:#f8fafc">
+            <div class="kicker">Overview — what you need first</div>
+            <p>You can start this SkillNode now — nothing blocks you. It needs <b>1 approved piece of evidence</b> to become pass-eligible. You decide when your work is good.</p>
+            <div class="grid2">
+              <div><b>Where to learn</b><p class="small">2 LearningResources — Pandas Docs and Python for Data Analysis. Materials are advice only — a missing or broken link never blocks you.</p></div>
+              <div><b>How to proceed</b><p class="small"><b>0 / 1</b> piece approved — not yet pass-eligible.<br>First Review will be set when you pass (different day needed for mastery).</p></div>
+            </div>
+            <b>Do this next</b>
+            <div style="display:flex;gap:8px;margin-top:6px"><button class="btn">Start this skill</button><button class="btn ghost" disabled>Mark as passed — you will confirm this step</button></div>
+            <p class="small">If you pass, you open 5 skills, for example <b>Filter rows and select columns in Pandas</b>. Links between skills are GraphEdge — only hard prerequisites can lock a SkillNode.</p>
+          </div>
+
+          <div class="card">
+            <div class="kicker">Evidence — deeper view</div>
+            <p class="small"><b>ArtifactSpec:</b> 1 piece — "Pandas DataFrame basics solution script" (required). <b>ValidationGate:</b> one gate for this SkillNode — it uses a small check or your own judgment (Acceptance authority), never AI.<br><b>EvidenceRecord:</b> 0 approved — no past work. If you fix past work, you add a new record that supersedes the old one — we keep the old one, but only the new one counts.<br><b>AssessmentAttempt:</b> 0 — attempts do not count for pass eligibility; only EvidenceRecord does.</p>
+            <span class="note">Button "Add evidence" will be here — not yet active.</span>
+          </div>
+
+          <div class="card">
+            <div class="kicker">Materials + Review — deeper view</div>
+            <p class="small"><b>LearningResource</b> check: each link has a last Verified date. We show Verified, stale, or broken. A stale or broken link only warns.<br><b>Review</b> cadence: no Review set now. After you pass, we set one Review. Overdue Reviews are found by date — they warn, they never block.</p>
+          </div>
+
+          <div class="card">
+            <div class="kicker">History — what happened before</div>
+            <p class="small"><b>Session:</b> no Session open now — at most one Session is open at a time; a stale Session only warns.<br><b>SessionWork:</b> 0 pieces — starting work on a <b>available</b> SkillNode marks it <b>active</b> (forward only — we never move you back).<br><b>Blocker:</b> 0 on this SkillNode — a Blocker you make is the only sign that you are stuck; it can raise a Remediation edge to suggest help — it never locks the skill.<br><b>Event log:</b> every change you make writes one Event — we never use the log to decide your state; we only use it for history.</p>
+            <span class="note">Buttons "I am stuck" / "Plan Review" will be here — not yet active.</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Question box for grilling -->
+  <div class="card" style="background:#fffbeb;border-color:#fde68a">
+    <div class="kicker">Help us choose — which form feels right?</div>
+    <ul class="small" style="margin:6px 0 0 18px">
+      <li>On open — do you want a story first (A), a quick scan of boxes (B), or a list to browse (C)? How fast must you see "Do this next"?</li>
+      <li>Where should waiting Reviews and open Blockers live — in the same text, or in their own box?</li>
+      <li>Is "Why we suggest this" clear enough? Does it help without blocking?</li>
+      <li>In the Skill detail — is Overview vs Evidence vs Materials vs History the right split? Where do LearningResource, Pass eligibility and Review dates belong?</li>
+      <li>Do the soft buttons that are not yet active ("Mark as passed — confirm step comes later") make the next step clear?</li>
+      <li>All three forms show the same idea — daily use only: today, suggestions, skill detail, health, and a clear Passing/Mastering step after you confirm. Other actions (add evidence, add Blocker, set Review) stay in the app you use now and come later.</li>
+    </ul>
+    <p class="small" style="margin-top:8px"><b>Scope note:</b> One Learner, on your own computer, no sign-in. A file you see that is an <b>Export</b> (like a report or database copy) is a fresh copy — we make it from your files when you ask, we never read it back as truth.</p>
+  </div>
+
+</main>
+
+<div class="bar" role="navigation" aria-label="change form">
+  <span style="font-size:11px;opacity:.85">Form:</span>
+  <button id="b-a" onclick="setVar('a')">A · Letter</button>
+  <button id="b-b" onclick="setVar('b')">B · Dashboard</button>
+  <button id="b-c" onclick="setVar('c')">C · List + Detail</button>
+  <span style="font-size:11px;opacity:.6;margin-left:4px">?variant=a|b|c</span>
+</div>
+
+<script>
+  function setVar(v){
+    for(const k of ['a','b','c']){
+      const sec=document.getElementById('var-'+k);
+      const btn=document.getElementById('b-'+k);
+      if(sec) sec.classList.toggle('hidden', k!==v);
+      if(btn) btn.classList.toggle('on', k===v);
+    }
+    const u=new URL(location.href); u.searchParams.set('variant',v); history.replaceState(null,'',u);
+  }
+  const p=new URLSearchParams(location.search).get('variant')||'a';
+  setVar(['a','b','c'].includes(p)?p:'a');
+</script>
+</html>
