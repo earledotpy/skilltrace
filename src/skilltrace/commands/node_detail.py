@@ -22,26 +22,16 @@ from __future__ import annotations
 from pathlib import Path
 
 from .. import render
+from ..context import load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
-from ..evidence._schema import EvidenceLoadError
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
-from ..evidence.gates import load_validation_gates
-from ..evidence.records import load_evidence_records
-from ..evidence.specs import ArtifactSpec, load_artifact_specs
-from ..execution._store import ExecutionLoadError
-from ..execution.blockers import Blocker, load_blockers
-from ..execution.sessions import load_sessions, open_session
-from ..graph.edges import EdgeLoadError, GraphEdge, load_edges
-from ..graph.nodes import NodeLoadError, SkillNode, load_nodes
-from ..graph.state import ProgressStoreError, load_state
-from ..resources.registry import (
-    LearningResource,
-    ResourceLoadError,
-    load_resources,
-    resources_for_node,
-)
-
-_EDGES_RELPATH = "graph/edges.yaml"
+from ..evidence.specs import ArtifactSpec
+from ..execution.blockers import Blocker
+from ..execution.sessions import open_session
+from ..graph.edges import EdgeLoadError, GraphEdge
+from ..graph.nodes import NodeLoadError, SkillNode
+from ..graph.state import ProgressStoreError
+from ..resources.registry import LearningResource
 
 
 # --- Mentor voice prose generators -------------------------------------------
@@ -88,11 +78,6 @@ def _unlocked_by(node_id: str, edges: list[GraphEdge]) -> list[str]:
         and edge.edge_type == "hard_prerequisite"
         and edge.source == node_id
     ]
-
-
-def _node_title_map(nodes: list[SkillNode]) -> dict[str, str]:
-    """Build a node_id -> title lookup."""
-    return {n.id: n.title for n in nodes}
 
 
 def _evidence_summary(
@@ -321,67 +306,41 @@ def _unlocks_context(
 
 
 def node_detail(ctx: Context) -> CommandResult:
-    """Load all layers, join for the requested node, render the Mentor view."""
+    """Load all layers via the JoinedView lenient seam and render the Mentor view."""
     root = ctx.root
     node_id = ctx.args.node_id
 
-    # Load all data sources; operational failures exit non-zero.
+    # One deep join — graph/state strict, rest lenient (matches pre-JoinedView try/except blocks).
     try:
-        nodes = load_nodes(root)
-        edges: list[GraphEdge] = (
-            load_edges(root) if (root / _EDGES_RELPATH).exists() else []
-        )
-        store = load_state(root)
+        joined = load_context_lenient(root)
     except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
         print(f"node: FAILED -- {exc}")
         return CommandResult(exit_code=1)
 
+    nodes = joined.nodes
+    edges = joined.edges
+    store = joined.store
+    specs = joined.specs
+    gates = joined.gates
+    records = joined.records
+
     # Verify node exists.
-    node_map = {n.id: n for n in nodes}
+    node_map = joined.node_map
     if node_id not in node_map:
         print(f"node: FAILED -- unknown node {node_id}.")
         return CommandResult(exit_code=1)
     node = node_map[node_id]
 
-    # Load evidence (graceful: empty on failure).
-    try:
-        specs = load_artifact_specs(root)
-    except EvidenceLoadError:
-        specs = []
-    try:
-        gates = load_validation_gates(root)
-    except EvidenceLoadError:
-        gates = []
-    try:
-        records = load_evidence_records(root)
-    except EvidenceLoadError:
-        records = []
+    has_gate = node_id in joined.has_gate
+    node_resources = joined.resources_by_node.get(node_id, [])
 
-    has_gate = any(g.node_id == node_id for g in gates)
-
-    # Load resources (graceful).
-    try:
-        all_resources = load_resources(root)
-    except ResourceLoadError:
-        all_resources = []
-    node_resources = resources_for_node(node_id, all_resources)
-
-    # Load execution state (graceful).
-    try:
-        sessions = load_sessions(root)
-    except ExecutionLoadError:
-        sessions = []
-    current_session = open_session(sessions)
+    current_session = open_session(joined.sessions)
     has_open_session = current_session is not None
 
-    try:
-        blockers = load_blockers(root)
-    except ExecutionLoadError:
-        blockers = []
-    node_blockers = _open_blockers_for_node(node_id, blockers)
+    node_blockers = _open_blockers_for_node(node_id, joined.blockers)
 
     # Derive context.
-    titles = _node_title_map(nodes)
+    titles = joined.titles
     state = store.state_of(node_id)
     state_label = _state_label(state)
     unsatisfied = _unsatisfied_prereqs(node_id, edges, store)

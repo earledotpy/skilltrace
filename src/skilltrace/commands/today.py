@@ -27,66 +27,34 @@ from typing import Any
 import yaml
 
 from .. import render
+from ..context import load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
-from ..evidence._schema import EvidenceLoadError
-from ..evidence.attempts import load_assessment_attempts
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
-from ..evidence.gates import load_validation_gates
-from ..evidence.records import load_evidence_records
-from ..evidence.specs import ArtifactSpec, load_artifact_specs
-from ..execution._store import ExecutionLoadError
-from ..execution.blockers import Blocker, load_blockers
-from ..execution.reviews import load_reviews
-from ..execution.sessions import load_sessions, open_session
-from ..execution.work import load_session_work
-from ..graph.edges import EdgeLoadError, GraphEdge, load_edges
-from ..graph.nodes import NodeLoadError, SkillNode, load_nodes
+from ..evidence.specs import ArtifactSpec
+from ..execution.blockers import Blocker
+from ..execution.sessions import open_session
+from ..graph.edges import EdgeLoadError
+from ..graph.nodes import NodeLoadError, SkillNode
 from ..graph.recommendation import recommend
-from ..graph.state import ProgressStoreError, load_state
+from ..graph.state import ProgressStoreError
 from ..policy.remediation_edges import (
     active_remediations,
     load_failed_attempt_threshold,
 )
-from ..resources.registry import (
-    LearningResource,
-    ResourceLoadError,
-    load_resources,
-    resources_for_node,
-)
-
-_EDGES_RELPATH = "graph/edges.yaml"
-_ATTEMPTS_RELPATH = Path("evidence") / "attempts.yaml"
-_POLICY_RELPATH = Path("policy") / "recommendation.yaml"
+from ..policy.weights import load_factor_weights, load_track_weights
+from ..resources.registry import LearningResource
 
 
 # --- Small loaders and helpers -------------------------------------------------
 
 
 def _load_weight_map(root: Path, key: str) -> dict[str, float]:
-    """Read one weight map from `policy/recommendation.yaml` (mirrors `next`).
-
-    A missing file, missing key, or non-mapping value yields an empty map so
-    `today` still runs and exits 0; individual non-numeric weights are skipped
-    rather than aborting the whole read.
-    """
-    path = root / _POLICY_RELPATH
-    if not path.exists():
-        return {}
-    try:
-        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    except yaml.YAMLError:
-        return {}
-    policy = doc.get("recommendation_policy") if isinstance(doc, dict) else None
-    raw = policy.get(key) if isinstance(policy, dict) else None
-    if not isinstance(raw, dict):
-        return {}
-    weights: dict[str, float] = {}
-    for name, value in raw.items():
-        try:
-            weights[str(name)] = float(value)
-        except (TypeError, ValueError):
-            continue
-    return weights
+    """Delegates to the single deep module ``policy.weights`` (C5)."""
+    if key == "track_weights":
+        return load_track_weights(root)
+    if key == "factor_weights":
+        return load_factor_weights(root)
+    return {}
 
 
 def _parse_date(val: Any) -> date | None:
@@ -262,64 +230,28 @@ def today(ctx: Context) -> CommandResult:
     """Load every layer, synthesize the study day, render the Mentor view."""
     root = ctx.root
 
+    # One deep join — graph/state strict, rest lenient.
     try:
-        nodes = load_nodes(root)
-        edges: list[GraphEdge] = (
-            load_edges(root) if (root / _EDGES_RELPATH).exists() else []
-        )
-        store = load_state(root)
+        joined = load_context_lenient(root)
     except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
         print(f"today: FAILED — {exc}")
         return CommandResult(exit_code=1)
 
-    node_map = {n.id: n for n in nodes}
-    titles = _node_title_map(nodes)
+    nodes = joined.nodes
+    edges = joined.edges
+    store = joined.store
+    sessions = joined.sessions
+    session_work = joined.work
+    blockers = joined.blockers
+    reviews = joined.reviews
+    attempts = joined.attempts
+    specs = joined.specs
+    gates = joined.gates
+    records = joined.records
+    all_resources = joined.resources
 
-    # Execution state (graceful: each history degrades independently).
-    try:
-        sessions = load_sessions(root)
-    except ExecutionLoadError:
-        sessions = []
-    try:
-        session_work = load_session_work(root)
-    except ExecutionLoadError:
-        session_work = []
-    try:
-        blockers = load_blockers(root)
-    except ExecutionLoadError:
-        blockers = []
-    try:
-        reviews = load_reviews(root)
-    except ExecutionLoadError:
-        reviews = []
-    try:
-        attempts = (
-            load_assessment_attempts(root)
-            if (root / _ATTEMPTS_RELPATH).exists()
-            else []
-        )
-    except EvidenceLoadError:
-        attempts = []
-
-    # Evidence state (graceful).
-    try:
-        specs = load_artifact_specs(root)
-    except EvidenceLoadError:
-        specs = []
-    try:
-        gates = load_validation_gates(root)
-    except EvidenceLoadError:
-        gates = []
-    try:
-        records = load_evidence_records(root)
-    except EvidenceLoadError:
-        records = []
-
-    # Resources (graceful).
-    try:
-        all_resources = load_resources(root)
-    except ResourceLoadError:
-        all_resources = []
+    node_map = joined.node_map
+    titles = joined.titles
 
     # Top recommendations (same engine + advisory pressure as `next`).
     open_blocked = {b.node_id for b in blockers if b.status == "open"}
@@ -359,11 +291,11 @@ def today(ctx: Context) -> CommandResult:
     focus_node = node_map.get(focus_node_id) if focus_node_id else None
     focus_state = store.state_of(focus_node_id) if focus_node_id else None
     focus_resources = (
-        resources_for_node(focus_node_id, all_resources)
+        joined.resources_by_node.get(focus_node_id, [])
         if focus_node_id
         else []
     )
-    has_gate = any(g.node_id == focus_node_id for g in gates) if focus_node_id else False
+    has_gate = (focus_node_id in joined.has_gate) if focus_node_id else False
 
     # Pressure facts for the brief.
     today_dt = datetime.now(timezone.utc).date()
