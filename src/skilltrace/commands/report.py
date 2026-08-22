@@ -28,23 +28,12 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from ..context import load_context_lenient
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
-from ..evidence._schema import EvidenceLoadError
-from ..evidence.gates import load_validation_gates
-from ..evidence.records import load_evidence_records
-from ..evidence.specs import load_artifact_specs
-from ..execution._store import ExecutionLoadError
-from ..execution.blockers import load_blockers
-from ..execution.remediation import load_remediation_actions
-from ..execution.reviews import load_reviews
-from ..execution.sessions import load_sessions
-from ..execution.work import load_session_work
-from ..graph.edges import EdgeLoadError, load_edges
-from ..graph.nodes import NodeLoadError, SkillNode, load_nodes
-from ..graph.state import ProgressStoreError, load_state
+from ..graph.edges import EdgeLoadError
+from ..graph.nodes import NodeLoadError, SkillNode
+from ..graph.state import ProgressStoreError
 from .resource_report import resource_report
-
-_EDGES_RELPATH = "graph/edges.yaml"
 
 
 def _parse_date(val: Any) -> date | None:
@@ -66,20 +55,14 @@ def report_progress(ctx: Context) -> CommandResult:
     """Whole-curriculum completion, states roll-up, tracks, session hours."""
     root = ctx.root
     try:
-        nodes = load_nodes(root)
-        store = load_state(root)
+        joined = load_context_lenient(root)
     except (NodeLoadError, ProgressStoreError) as exc:
         print(f"report progress: FAILED -- {exc}")
         return CommandResult(exit_code=1)
-
-    try:
-        sessions = load_sessions(root)
-    except ExecutionLoadError:
-        sessions = []
-    try:
-        session_work = load_session_work(root)
-    except ExecutionLoadError:
-        session_work = []
+    nodes = joined.nodes
+    store = joined.store
+    sessions = joined.sessions
+    session_work = joined.work
 
     total_nodes = len(nodes)
     states = {"mastered": 0, "passed": 0, "active": 0, "available": 0, "locked": 0}
@@ -183,23 +166,16 @@ def report_blockers(ctx: Context) -> CommandResult:
     """Persistent stuckness diagnostic, open blockers, and rescue nodes."""
     root = ctx.root
     try:
-        nodes = load_nodes(root)
-        edges = load_edges(root) if (root / _EDGES_RELPATH).exists() else []
-        store = load_state(root)
+        joined = load_context_lenient(root)
     except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
         print(f"report blockers: FAILED -- {exc}")
         return CommandResult(exit_code=1)
-
-    try:
-        blockers = load_blockers(root)
-    except ExecutionLoadError:
-        blockers = []
-    try:
-        actions = load_remediation_actions(root)
-    except ExecutionLoadError:
-        actions = []
-
-    titles = {n.id: n.title for n in nodes}
+    nodes = joined.nodes
+    edges = joined.edges
+    store = joined.store
+    blockers = joined.blockers
+    actions = joined.remediations
+    titles = joined.titles
     today = datetime.now(timezone.utc).date()
 
     open_blockers = [b for b in blockers if b.status == "open"]
@@ -286,18 +262,14 @@ def report_reviews(ctx: Context) -> CommandResult:
     """Retention & spaced-repetition health, overdue checks, and mastery candidates."""
     root = ctx.root
     try:
-        nodes = load_nodes(root)
-        store = load_state(root)
+        joined = load_context_lenient(root)
     except (NodeLoadError, ProgressStoreError) as exc:
         print(f"report reviews: FAILED -- {exc}")
         return CommandResult(exit_code=1)
-
-    try:
-        reviews = load_reviews(root)
-    except ExecutionLoadError:
-        reviews = []
-
-    titles = {n.id: n.title for n in nodes}
+    nodes = joined.nodes
+    store = joined.store
+    reviews = joined.reviews
+    titles = joined.titles
     today = datetime.now(timezone.utc).date()
 
     scheduled = [r for r in reviews if r.status == "scheduled"]
@@ -380,24 +352,15 @@ def report_evidence(ctx: Context) -> CommandResult:
     node_id_filter = getattr(ctx.args, "node_id", None)
 
     try:
-        nodes = load_nodes(root)
-        store = load_state(root)
+        joined = load_context_lenient(root)
     except (NodeLoadError, ProgressStoreError) as exc:
         print(f"report evidence: FAILED -- {exc}")
         return CommandResult(exit_code=1)
-
-    try:
-        specs = load_artifact_specs(root)
-    except EvidenceLoadError:
-        specs = []
-    try:
-        gates = load_validation_gates(root)
-    except EvidenceLoadError:
-        gates = []
-    try:
-        records = load_evidence_records(root)
-    except EvidenceLoadError:
-        records = []
+    nodes = joined.nodes
+    store = joined.store
+    specs = joined.specs
+    gates = joined.gates
+    records = joined.records
 
     node_map = {n.id: n for n in nodes}
     if node_id_filter:

@@ -21,25 +21,20 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .evidence._schema import EvidenceLoadError
-from .evidence.attempts import AssessmentAttempt, load_assessment_attempts
-from .evidence.gates import ValidationGate, load_validation_gates
-from .evidence.records import EvidenceRecord, load_evidence_records
-from .evidence.specs import ArtifactSpec, load_artifact_specs
-from .events import load_events
-from .execution._store import ExecutionLoadError
-from .execution.blockers import Blocker, load_blockers
-from .execution.remediation import RemediationAction, load_remediation_actions
-from .execution.reviews import Review, load_reviews
-from .execution.sessions import Session, load_sessions
-from .execution.work import SessionWork, load_session_work
-from .graph.edges import EdgeLoadError, GraphEdge, load_edges
-from .graph.nodes import NodeLoadError, SkillNode, load_nodes
-from .graph.state import ProgressStore, ProgressStoreError, load_state
-from .policy.loading import POLICY_FILES, PolicyLoadError, load_policy_doc
-from .resources.registry import LearningResource, ResourceLoadError, load_resources
-
-_EDGES_RELPATH = Path("graph") / "edges.yaml"
+from .context import JoinedView, load_context_strict
+from .evidence.attempts import AssessmentAttempt
+from .evidence.gates import ValidationGate
+from .evidence.records import EvidenceRecord
+from .evidence.specs import ArtifactSpec
+from .execution.blockers import Blocker
+from .execution.remediation import RemediationAction
+from .execution.reviews import Review
+from .execution.sessions import Session
+from .execution.work import SessionWork
+from .graph.edges import GraphEdge
+from .graph.nodes import SkillNode
+from .graph.state import ProgressStore
+from .resources.registry import LearningResource
 
 
 @dataclass
@@ -68,79 +63,29 @@ class ExportData:
         return not self.errors
 
 
+def _view_to_export_data(view: JoinedView) -> ExportData:
+    """Translate the strict JoinedView into the legacy ExportData shape."""
+    return ExportData(
+        nodes=view.nodes,
+        edges=view.edges,
+        state=view.store,
+        artifact_specs=view.specs,
+        validation_gates=view.gates,
+        evidence_records=view.records,
+        attempts=view.attempts,
+        sessions=view.sessions,
+        session_work=view.work,
+        blockers=view.blockers,
+        remediation_actions=view.remediations,
+        reviews=view.reviews,
+        events=view.events,
+        resources=view.resources,
+        policies=dict(view.policies),
+        errors=list(view.errors),
+    )
+
+
 def load_export_data(root: Path | str) -> ExportData:
-    """Load every record type from `root`, folding loader failures into errors."""
-    root_path = Path(root)
-    data = ExportData()
-    errors = data.errors
-
-    try:
-        data.nodes = load_nodes(root_path)
-    except NodeLoadError as exc:
-        errors.append(str(exc))
-
-    if (root_path / _EDGES_RELPATH).exists():
-        try:
-            data.edges = load_edges(root_path)
-        except EdgeLoadError as exc:
-            errors.append(str(exc))
-
-    try:
-        data.state = load_state(root_path)
-    except ProgressStoreError as exc:
-        errors.append(str(exc))
-
-    try:
-        data.artifact_specs = load_artifact_specs(root_path)
-    except EvidenceLoadError as exc:
-        errors.append(str(exc))
-    try:
-        data.validation_gates = load_validation_gates(root_path)
-    except EvidenceLoadError as exc:
-        errors.append(str(exc))
-    try:
-        data.evidence_records = load_evidence_records(root_path)
-    except EvidenceLoadError as exc:
-        errors.append(str(exc))
-    try:
-        data.attempts = load_assessment_attempts(root_path)
-    except EvidenceLoadError as exc:
-        errors.append(str(exc))
-
-    try:
-        data.sessions = load_sessions(root_path)
-    except ExecutionLoadError as exc:
-        errors.append(str(exc))
-    try:
-        data.session_work = load_session_work(root_path)
-    except ExecutionLoadError as exc:
-        errors.append(str(exc))
-    try:
-        data.blockers = load_blockers(root_path)
-    except ExecutionLoadError as exc:
-        errors.append(str(exc))
-    try:
-        data.remediation_actions = load_remediation_actions(root_path)
-    except ExecutionLoadError as exc:
-        errors.append(str(exc))
-    try:
-        data.reviews = load_reviews(root_path)
-    except ExecutionLoadError as exc:
-        errors.append(str(exc))
-
-    # The event log is audit-only and never a defect when absent (a fresh
-    # repo has logged nothing yet) — `load_events` already returns [].
-    data.events = load_events(root_path)
-
-    try:
-        data.resources = load_resources(root_path)
-    except ResourceLoadError as exc:
-        errors.append(str(exc))
-
-    for filename in POLICY_FILES:
-        try:
-            data.policies[filename] = load_policy_doc(root_path, filename)
-        except PolicyLoadError as exc:
-            errors.append(str(exc))
-
-    return data
+    """Load every record type via the strict JoinedView seam (one seam, N consumers)."""
+    view = load_context_strict(root)
+    return _view_to_export_data(view)
