@@ -11,8 +11,7 @@ from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ._common import now_iso as _now_iso, report_plan as _report
 from ..execution._store import ExecutionLoadError
 from ..execution.blockers import load_blockers
-from ..execution.lifecycle import (
-    ExecutionPlan,
+from ..execution.remediation_planning import (
     plan_remediation_complete,
     plan_remediation_create,
 )

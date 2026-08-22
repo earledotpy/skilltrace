@@ -11,8 +11,7 @@ from __future__ import annotations
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ._common import now_iso as _now_iso, report_plan as _report
 from ..execution._store import ExecutionLoadError
-from ..execution.lifecycle import (
-    ExecutionPlan,
+from ..execution.review_planning import (
     plan_review_cancel,
     plan_review_complete,
     plan_review_schedule,

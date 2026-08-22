@@ -16,7 +16,8 @@ from datetime import datetime, timezone
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ._common import now_iso as _now_iso, report_plan as _report
 from ..execution._store import ExecutionLoadError
-from ..execution.lifecycle import ExecutionPlan, plan_close, plan_start, plan_work
+from ..execution.base_plan import BasePlan
+from ..execution.session_planning import SessionPlan, plan_close, plan_start, plan_work
 from ..execution.remediation import load_remediation_actions
 from ..execution.reviews import load_reviews
 from ..execution.sessions import (
@@ -38,7 +39,7 @@ from ..policy.advisory import (
 )
 
 
-def _apply(root, plan: ExecutionPlan, store) -> CommandResult:
+def _apply(root, plan: SessionPlan, store) -> CommandResult:
     """Bind a planner's decision to the filesystem (records, then state)."""
     if plan.exit_code != 0:
         return CommandResult(exit_code=plan.exit_code)
