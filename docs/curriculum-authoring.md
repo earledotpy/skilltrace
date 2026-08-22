@@ -92,7 +92,7 @@ learner's actual environment (Windows) so they work at submission time.
 
 AI review is never an acceptance authority; it may attach advisory commentary
 only. Passing and mastering are explicit learner commands (see the safety rules
-in `CLAUDE.md`).
+in `AGENTS.md`).
 
 **Authoring an objective gate (the shipped-checker pattern).** The gate runner
 (`commands/submit.py`) runs the gate's `command` as `shlex.split(command)` →

@@ -12,11 +12,11 @@ from pathlib import Path
 
 # A directory is a SkillTrace repo root if it carries one of these markers.
 # `graph/edges.yaml` is the sole source of truth for relationships (invariant),
-# so its presence is the strongest signal; `CLAUDE.md` covers a fresh repo whose
+# so its presence is the strongest signal; `AGENTS.md` covers a fresh repo whose
 # graph has not been populated yet.
 _MARKERS = (
     Path("graph") / "edges.yaml",
-    Path("CLAUDE.md"),
+    Path("AGENTS.md"),
 )
 
 

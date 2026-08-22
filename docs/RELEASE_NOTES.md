@@ -153,7 +153,7 @@ Operating base -- repo safe for iterative agent-assisted work.
 
 ### What's included
 
-- CLAUDE.md, CONTEXT.md (ubiquitous language).
+- AGENTS.md, CONTEXT.md (ubiquitous language).
 - PRD defining v1 as local-first CLI learning engine.
 - ADRs 0001 and 0002.
 - Issue tracker and milestone labels.

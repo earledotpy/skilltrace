@@ -1,4 +1,4 @@
-# CLAUDE.md — SkillTrace
+# AGENTS.md — SkillTrace
 
 SkillTrace is a local-first, CLI-first, single-learner learning engine: a
 skill graph with evidence-gated progress. It operates a personal AI-study

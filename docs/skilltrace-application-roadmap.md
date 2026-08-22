@@ -98,7 +98,7 @@ Settled 2026-07-02 (grilling session); see `CONTEXT.md` for definitions and
 | RC | Timeline | Purpose | Definition of done |
 | --- | --- | --- | --- |
 | **v0.1.0-rc1** | Complete | Scaffold baseline | Generated scaffold exists (historical; includes an interface layer since cut by ADR 0002). |
-| **v0.2.0-rc1** | Weeks 1–2 | Operating base | `CLAUDE.md`, `CONTEXT.md`, PRD, ADRs, issues, first milestone plan. |
+| **v0.2.0-rc1** | Weeks 1–2 | Operating base | `AGENTS.md`, `CONTEXT.md`, PRD, ADRs, issues, first milestone plan. |
 | **v0.3.0-rc1** | Weeks 3–4 | Graph core + CLI package | Installable `skilltrace` CLI; loaders, progress store, validation, cycle detection, readiness sync, next-node v1. |
 | **v0.4.0-rc1** | Weeks 5–6 | Evidence core | Artifact specs, gates, attempts, evidence records, supersede model, pass eligibility, explicit pass command. |
 | **v0.5.0-rc1** | Weeks 7–8 | Execution workflow | Sessions, work items, blockers, remediation, reviews, audit event log, mutation commands. |
@@ -126,7 +126,7 @@ Purpose: make the repo safe for iterative agent-assisted work (Claude Code).
 
 Deliverables:
 
-- `CLAUDE.md`
+- `AGENTS.md`
 - `CONTEXT.md` — ubiquitous language *(created 2026-07-02, maintained continuously)*
 - `docs/PRD.md` — defines v1 as a local-first CLI learning engine, not an LMS
 - `docs/adr/` — ADR 0001 and 0002 exist; new ADRs as decisions warrant
@@ -525,7 +525,7 @@ Scope:
 Docs required:
 
 ```text
-README.md            CLAUDE.md              CONTEXT.md
+README.md            AGENTS.md              CONTEXT.md
 docs/INSTALL.md      docs/RUNBOOK.md        docs/USER_GUIDE.md
 docs/DEVELOPER_GUIDE.md  docs/RELEASE_NOTES.md
 docs/SAFETY_BOUNDARIES.md  docs/POST_V1_BACKLOG.md

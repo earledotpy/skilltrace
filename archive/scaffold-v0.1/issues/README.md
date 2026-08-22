@@ -21,7 +21,7 @@ Conventions:
 - Milestones are the roadmap RC names; an issue belongs to exactly one.
 - Each issue carries its own acceptance criteria, including tests — an
   issue without green tests is not done (TDD: write the failing test first).
-- Safety rules in `CLAUDE.md` apply to every issue; no issue may introduce
+- Safety rules in `AGENTS.md` apply to every issue; no issue may introduce
   an automated pass/master/delete path.
 - Close by setting `status: done` and appending a short outcome note; files
   are never deleted.

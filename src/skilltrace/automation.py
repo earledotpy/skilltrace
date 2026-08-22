@@ -4,7 +4,7 @@ This is one of the two cross-cutting rules the dispatcher owns: before an action
 carrying an `automation_action` label is dispatched, it is checked here, and a
 forbidden action is refused with a non-zero exit.
 
-Hard boundary (CLAUDE.md): passing, mastering, and deleting records are never
+Hard boundary (AGENTS.md): passing, mastering, and deleting records are never
 automated. That guarantee is **code-authoritative** here, not policy-derived:
 `pass_node`, `master_node`, and `delete_record` are refused unconditionally, with
 or without a policy file, and even if the policy YAML were edited to mark them
@@ -20,7 +20,7 @@ from pathlib import Path
 import yaml
 
 # The hard-boundary floor. Never remove or narrow this set; policy cannot
-# override it. These are the actions CLAUDE.md forbids from any automated path.
+# override it. These are the actions AGENTS.md forbids from any automated path.
 FORBIDDEN_ACTIONS: frozenset[str] = frozenset(
     {"pass_node", "master_node", "delete_record"}
 )

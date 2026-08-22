@@ -11,7 +11,7 @@ the first time — and one of them, `automation_boundary.yaml`, declares which
 actions automation may perform, including the safety-critical forbidden list:
 `pass_node`, `master_node`, `delete_record`.
 
-If that file were genuinely authoritative, the safety rules CLAUDE.md calls
+If that file were genuinely authoritative, the safety rules AGENTS.md calls
 "never violate, never work around" would be exactly as hard as one line of
 YAML: edit `pass_node` to `allowed` and the boundary is gone. A boundary that
 a text editor can soften is not a hard boundary; it is a default.

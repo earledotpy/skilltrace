@@ -28,7 +28,7 @@ updating it would be extending it (forbidden), leaving it is a silent trap.
 - Drop `gate_kind`, `ai_advisory_only`, `can_close_node`,
   `required_consecutive_passes` everywhere.
 - Delete `compiler/` entirely.
-- Update `CLAUDE.md`: remove the scaffold smoke-check lines and the
+- Update `AGENTS.md`: remove the scaffold smoke-check lines and the
   `compiler/` repo-layout entry; note the interface layer's replacement
   history stays in ADR 0002 / roadmap.
 

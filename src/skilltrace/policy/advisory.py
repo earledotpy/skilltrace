@@ -1,4 +1,4 @@
-"""Advisory policy warnings — warn and reorder, never block (CLAUDE.md).
+"""Advisory policy warnings — warn and reorder, never block (AGENTS.md).
 
 The warning texts are pure functions of counts the caller supplies; the
 loaders here read the workload and remediation seeds and, like cadence,
