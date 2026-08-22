@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PROTOTYPE — P1 Daily Home View (today/next/node in browser) — THROWAWAY</title>
+<style>
+  :root { --bg:#fafaf9; --fg:#1c1917; --mut:#57534e; --border:#e7e5e4; --pill:#f5f5f4; --accent:#0c4a6e; --warn:#fef3c7; --err:#fee2e2; --advisory:#e0f2fe; --ok:#dcfce7; }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 ui-sans, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--fg); background:var(--bg)}
+  header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);z-index:10}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+  .health-strip{display:flex;gap:12px;flex-wrap:wrap;padding:8px 0;font-size:12px;color:var(--mut)}
+  .health-strip span{border:1px solid var(--border);border-radius:999px;padding:2px 8px;background:var(--pill)}
+  .health-strip .ok{border-color:#86efac;background:var(--ok)}
+  h1{font-size:18px;margin:8px 0 2px}
+  .subtitle{color:var(--mut);font-size:12px;margin-bottom:8px}
+  .banner{margin-top:0; padding:8px 12px; border-radius:8px; font-size:13px}
+  .banner.none{background:#fff;border:1px dashed var(--border)}
+  .banner.open{background:var(--advisory);border:1px solid #bae6fd}
+  .banner.pressure{background:var(--warn);border:1px solid #fde68a; margin-top:8px}
+  .kicker{font-size:11px;letter-spacing:.08em;font-weight:700;color:var(--mut);margin:16px 0 4px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin:8px 0}
+  .pill{font-size:11px;border:1px solid var(--border);border-radius:999px;padding:2px 8px;background:var(--pill);display:inline-block}
+  .pill.locked{border-color:#fca5a5;background:var(--err)}
+  .pill.available{border-color:#86efac;background:var(--ok)}
+  .pill.active{border-color:#7dd3fc;background:var(--advisory)}
+  .pill.passed{border-color:#c4b5fd;background:#ede9fe}
+  .title{font-size:20px;font-weight:700;margin:4px 0}
+  .btn{appearance:none;border:1px solid #0c4a6e;background:#0c4a6e;color:#fff;border-radius:8px;padding:8px 12px;font-weight:600;cursor:pointer}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.secondary{background:#fff;color:var(--fg);border-color:var(--border)}
+  .grid{display:grid;gap:16px}
+  .grid.two{grid-template-columns: 1.2fr .8fr}
+  .grid.three{grid-template-columns: 1fr 1fr 1fr}
+  @media(max-width:900px){ .grid.two{grid-template-columns:1fr} .grid.three{grid-template-columns:1fr} }
+  .list{margin:0;padding:0;list-style:none}
+  .list li{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#fff;margin-bottom:8px}
+  .list li small{color:var(--mut)}
+  details{border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:#fff}
+  details summary{cursor:pointer;font-weight:600}
+  .resource{font-size:12px}
+  .resource a{color:var(--accent)}
+  .split{display:grid;grid-template-columns: 340px 1fr; gap:16px}
+  @media(max-width:900px){.split{grid-template-columns:1fr}}
+  .rail{position:sticky;top:78px;align-self:start}
+  .tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}
+  .tab{border:1px solid var(--border);background:var(--pill);border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer}
+  .tab.active{background:#0c4a6e;color:#fff;border-color:#0c4a6e}
+  .proto-note{font-size:11px;color:#92400e;background:var(--warn);border:1px solid #fde68a;border-radius:6px;padding:4px 8px;display:inline-block;margin:4px 0}
+  .variant-bar{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:#1c1917;color:#fff;border-radius:999px;padding:8px 12px;display:flex;gap:8px;align-items:center;box-shadow:0 4px 24px rgba(0,0,0,.3);z-index:50}
+  .variant-bar button{border-radius:999px;border:1px solid #444;background:#292524;color:#fff;padding:6px 10px;cursor:pointer;font-size:12px}
+  .variant-bar button.active{background:#fff;color:#1c1917;border-color:#fff;font-weight:700}
+  .mut{color:var(--mut)}
+  code{background:#f5f5f4;border:1px solid var(--border);border-radius:4px;padding:0 4px;font-size:12px}
+  .drill{font-size:12px;color:var(--mut);border-left:3px solid var(--border);padding-left:10px;margin:8px 0}
+  .hidden{display:none}
+  .throwaway-banner{background:#422006;color:#ffedd5;text-align:center;padding:4px 8px;font-size:12px;letter-spacing:.02em}
+</style>
+<div class="throwaway-banner">PROTOTYPE — THROWAWAY — not production code — <code>prototype/p1-daily-home-view.html</code> — close to <code>src/skilltrace/context.py:JoinedView</code> + <code>src/skilltrace/render.py</code> + <code>src/skilltrace/cli.py:today/next/node</code></div>
+<header>
+  <div class="wrap">
+    <h1>SkillTrace — daily home <span class="mut" style="font-weight:400">(<code>skilltrace today</code> + <code>next</code> + <code>node</code> + <code>health</code> → browser)</span></h1>
+    <div class="subtitle">Variants A/B/C switch below. Source material is real CLI output from this repo (81 nodes / JoinedView lenient). No server wiring; no style-system commitment.</div>
+    <div class="health-strip" aria-label="health strip">
+      <span class="ok">graph: 81 nodes, 124 edges — OK</span>
+      <span class="ok">evidence: 81 specs, 81 gates — OK</span>
+      <span class="ok">execution: 0 sessions, 0 blockers, 0 reviews — OK</span>
+      <span class="ok">policy: 7 files — OK</span>
+      <span class="ok">resources: 29 verified — OK</span>
+      <span class="ok">progress: available 45 · locked 36</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="padding:16px 16px 80px">
+  <!-- Shared state surface -->
+  <div id="state-surface" class="kicker" style="margin-top:8px">STATE SURFACE (JoinedView lenient, per request — not cached)</div>
+  <div class="card" style="background:#fff;border-style:dashed">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--mut)">
+      <span><b>JoinedView</b>: <code>load_context_lenient(root)</code> <code>src/skilltrace/context.py:260</code> — graph/state strict, evidence/execution/resources/policy degrade to empty</span>
+      <span><b>Derived indexes</b>: <code>node_map</code>, <code>titles</code>, <code>resources_by_node</code> (<code>context.py:189</code> via <code>resources_for_node</code>), <code>has_gate</code>, <code>specs_by_node</code></span>
+      <span><b>Today source</b>: <code>today.py:107</code> top rec + <code>_study_day_brief</code> + <code>recommend()</code> + overdue (today <code>2026-08-22</code>) + open blockers</span>
+      <span><b>Render</b>: <code>render.section_kicker/title_state/brief/where_to_learn/how_to_proceed/do_this_next/context</code> (<code>render.py:42</code>) — stdlib-pure, no ANSI</span>
+    </div>
+  </div>
+
+  <!-- VARIANT A — Mentor-first linear -->
+  <section id="variant-a" class="variant">
+    <div class="kicker">VARIANT A — Mentor-first linear (CLI order → browser cards, single column, reading-first)</div>
+    <div class="proto-note">Answers: "What does learner see on open?" — single narrative flow. Trade-off: low chrome, least glance power for blockers/reviews.</div>
+
+    <div class="banner none">There's no session open — your best focus today is <b>Use basic Pandas DataFrame operations</b>. <span class="mut">Also in range: Query rows and columns with SELECT, Use variables and expressions in Python.</span></div>
+
+    <div class="kicker">TODAY</div>
+    <div class="card">
+      <div class="kicker" style="margin:0">THIS SKILL</div>
+      <div class="title">Use basic Pandas DataFrame operations</div>
+      <div><span class="pill available">Ready to start</span> <span class="mut" style="font-size:12px">data.pandas.dataframe_basics_01 · foundational · 60–180 min</span></div>
+      <p>You're clear to begin Use basic Pandas DataFrame operations — nothing is blocking you. It needs 1 accepted submission(s) to pass. You decide when the work is good enough, not an AI.</p>
+      <div class="kicker">Where to learn (top focus)</div>
+      <div class="resource">Pandas Docs — <a href="https://pandas.pydata.org/docs/">https://pandas.pydata.org/docs/</a><br/>Python For Data Analysis — <a href="https://wesmckinney.com/book/">https://wesmckinney.com/book/</a></div>
+      <div class="kicker">How to proceed</div>
+      <div class="mut">0 of 1 Pandas DataFrame basics solution script. <span class="proto-note">eligibility: <code>compute_eligibility()</code> (<code>evidence/eligibility.py:1</code>) — live accepted count via supersede set — not eligible</span></div>
+      <div class="kicker">DO THIS NEXT</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn">Start studying — <code>skilltrace start data.pandas.dataframe_basics_01</code></button>
+        <button class="btn secondary" disabled title="Tier 1 write via confirmation modal — calls plan_pass → write_asserted (forward-only) → save_state — see G2">✓ Mark passed (disabled — confirmation modal in G2)</button>
+      </div>
+      <div class="drill">Passing this opens the door to 5 skills, including Filter rows and select columns in Pandas and Aggregate a DataFrame with groupby. (<code>node_detail.py:_unlocks_context</code> — hard_prerequisite edges only)</div>
+      <details style="margin-top:8px">
+        <summary>Why this? — next reasoning (advisory, never blocks)</summary>
+        <div class="mut" style="font-size:12px; margin-top:6px">
+          Top pick for 30-min session — <code>recommend()</code> (<code>graph/recommendation.py:98</code>) with track/factor weights (<code>policy/weights.py</code>). No remediation boost active; no open blockers penalized. Unlocks 7 downstream skills — highest leverage in range. All hard prerequisites satisfied (derived readiness <code>graph/readiness.py:67</code>). Soft prerequisites ignored for eligibility. Advisory only — not a gate.
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="kicker">Also recommended (next — 60-min session)</div>
+      <ol class="list" style="margin-top:8px">
+        <li><b>Query rows and columns with SELECT</b> <span class="pill available">Ready to start</span><br/><small>20–45 min · Sqlbolt / SQLite Docs — unlocks 5 skills</small><br/><a class="mut" href="#">View node detail →</a></li>
+        <li><b>Define and call Python functions</b> <span class="pill available">Ready to start</span><br/><small>60–180 min — unlocks 5 skills</small></li>
+        <li><b>Use variables and expressions in Python</b> <span class="pill available">Ready to start</span> <small>+2 more in range</small></li>
+      </ol>
+      <details style="margin-top:8px">
+        <summary>Show locked (never recommended as available)</summary>
+        <div class="mut" style="font-size:12px">Locked nodes hidden by default; toggle <code>next --show-locked</code> surfaces them with unsatisfied hard prereqs (<code>node_detail.py:_unsatisfied_prereqs</code>) — not startable, not a block.</div>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="kicker">Placeholder affordances — later tickets (shown disabled/annotated, not built)</div>
+      <div class="grid three">
+        <div><span class="proto-note">G2 modal</span><br/><button class="btn secondary" disabled>Master (needs spaced satisfactory review)</button><div class="drill">Mastery eligibility: <code>policy/mastery.py:66</code> — passed + live evidence + review on different day</div></div>
+        <div><span class="proto-note">G5 writes — deferred</span><br/><button class="btn secondary" disabled>Submit evidence</button> <button class="btn secondary" disabled>Create blocker</button><div class="drill">Writes deferred from MVP (G1): <code>start</code>/<code>work</code>, <code>evidence submit</code>, <code>attempt record</code>, <code>blocker/remediation/review</code> — stay CLI-only in Tier 1 daily loop.</div></div>
+        <div><span class="proto-note">Resources drill-down</span><br/><div class="resource"><a href="#">29 resources — verified 29 / stale 0 / broken 0</a></div><div class="drill"><code>resources_by_node</code> primary: linked 2; drill-down: verification status (<code>resources/status.py:34</code> — broken dominates), human-only <code>verify-resource</code>.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VARIANT B — Dashboard grid -->
+  <section id="variant-b" class="variant hidden">
+    <div class="kicker">VARIANT B — Dashboard grid (glanceable: header strip + focus + pressure + recs)</div>
+    <div class="proto-note">Answers: partition of <code>today</code> on the page — pressure bits get their own column instead of inline sentence. Trade-off: denser, more components to maintain hierarchy.</div>
+
+    <div class="grid two">
+      <div>
+        <div class="banner none">No open session · <b>~0 overdue reviews · 0 open blockers</b> — nothing blocking you; stay with the open thread is not needed today.</div>
+        <div class="card">
+          <div class="kicker" style="margin:0">FOCUS TODAY — top recommendation</div>
+          <div class="title">Use basic Pandas DataFrame operations</div>
+          <div><span class="pill available">Ready to start</span> <span class="mut">[foundational · 60–180 min]</span></div>
+          <p class="mut">You're clear to begin — needs 1 accepted submission to pass.</p>
+          <div class="grid two">
+            <div>
+              <div class="kicker">Where to learn</div>
+              <div class="resource">Pandas Docs — <a href="#">pandas.pydata.org/docs</a><br/>Python For Data Analysis — <a href="#">wesmckinney.com/book</a></div>
+            </div>
+            <div>
+              <div class="kicker">How to proceed</div>
+              <div class="mut" style="font-size:12px">Evidence: 0/1 · Gate: yes · Eligible: no (<code>eligibility</code> derived, never stored)</div>
+              <div class="drill">Review cadence: none scheduled — first review auto-scheduled on pass (<code>policy/cadence.py</code>)</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn">Start</button>
+            <button class="btn secondary" disabled>Pass — needs eligibility + explicit confirm (G2)</button>
+          </div>
+          <details style="margin-top:8px"><summary>Why this recommendation?</summary><div class="mut" style="font-size:12px">Remediation pressure: none active · Blocker penalty: none · Track weight: foundational boosted · Factor weights applied · Hard vs soft prereq: only hard gates <code>available</code> (soft never blocks) — see <code>recommend.py:200</code>.</div></details>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="kicker">STUDY DAY PRESSURE — advisory, never blocks</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span class="pill">0 overdue reviews</span><span class="pill">0 open blockers</span><span class="pill">45 available · 36 locked</span>
+          </div>
+          <div class="mut" style="font-size:12px;margin-top:6px">Overdue derived from <code>execution/reviews.yaml</code> vs today (<code>today.py:301</code>); blockers from <code>execution/blockers.yaml</code> (open only). Stale session warning if open &gt; threshold (<code>execution/staleness.py</code>).</div>
+          <div class="kicker">Top recommendations (next — sized to 60 min)</div>
+          <ol class="list">
+            <li><b>01 · dataframe_basics_01</b> <span class="pill available">Ready</span><br/><small>unlocks 7 · Where to learn: 2 resources</small></li>
+            <li><b>02 · select_basics_01</b> <span class="pill available">Ready</span><br/><small>unlocks 5</small></li>
+            <li><b>03 · functions_01</b> <span class="pill available">Ready</span><br/><small>unlocks 5</small></li>
+          </ol>
+          <div class="drill"><code>JoinedView</code> fields primary: title/state/brief/resources/eligibility/action — drill-down: specs_by_node, gate, supersede chain, attempts, unlocks.</div>
+        </div>
+        <div class="card">
+          <div class="kicker">Health drill-down (read-only)</div>
+          <div class="mut" style="font-size:12px">graph 81/124 OK · evidence 81/81 OK · execution 0/0/0/0/0 OK · policy 7 OK · resources 29 verified OK — <code>health.py:101</code> via 5 validators + liveness</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VARIANT C — Split master-detail -->
+  <section id="variant-c" class="variant hidden">
+    <div class="kicker">VARIANT C — Split master-detail (rail queue + drawer with tabs — drill-down richest)</div>
+    <div class="proto-note">Answers: node detail primary vs drill-down — JoinedView fields split across tabs. Trade-off: best for deep inspection, heaviest interaction cost for daily scan.</div>
+
+    <div class="split">
+      <div class="rail">
+        <div class="banner none" style="margin-bottom:8px">No session open · Focus = top rec</div>
+        <div class="card" style="margin:0">
+          <div class="kicker">NEXT QUEUE — <code>next --minutes 60 --limit 5</code></div>
+          <div class="mut" style="font-size:11px">Sized to available minutes · advisory remediation boost (+blocker penalty) · no hard-prereq override</div>
+          <ol class="list" style="margin-top:8px">
+            <li style="border-color:#0c4a6e;background:#f0f9ff"><b>★ Use basic Pandas DataFrame operations</b><br/><span class="pill available">Ready to start</span> <small>foundational · 60–180 min · unlocks 7</small><br/><details><summary style="font-size:11px">Why tier-1 top?</summary><div class="mut" style="font-size:11px">Track weight + unlock fan-out + estimated effort fit · remediation: none · blocked: none</div></details></li>
+            <li><b>Query rows and columns with SELECT</b><br/><span class="pill available">Ready</span> <small>20–45 min · unlocks 5</small></li>
+            <li><b>Define and call Python functions</b><br/><span class="pill available">Ready</span> <small>60–180 min</small></li>
+            <li><b>Use variables and expressions</b><br/><span class="pill available">Ready</span></li>
+            <li><b>Summarize dataset — descriptive stats</b><br/><span class="pill available">Ready</span></li>
+          </ol>
+          <div style="margin-top:8px"><label class="mut" style="font-size:12px"><input type="checkbox" disabled> Show locked (demo — locked nodes would list unsatisfied prereqs)</label></div>
+          <div class="mut" style="font-size:11px;margin-top:4px"><code>recommend()</code> reason field is the "why" surface; remediation edges activate only on blocker/open or N failed attempts — never locks target (<code>policy/remediation_edges.py</code>).</div>
+        </div>
+        <div class="card">
+          <div class="kicker">PRESSURE STRIP</div>
+          <div class="mut" style="font-size:12px">0 overdue · 0 blockers · 0 remediation-active · stale: none<br/>Advisory policies reorder/warn, never block human action (<code>CONTEXT.md:Advisory policy</code>).</div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="kicker" style="margin:0">THIS SKILL — node detail drawer</div>
+          <div class="title">Use basic Pandas DataFrame operations</div>
+          <div><span class="pill available">Ready to start</span> <span class="mut">data.pandas.dataframe_basics_01 · [state via <code>store.state_of()</code>]</span></div>
+
+          <div class="tabs" role="tablist">
+            <span class="tab active">Overview (primary)</span><span class="tab">Evidence</span><span class="tab">Resources</span><span class="tab">History</span>
+          </div>
+
+          <div class="card" style="background:#f8fafc">
+            <div class="kicker">Overview — primary JoinedView fields</div>
+            <p>You're clear to begin Use basic Pandas DataFrame operations — nothing is blocking you. It needs 1 accepted submission(s) to pass. You decide when the work is good enough, not an AI.</p>
+            <div class="grid two">
+              <div><b>Where to learn (primary)</b><div class="resource">Pandas Docs — https://pandas.pydata.org/docs/<br/>Python For Data Analysis — https://wesmckinney.com/book/</div><div class="drill"><code>resources_by_node</code> — derived reverse index (<code>context.py:189</code>) — advice only, never gates readiness</div></div>
+              <div><b>How to proceed (primary)</b><div class="mut" style="font-size:12px">0 of 1 Pandas DataFrame basics solution script.<br/>Pass-eligibility: <b>not eligible</b> — 0/1 accepted (minimum not met), gate present.</div><div class="drill"><code>specs_by_node</code> + <code>has_gate</code> + <code>live_accepted_count</code> (supersede-aware)</div></div>
+            </div>
+            <b>Do this next (primary)</b><div style="display:flex;gap:8px;margin-top:4px"><button class="btn">Start studying</button><button class="btn secondary" disabled title="G2 confirmation modal required — see blocker">✓ Pass — requires explicit confirm (G2)</button></div>
+            <div class="drill">Unlocks 5 skills including Filter rows and select columns in Pandas — hard_prerequisite edges only; soft edges never lock.</div>
+          </div>
+
+          <div class="card">
+            <div class="kicker">Evidence — drill-down</div>
+            <div class="mut" style="font-size:12px">Gate: <code>ValidationGate</code> for this node — <code>evidence/gates.yaml</code> — objective vs learner manual review (<code>evidence/gates.py</code>). Spec: <code>spec.data.pandas.dataframe_basics</code> — minimum_count 1 — required (<code>evidence/specs.py</code>).<br/>Records: 0 live accepted — no supersede chain. AssessmentAttempts: 0 — attempts never count toward eligibility (<code>evidence/eligibility.py:14</code>).<br/>Submission writes to <code>evidence/evidence_records.yaml</code> via <code>plan_submit</code> + hasher; frozen at submission (<code>evidence/submission.py:1</code>).</div>
+            <div class="proto-note">Placeholder affordance: "Submit evidence" button here — deferred to post-MVP (G5) — shown disabled/annotated.</div>
+          </div>
+
+          <div class="card">
+            <div class="kicker">Resources + Reviews — drill-down</div>
+            <div class="mut" style="font-size:12px">Resources_for_node: 2 — verification status derived (<code>resources/status.py:34</code> — broken dominates, stale derived from <code>last_verified + stale_after_days</code>). Human-only <code>verify-resource</code> writes <code>last_verified</code>/<code>broken</code> (<code>resources/registry.py:352</code>).<br/>Review cadence: no review scheduled — auto-schedule on pass via <code>policy/cadence.py</code> (1st review), overdue derived daily (<code>today.py:301</code>), mastery needs spaced satisfactory review (<code>policy/mastery.py:66</code>).</div>
+          </div>
+
+          <div class="card">
+            <div class="kicker">History + Execution — drill-down</div>
+            <div class="mut" style="font-size:12px">Sessions: none open (single-open invariant <code>execution/sessions.py:58</code>) · Work items: 0 · Blockers on this node: 0 (advisory only) · Remediation: none active (<code>policy/remediation_edges.py</code> — activates on blocker or N failed attempts) · Events: audit-only append-only (<code>execution/events.yaml</code> via <code>dispatch.py:126</code> — one event per mutating success, never read to compute state).</div>
+            <div class="proto-note">Placeholder: "Create blocker / Schedule review / Record attempt" — deferred (G5) — disabled + annotated.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Grill notes -->
+  <div class="card" style="background:#fffbf0;border-color:#fde68a">
+    <div class="kicker">GRILL THE INFORMATION ARCHITECTURE — questions this prototype settles (P1 deliverable)</div>
+    <ul style="margin:6px 0 0 18px; font-size:13px" class="mut">
+      <li><b>On open</b>: do we lead with Mentor narrative (A) or dashboard pressure strip (B) or queue+drawer (C)? How much chrome before the learner sees "Do this next"?</li>
+      <li><b>Today partition</b>: inline pressure sentence vs dedicated column/rail vs tab — where do overdue reviews & open blockers live without drowning the focus skill?</li>
+      <li><b>Next reasoning</b>: collapsible "Why this?" per card (shown above) — enough to surface policy effects, hard vs soft prereq, remediation pressure without blocking?</li>
+      <li><b>Node detail primary vs drill-down</b>: JoinedView split — Overview keeps Mentor's 7-part shape (kicker/title/state/brief/Where to learn/How to proceed/Do this next/context) + eligibility count; drill-down tabs hold specs/gate/records/supersede, resources+verification, attempts, reviews cadence, sessions/work/blockers/events, edges (prereqs/unlocks). Right cut?</li>
+      <li><b>Affordances for later tickets</b>: pass/master modal trigger, blocker/review/evidence actions — shown disabled + annotated (G2/G5) — does placeholder language make the forward path clear without building the forms?</li>
+      <li><b>What the prototype may NOT show (G1 MVP boundary)</b>: Tier 1 daily loop only — <code>today/next/node/health + eligibility + pass/master modal</code> via <code>write_asserted</code> forward-only; deferred writes remain CLI-only and are the immediate follow-on slices.</li>
+    </ul>
+    <div class="drill">Scaffold <code>views.yaml/cards.yaml</code> NOT used as spec — mined only as reference (R1 traps): no YAML registry, no generic <code>PATCH /state</code>, no planned-session wizard, no pending queue, no interface-cards export. Mentions reference-research ss1.5+3 as product input only. See <code>research/serve-seams.md</code> research/serve-seams@31c0645.</div>
+  </div>
+
+  <div class="card">
+    <div class="kicker">VIEW MODEL — JoinedView fields mapped to UI sections</div>
+    <div class="mut" style="font-size:12px; line-height:1.6">
+      <b>Primary on every load</b> (above the fold): <code>node.title</code> + <code>store.state_of(node_id)</code> → state pill + Mentor <code>_brief_*</code> (<code>node_detail.py:139</code> / <code>today.py:107</code>), <code>resources_by_node[node_id]</code> → Where to learn, <code>specs_by_node[node_id]</code> + <code>has_gate</code> + <code>live_accepted_count(records)</code> → How to proceed/eligibility, <code>edges (hard_prerequisite)</code> → locked reason & unlocks context, <code>recommend(limit=3)</code> → Also in range.<br/>
+      <b>Collapsible/secondary</b>: "Why this?" — <code>Recommendation.reason</code> + track/factor weights + remediation boost — advisory only.<br/>
+      <b>Drill-down tabs/drawer</b>: full spec table + gate kind, evidence records with supersede lineage (<code>report evidence</code>), attempts (<code>evidence/attempts.yaml</code>), resource verification derived status, review schedule/history + cadence, sessions/work (single-open invariant), open blockers/remediation, unlock fan-out. Events audit trail never reconstructs state.<br/>
+      <b>Never in the view model</b>: <code>active_view_id/last_node_id</code> ephemeral (not <code>state.yaml</code> ADR 0001), interface-layer derived exports, pending queue, generic state patch.
+    </div>
+  </div>
+</main>
+
+<div class="variant-bar" role="navigation" aria-label="variant switcher">
+  <span style="font-size:11px;opacity:.8">PROTOTYPE — P1 · Variant:</span>
+  <button id="btn-a" onclick="setVariant('a')">A · Linear</button>
+  <button id="btn-b" onclick="setVariant('b')">B · Dashboard</button>
+  <button id="btn-c" onclick="setVariant('c')">C · Split</button>
+  <span style="font-size:11px;opacity:.6;margin-left:4px">?variant=a|b|c</span>
+</div>
+
+<script>
+  function setVariant(v){
+    const map={a:'variant-a',b:'variant-b',c:'variant-c'};
+    for(const k of ['a','b','c']){
+      document.getElementById(map[k]).classList.toggle('hidden', k!==v);
+      document.getElementById('btn-'+k).classList.toggle('active', k===v);
+    }
+    const url=new URL(location.href); url.searchParams.set('variant',v); history.replaceState(null,'',url);
+  }
+  const initial = new URLSearchParams(location.search).get('variant') || 'a';
+  setVariant(['a','b','c'].includes(initial)?initial:'a');
+</script>
+</html>
