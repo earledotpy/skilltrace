@@ -8,6 +8,8 @@ import pytest
 
 from skilltrace.context import JoinedView, Loaders, load_context_lenient, load_context_strict
 from skilltrace.evidence._schema import EvidenceLoadError
+from skilltrace.evidence.gates import ValidationGate
+from skilltrace.evidence.specs import ArtifactSpec
 from skilltrace.execution._store import ExecutionLoadError
 from skilltrace.graph.nodes import NodeLoadError, SkillNode
 from skilltrace.graph.state import ProgressStore, ProgressStoreError
@@ -212,9 +214,122 @@ def test_resources_by_node_uses_reverse_index(tmp_path: Path):
     assert view.resources_by_node["testing.alpha.subject_02"] == []
 
 
-def test_real_filesystem_wires_through(tmp_path: Path):
-    # Uses the temp dir as root — lenient should degrade gracefully, strict should collect policy missing.
-    # The shipped repo root is not tmp_path, so nodes will fail — but we just assert the seam is wired.
-    view_lenient = load_context_strict(tmp_path, loaders=Loaders())
-    # On a blank tmp dir, strict collects errors (nodes missing etc.)
-    assert isinstance(view_lenient, JoinedView)
+def _write_node_file(root: Path, node_id: str) -> None:
+    import yaml as yaml_mod
+
+    frontmatter = {
+        "id": node_id,
+        "title": f"Title for {node_id}",
+        "summary": "summary",
+        "domain": "testing",
+        "track": "foundational",
+        "micro_session_fit": {
+            "can_fit_15_min": True,
+            "can_fit_30_min": True,
+            "requires_long_block": False,
+        },
+    }
+    block = yaml_mod.safe_dump(frontmatter, sort_keys=False)
+    path = root / "graph" / "nodes" / f"{node_id}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"---\n{block}---\n", encoding="utf-8")
+
+
+def _write_yaml(root: Path, relpath: str, doc: dict) -> None:
+    import yaml as yaml_mod
+
+    path = root / relpath
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml_mod.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+
+def test_filesystem_loaders_and_in_memory_doubles_agree(tmp_path: Path):
+    # The seam's justification (T1 acceptance): the same logical repo loaded
+    # through the real filesystem adapters and through hand-built in-memory
+    # doubles yields the same joined view — derived indexes included.
+    n1, n2 = _node("testing.alpha.subject_01"), _node("testing.alpha.subject_02")
+    spec = ArtifactSpec(
+        id="spec-01",
+        node_id="testing.alpha.subject_01",
+        title="Spec 01",
+        artifact_kind="problem_set",
+        required=True,
+        minimum_count=3,
+    )
+    gate = ValidationGate(
+        id="gate-01", node_id="testing.alpha.subject_01", authority="manual"
+    )
+    resource = _fake_resource("testing.alpha.subject_01")
+
+    # The same logical repo, written as real files.
+    for node in (n1, n2):
+        _write_node_file(tmp_path, node.id)
+    _write_yaml(
+        tmp_path,
+        "evidence/artifact_specs.yaml",
+        {
+            "artifact_specs": [
+                {
+                    "id": spec.id,
+                    "node_id": spec.node_id,
+                    "title": spec.title,
+                    "artifact_kind": spec.artifact_kind,
+                    "required": spec.required,
+                    "minimum_count": spec.minimum_count,
+                }
+            ]
+        },
+    )
+    _write_yaml(
+        tmp_path,
+        "evidence/validation_gates.yaml",
+        {
+            "validation_gates": [
+                {"id": gate.id, "node_id": gate.node_id, "authority": gate.authority}
+            ]
+        },
+    )
+    _write_yaml(
+        tmp_path,
+        "graph/resources.yaml",
+        {
+            "resources": [
+                {
+                    "id": resource.id,
+                    "cost": resource.cost,
+                    "url": resource.url,
+                    "supports": list(resource.supports),
+                }
+            ]
+        },
+    )
+    _write_yaml(tmp_path, "graph/state.yaml", {"progress": {}})
+
+    fs_view = load_context_lenient(tmp_path, loaders=Loaders())
+
+    doubles = Loaders(
+        load_nodes=lambda _r: [n1, n2],
+        load_edges=lambda _r: [],
+        load_state=lambda _r: ProgressStore(),
+        load_specs=lambda _r: [spec],
+        load_gates=lambda _r: [gate],
+        load_records=lambda _r: [],
+        load_attempts=lambda _r: [],
+        load_sessions=lambda _r: [],
+        load_work=lambda _r: [],
+        load_blockers=lambda _r: [],
+        load_remediations=lambda _r: [],
+        load_reviews=lambda _r: [],
+        load_resources=lambda _r: [resource],
+        load_events=lambda _r: [],
+        load_policies=lambda _r: {},
+    )
+    double_view = load_context_lenient(tmp_path, loaders=doubles)
+
+    assert fs_view.errors == []
+    assert list(fs_view.titles) == list(double_view.titles)
+    assert set(fs_view.node_map) == set(double_view.node_map) == {"testing.alpha.subject_01", "testing.alpha.subject_02"}
+    assert fs_view.has_gate == double_view.has_gate == {"testing.alpha.subject_01"}
+    assert list(fs_view.specs_by_node) == list(double_view.specs_by_node) == ["testing.alpha.subject_01"]
+    assert [r.id for r in fs_view.resources_by_node["testing.alpha.subject_01"]] == ["res-01"]
+    assert fs_view.resources_by_node["testing.alpha.subject_02"] == []
