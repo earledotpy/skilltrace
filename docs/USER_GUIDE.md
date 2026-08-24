@@ -133,6 +133,7 @@ skilltrace reviews
 ```bash
 skilltrace export markdown   # Human-readable snapshot
 skilltrace export sqlite     # SQLite mirror for querying
+skilltrace export html       # Self-contained HTML snapshot (data/export.html)
 skilltrace backup            # Timestamped zip of all data
 ```
 

@@ -61,6 +61,7 @@ def test_registry_has_the_expected_commands():
         "suggest reviews",
         "export markdown",
         "export sqlite",
+        "export html",
         "backup",
         "serve",
     }

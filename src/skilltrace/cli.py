@@ -423,7 +423,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # export <target>
     export_parser = subcommands.add_parser(
-        "export", help="Export a disposable data snapshot (markdown, sqlite)."
+        "export", help="Export a disposable data snapshot (markdown, sqlite, html)."
     )
     export_targets = export_parser.add_subparsers(dest="_export_target", metavar="<target>")
     export_targets.required = True
@@ -435,6 +435,10 @@ def build_parser() -> argparse.ArgumentParser:
         "sqlite", help="Rebuild the SQLite mirror at data/skilltrace.db."
     )
     export_sqlite_parser.set_defaults(_command_name="export sqlite")
+    export_html_parser = export_targets.add_parser(
+        "html", help="Write a self-contained HTML snapshot to data/export.html."
+    )
+    export_html_parser.set_defaults(_command_name="export html")
 
     # backup
     backup_parser = subcommands.add_parser(

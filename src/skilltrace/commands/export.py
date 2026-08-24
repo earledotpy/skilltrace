@@ -12,8 +12,10 @@ command before anything touches disk).
 
 from __future__ import annotations
 
+from ..context import load_context_strict
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..export_data import ExportData, load_export_data
+from ..html_export import HTML_EXPORT_RELPATH, render_html
 from ..markdown_export import MARKDOWN_EXPORT_RELPATH, render_markdown
 from ..sqlite_export import SQLITE_EXPORT_RELPATH, write_sqlite_export
 from ._common import now_iso
@@ -52,6 +54,22 @@ def export_sqlite(ctx: Context) -> CommandResult:
     return CommandResult()
 
 
+def export_html(ctx: Context) -> CommandResult:
+    """Write the self-contained HTML snapshot, refusing on any load error."""
+    view = load_context_strict(ctx.root)
+    if not view.ok:
+        print("export html: FAILED — could not load export data:")
+        for error in view.errors:
+            print(f"  [error] {error}")
+        return CommandResult(exit_code=1)
+
+    path = ctx.root / HTML_EXPORT_RELPATH
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(render_html(ctx), encoding="utf-8")
+    print(f"export html: wrote {HTML_EXPORT_RELPATH.as_posix()}")
+    return CommandResult()
+
+
 def register(registry: Registry) -> None:
     registry.register(
         Command(
@@ -67,5 +85,13 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=export_sqlite,
             help="Rebuild the SQLite mirror at data/skilltrace.db.",
+        )
+    )
+    registry.register(
+        Command(
+            name="export html",
+            kind=Kind.MUTATING,
+            handler=export_html,
+            help="Write a self-contained HTML snapshot to data/export.html.",
         )
     )

@@ -134,6 +134,9 @@ skilltrace export markdown
 # SQLite mirror (rebuilt each run at data/skilltrace.db)
 skilltrace export sqlite
 
+# Self-contained HTML snapshot (whole-file rewrite at data/export.html)
+skilltrace export html
+
 # Timestamped zip backup into backups/
 skilltrace backup
 ```
