@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PROTOTYPE — P1 Modals (pass / master / start) — THROWAWAY</title>
+<style>
+  :root { --bg:#fafaf9; --fg:#1c1917; --mut:#57534e; --border:#e7e5e4; --pill:#f5f5f4; --accent:#0c4a6e; --warn:#fef3c7; --err:#fee2e2; --advisory:#e0f2fe; --ok:#dcfce7; }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 ui-sans, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--fg); background:var(--bg)}
+  header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);z-index:10}
+  .wrap{max-width:900px;margin:0 auto;padding:0 16px}
+  .throwaway-banner{background:#422006;color:#ffedd5;text-align:center;padding:4px 8px;font-size:12px;letter-spacing:.02em}
+  .kicker{font-size:11px;letter-spacing:.08em;font-weight:700;color:var(--mut);margin:16px 0 4px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin:12px 0}
+  .pill{font-size:11px;border:1px solid var(--border);border-radius:999px;padding:2px 8px;background:var(--pill);display:inline-block}
+  .pill.locked{border-color:#fca5a5;background:var(--err)} .pill.available{border-color:#86efac;background:var(--ok)}
+  .pill.active{border-color:#7dd3fc;background:var(--advisory)} .pill.passed{border-color:#c4b5fd;background:#ede9fe}
+  .btn{appearance:none;border:1px solid #0c4a6e;background:#0c4a6e;color:#fff;border-radius:8px;padding:8px 12px;font-weight:600;cursor:pointer}
+  .btn.secondary{background:#fff;color:var(--fg);border-color:var(--border)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .mut{color:var(--mut)} .warn{color:#92400e;background:var(--warn);border:1px solid #fde68a;border-radius:6px;padding:4px 8px;display:inline-block;font-size:11px}
+  code{background:#f5f5f4;border:1px solid var(--border);border-radius:4px;padding:0 4px;font-size:12px}
+  .modal{border:2px solid #0c4a6e;border-radius:12px;padding:16px;background:#fff;box-shadow:0 8px 32px rgba(0,0,0,.12);margin:12px 0}
+  .modal h2{margin:0 0 4px;font-size:16px}
+  .grid{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+  @media(max-width:800px){.grid{grid-template-columns:1fr}}
+  .drill{font-size:12px;color:var(--mut);border-left:3px solid var(--border);padding-left:10px;margin:8px 0}
+  .banner{padding:8px 12px;border-radius:8px;font-size:13px;margin:8px 0}
+  .banner.advisory{background:var(--advisory);border:1px solid #bae6fd}
+  .banner.err{background:var(--err);border:1px solid #fca5a5}
+</style>
+<div class="throwaway-banner">PROTOTYPE — THROWAWAY — not production code — <code>prototype/p1-modals.html</code> — complements <code>prototype/p1-daily-home-view.html</code> — close to <code>src/skilltrace/context.py:JoinedView</code> + G2/G5 modal spec</div>
+<header><div class="wrap" style="padding:12px 16px">
+  <h1 style="margin:0;font-size:18px">SkillTrace — confirmation modals sketch <span class="mut" style="font-weight:400">(G2 pass/master + G5 start — cheap, no JS, no wiring)</span></h1>
+  <div class="mut" style="font-size:12px">Server-rendered HTML forms per G2/G3; every POST re-runs <code>plan_pass</code>/<code>plan_master</code> against fresh truth; buttons stay enabled, domain refuses verbatim.</div>
+</div></header>
+
+<main class="wrap" style="padding:16px 16px 40px">
+  <div class="kicker">PASS MODAL — server-fresh eligibility facts + auto-review note (G2)</div>
+  <div class="modal">
+    <h2>Confirm pass: Use basic Pandas DataFrame operations <span class="pill passed">passed — not yet</span> <span class="mut" style="font-weight:400">data.pandas.dataframe_basics_01</span></h2>
+    <div class="mut" style="font-size:12px">State: <code>store.state_of()</code> = <b>available</b> · Gate: objective — <code>python evidence/checks/data.pandas.dataframe_basics_01_check.py</code> · Specs: 1 required, <b>0/1 accepted</b> (live count via supersede set)</div>
+    <div class="grid">
+      <div class="card" style="margin:8px 0;background:#f8fafc">
+        <b>Eligibility</b>
+        <div class="mut" style="font-size:12px;margin-top:4px">Required spec <code>spec.data.pandas.dataframe_basics</code> — minimum 1 — live accepted 0. <span class="warn">Not eligible — 0/1</span></div>
+        <div class="drill">Computed via <code>src/skilltrace/evidence/eligibility.py:1</code> + <code>has_gate</code>/<code>specs_by_node</code> from <code>JoinedView</code> lenient — never stored.</div>
+      </div>
+      <div class="card" style="margin:8px 0;background:#f8fafc">
+        <b>What confirming does</b>
+        <div class="mut" style="font-size:12px;margin-top:4px">Calls <code>dispatch(REGISTRY.get("pass"), ctx)</code> in-process → <code>write_asserted</code> forward-only (<code>src/skilltrace/graph/state.py:118</code>) → <code>save_state</code>. On success schedules first review per <code>policy/cadence.py</code>. One audit event <code>pass</code> + <code>source: "web"</code>.</div>
+      </div>
+    </div>
+    <div class="banner advisory">Confirming schedules reviews per cadence policy — an allowed automation (review auto-schedule on pass). <span class="mut">Master stays permanent; pass is also forward-only.</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn">Confirm pass — explicit learner command</button>
+      <button class="btn secondary">Cancel</button>
+      <span class="warn">Buttons stay enabled — domain refuses verbatim on ineligible click (exit 2 stays in modal).</span>
+    </div>
+    <div class="drill">Exit 2 → modal stays open with refusal text; Exit 1 → dismiss modal + page banner suggesting <code>skilltrace validate</code>; Exit 0 → close + refresh + success line + review ids.</div>
+  </div>
+
+  <div class="kicker">MASTER MODAL — two-step permanent confirm (G2)</div>
+  <div class="modal" style="border-color:#7c3aed">
+    <h2>Step 1 — Mastery facts <span class="mut" style="font-weight:400">data.pandas.dataframe_basics_01</span></h2>
+    <div class="mut" style="font-size:12px">Passed 2026-08-10 via <code>pass</code> + <code>source: "cli"</code>. Satisfactory review <code>rev.data.pandas.dataframe_basics_01.001</code> completed 2026-08-12 (different day, spacing = 1 day per policy). Evidence still live (0 superseded).</div>
+    <div class="card" style="background:#f5f3ff;border-color:#ddd6fe">
+      <b>Mastery eligibility</b> <span class="mut" style="font-size:12px">(<code>src/skilltrace/policy/mastery.py:66</code> — passed + live evidence + spaced satisfactory review)</span>
+      <div class="mut" style="font-size:12px;margin-top:4px"><b>Eligible</b> — all hard checks satisfied. Proceed to permanent confirm.</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" style="background:#7c3aed;border-color:#7c3aed">Continue to permanent confirm →</button>
+      <button class="btn secondary">Cancel</button>
+    </div>
+  </div>
+  <div class="modal" style="border-color:#7c3aed">
+    <h2>Step 2 — This is permanent <span class="pill passed">mastered never demotes</span></h2>
+    <div class="banner err"><b>Mastering is permanent and never moves backward.</b> A later unsatisfactory review creates failure records + remediation pressure, but never demotes state. Confirm only if you intend the node to remain mastered forever.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" style="background:#7c3aed;border-color:#7c3aed">Confirm master — permanent</button>
+      <button class="btn secondary">Back</button>
+    </div>
+    <div class="drill">Friction scales with irreversibility — pass is one confirm, master is two. Same registry nest-dispatch: <code>dispatch(REGISTRY.get("master"), ctx)</code>, <code>source: "web"</code>, one audit event.</div>
+  </div>
+
+  <div class="kicker">START CONFIRM — lightweight single-click (G5, not G2 heavyweight)</div>
+  <div class="modal" style="border-color:#0c4a6e">
+    <h2>Start studying: Use basic Pandas DataFrame operations <span class="pill available">available</span></h2>
+    <div class="mut" style="font-size:12px">Optional template: <select disabled><option>standard (60–180 min)</option><option>micro</option><option>deep</option></select> (opaque label, <code>policy/workload.yaml</code> preset). Also shows: locked reason (if any) + open-session name (domain refuses second session).</div>
+    <div class="banner advisory">This marks <code>data.pandas.dataframe_basics_01</code> <b>active — progress never moves backward</b> (<code>src/skilltrace/graph/state.py:118</code> forward-only via session_planning). Same writer as pass/master but precondition-light (availability + no open session) — lightweight confirm, not heavyweight modal.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn">Confirm start — marks active</button>
+      <button class="btn secondary">Cancel</button>
+      <span class="mut" style="font-size:12px;align-self:center">Other writes (<code>work</code>/<code>blocker</code>/<code>evidence</code>) are plain submits — no confirm, refusal only from domain.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="kicker">DEGRADED / ADVISORY HANDLING (G5 cross-cutting)</div>
+    <div class="mut" style="font-size:12px">When <code>load_context_lenient</code> degrades an optional layer to empty, forms stay <b>enabled</b> and show advisory banner: "evidence layer failed to load — run <code>skilltrace health</code>" — never a block. Advisory policies (workload, cadence, remediation pressure) are banners/pills/pressure strip/"Why this?" only. Locked nodes show locked pill + unsatisfied hard prereqs (G2).</div>
+  </div>
+
+  <div class="card" style="background:#fffbf0;border-color:#fde68a">
+    <div class="kicker">WHAT THIS SKETCH SETTLES</div>
+    <ul style="margin:6px 0 0 18px;font-size:13px" class="mut">
+      <li><b>Pass</b> shows server-fresh eligibility (spec counts + gate) + auto-review note + explicit Confirm; buttons enabled; refusal is inline.</li>
+      <li><b>Master</b> is two pages — mastery facts then permanent confirm — friction matches irreversibility.</li>
+      <li><b>Start</b> is lightweight confirm with forward-only copy; heavyweight modals stay exclusive to pass/master.</li>
+      <li><b>All</b> dispatch in-process through registry per G2 — no second write path; one event <code>source: "web"</code>.</li>
+    </ul>
+  </div>
+</main>
+</html>
