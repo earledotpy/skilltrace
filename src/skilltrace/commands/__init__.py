@@ -10,6 +10,7 @@ registered now with its final name and classification so the dispatcher contract
 from __future__ import annotations
 
 from ..dispatch import Registry
+from ..web import server as web_server
 from . import (
     attempt,
     backup,
@@ -64,4 +65,7 @@ def register_all(registry: Registry) -> Registry:
     today.register(registry)
     export.register(registry)
     backup.register(registry)
+    # Tier 1 local web UI (ADR 0006): READ_ONLY — serve appends no event; the
+    # `ui` alias shares this registration via its `_command_name`.
+    web_server.register(registry)
     return registry

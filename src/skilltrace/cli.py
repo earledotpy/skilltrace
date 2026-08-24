@@ -9,7 +9,8 @@ close`, blockers/remediation/reviews), policy (`validate policy`,
 `check-automation`, `suggest`), data-out (`export markdown`,
 `export sqlite`, `backup`), and the cross-layer roll-up (`health`). Top-level
 aliases `submit` and `close` wrap `evidence submit` and `session close`
-respectively, sharing the same handler and `_command_name`; the `st`
+respectively, sharing the same handler and `_command_name`, as does `ui` for
+`serve` (the Tier 1 local web UI, ADR 0006); the `st`
 console-script entry point (see `pyproject.toml`) is a second name for this
 same `main`.
 """
@@ -22,6 +23,7 @@ from pathlib import Path
 from .commands import register_all
 from .dispatch import Context, Registry, dispatch
 from .paths import find_root
+from .web.server import DEFAULT_PORT
 
 # The process-wide command registry. Handlers are placeholders in this issue;
 # the dispatcher contract they exercise is final.
@@ -63,6 +65,21 @@ def _add_session_close_arguments(parser: argparse.ArgumentParser) -> None:
         "--end",
         default=None,
         help="Honest end timestamp for a forgotten session (after start, not in the future).",
+    )
+
+
+def _add_serve_arguments(parser: argparse.ArgumentParser) -> None:
+    """Attach `serve`'s arguments to `parser` (canonical + `ui` alias)."""
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=DEFAULT_PORT,
+        help="Loopback port to serve on (fails fast if already in use).",
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Do not auto-open the browser at the served URL.",
     )
 
 
@@ -425,6 +442,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="Zip graph/evidence/execution/policy/release into a timestamped archive under backups/.",
     )
     backup_parser.set_defaults(_command_name="backup")
+
+    # serve / ui — Tier 1 local web UI (ADR 0006). Loopback-only, foreground;
+    # READ_ONLY in the registry, so it appends no audit event itself. The `ui`
+    # alias shares the canonical registration via `_command_name`, like
+    # `close` -> `session close`.
+    serve_parser = subcommands.add_parser(
+        "serve", help="Run the local web UI on loopback (foreground; read-only)."
+    )
+    _add_serve_arguments(serve_parser)
+    serve_parser.set_defaults(_command_name="serve")
+
+    ui_alias_parser = subcommands.add_parser("ui", help="Alias for `serve`.")
+    _add_serve_arguments(ui_alias_parser)
+    ui_alias_parser.set_defaults(_command_name="serve")
 
     # next
     next_parser = subcommands.add_parser(

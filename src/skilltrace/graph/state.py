@@ -23,6 +23,7 @@ mirroring how the node/edge loaders defer cross-reference integrity.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -83,6 +84,19 @@ class ProgressStore:
 
     entries: dict[str, ProgressEntry] = field(default_factory=dict)
     source_path: Path | None = None
+
+    def state_summary(self) -> str:
+        """One-line roll-up of the stored entries ("45 node(s); states: …").
+
+        The shape every surface reports — CLI health and the serve health
+        strip share this wording, so there is no parallel vocabulary.
+        """
+        counts: Counter[str] = Counter(entry.state for entry in self.entries.values())
+        states = ", ".join(f"{state}={n}" for state, n in sorted(counts.items()))
+        summary = f"{len(self.entries)} node(s)"
+        if states:
+            summary += f"; states: {states}"
+        return summary
 
     def state_of(self, node_id: str, default: str = "locked") -> str:
         """Return the recorded state, or `default` for an absent node.

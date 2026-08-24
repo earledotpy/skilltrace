@@ -20,6 +20,7 @@ affect readiness, eligibility, or node state.
 
 from __future__ import annotations
 
+from collections import Counter
 from datetime import date
 from enum import Enum
 from pathlib import Path
@@ -87,6 +88,29 @@ def derive_status(
     if (today - verified_on).days > stale_after_days:
         return VerificationStatus.STALE
     return VerificationStatus.VERIFIED
+
+
+SUMMARY_ORDER = (
+    VerificationStatus.VERIFIED,
+    VerificationStatus.STALE,
+    VerificationStatus.UNVERIFIED,
+    VerificationStatus.BROKEN,
+)
+
+
+def verification_summary(
+    resources: list[LearningResource], *, today: date, stale_after_days: int
+) -> str:
+    """One summary shape ("verified=29, stale=0, …") for every surface.
+
+    The CLI health roll-up and the serve health strip both report through
+    this helper — one derivation, one wording, no parallel vocabulary.
+    """
+    by_status: Counter[VerificationStatus] = Counter(
+        derive_status(r, today=today, stale_after_days=stale_after_days)
+        for r in resources
+    )
+    return ", ".join(f"{s.value}={by_status.get(s, 0)}" for s in SUMMARY_ORDER)
 
 
 def stale_after_days(root: Path | str) -> int:

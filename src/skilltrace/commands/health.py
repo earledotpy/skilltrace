@@ -14,7 +14,6 @@ this command. Read-only: it appends no audit event.
 
 from __future__ import annotations
 
-from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -30,7 +29,12 @@ from ..graph.state import ProgressStoreError, load_state
 from ..graph.validation import ValidationResult, load_and_validate
 from ..policy.validation import PolicyValidationResult, load_and_validate_policy
 from ..resources.registry import ResourceLoadError, load_resources
-from ..resources.status import VerificationStatus, derive_status, stale_after_days
+from ..resources.status import (
+    VerificationStatus,
+    derive_status,
+    stale_after_days,
+    verification_summary,
+)
 from ..resources.validation import ResourceValidationResult, load_and_validate_resources
 from ._common import now_iso
 
@@ -106,14 +110,7 @@ def _liveness_lines(root: Path) -> tuple[list[str], int]:
         except ProgressStoreError:
             store = None
         if store is not None:
-            state_counts: dict[str, int] = {}
-            for entry in store.entries.values():
-                state_counts[entry.state] = state_counts.get(entry.state, 0) + 1
-            counts_str = ", ".join(f"{s}={n}" for s, n in sorted(state_counts.items()))
-            lines.append(
-                f"progress store: {len(store.entries)} node(s)"
-                + (f"; states: {counts_str}" if counts_str else "")
-            )
+            lines.append(f"progress store: {store.state_summary()}")
 
             try:
                 nodes = load_nodes(root)
@@ -150,21 +147,13 @@ def _liveness_lines(root: Path) -> tuple[list[str], int]:
     if resources is not None:
         today = datetime.now(timezone.utc).date()
         window = stale_after_days(root)
-        by_status = Counter(
-            derive_status(r, today=today, stale_after_days=window) for r in resources
-        )
-        summary = ", ".join(
-            f"{status.value}={by_status.get(status, 0)}"
-            for status in (
-                VerificationStatus.VERIFIED,
-                VerificationStatus.STALE,
-                VerificationStatus.UNVERIFIED,
-                VerificationStatus.BROKEN,
-            )
-        )
+        summary = verification_summary(resources, today=today, stale_after_days=window)
         lines.append(f"resources: {len(resources)} resource(s); {summary}")
-        bad = by_status.get(VerificationStatus.STALE, 0) + by_status.get(
-            VerificationStatus.BROKEN, 0
+        bad = sum(
+            1
+            for r in resources
+            if derive_status(r, today=today, stale_after_days=window)
+            in (VerificationStatus.STALE, VerificationStatus.BROKEN)
         )
         if bad:
             lines.append(
