@@ -92,8 +92,17 @@ remediation node is passed or the triggering blocker is resolved.
 that must stay manual: no AI-only pass, no automatic mastery, no automatic
 deletion, no hard-prerequisite override. *Automation* means an action firing
 as a side effect of another command (e.g. review scheduling on pass); an
-explicit learner command is by definition manual, so every action is either
+explicit learner command — issued at the terminal or by confirming in a
+confirmation modal — is by definition manual, so every action is either
 automatable or manual-only — there is no middle "with confirmation" tier.
+
+**Confirmation modal** — the browser form of an explicit learner command: a
+dialog that presents the eligibility facts behind an intended pass or mastery
+assertion and completes only on an explicit confirming click. Page load,
+prefetching, or script execution never constitutes assertion. Mastery confirms
+twice — the second click exists because mastery is permanent. A modal
+confirmation asserts exactly what the equivalent terminal command asserts — it
+informs, never adds or relaxes an engine rule.
 
 **Advisory policy** — a policy that reorders recommendations or prints
 warnings (workload, review cadence, remediation pressure). Advisory policies
@@ -271,13 +280,24 @@ automated check that fails is an objective observation and may set the
 broken marker, but a bot can never assert that a resource is good. A replacement candidate is just an alternative resource linked to
 the same node, promoted only by a human curriculum edit.
 
-**Export** — a derived artifact (SQLite database, Markdown report, backup
-archive) regenerated whole from the files on demand. Exports are disposable,
-never hand-edited, and never read back by the engine. The Markdown/YAML
-files are the only source of truth.
+**Export** — a derived artifact (SQLite database, Markdown report, static
+HTML report, backup archive) regenerated whole from the files on demand.
+Exports are disposable, never hand-edited, and never read back by the
+engine. The Markdown/YAML files are the only source of truth. A static HTML
+report reviews where everything stood at generation time and says so on its
+face — it is a review snapshot, never a daily view.
 
 **Event log** — an append-only audit trail. Every mutating command appends
 one event (when, what command, what it changed); read-only commands log
 nothing. Events are never read back to compute state — losing the log loses
 history, not state. A data change with no matching event is by definition a
 hand edit.
+
+**Serve** — the live local web surface (`skilltrace serve`, alias `st ui`)
+through which the learner reads daily views and issues explicit commands
+outside the terminal. It renders straight from the truth files at each
+request and keeps no copy of its own, so what it shows is always current;
+its writes are the same explicit, confirmed learner commands as the CLI's,
+never a second path. Serve shows truth but is never a source of it, and
+nothing it renders is ever read back by the engine — unlike an Export,
+it is a view onto truth, not a copy of it.
