@@ -289,9 +289,10 @@ face — it is a review snapshot, never a daily view.
 
 **Event log** — an append-only audit trail. Every mutating command appends
 one event (when, what command, what it changed); read-only commands log
-nothing. Events are never read back to compute state — losing the log loses
-history, not state. A data change with no matching event is by definition a
-hand edit.
+nothing. Each event also carries its provenance — whether the command was
+issued from the terminal or through Serve. Events are never read back to
+compute state — losing the log loses history, not state. A data change with
+no matching event is by definition a hand edit.
 
 **Serve** — the live local web surface (`skilltrace serve`, alias `st ui`)
 through which the learner reads daily views and issues explicit commands

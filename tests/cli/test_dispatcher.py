@@ -80,6 +80,35 @@ def test_event_args_exclude_internal_and_root_fields(tmp_path):
     assert event["args"] == {"minutes": 15}
 
 
+def test_web_context_source_lands_in_event_args(tmp_path):
+    # G2#66: a browser write rides its provenance in Context.source (never in
+    # argv, so the underscore exclusion above is untouched); the one audit
+    # event records it beside the invocation args.
+    cmd = Command("m", Kind.MUTATING, lambda ctx: CommandResult())
+    dispatch(
+        cmd,
+        Context(root=tmp_path, args=argparse.Namespace(node_id="n.01"), source="web"),
+    )
+    event = load_events(tmp_path)[0]
+    assert event["args"] == {"node_id": "n.01", "source": "web"}
+
+
+def test_cli_context_omits_source_from_event_args(tmp_path):
+    # The CLI path (source=None) must not gain a spurious `source` key.
+    cmd = Command("m", Kind.MUTATING, lambda ctx: CommandResult())
+    dispatch(cmd, _ctx(tmp_path, node_id="n.01"))
+    event = load_events(tmp_path)[0]
+    assert event["args"] == {"node_id": "n.01"}
+
+
+def test_read_only_command_with_web_source_appends_no_event(tmp_path):
+    # Source provenance never turns a read-only command into an audited one.
+    cmd = Command("look", Kind.READ_ONLY, _record([]))
+    rc = dispatch(cmd, Context(root=tmp_path, args=argparse.Namespace(), source="web"))
+    assert rc == 0
+    assert load_events(tmp_path) == []
+
+
 def test_forbidden_automation_action_is_refused(tmp_path):
     calls = []
     cmd = Command(

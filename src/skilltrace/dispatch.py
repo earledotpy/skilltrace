@@ -36,10 +36,18 @@ class Kind(str, Enum):
 
 @dataclass
 class Context:
-    """Everything a handler needs: the repo root and parsed arguments."""
+    """Everything a handler needs: the repo root and parsed arguments.
+
+    ``source`` carries write provenance for surfaces that nest-dispatch a
+    command without an argv (``"web"`` for browser-initiated writes). It rides
+    here rather than in ``args`` so ``_event_args``' underscore exclusion stays
+    untouched; when set it lands in the single audit event's args beside the
+    invocation arguments.
+    """
 
     root: Path
     args: argparse.Namespace
+    source: str | None = None
 
 
 @dataclass
@@ -124,10 +132,13 @@ def dispatch(command: Command, ctx: Context) -> int:
 
     # 3. Audit — exactly one event for a mutating command that succeeded.
     if command.kind is Kind.MUTATING and result.exit_code == 0:
+        event_args = _event_args(ctx.args)
+        if ctx.source is not None:
+            event_args["source"] = ctx.source
         append_event(
             ctx.root,
             command=command.name,
-            args=_event_args(ctx.args),
+            args=event_args,
             records_touched=result.records_touched,
         )
 
