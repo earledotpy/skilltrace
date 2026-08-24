@@ -1,6 +1,6 @@
-"""Daily read-only pages — the mechanical HTML transform of Mentor output (T3).
+"""Daily pages — reads (T3) and browser writes (T4) over one mechanical transform.
 
-The four GET routes (`/`, `/next`, `/nodes/{id}`, `/health`) translate the CLI
+The GET routes (`/`, `/next`, `/nodes/{id}`, `/health`) translate the CLI
 derivations into browser cards. The translation is deliberately mechanical
 (ADR 0006 / G3#67): every page calls the same line-producers the CLI prints
 (``derive_today`` / ``derive_next`` / ``derive_node_detail`` / ``health_report``)
@@ -11,29 +11,53 @@ prose is re-declared here, so CLI and serve cannot disagree; if the transform
 outgrows line-shape text, the sanctioned escalation is refactoring
 ``render.py`` into structured data, never a parallel hand-written vocabulary.
 
+The write routes (T4, G2#66 + G5#69) are thin glue over the *same* registry the
+CLI dispatches through: a confirmed action builds ``Context(root, args,
+source="web")`` and calls ``dispatch(REGISTRY.get(name), ctx)`` in-process —
+no second write path, sole-caller invariant intact. Handler stdout is captured
+and rendered verbatim (escaped); ``CommandResult.exit_code`` is the contract:
+``0`` redirects after POST with an ok flash, ``2`` re-renders the modal (or
+flashes back to the host page) with the refusal verbatim, ``1`` redirects with
+a banner suggesting ``skilltrace validate``. Heavyweight confirmation stays
+exclusive to ``pass``/``master``; every other daily write is a plain form.
+Buttons are never pre-disabled by derived preconditions — the domain's refusal
+on click is the truth (G2), so a stale modal can never assert what eligibility
+no longer supports.
+
 Information architecture: P1 variant **A — Mentor-first linear** (decision on
 issue #72). One column of reading-order cards; pressure excerpts and the
 health strip follow the focus card instead of competing with it; drill-downs
 are native ``<details>`` elements, so no JavaScript anywhere. Reads go through
-the lenient ``JoinedView`` fresh per request; writes are not wired here.
+the lenient ``JoinedView`` fresh per request.
 """
 
 from __future__ import annotations
 
 import html
 import re
+from argparse import Namespace
+from contextlib import redirect_stdout
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from io import StringIO
 from pathlib import Path
+from urllib.parse import urlencode
 
+from ..commands.eligibility import passed_at_of
 from ..commands.health import health_report
 from ..commands.node_detail import _unlocked_by, _unsatisfied_prereqs, derive_node_detail
 from ..commands.recommend import derive_next
 from ..commands.today import derive_today
 from ..context import JoinedView, load_context_lenient
-from ..evidence.eligibility import live_accepted_count
+from ..dispatch import Context, dispatch
+from ..evidence.eligibility import compute_eligibility, live_accepted_count
+from ..execution.sessions import open_session
+from ..execution.templates import known_templates
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
+from ..policy.cadence import load_cadence
+from ..policy.mastery import compute_mastery_eligibility, load_mastery_values
 from ..resources.status import VerificationStatus, derive_status, stale_after_days
 
 
@@ -75,6 +99,22 @@ _STYLE = """
   details { margin: 0.5rem 0; }
   summary { cursor: pointer; font-weight: 600; }
   .filters label { margin-right: 0.9rem; }
+  .form-row { margin: 0.45rem 0; }
+  .form-row > label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.15rem; }
+  input[type="text"], input[type="number"], textarea, select {
+    width: 100%; max-width: 34rem; padding: 0.35rem 0.5rem; font: inherit;
+    border: 1px solid #8886; border-radius: 6px; background: transparent; color: inherit;
+  }
+  textarea { min-height: 3.2rem; }
+  .inline-check { font-weight: 400; font-size: 0.9rem; }
+  .btn { display: inline-block; border: 1px solid #0c4a6e; background: #0c4a6e; color: #fff;
+         border-radius: 8px; padding: 0.35rem 0.75rem; font-weight: 600; cursor: pointer;
+         text-decoration: none; font-size: 0.9rem; }
+  .btn.secondary { background: transparent; color: inherit; border-color: #8888; }
+  .btn.master, .modal.permanent { border-color: #7c3aed; }
+  .btn.master { background: #7c3aed; color: #fff; }
+  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.5rem 0; }
+  .modal { border: 2px solid #0c4a6e; border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
 """
 
 
@@ -124,6 +164,144 @@ def _fresh_join(root) -> tuple[JoinedView | None, tuple[str, int] | None]:
             f"The Skill graph or progress store failed to load: {exc}"
         )
         return None, (body, 500)
+
+
+# --- Browser-write plumbing (T4): one dispatch path, exit-code mapping ----------
+
+
+@dataclass
+class Redirect:
+    """A POST outcome that sends 303 See Other — redirect-after-POST."""
+
+    location: str
+
+
+def _dispatch_web(root, command_name: str, **arg_fields) -> tuple[int, list[str]]:
+    """Nest-dispatch one registry command in-process with ``source: "web"``.
+
+    The registry is imported lazily (``cli`` imports this package at startup),
+    and it is *the* process-wide ``REGISTRY`` — the same registration the CLI
+    resolves, so handlers, kinds, automation labels, audit events, and refusal
+    semantics cannot drift from the command line (G2#66's one-write-path rule).
+    Handler stdout is captured so refusals can render verbatim; the
+    ``CommandResult.exit_code`` is the whole contract.
+    """
+    from ..cli import REGISTRY
+
+    command = REGISTRY.get(command_name)
+    if command is None:  # pragma: no cover — every wired name is registered
+        raise KeyError(f"no such command in the registry: {command_name}")
+    ctx = Context(root=Path(root), args=Namespace(**arg_fields), source="web")
+    buffer = StringIO()
+    with redirect_stdout(buffer):
+        exit_code = dispatch(command, ctx)
+    return exit_code, buffer.getvalue().splitlines()
+
+
+def _output_banners(lines: list[str], *, default_class: str = "advisory") -> str:
+    """Captured handler output verbatim, escaped, as banners.
+
+    ``[error]``/``[warning]`` prefixes keep their canonical banner classes;
+    any other line (a refusal headline, a success note, an advisory) renders
+    under ``default_class`` — nothing is rewritten, only escaped.
+    """
+    parts: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("[error] "):
+            parts.append(
+                f'<p class="banner error">{_esc(stripped[len("[error] "):])}</p>'
+            )
+        elif stripped.startswith("[warning] "):
+            parts.append(
+                f'<p class="banner warning">{_esc(stripped[len("[warning] "):])}</p>'
+            )
+        else:
+            parts.append(f'<p class="banner {_esc(default_class)}">{_esc(stripped)}</p>')
+    return "".join(parts)
+
+
+def _flash_html(query: dict) -> str:
+    """Flash banners carried across a redirect in the query string."""
+    text = (query.get("notice") or [""])[0]
+    if not text:
+        return ""
+    kind = (query.get("kind") or ["ok"])[0]
+    if kind not in {"ok", "warning", "error"}:
+        kind = "ok"
+    return _output_banners(text.splitlines(), default_class=kind)
+
+
+def _redirect_with_notice(location: str, lines: list[str], kind: str) -> Redirect:
+    """PRG redirect carrying the captured output as a flash notice."""
+    notice = "\n".join(line for line in lines if line.strip())
+    params = urlencode({"notice": notice, "kind": kind})
+    separator = "&" if "?" in location else "?"
+    return Redirect(location=f"{location}{separator}{params}")
+
+
+def _safe_next(form: dict, fallback: str) -> str:
+    """The host page a form POST returns to — local paths only."""
+    target = (form.get("next") or [fallback])[0]
+    if target.startswith("/") and not target.startswith("//"):
+        return target
+    return fallback
+
+
+def _field(form: dict, key: str) -> str | None:
+    values = form.get(key)
+    if not values or not values[0].strip():
+        return None
+    return values[0]
+
+
+def _int_field(form: dict, key: str) -> tuple[int | None, str | None]:
+    raw = _field(form, key)
+    if raw is None:
+        return None, None
+    try:
+        return int(raw), None
+    except ValueError:
+        return None, f"{key} must be an integer."
+
+
+def _degraded_banner(view: JoinedView) -> str:
+    """Advisory notice when lenient layers degraded — forms stay enabled."""
+    if not view.degraded:
+        return ""
+    names = ", ".join(sorted(set(view.degraded)))
+    return (
+        '<p class="banner advisory">Optional layer(s) failed to load and read '
+        f"as empty ({_esc(names)}) — forms stay enabled and a domain refusal "
+        'remains the truth. Run <code>skilltrace validate</code> / '
+        "<code>skilltrace health</code> for the roll-up.</p>"
+    )
+
+
+def _finish_write(
+    next_url: str,
+    lines: list[str],
+    exit_code: int,
+    *,
+    stay_renderer=None,
+) -> Redirect | tuple[str, str, int]:
+    """Map a dispatched write's exit code per G2#66.
+
+    ``0`` → redirect-after-POST with an ok flash; ``2`` → the modal re-renders
+    with the refusal verbatim inline when a ``stay_renderer`` is given, else a
+    warning flash back on the host page; ``1`` → dismiss with an error flash
+    suggesting ``skilltrace validate``.
+    """
+    if exit_code == 0:
+        return _redirect_with_notice(next_url, lines, "ok")
+    if exit_code == 2 and stay_renderer is not None:
+        return stay_renderer(_output_banners(lines))
+    if exit_code == 2:
+        return _redirect_with_notice(next_url, lines, "warning")
+    lines = [*lines, "Operational failure — run `skilltrace validate` for the roll-up."]
+    return _redirect_with_notice(next_url, lines, "error")
 
 
 # --- Mechanical line -> HTML transform ----------------------------------------
@@ -252,7 +430,10 @@ def _pressure_card(model, view: JoinedView) -> str:
         lists += f'<div class="kicker">OVERDUE REVIEWS</div><ul>{items}</ul>'
     if model.open_blockers:
         items = "".join(
-            f"<li>{_node_link(b.node_id)} — {_esc(b.description)}</li>"
+            "<li>"
+            f"{_node_link(b.node_id)} — {_esc(b.description)} "
+            + _resolve_blocker_form(b.id)
+            + "</li>"
             for b in model.open_blockers
         )
         lists += f'<div class="kicker">OPEN BLOCKERS</div><ul>{items}</ul>'
@@ -286,7 +467,7 @@ def _health_strip_card(root) -> str:
 # --- Route bodies ---------------------------------------------------------------
 
 
-def home_body(root) -> tuple[str, str, int]:
+def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
     """GET `/` — the today dashboard (P1 variant A: Mentor-first linear).
 
     Returns ``(page_title, body_html, http_status)``.
@@ -307,12 +488,128 @@ def home_body(root) -> tuple[str, str, int]:
 
     body = (
         _NAV
+        + _flash_html(query or {})
+        + _degraded_banner(view)
         + focus_bar
         + cards_html(model.lines)
+        + _start_confirm_card(view, root, model.focus_node_id)
+        + _session_strip_card(view, root)
         + _pressure_card(model, view)
         + _health_strip_card(root)
     )
     return "Today", body, 200
+
+
+def _template_select(templates: set[str], empty_label: str) -> str:
+    options = "".join(f'<option value="{_esc(t)}">{_esc(t)}</option>' for t in sorted(templates))
+    return (
+        f'<select name="template"><option value="">{_esc(empty_label)}</option>{options}</select>'
+    )
+
+
+def _start_confirm_form(view: JoinedView, root, node_id: str) -> str:
+    """The lightweight single-click start confirm (G5) — never a heavyweight modal.
+
+    Copy states the forward-only permanence; locked reason and an already-open
+    session stay visible as advisory text while the button stays enabled — the
+    domain refuses a second session or a locked node verbatim on click.
+    """
+    title = view.titles.get(node_id, node_id)
+    state = view.store.state_of(node_id)
+    open_now = open_session(view.sessions)
+    advisory = ""
+    if state == "locked":
+        advisory = (
+            '<p class="mut">Currently locked (unsatisfied hard prerequisite) — '
+            "the domain refuses until it unlocks.</p>"
+        )
+    elif open_now is not None:
+        advisory = (
+            f'<p class="mut">Session <code>{_esc(open_now.id)}</code> is open — '
+            "the domain refuses a second; close it first.</p>"
+        )
+    return (
+        '<div class="form-row"><label>Session template</label>'
+        f"{_template_select(known_templates(root), '(none)')}</div>"
+        f"{advisory}"
+        '<div class="actions">'
+        f'<form method="post" action="/nodes/{_esc(node_id)}/start">'
+        f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
+        '<button type="submit" class="btn">Start studying</button></form>'
+        '<span class="mut">marks this skill '
+        "<strong>active</strong> — progress never moves backward.</span>"
+        "</div>"
+    )
+
+
+def _start_confirm_card(view: JoinedView, root, focus_node_id: str | None) -> str:
+    if not focus_node_id or focus_node_id not in view.node_map:
+        return ""
+    title = _esc(view.titles.get(focus_node_id, focus_node_id))
+    return (
+        '<div class="card">\n'
+        '<div class="kicker">START HERE — TODAY\'S TOP PICK (LIGHTWEIGHT CONFIRM)</div>\n'
+        f"<p><a href=\"/nodes/{_esc(focus_node_id)}\">{title}</a></p>\n"
+        f"{_start_confirm_form(view, root, focus_node_id)}\n</div>\n"
+    )
+
+
+def _work_form_fields() -> str:
+    return (
+        '<div class="form-row"><label>Notes</label>'
+        '<textarea name="notes"></textarea></div>'
+        '<div class="form-row"><label>Minutes '
+        '<input type="number" name="minutes" min="1" style="max-width:7rem"></label></div>'
+        '<div class="form-row inline-check">'
+        '<label><input type="checkbox" name="blocked" value="1"> ended stuck '
+        "(blocked requires notes)</label></div>"
+    )
+
+
+def _session_strip_card(view: JoinedView, root) -> str:
+    """The home session strip (G5): work log + honest-end close for the open day."""
+    current = open_session(view.sessions)
+    close_form = (
+        "<details><summary>Forgot to close?</summary>"
+        '<form method="post" action="/session/close">'
+        '<input type="hidden" name="next" value="/">'
+        '<div class="form-row"><label>Honest end (ISO timestamp, optional — '
+        'e.g. 2026-08-24T13:45+00:00)</label>'
+        '<input type="text" name="end"></div>'
+        '<button type="submit" class="btn secondary">Close session</button>'
+        "</form><p class=\"mut\">Without it the session closes now.</p></details>"
+    )
+    if current is not None:
+        template = (
+            f' <span class="pill">{_esc(current.template)}</span>'
+            if current.template
+            else ""
+        )
+        header = (
+            f"<p>Open session <code>{_esc(current.id)}</code> — started "
+            f"<code>{_esc(str(current.started_at)[:19])}</code>{template}</p>"
+        )
+    else:
+        header = (
+            '<p class="mut">No session is open — start one below; closing '
+            "without one is refused by the domain.</p>"
+        )
+    work_form = (
+        "<details><summary>Log work</summary>"
+        '<form method="post" action="/work">'
+        '<input type="hidden" name="next" value="/">'
+        '<div class="form-row"><label>Node id</label>'
+        '<input type="text" name="node_id" required placeholder="e.g. math.algebra.variables_expressions_01"></div>'
+        f"{_work_form_fields()}"
+        '<button type="submit" class="btn secondary">Add work item</button>'
+        "</form><p class=\"mut\">Verbatim CLI fields — "
+        "<code>work &lt;node_id&gt; [--blocked] [--notes] [--minutes]</code>.</p></details>"
+    )
+    return (
+        '<div class="card">\n'
+        '<div class="kicker">SESSION STRIP</div>\n'
+        f"{header}\n{work_form}\n{close_form}\n</div>\n"
+    )
 
 
 def _parse_int(query: dict, key: str, default: int) -> int | None:
@@ -404,8 +701,8 @@ def _candidate_cards(model) -> str:
     return "".join(html_out)
 
 
-def node_body(root, node_id: str) -> tuple[str, str, int]:
-    """GET `/nodes/{id}` — primary Mentor card plus drill-down drawers."""
+def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, int]:
+    """GET `/nodes/{id}` — primary Mentor card, write actions, drill-downs."""
     view, failure = _fresh_join(root)
     if view is None:
         return "Error", failure[0], failure[1]
@@ -415,15 +712,150 @@ def node_body(root, node_id: str) -> tuple[str, str, int]:
         body, status = _status_page(404, f"Unknown node {node_id}.")
         return "Not found", body, status
 
+    actions = _node_actions_card(root, view, node_id)
     drill = _drill_down_card(node_id, view, Path(root))
     title = view.node_map[node_id].title
     body = (
         _NAV
+        + _flash_html(query or {})
+        + _degraded_banner(view)
         + f'<p class="mut"><a href="/">Today</a> &middot; <a href="/next">Next</a></p>'
         + cards_html(lines)
+        + actions
         + drill
     )
     return title, body, 200
+
+
+def _resolve_blocker_form(blocker_id: str, next_url: str = "/") -> str:
+    """Resolve affordance on each open-blocker row (G5): summary required."""
+    return (
+        "<details><summary>Resolve</summary>"
+        f'<form method="post" action="/blockers/{_esc(blocker_id)}/resolve">'
+        f'<input type="hidden" name="next" value="{_esc(next_url)}">'
+        '<div class="form-row"><label>Resolution summary</label>'
+        '<input type="text" name="summary" required></div>'
+        '<button type="submit" class="btn secondary">Resolve '
+        f"{_esc(blocker_id)}</button></form></details>"
+    )
+
+
+def _evidence_submit_form(root, view: JoinedView, node_id: str) -> str:
+    """Evidence submit (G5) — verbatim CLI fields, judged at submission.
+
+    Spec select auto-resolves when the node has exactly one spec; accept/
+    reject radios render only on manual-gate nodes (an objective gate's exit
+    code is the verdict); the supersede flow hides behind an advanced toggle.
+    """
+    specs = view.specs_by_node.get(node_id, [])
+    gate = next((g for g in view.gates if g.node_id == node_id), None)
+
+    if not specs:
+        spec_field = '<p class="mut">No artifact spec — the domain refuses any submission.</p>'
+    elif len(specs) == 1:
+        spec_field = f'<input type="hidden" name="spec" value="{_esc(specs[0].id)}">'
+    else:
+        options = "".join(
+            f'<option value="{_esc(s.id)}">{_esc(s.id)}</option>' for s in specs
+        )
+        spec_field = (
+            '<div class="form-row"><label>Artifact spec</label>'
+            f'<select name="spec">{options}</select></div>'
+        )
+
+    if gate is None:
+        verdict_field = '<p class="mut">No gate — the domain refuses any submission.</p>'
+    elif gate.command:
+        verdict_field = (
+            f'<p class="mut">Objective gate — running it decides the verdict '
+            f"({_esc(gate.command)}).</p>"
+        )
+    else:
+        verdict_field = (
+            '<div class="form-row"><label>Gate verdict (manual)</label>'
+            '<span class="inline-check">'
+            '<label><input type="radio" name="verdict" value="accept"> accept</label> '
+            '<label><input type="radio" name="verdict" value="reject"> reject</label>'
+            "</span></div>"
+        )
+
+    record_ids = [r.id for r in view.records if r.artifact_spec_id in {s.id for s in specs}]
+    datalist = ""
+    if record_ids:
+        options = "".join(f'<option value="{_esc(rid)}"></option>' for rid in record_ids)
+        datalist = f'<datalist id="records-{_esc(node_id)}">{options}</datalist>'
+    supersedes_field = (
+        "<details><summary>Advanced: correct an earlier record</summary>"
+        '<div class="form-row"><label>Supersedes (record id)</label>'
+        f'<input type="text" name="supersedes" list="records-{_esc(node_id)}">{datalist}</div>'
+        '<div class="form-row"><label>Reason (required with supersedes)</label>'
+        '<input type="text" name="reason"></div>'
+        "</details>"
+    )
+
+    return (
+        "<details><summary>Submit evidence</summary>"
+        '<form method="post" action="/nodes/'
+        + _esc(node_id)
+        + '/evidence">'
+        f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
+        '<div class="form-row"><label>Location (repo-relative path or URL)</label>'
+        '<input type="text" name="location" required></div>'
+        f"{spec_field}"
+        '<div class="form-row"><label>Note (optional)</label>'
+        '<input type="text" name="note"></div>'
+        f"{verdict_field}"
+        f"{supersedes_field}"
+        '<button type="submit" class="btn secondary">Submit evidence</button>'
+        "</form>"
+        '<p class="mut">Acceptance freezes at submission (ADR 0003) — the gate '
+        "verdict renders loudly; records are immutable and corrected by "
+        "superseding, never edited.</p></details>"
+    )
+
+
+def _node_actions_card(root, view: JoinedView, node_id: str) -> str:
+    """Node-detail write surface (G5): pass/master modals + daily-write forms."""
+    blockers = [
+        b for b in view.blockers if b.node_id == node_id and b.status == "open"
+    ]
+    node_url = f"/nodes/{node_id}"
+    blocker_forms = "".join(
+        f"<li><code>{_esc(b.id)}</code> — {_esc(b.description)} "
+        + _resolve_blocker_form(b.id, node_url)
+        + "</li>"
+        for b in blockers
+    )
+    blocker_section = (
+        f'<ul>{blocker_forms}</ul>' if blocker_forms else '<p class="mut">No open blockers.</p>'
+    )
+    return (
+        '<div class="card">\n'
+        '<div class="kicker">WRITE ACTIONS — SAME REGISTRY, SAME EVENTS AS THE CLI</div>\n'
+        '<div class="actions">'
+        f'<a class="btn" href="/nodes/{_esc(node_id)}/pass">Pass&hellip;</a>'
+        f'<a class="btn master" href="/nodes/{_esc(node_id)}/master">Master&hellip;</a>'
+        "</div>\n"
+        "<details open><summary>Start studying</summary>"
+        f"{_start_confirm_form(view, root, node_id)}\n</details>\n"
+        "<details><summary>Log work</summary>"
+        '<form method="post" action="/work">'
+        f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
+        f"{_work_form_fields()}"
+        '<button type="submit" class="btn secondary">Add work item</button></form></details>\n'
+        "<details><summary>I'm stuck — create a blocker</summary>"
+        '<form method="post" action="/nodes/'
+        + _esc(node_id)
+        + '/blockers">'
+        f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
+        '<div class="form-row"><label>Description (the obstacle)</label>'
+        '<input type="text" name="description" required></div>'
+        '<button type="submit" class="btn secondary">Create blocker</button></form></details>\n'
+        f"{_evidence_submit_form(root, view, node_id)}\n"
+        "<details><summary>Open blockers on this skill</summary>"
+        f"{blocker_section}</details>\n"
+        "</div>\n"
+    )
 
 
 _STATUS_PILL_CLASSES = {
@@ -630,3 +1062,310 @@ def health_body(root) -> tuple[str, str, int]:
         "CLI edits appear on refresh.</p>\n</div>\n"
     )
     return "Health", body, 200
+
+
+# --- Confirmation modals (G2#66) — server-fresh facts, domain refusal is truth --
+
+
+def _modal_shell(
+    view: JoinedView,
+    node_id: str,
+    heading: str,
+    inner: str,
+    extra_html: str = "",
+) -> tuple[str, str, int]:
+    node = view.node_map[node_id]
+    state = view.store.state_of(node_id)
+    modal = (
+        f'<div class="modal">'
+        f"<h2>{heading}</h2>"
+        f'<p class="mut">{_esc(node_id)} &middot; '
+        f'state <span class="pill {_esc(state)}">{_esc(state)}</span></p>'
+        f"{inner}"
+        "</div>"
+    )
+    body = _NAV + _degraded_banner(view) + extra_html + modal
+    return node.title, body, 200
+
+
+def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int]:
+    """GET/POST `/nodes/{id}/pass` — the pass confirmation modal (G2).
+
+    Every render recomputes eligibility from a fresh lenient join; nothing is
+    pre-disabled. Confirming POSTs and re-runs ``plan_pass`` inside the
+    handler against freshly loaded truth, so a stale modal can never assert
+    what eligibility no longer supports.
+    """
+    view, failure = _fresh_join(root)
+    if view is None:
+        return "Error", failure[0], failure[1]
+    if node_id not in view.node_map:
+        body, status = _status_page(404, f"Unknown node {node_id}.")
+        return "Not found", body, status
+
+    state = view.store.state_of(node_id)
+    eligibility = compute_eligibility(
+        node_id,
+        view.specs_by_node.get(node_id, []),
+        has_gate=node_id in view.has_gate,
+        records=view.records,
+        node_state=state,
+    )
+
+    gate = next((g for g in view.gates if g.node_id == node_id), None)
+    if gate is None:
+        authority_line = "No validation gate — no authority can accept its evidence."
+    elif gate.command:
+        authority_line = (
+            "objective — runs "
+            f"<code>{_esc(gate.command)}</code>; its exit code was the verdict."
+        )
+    else:
+        authority_line = f"{_esc(gate.authority)} — learner-stated verdict at submission."
+
+    spec_rows = [
+        [
+            _esc(s.spec_id),
+            _esc(s.minimum_count),
+            _esc(s.accepted_count),
+            "met" if s.met else "below minimum",
+        ]
+        for s in eligibility.specs
+    ]
+    spec_table = (
+        _table(["Required spec", "Minimum", "Live accepted", "Standing"], spec_rows)
+        if spec_rows
+        else '<p class="mut">No required artifact spec.</p>'
+    )
+
+    verdict_html = _output_banners(
+        ["Pass eligibility currently holds on this fresh read."]
+        if eligibility.eligible
+        else list(eligibility.reasons),
+        default_class="ok" if eligibility.eligible else "warning",
+    )
+
+    not_backed = ""
+    if eligibility.passed_but_not_backed:
+        not_backed = (
+            '<p class="banner warning">passed_but_not_backed — this asserted pass is no '
+            "longer backed by live evidence; it stands regardless, never demotes.</p>"
+        )
+
+    cadence = load_cadence(root)
+    if cadence.schedule_reviews_after_pass and cadence.intervals:
+        schedule = ", ".join(
+            f"{interval.label} (+{interval.days_after_pass}d)"
+            for interval in cadence.intervals
+        )
+        review_note = (
+            f'<p class="banner advisory">Confirming schedules {len(cadence.intervals)} review(s) '
+            f"per cadence policy: {_esc(schedule)}.</p>"
+        )
+    else:
+        review_note = (
+            '<p class="banner advisory">No auto-schedule configured — reviews stay manual '
+            "(<code>review schedule</code>).</p>"
+        )
+
+    inner = (
+        f"<p>Gate: {authority_line}</p>"
+        f"{spec_table}"
+        "<p><strong>Eligibility</strong></p>"
+        f"{verdict_html}"
+        f"{not_backed}"
+        '<p class="mut">Confirming asserts <code>passed</code> forward-only through the '
+        "same guarded writer as the CLI (one audit event, source web).</p>"
+        f"{review_note}"
+        f'<form method="post" action="/nodes/{_esc(node_id)}/pass">'
+        '<div class="actions">'
+        '<button type="submit" class="btn">Confirm pass — explicit learner command</button>'
+        f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
+        "</div></form>"
+        '<p class="mut">Buttons stay enabled by design — if these facts are stale, the '
+        "domain refuses on click and that refusal is the truth.</p>"
+    )
+    return _modal_shell(view, node_id, "Confirm pass", inner, extra_html)
+
+
+def master_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int]:
+    """GET `/nodes/{id}/master` — step 1 of 2: mastery facts."""
+    view, failure = _fresh_join(root)
+    if view is None:
+        return "Error", failure[0], failure[1]
+    if node_id not in view.node_map:
+        body, status = _status_page(404, f"Unknown node {node_id}.")
+        return "Not found", body, status
+
+    state = view.store.state_of(node_id)
+    values = load_mastery_values(root)
+    passed_at = passed_at_of(view.store, node_id)
+    mastery = compute_mastery_eligibility(
+        node_id,
+        current_state=state,
+        passed_at=passed_at,
+        specs=view.specs_by_node.get(node_id, []),
+        records=view.records,
+        reviews=view.reviews,
+        values=values,
+    )
+    accepted_total = sum(
+        live_accepted_count(view.records, s.id)
+        for s in view.specs_by_node.get(node_id, [])
+    )
+
+    fact_rows = [
+        ["Passed on", _esc(str(passed_at)[:10]) if passed_at else "—"],
+        [
+            "Accepted live evidence",
+            f"{accepted_total} of {values.min_accepted_evidence} required",
+        ],
+        [
+            "Review spacing policy",
+            f"a satisfactory completed review at least "
+            f"{values.min_days_pass_to_review} day(s) after the pass",
+        ],
+    ]
+    verdict_html = _output_banners(
+        ["Mastery eligibility holds — proceed to the permanent confirm."]
+        if mastery.eligible
+        else list(mastery.reasons),
+        default_class="ok" if mastery.eligible else "warning",
+    )
+
+    inner = (
+        "<div class=\"kicker\">MASTERY FACTS</div>"
+        + _table(["Fact", "Value"], fact_rows)
+        + "<p><strong>Eligibility</strong></p>"
+        + verdict_html
+        + '<p class="mut">Mastery requires a passed node with accepted evidence and '
+        "satisfactory spaced review (<code>policy/mastery_promotion.yaml</code>).</p>"
+        + '<div class="actions">'
+        + f'<a class="btn master" href="/nodes/{_esc(node_id)}/master/confirm">'
+        "Continue to permanent confirm &rarr;</a>"
+        + f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
+        "</div>"
+    )
+    return _modal_shell(view, node_id, "Step 1 — Mastery facts", inner, extra_html)
+
+
+def master_confirm_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int]:
+    """GET/POST `/nodes/{id}/master/confirm` — step 2 of 2: permanence."""
+    view, failure = _fresh_join(root)
+    if view is None:
+        return "Error", failure[0], failure[1]
+    if node_id not in view.node_map:
+        body, status = _status_page(404, f"Unknown node {node_id}.")
+        return "Not found", body, status
+
+    inner = (
+        '<p class="banner warning"><strong>This is permanent.</strong> Mastered never '
+        "demotes — a later unsatisfactory review creates pressure, but the state never "
+        "moves backward. Confirm only if you intend this skill to remain mastered "
+        "forever.</p>"
+        '<p class="mut">Same registry nest-dispatch as the CLI '
+        "(one audit event, source web).</p>"
+        f'<form method="post" action="/nodes/{_esc(node_id)}/master/confirm">'
+        '<div class="actions">'
+        '<button type="submit" class="btn master">Confirm master — permanent</button>'
+        f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/master">Back</a>'
+        "</div></form>"
+    )
+    return _modal_shell(view, node_id, "Step 2 — This is permanent", inner, extra_html)
+
+
+# --- POST handlers — thin glue over dispatch, exit-code mapped -------------------
+
+
+def post_pass(root, node_id: str, form: dict):
+    exit_code, lines = _dispatch_web(root, "pass", node_id=node_id)
+    return _finish_write(
+        f"/nodes/{node_id}",
+        lines,
+        exit_code,
+        stay_renderer=lambda extra: pass_modal_body(root, node_id, extra_html=extra),
+    )
+
+
+def post_master_confirm(root, node_id: str, form: dict):
+    exit_code, lines = _dispatch_web(root, "master", node_id=node_id)
+    return _finish_write(
+        f"/nodes/{node_id}",
+        lines,
+        exit_code,
+        stay_renderer=lambda extra: master_confirm_body(root, node_id, extra_html=extra),
+    )
+
+
+def post_start(root, node_id: str, form: dict):
+    next_url = _safe_next(form, f"/nodes/{node_id}")
+    exit_code, lines = _dispatch_web(
+        root, "start", node_id=node_id, template=_field(form, "template")
+    )
+    return _finish_write(next_url, lines, exit_code)
+
+
+def post_work(root, form: dict):
+    next_url = _safe_next(form, "/")
+    node_id = _field(form, "node_id")
+    minutes, minutes_error = _int_field(form, "minutes")
+    if not node_id:
+        return _redirect_with_notice(next_url, ["work requires a node id."], "warning")
+    if minutes_error:
+        return _redirect_with_notice(next_url, [minutes_error], "warning")
+    exit_code, lines = _dispatch_web(
+        root,
+        "work",
+        node_id=node_id,
+        blocked=_field(form, "blocked") is not None,
+        notes=_field(form, "notes"),
+        minutes=minutes,
+    )
+    return _finish_write(next_url, lines, exit_code)
+
+
+def post_session_close(root, form: dict):
+    next_url = _safe_next(form, "/")
+    exit_code, lines = _dispatch_web(root, "session close", end=_field(form, "end"))
+    return _finish_write(next_url, lines, exit_code)
+
+
+def post_blocker_create(root, node_id: str, form: dict):
+    next_url = _safe_next(form, f"/nodes/{node_id}")
+    exit_code, lines = _dispatch_web(
+        root, "blocker create", node_id=node_id, description=_field(form, "description")
+    )
+    return _finish_write(next_url, lines, exit_code)
+
+
+def post_blocker_resolve(root, blocker_id: str, form: dict):
+    next_url = _safe_next(form, "/")
+    exit_code, lines = _dispatch_web(
+        root, "blocker resolve", blocker_id=blocker_id, summary=_field(form, "summary")
+    )
+    return _finish_write(next_url, lines, exit_code)
+
+
+def post_evidence(root, node_id: str, form: dict):
+    next_url = _safe_next(form, f"/nodes/{node_id}")
+    location = _field(form, "location")
+    if not location:
+        return _redirect_with_notice(
+            next_url,
+            ["evidence submit: an artifact location is required."],
+            "warning",
+        )
+    verdict = _field(form, "verdict")
+    exit_code, lines = _dispatch_web(
+        root,
+        "evidence submit",
+        node_id=node_id,
+        spec=_field(form, "spec"),
+        location=location,
+        note=_field(form, "note"),
+        accept=verdict == "accept",
+        reject=verdict == "reject",
+        supersedes=_field(form, "supersedes"),
+        reason=_field(form, "reason"),
+    )
+    return _finish_write(next_url, lines, exit_code)

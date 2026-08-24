@@ -12,7 +12,9 @@ error policies. This module is the single deep module that owns the join:
 * ``load_context_lenient(root, loaders) -> JoinedView`` — the Skill graph
   (``SkillNodes`` + ``GraphEdges``) and the progress store are strict
   (a ``NodeLoadError``/``EdgeLoadError``/``ProgressStoreError`` is re-raised);
-  evidence/execution/resources/policy degrade to empty collections.
+  evidence/execution/resources/policy degrade to empty collections and every
+  degraded layer's name is recorded into ``view.degraded``, so surfaces that
+  keep serving can warn honestly about what they could not see.
   For ``node``/``today``/``next``/``report`` this matches the existing
   try/except blocks.
 
@@ -168,6 +170,9 @@ class JoinedView:
     events: list[dict] = field(default_factory=list)
     policies: dict[str, dict] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
+    # Lenient-only: names of the optional layers that failed to load and were
+    # degraded to empty (strict collects the same failures into ``errors``).
+    degraded: list[str] = field(default_factory=list)
 
     # derived
     node_map: dict[str, SkillNode] = field(default_factory=dict)
@@ -273,7 +278,9 @@ def load_context_lenient(root: Path | str, loaders: Loaders | None = None) -> Jo
     view.edges = ld.load_edges(root_path)
     view.store = ld.load_state(root_path)
 
-    # Lenient — degrade to empty on failure, never raise
+    # Lenient — degrade to empty on failure, never raise; record what degraded
+    # so serving surfaces can warn ("forms stay enabled, domain refusal is truth").
+    view.degraded = []
     for attr, loader in (
         ("specs", ld.load_specs),
         ("gates", ld.load_gates),
@@ -290,16 +297,19 @@ def load_context_lenient(root: Path | str, loaders: Loaders | None = None) -> Jo
             setattr(view, attr, loader(root_path))
         except (EvidenceLoadError, ExecutionLoadError, ResourceLoadError, Exception):  # noqa: BLE001
             setattr(view, attr, [])
+            view.degraded.append(attr)
 
     # events and policies are lenient too (today/next never fail on them)
     try:
         view.events = ld.load_events(root_path)
     except Exception:  # noqa: BLE001
         view.events = []
+        view.degraded.append("events")
     try:
         view.policies = ld.load_policies(root_path)
     except (PolicyLoadError, Exception):  # noqa: BLE001
         view.policies = {}
+        view.degraded.append("policies")
 
     _build_derived(view)
     return view
