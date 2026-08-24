@@ -183,11 +183,13 @@ def test_health_route_renders_via_lenient_seam(running_server):
     assert "states: available=" in body  # progress-store roll-up present
 
 
-def test_index_route_renders_shell(running_server):
+def test_index_route_renders_today_dashboard(running_server):
+    # T3 replaced the placeholder shell with the today dashboard (variant A).
     server, _ = running_server
     status, _, body = _get(f"http://127.0.0.1:{server.server_port}/")
     assert status == 200
-    assert "SkillTrace is serving" in body
+    assert "TODAY" in body  # the canonical Mentor kicker
+    assert 'href="/nodes/' in body  # focus card links at the node detail
 
 
 def test_unknown_route_is_404(running_server):
@@ -201,6 +203,74 @@ def test_requests_touch_no_data_dir(running_server):
     _get(f"http://127.0.0.1:{server.server_port}/health")
     _get(f"http://127.0.0.1:{server.server_port}/")
     assert not (root / "data").exists()  # data/* never read or written
+
+
+# --- T3 routes over real HTTP: /next, /nodes/{id}, freshness -------------------
+
+
+def test_next_route_mirrors_flags_over_http(running_server):
+    server, _ = running_server
+    base = f"http://127.0.0.1:{server.server_port}"
+    _, _, default_body = _get(f"{base}/next")
+    assert "60-min session" in default_body
+    _, _, limited = _get(f"{base}/next?minutes=90&limit=2")
+    assert "90-min session" in limited
+    _, _, locked = _get(f"{base}/next?locked=1")
+    assert "Locked (" in locked
+
+
+def test_next_route_bad_query_param_is_400(running_server):
+    server, _ = running_server
+    status, _, _ = _get(f"http://127.0.0.1:{server.server_port}/next?minutes=abc")
+    assert status == 400
+
+
+def test_node_route_serves_detail_and_unknown_is_404(running_server):
+    server, root = running_server
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(root)
+    node_id = sorted(view.nodes, key=lambda n: n.id)[0].id
+    status, _, body = _get(f"http://127.0.0.1:{server.server_port}/nodes/{node_id}")
+    assert status == 200
+    assert "THIS SKILL" in body  # canonical Mentor kicker
+    assert "DRILL-DOWN" in body
+    status, _, _ = _get(f"http://127.0.0.1:{server.server_port}/nodes/no.such_node_99")
+    assert status == 404
+
+
+def test_trailing_slash_and_encoded_node_ids_normalize(running_server):
+    server, root = running_server
+    base = f"http://127.0.0.1:{server.server_port}"
+    status, _, body = _get(f"{base}/next/")
+    assert status == 200  # /next/ behaves like /next
+    assert "Next" in body
+
+
+def test_routes_render_fresh_after_state_edit_over_http(running_server):
+    import yaml as _yaml
+
+    server, root = running_server
+    base = f"http://127.0.0.1:{server.server_port}"
+
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(root)
+    node_id = next(
+        n.id for n in sorted(view.nodes, key=lambda x: x.id)
+        if view.store.state_of(n.id) == "available"
+    )
+
+    _, _, before = _get(f"{base}/nodes/{node_id}")
+    state_path = root / "graph" / "state.yaml"
+    doc = _yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    doc["progress"][node_id]["state"] = "active"
+    state_path.write_text(
+        _yaml.safe_dump(doc, sort_keys=False), encoding="utf-8"
+    )
+    _, _, after = _get(f"{base}/nodes/{node_id}")
+    assert before != after  # no cache — the edit is live on refresh
+    assert '<span class="pill in-progress">In progress</span>' in after
 
 
 # --- Escaping discipline and error-message honesty ---------------------------

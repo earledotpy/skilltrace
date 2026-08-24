@@ -10,7 +10,6 @@ registered now with its final name and classification so the dispatcher contract
 from __future__ import annotations
 
 from ..dispatch import Registry
-from ..web import server as web_server
 from . import (
     attempt,
     backup,
@@ -41,6 +40,11 @@ from . import (
 
 def register_all(registry: Registry) -> Registry:
     """Register every command onto `registry` and return it."""
+    # Imported here, not at module level: the command package must not load the
+    # presentation layer on import (the web views read back through these very
+    # command modules — a module-level import would be a cycle).
+    from ..web import server as web_server
+
     validate.register(registry)
     health.register(registry)
     node_detail.register(registry)

@@ -302,22 +302,16 @@ def _unlocks_context(
     )
 
 
-# --- Command handler ----------------------------------------------------------
+# --- Shared derivation (CLI and web render the same lines) --------------------
 
 
-def node_detail(ctx: Context) -> CommandResult:
-    """Load all layers via the JoinedView lenient seam and render the Mentor view."""
-    root = ctx.root
-    node_id = ctx.args.node_id
+def derive_node_detail(joined, node_id: str) -> list[str] | None:
+    """Assemble the Mentor-voice lines for one node from a loaded JoinedView.
 
-    # One deep join — graph/state strict, rest lenient (matches pre-JoinedView try/except blocks).
-    try:
-        joined = load_context_lenient(root)
-    except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
-        print(f"node: FAILED -- {exc}")
-        return CommandResult(exit_code=1)
-
-    nodes = joined.nodes
+    Returns ``None`` when the node is unknown. Both ``skilltrace node`` and the
+    serve shell's ``/nodes/{id}`` page render exactly these lines, so the two
+    surfaces cannot drift apart.
+    """
     edges = joined.edges
     store = joined.store
     specs = joined.specs
@@ -327,8 +321,7 @@ def node_detail(ctx: Context) -> CommandResult:
     # Verify node exists.
     node_map = joined.node_map
     if node_id not in node_map:
-        print(f"node: FAILED -- unknown node {node_id}.")
-        return CommandResult(exit_code=1)
+        return None
     node = node_map[node_id]
 
     has_gate = node_id in joined.has_gate
@@ -408,6 +401,26 @@ def node_detail(ctx: Context) -> CommandResult:
     context = _unlocks_context(node_id, edges, titles)
     if context:
         lines.extend(render.section_context(context))
+
+    return lines
+
+
+def node_detail(ctx: Context) -> CommandResult:
+    """Load all layers via the JoinedView lenient seam and render the Mentor view."""
+    root = ctx.root
+    node_id = ctx.args.node_id
+
+    # One deep join — graph/state strict, rest lenient (matches pre-JoinedView try/except blocks).
+    try:
+        joined = load_context_lenient(root)
+    except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
+        print(f"node: FAILED -- {exc}")
+        return CommandResult(exit_code=1)
+
+    lines = derive_node_detail(joined, node_id)
+    if lines is None:
+        print(f"node: FAILED -- unknown node {node_id}.")
+        return CommandResult(exit_code=1)
 
     # Print the assembled view.
     for line in lines:

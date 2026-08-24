@@ -20,6 +20,7 @@ reports**.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -226,17 +227,24 @@ def _focus_action(
 # --- Command handler ----------------------------------------------------------
 
 
-def today(ctx: Context) -> CommandResult:
-    """Load every layer, synthesize the study day, render the Mentor view."""
-    root = ctx.root
+@dataclass
+class TodayModel:
+    """The study-day derivation shared by `today` and the serve home page.
 
-    # One deep join — graph/state strict, rest lenient.
-    try:
-        joined = load_context_lenient(root)
-    except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
-        print(f"today: FAILED — {exc}")
-        return CommandResult(exit_code=1)
+    ``lines`` is the canonical Mentor output; the pressure facts and state
+    counts ride alongside so the web view can excerpt them without
+    re-deriving (one voice, no parallel vocabulary).
+    """
 
+    lines: list[str]
+    focus_node_id: str | None
+    overdue: list  # list[Review] — scheduled and past due
+    open_blockers: list[Blocker]
+    counts: dict[str, int]  # progress-store state -> node count
+
+
+def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
+    """Synthesize the study day from one loaded JoinedView. Pure of printing."""
     nodes = joined.nodes
     edges = joined.edges
     store = joined.store
@@ -248,7 +256,6 @@ def today(ctx: Context) -> CommandResult:
     specs = joined.specs
     gates = joined.gates
     records = joined.records
-    all_resources = joined.resources
 
     node_map = joined.node_map
     titles = joined.titles
@@ -267,7 +274,7 @@ def today(ctx: Context) -> CommandResult:
         edges,
         store,
         _load_weight_map(root, "track_weights"),
-        minutes=ctx.args.minutes,
+        minutes=minutes,
         limit=3,
         factor_weights=_load_weight_map(root, "factor_weights"),
         remediation_boosted={r.remediation_node for r in active},
@@ -372,7 +379,32 @@ def today(ctx: Context) -> CommandResult:
             render.section_do_this_next("Open your study options: `skilltrace next`")
         )
 
-    for line in lines:
+    counts: dict[str, int] = {}
+    for entry in store.entries.values():
+        counts[entry.state] = counts.get(entry.state, 0) + 1
+
+    return TodayModel(
+        lines=lines,
+        focus_node_id=focus_node_id,
+        overdue=overdue,
+        open_blockers=open_blocker_list,
+        counts=counts,
+    )
+
+
+def today(ctx: Context) -> CommandResult:
+    """Load every layer, synthesize the study day, render the Mentor view."""
+    root = ctx.root
+
+    # One deep join — graph/state strict, rest lenient.
+    try:
+        joined = load_context_lenient(root)
+    except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
+        print(f"today: FAILED — {exc}")
+        return CommandResult(exit_code=1)
+
+    model = derive_today(joined, root, minutes=ctx.args.minutes)
+    for line in model.lines:
         print(line)
 
     return CommandResult(exit_code=0)

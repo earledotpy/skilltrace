@@ -14,6 +14,7 @@ this command. Read-only: it appends no audit event.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -166,15 +167,44 @@ def _liveness_lines(root: Path) -> tuple[list[str], int]:
     return lines, warnings
 
 
-def health(ctx: Context) -> CommandResult:
-    root = ctx.root
+# --- Shared derivation (CLI and web render the same report) -------------------
 
+
+@dataclass
+class LayerHealth:
+    """One validate target's roll-up: the exact CLI line plus structured facts."""
+
+    target: str
+    counts: str
+    ok: bool
+    line: str  # the exact line `skilltrace health` prints for this layer
+    error_lines: list[str]  # verbatim errors printed beneath it
+
+
+@dataclass
+class HealthReport:
+    """The full health derivation shared by `health` and the serve page."""
+
+    layers: list[LayerHealth]
+    liveness_lines: list[str]
+    error_count: int
+    warning_count: int
+
+    def verdict(self) -> str:
+        return render.verdict_line(
+            "health", error_count=self.error_count, warning_count=self.warning_count
+        )
+
+
+def health_report(root: Path) -> HealthReport:
+    """Run the five validators plus liveness facts. Pure of printing."""
     graph_result = load_and_validate(root)
     evidence_result = load_and_validate_evidence(root)
     execution_result = load_and_validate_execution(root)
     policy_result = load_and_validate_policy(root)
     resources_result = load_and_validate_resources(root)
 
+    layers: list[LayerHealth] = []
     error_count = 0
     warning_count = 0
 
@@ -186,19 +216,44 @@ def health(ctx: Context) -> CommandResult:
         ("resources", _resources_counts(resources_result), resources_result),
     ):
         line, error_lines = _layer_line(target, counts, result)
-        print(line)
-        for error_line in error_lines:
-            print(error_line)
+        layers.append(
+            LayerHealth(
+                target=target,
+                counts=counts,
+                ok=result.ok,
+                line=line,
+                error_lines=list(error_lines),
+            )
+        )
         error_count += len(result.errors)
         warning_count += len(result.warnings)
 
     liveness_lines, liveness_warnings = _liveness_lines(root)
-    for line in liveness_lines:
-        print(line)
     warning_count += liveness_warnings
 
-    print(render.verdict_line("health", error_count=error_count, warning_count=warning_count))
-    return CommandResult(exit_code=0 if error_count == 0 else 1)
+    return HealthReport(
+        layers=layers,
+        liveness_lines=liveness_lines,
+        error_count=error_count,
+        warning_count=warning_count,
+    )
+
+
+def health(ctx: Context) -> CommandResult:
+    root = ctx.root
+
+    report = health_report(Path(root))
+
+    for layer in report.layers:
+        print(layer.line)
+        for error_line in layer.error_lines:
+            print(error_line)
+
+    for line in report.liveness_lines:
+        print(line)
+
+    print(report.verdict())
+    return CommandResult(exit_code=0 if report.error_count == 0 else 1)
 
 
 def register(registry: Registry) -> None:

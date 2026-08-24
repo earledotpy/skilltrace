@@ -19,6 +19,7 @@ the locked nodes with their unsatisfied hard prerequisites named.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -28,7 +29,12 @@ from ..context import load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..graph.edges import EdgeLoadError, GraphEdge
 from ..graph.nodes import NodeLoadError, SkillNode
-from ..graph.recommendation import Recommendation, RecommendationResult, recommend
+from ..graph.recommendation import (
+    LockedCandidate,
+    Recommendation,
+    RecommendationResult,
+    recommend,
+)
 from ..graph.state import ProgressStoreError
 from ..policy.remediation_edges import (
     ActiveRemediation,
@@ -173,7 +179,7 @@ def _resource_lines(resources: list[LearningResource]) -> list[str]:
 # --- Report renderer ----------------------------------------------------------
 
 
-def _print_mentor_report(
+def _mentor_lines(
     result: RecommendationResult,
     minutes: int,
     limit: int,
@@ -181,15 +187,18 @@ def _print_mentor_report(
     all_resources: list[LearningResource],
     store,
     active_remediations_list: list[ActiveRemediation],
-) -> None:
-    """Render the enriched Mentor-voice next report.
+) -> list[str]:
+    """The enriched Mentor-voice next report as canonical lines.
 
     One kicker block per ranked candidate: title + state, contrastive brief,
     Where to learn, How to proceed, Do this next. Warnings and locked appendix
-    follow the same rules as before. Advisory remediation lines close the output.
+    follow the same rules as before; advisory remediation lines close the
+    output. Both `next` and the serve shell's `/next` page render exactly
+    these lines.
     """
+    out: list[str] = []
     for track in result.unmapped_tracks:
-        print(
+        out.append(
             render.warning(
                 f"track {track!r} is not in policy/recommendation.yaml "
                 "track_weights (scored 0); add it there to prioritize its nodes."
@@ -197,20 +206,17 @@ def _print_mentor_report(
         )
 
     if not result.recommendations:
-        lines: list[str] = []
-        lines.append(render.section_kicker("What's next"))
-        lines.extend(
+        out.append(render.section_kicker("What's next"))
+        out.extend(
             render.section_brief(
                 f"There's nothing available or active to recommend for a {minutes}-min session. "
                 "Run `skilltrace sync` if this looks wrong — readiness may be stale."
             )
         )
-        lines.extend(
+        out.extend(
             render.section_do_this_next("Refresh readiness: `skilltrace sync`")
         )
-        for line in lines:
-            print(line)
-        return
+        return out
 
     total = len(result.recommendations)
     session_label = f"{minutes}-min session"
@@ -220,7 +226,7 @@ def _print_mentor_report(
         if node is None:
             # Should never happen (nodes and store are loaded together), but
             # degrade gracefully rather than crash.
-            print(f"  {rank}. {rec.node_id}")
+            out.append(f"  {rank}. {rec.node_id}")
             continue
 
         state = store.state_of(rec.node_id)
@@ -238,18 +244,17 @@ def _print_mentor_report(
         lines.extend(render.section_how_to_proceed(_how_to_proceed(node, state, minutes)))
         lines.extend(render.section_do_this_next(_do_this_next(node, state)))
 
-        for line in lines:
-            print(line)
+        out.extend(lines)
 
         # Separator between candidates (not after the last one).
         if rank < total:
-            print()
-            print("---")
+            out.append("")
+            out.append("---")
 
     # Closing context: advisory remediation lines.
     for remediation in active_remediations_list:
-        print()
-        print(
+        out.append("")
+        out.append(
             render.advisory(
                 f"remediation edge active: {remediation.remediation_node} "
                 f"supports {remediation.target} — {remediation.trigger}."
@@ -258,10 +263,63 @@ def _print_mentor_report(
 
     # Locked appendix.
     if result.locked:
-        print()
-        print(f"Locked ({len(result.locked)}):")
+        out.append("")
+        out.append(f"Locked ({len(result.locked)}):")
         for locked in result.locked:
-            print(f"  {locked.node_id} — {locked.reason}")
+            out.append(f"  {locked.node_id} — {locked.reason}")
+
+    return out
+
+
+@dataclass
+class NextModel:
+    """The recommendation derivation shared by `next` and the serve page.
+
+    ``lines`` is the canonical Mentor output; the structured recommendations
+    ride alongside so the web view can render its "Why this?" reasoning
+    without re-running the ranker.
+    """
+
+    lines: list[str]
+    recommendations: list[Recommendation]
+    locked: list[LockedCandidate]
+
+
+def derive_next(
+    joined,
+    root: Path,
+    *,
+    minutes: int = 60,
+    limit: int = 5,
+    show_locked: bool = False,
+) -> NextModel:
+    """Load-free ranking over one loaded JoinedView. Pure of printing."""
+    active, blocked = _policy_pressure(root, joined)
+    result = recommend(
+        joined.nodes,
+        joined.edges,
+        joined.store,
+        load_track_weights(root),
+        minutes=minutes,
+        limit=limit,
+        show_locked=show_locked,
+        factor_weights=load_factor_weights(root),
+        remediation_boosted={r.remediation_node for r in active},
+        open_blocked=blocked,
+    )
+    return NextModel(
+        lines=_mentor_lines(
+            result,
+            minutes,
+            limit,
+            joined.node_map,
+            joined.resources,
+            joined.store,
+            active,
+        ),
+        recommendations=list(result.recommendations),
+        locked=list(result.locked),
+    )
 
 
 def recommend_next(ctx: Context) -> CommandResult:
@@ -274,34 +332,15 @@ def recommend_next(ctx: Context) -> CommandResult:
         print(f"next: FAILED — {exc}")
         return CommandResult(exit_code=1)
 
-    nodes = joined.nodes
-    edges = joined.edges
-    store = joined.store
-    all_resources = joined.resources
-    node_map = joined.node_map
-
-    active, blocked = _policy_pressure(root, joined)
-    result = recommend(
-        nodes,
-        edges,
-        store,
-        load_track_weights(root),
+    model = derive_next(
+        joined,
+        root,
         minutes=ctx.args.minutes,
         limit=ctx.args.limit,
         show_locked=ctx.args.show_locked,
-        factor_weights=load_factor_weights(root),
-        remediation_boosted={r.remediation_node for r in active},
-        open_blocked=blocked,
     )
-    _print_mentor_report(
-        result,
-        ctx.args.minutes,
-        ctx.args.limit,
-        node_map,
-        all_resources,
-        store,
-        active,
-    )
+    for line in model.lines:
+        print(line)
     return CommandResult()
 
 
