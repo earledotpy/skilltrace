@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE — P1b Polish — B dashboard — THROWAWAY</title>
+<!-- prototype/p1b-polish.html throwaway per #78, HITL prototype — not production code, stdlib inline <style> only ADR 0006 — durable asset per #83 (T-Fix) -->
+<!-- Rhythm frozen at #76/#77 verbatim: main.wrap 14px 18px 40px / card 16px 12px 0 / gap 16px / rail 78px / health-strip 8px gap 8px 0 12px / list 8px 12px -->
+<!-- Live _STYLE after #81 (94c418d) is tighter: main.wrap 10px 18px 24px / card 14px 10px 0 / gap 14px / rail 68px / health-strip 6px gap 6px 0 8px / list 6px 10px — divergence is expected throwaway staleness, not drift -->
+<style>
+  /* THROWAWAY — verbatim carry from #76 + #77 — single inline <style> (ADR 0006) — frozen at #76/#77, see HTML comments for #81 live deltas */
+  :root {
+    --bg:#fafaf9; --fg:#1c1917; --mut:#57534e; --border:#e7e5e4; --pill:#f5f5f4;
+    --accent:#0c4a6e; --warn:#fef3c7; --err:#fee2e2; --advisory:#e0f2fe; --ok:#dcfce7;
+  }
+  *{box-sizing:border-box}
+  html,body{width:100%; overflow-x:clip}
+  body{margin:0; font:14px/1.5 ui-sans, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--fg); background:var(--bg)}
+  /* throwaway banner */
+  .throwaway-banner{background:#422006; color:#ffedd5; text-align:center; padding:4px 8px; font-size:12px; letter-spacing:.02em}
+  /* header — sticky (#77) */
+  header{position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--border);}
+  header .wrap{max-width:1100px; margin:0 auto; padding:0 18px;}
+  header h1{font-size:18px; font-weight:800; margin:12px 0 2px; line-height:1.2}
+  header .sub{color:var(--mut); font-size:13px; margin-bottom:10px}
+  .nav{font-size:0.9rem; margin-bottom:0; display:flex; gap:0.9rem; flex-wrap:wrap; padding:8px 0 10px; align-items:center}
+  .nav a{color:var(--accent); text-decoration:none; font-weight:600}
+  .nav a:hover{text-decoration:underline}
+  .nav .jump{display:flex; gap:6px; align-items:center; margin-left:auto}
+  .nav .jump input{border:1px solid var(--border); border-radius:8px; padding:4px 8px; font:inherit; font-size:13px; background:#fff; color:var(--fg)}
+  .nav .jump button{border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:8px; padding:4px 10px; font-weight:600; cursor:pointer; font-size:12px}
+  .health-strip{display:flex; gap:8px; flex-wrap:wrap; padding:8px 0 12px; font-size:12px}
+  .health-strip .pill{border:1px solid var(--border); border-radius:999px; padding:3px 10px; background:#fff; font-size:12px}
+  .health-strip .pill.ok{background:var(--ok); border-color:#86efac}
+  /* wrap + grid */
+  .wrap{max-width:1100px; margin:0 auto; padding:0 18px;}
+  main.wrap{padding:14px 18px 40px}
+  .grid-two{display:grid; grid-template-columns:1.2fr .8fr; gap:16px; align-items:start;}
+  .grid-two > *{min-width:0}
+  @media(max-width:900px){.grid-two{grid-template-columns:1fr}}
+  .grid-two .focus-sub{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media(max-width:900px){.grid-two .focus-sub{grid-template-columns:1fr}}
+  /* chrome — verbatim from #76 p1-modals */
+  .kicker{font-size:11px; letter-spacing:.08em; font-weight:700; color:var(--mut); text-transform:uppercase; margin:14px 0 6px}
+  .kicker:first-child{margin-top:0}
+  .title{font-size:20px; font-weight:700; line-height:1.2; margin:6px 0 4px}
+  .mut{color:var(--mut)}
+  .small{font-size:12px; color:var(--mut); line-height:1.4}
+  .big{font-size:15px; line-height:1.5}
+  .card{background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; margin:12px 0}
+  .pill{border-radius:999px; border:1px solid var(--border); background:var(--pill); font-size:11px; padding:2px 8px; display:inline-block; font-weight:600}
+  .pill.locked{border-color:#fca5a5; background:var(--err)}
+  .pill.available{border-color:#86efac; background:var(--ok)}
+  .pill.active{border-color:#7dd3fc; background:var(--advisory)}
+  .pill.passed{border-color:#c4b5fd; background:#ede9fe}
+  .banner{padding:8px 12px; border-radius:8px; font-size:13px; margin:8px 0}
+  .banner.advisory{background:var(--advisory); border:1px solid #bae6fd}
+  .banner.warn{background:var(--warn); border:1px solid #fde68a}
+  .banner.err{background:var(--err); border:1px solid #fca5a5}
+  .banner.ok{background:var(--ok); border:1px solid #86efac}
+  .btn{appearance:none; border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:8px; padding:8px 12px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; font-size:13px}
+  .btn.secondary{background:#fff; color:var(--fg); border-color:var(--border)}
+  .btn.ghost{background:#fff; color:var(--fg); border-color:var(--border)}
+  .btn:disabled{opacity:.45; cursor:not-allowed}
+  .btn.master{border-color:#7c3aed; background:#7c3aed}
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  .list{list-style:none; padding:0; margin:8px 0}
+  .list li{border:1px solid var(--border); border-radius:12px; padding:12px; background:#fff; margin-bottom:8px}
+  .split{display:grid; grid-template-columns:360px 1fr; gap:16px}
+  @media(max-width:900px){.split{grid-template-columns:1fr}}
+  .rail{position:sticky; top:78px; align-self:start}
+  details{margin:8px 0}
+  summary{cursor:pointer; font-weight:600}
+  hr{border:none; border-top:1px solid var(--border); margin:12px 0}
+  .breadcrumb{font-size:12px; color:var(--mut); margin:8px 0}
+  .breadcrumb a{color:var(--accent)}
+</style>
+
+<div class="throwaway-banner">PROTOTYPE — THROWAWAY — not production code — <code>prototype/p1b-polish.html</code> — B dashboard with locked tokens+grid (verbatim #76 + #77) — compare with live <code>st ui</code> A linear — see also <a href="p1-modals.html" style="color:#ffedd5; text-decoration:underline">p1-modals.html</a> for pass/master chrome</div>
+
+<header>
+  <div class="wrap">
+    <h1>SkillTrace — Your study home</h1>
+    <div class="sub">B dashboard — 1.2fr focus + 0.8fr pressure — 1100px wrap — sticky health+nav — throwaway against live lines</div>
+    <nav class="nav" aria-label="primary">
+      <a href="/">Today</a>
+      <a href="/next">Next</a>
+      <a href="/health">Health</a>
+      <span class="jump">
+        <input type="text" placeholder="skill id — e.g. data.pandas.dataframe_basics_01" size="32" aria-label="jump to skill">
+        <button type="button">Go</button>
+      </span>
+    </nav>
+    <div class="health-strip" aria-label="health">
+      <span class="pill ok">✓ Skills: 81</span>
+      <span class="pill ok">✓ Links: 124</span>
+      <span class="pill ok">✓ Progress safe</span>
+      <span class="pill ok">✓ Materials: 29 — all checked</span>
+      <span class="pill">45 ready · 36 locked</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- breadcrumb -->
+  <div class="breadcrumb"><a href="/">Today</a> · <a href="/next">Next</a> — live JoinedView lenient per request</div>
+
+  <!-- warm advisory — from live today banner -->
+  <div class="banner advisory">Good morning — no study block is open now. Your best focus today is <b>Use basic Pandas DataFrame operations</b>. <span class="small">Also in range: Query rows and columns with SELECT · Use variables and expressions in Python.</span></div>
+
+  <div class="grid-two">
+    <!-- LEFT 1.2fr — focus SkillNode -->
+    <div>
+      <div class="card">
+        <div class="kicker" style="color:var(--accent); margin:0">Focus for today</div>
+        <div class="title">Use basic Pandas DataFrame operations</div>
+        <div style="margin:4px 0 8px"><span class="pill available">Ready to start</span> <span class="small">Foundational · About 1 to 3 hours</span></div>
+        <p class="big" style="margin:8px 0">You can start this skill now. Nothing blocks you. To pass, you need 1 approved piece of work. You decide when your work is good — not the computer.</p>
+        <div class="focus-sub">
+          <div>
+            <div class="kicker">Where to learn</div>
+            <p class="small" style="margin:4px 0">2 trusted materials for this skill:</p>
+            <ul class="small" style="margin:6px 0 0 18px">
+              <li><a href="https://pandas.pydata.org/docs">Pandas Docs</a> — free, Verified</li>
+              <li><a href="https://wesmckinney.com/book">Python for Data Analysis</a> — free intro</li>
+            </ul>
+          </div>
+          <div>
+            <div class="kicker">How to proceed</div>
+            <p class="small"><b>0 of 1 piece approved</b> — not yet pass-eligible. Pass eligibility means every required piece has enough approved work. We check this each time — never stored.</p>
+            <p class="small">No Review set yet. The first Review is set for you when you pass.</p>
+          </div>
+        </div>
+        <div class="kicker">Do this next</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+          <a class="btn" href="p1-modals.html">Start this skill</a>
+          <a class="btn secondary" href="p1-modals.html" style="opacity:.7">Mark as passed — confirm step</a>
+          <span class="small">→ pass/master modals live in <a href="p1-modals.html">p1-modals.html</a> (verbatim chrome)</span>
+        </div>
+        <p class="small" style="margin-top:8px">If you pass this skill, you will open 5 other skills, including <b>Filter rows and select columns in Pandas</b>.</p>
+        <details><summary>Why we suggest this one?</summary>
+          <p class="small">Best fit for 30 minutes. It opens 7 downstream skills. No open Blocker. No remediation help active. Hard prerequisites are satisfied — soft hints do not block you. Advisory only.</p>
+          <ul class="small" style="margin:6px 0 0 18px">
+            <li>Score: top for 60-min session</li>
+            <li>Track weight: foundational = 2.0</li>
+            <li>Downstream leverage: 7 unlocks</li>
+            <li>Fits session: yes</li>
+            <li>Remediation boost: none · Open blocker penalty: none</li>
+          </ul>
+        </details>
+      </div>
+
+      <!-- node drill-down preview — <details> density (fog — not yet tabs) -->
+      <div class="card">
+        <div class="kicker">Skill detail — read-only drill-downs (preview <code>&lt;details&gt;</code> density)</div>
+        <p class="small" style="margin:4px 0">Density question lives here — <code>Evidence / Resources / History</code> as <code>&lt;details&gt;</code> vs tabs. This prototype keeps native <code>&lt;details&gt;</code> (no tabs) for FOV sign-off; C split tabs stay deferred.</p>
+        <details><summary>Evidence</summary>
+          <p class="small">Spec: Pandas DataFrame basics solution script — <b>required</b> · Minimum 1 · Live accepted 0 · Gate: objective check <code>python evidence/checks/data.pandas.dataframe_basics_01_check.py</code> · Record 0 · Attempt 0</p>
+          <p class="small">Evidence records are immutable — corrections supersede, never edit. Superseded records no longer count toward eligibility.</p>
+        </details>
+        <details><summary>Resources</summary>
+          <p class="small">Pandas Docs — <span class="pill available">Verified</span> — https://pandas.pydata.org/docs — last checked today<br>Python for Data Analysis — <span class="pill available">Verified</span> — https://wesmckinney.com/book</p>
+        </details>
+        <details><summary>History · Sessions, blockers, remediation</summary>
+          <p class="small">Session: none open — at most one open at a time; stale only warns. Work: 0. Blockers: 0 — a Blocker is explicit, never auto-created from blocked work. Remediation: 0. Reviews: 0 — first Review auto-set on pass.</p>
+        </details>
+        <details><summary>Graph edges</summary>
+          <p class="small">Hard prerequisites: none unsatisfied. Unlocks: 5 — e.g. Filter rows and select columns in Pandas. Soft prerequisites warn only — never lock.</p>
+        </details>
+        <p class="small" style="margin-top:8px">Full node page is <code>/nodes/data.pandas.dataframe_basics_01</code> — this card mirrors <code>derive_node_detail</code> lines through <code>render.py:42</code> helpers.</p>
+      </div>
+    </div>
+
+    <!-- RIGHT 0.8fr — pressure column -->
+    <div>
+      <div class="card">
+        <div class="kicker">Today — needs your eye (advisory only)</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin:6px 0">
+          <span class="pill">0 Reviews waiting</span>
+          <span class="pill">0 Blockers open</span>
+          <span class="pill">45 ready · 36 locked</span>
+        </div>
+        <p class="small">Reviews that are overdue and Blockers that are open only change the order — they never block you. Only a <b>locked</b> SkillNode is a wall.</p>
+        <div class="kicker">Top suggestions — 60 minutes</div>
+        <ul class="list">
+          <li><b>1 · Pandas DataFrames</b> <span class="pill available">Ready</span><br><span class="small">Opens 7 skills · 2 materials — Load, inspect, filter, and summarize tabular data with Pandas.</span><br><span class="small"><a href="/nodes/data.pandas.dataframe_basics_01">View skill →</a> · 60–180 min</span></li>
+          <li><b>2 · SELECT basics</b> <span class="pill available">Ready</span><br><span class="small">Opens 5 skills — Retrieve specific columns with SELECT. <a href="#">View skill →</a> · 20–45 min</span></li>
+          <li><b>3 · Python functions</b> <span class="pill available">Ready</span><br><span class="small">Write reusable functions. <a href="#">View skill →</a> · 60–180 min</span></li>
+        </ul>
+        <p class="small"><b>Inside the Skill detail:</b> first you see title + state + next step. Deeper you see evidence, materials, history, and links — all <code>&lt;details&gt;</code>, no JavaScript.</p>
+      </div>
+
+      <div class="card">
+        <div class="kicker">Health — quick check</div>
+        <p class="small">All 5 checks are OK: Skills, evidence, study blocks, rules, and materials. This check is read-only — it never changes your progress.</p>
+        <p class="small">Graph 81 nodes / 124 edges · 81 specs / 81 gates · 0 records / 0 attempts · 5 policy files · 29 resources — verified 29, stale 0 · 45 ready · 36 locked</p>
+        <p><a href="/health">Full roll-up →</a> <span class="small">(mirrors <code>skilltrace health</code>)</span></p>
+      </div>
+
+      <div class="card" style="background:#fffbeb; border-color:#fde68a">
+        <div class="kicker">Study-day pressure — advisory, never blocks</div>
+        <p class="small">This column is the pressure column: overdue Reviews + open Blockers + availability counts. The Engine warns and reorders — the Learner decides. No advisory pill ever gates <code>pass</code>/<code>master</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BELOW GRID — rec queue spanning both columns -->
+  <div class="card">
+    <div class="kicker">Other good choices for today — 60-minute queue (below grid)</div>
+    <p class="small">Live from <code>skilltrace next --minutes 60</code> — mirrors <code>derive_next</code> lines. Five candidates, same <code>render.py → cards_html</code> transform.</p>
+    <ul class="list">
+      <li><b>Query rows and columns with SELECT</b> <span class="pill available">Ready</span><br><span class="small">20–45 min · Opens 5 skills · 3 materials — Sqlbolt · Select Star SQL · SQLite Docs</span> — <a href="#">View skill →</a></li>
+      <li><b>Define and call Python functions</b> <span class="pill available">Ready</span><br><span class="small">60–180 min · Opens 5 skills — Python Tutorial · Automate the Boring Stuff · Runestone</span></li>
+      <li><b>Use variables and expressions in Python</b> <span class="pill available">Ready</span><br><span class="small">30–90 min · Opens 5 skills</span></li>
+      <li><b>Summarize a dataset with descriptive statistics</b> <span class="pill available">Ready</span><br><span class="small">30–60 min · Opens 4 skills — Khan Statistics · OpenIntro</span></li>
+    </ul>
+    <p class="small">Queue spans both columns in <code>.grid-two</code> — same <code>ul.list &gt; li</code> tokens (border 1px var(--border), radius 12px, pad 12px).</p>
+  </div>
+
+  <!-- Density note + live-lines provenance -->
+  <div class="card" style="background:#f8fafc">
+    <div class="kicker">What this prototype settles — live-lines provenance</div>
+    <p class="small"><b>Question:</b> Does B's 1100px + 1.2fr/.8fr + sticky health+nav + 900px collapse hold the full planned UI (focus + pressure + queue) above fold without inventing a new IA — and is the chrome carry switchable against live <code>st ui</code> A?</p>
+    <ul class="small" style="margin:6px 0 0 18px">
+      <li><b>Tokens:</b> stone palette #fafaf9→#0c4a6e + 14px/1.5 + 11px kicker + 20px title + solid pills/banners — verbatim #76, no <code>color-scheme: light dark</code>, no translucency.</li>
+      <li><b>Shell:</b> sticky <code>header top:0 #fff</code> + <code>.wrap 1100px 18px</code> + <code>.grid-two 1.2fr .8fr 16px</code> + <code>@900px → 1fr</code> + <code>.list</code> + <code>.rail top:78px</code> — verbatim #77. Mechanical <code>render.py:42 → cards_html</code> unchanged — only CSS swaps.</li>
+      <li><b>Lines:</b> focus = <code>skilltrace today</code> + <code>JoinedView</code> lenient; queue = <code>skilltrace next --minutes 60</code> (5 options); health = <code>skilltrace health</code> (81/124/29/45·36); detail preview = <code>skilltrace node data.pandas.dataframe_basics_01</code>. Human language only — no file:line fences in page.</li>
+      <li><b>Affordances:</b> Start / Mark as passed / Master link to <a href="p1-modals.html">p1-modals.html</a> throwaway — heavyweight confirm stays exclusive to pass/master (G2). No new dep, stdlib inline &lt;style&gt; only (ADR 0006).</li>
+      <li><b>Sign-off:</b> Open this file and live <code>http://localhost:8000/</code> A side-by-side — B must feel like human <code>?variant=B</code> @069139e but with stone tokens. Tuning (shadow, blur, 16px card) is deferred to FOV density ticket.</li>
+    </ul>
+  </div>
+
+  <div class="card" style="background:#fffbeb; border-color:#fde68a">
+    <div class="kicker">Open questions left as fog</div>
+    <ul class="small" style="margin:6px 0 0 18px">
+      <li>Node detail density — <code>&lt;details&gt;</code> vs tabs on <code>/nodes/{id}</code> — this prototype keeps <code>&lt;details&gt;</code>. Tabs belong to C split and stay fog until FOV density ticket lands.</li>
+      <li>Modal chrome carry — <code>p1-modals.html</code> already uses same tokens (900px wrap there is intentional narrower modal focus). Whether modals adopt 1100px wrap verbatim is the modal-chrome fog patch.</li>
+      <li>Field of view on 900p — verify at 1100px that focus (≈648px) + pressure (≈432px) + queue sit above fold. Collapse to single column at 900px.</li>
+    </ul>
+  </div>
+
+  <hr>
+  <p class="small">Compare: live A linear at <code>src/skilltrace/web/views.py:69 _STYLE</code> (46rem, system-ui, translucent pills #f87171aa etc, single column). This B carries #76 solid pills + #77 grid — verbatim, no tuning. Throwaway branch: <code>research/p1b-polish</code> pattern not needed — prototype is HITL, commit stays on feature branch until sign-off.</p>
+  <p class="small" style="color:#92400e"><b>Staleness note per #83:</b> prototype shell frozen at <code>main.wrap 14px 18px 40px / card 16px 12px 0 / gap 16px / rail 78px / health-strip 8px gap 8px 0 12px</code> (pre-#81). Live <code>_STYLE</code> after <code>94c418d</code> (#81) is <code>10px 18px 24px / 14px 10px 0 / 14px / 68px / 6px 6px 0 8px</code> — full delta in commit 94c418d + <code>views.py:69</code> diff. Divergence is expected throwaway staleness; prototype not retuned — compare side-by-side to see density tightening.</p>
+</main>
+</html>
