@@ -33,7 +33,6 @@ from .commands.report import (
 )
 from .commands.resource_report import resource_report
 from .context import load_context_strict
-from .web.views import cards_html, page
 
 HTML_EXPORT_RELPATH = Path("data") / "export.html"
 
@@ -68,6 +67,8 @@ def _banner_card(generated_at: str) -> str:
 
 def _health_strip_card(root: Path) -> str:
     """The five validators plus liveness, mirroring the serve health strip."""
+    from .web.views import cards_html
+
     report = health_report(Path(root))
     pills = "".join(
         f'<span class="pill {"verified" if layer.ok else "broken"}">'
@@ -86,6 +87,8 @@ def _health_strip_card(root: Path) -> str:
 
 def render_html(ctx) -> str:
     """Build the full self-contained HTML page from the captured report lines."""
+    from .web.views import cards_html, page
+
     sections_html = ""
     for title, handler in _SECTIONS:
         lines = _capture(handler, ctx)

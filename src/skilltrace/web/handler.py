@@ -64,6 +64,17 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
             title, body, status = home_body(self.server.root, query)
         elif path == "/next":
             title, body, status = next_body(self.server.root, query)
+        elif path == "/nodes/jump":
+            node_id = (query.get("node_id") or [""])[0].strip()
+            if not node_id:
+                title, body, status = self._not_found()
+                self._send(page(title, body), status=status)
+                return
+            # No JS jump — redirect to GET /nodes/{id} (escaping handled by _esc on render)
+            from urllib.parse import quote as _quote
+
+            self._redirect(f"/nodes/{_quote(node_id, safe='._-')}")
+            return
         elif master_confirm is not None:
             title, body, status = master_confirm_body(
                 self.server.root, unquote(master_confirm.group(1))

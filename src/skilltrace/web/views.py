@@ -67,35 +67,66 @@ def _esc(value: object) -> str:
 
 
 _STYLE = """
-  :root { color-scheme: light dark; }
-  body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 46rem;
-         padding: 0 1rem; line-height: 1.5; }
+  :root {
+    --bg:#fafaf9; --fg:#1c1917; --mut:#57534e; --border:#e7e5e4; --pill:#f5f5f4;
+    --accent:#0c4a6e; --warn:#fef3c7; --err:#fee2e2; --advisory:#e0f2fe; --ok:#dcfce7;
+  }
+  *{box-sizing:border-box}
+  html,body{width:100%; overflow-x:clip}
+  body{margin:0; font:14px/1.5 ui-sans, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--fg); background:var(--bg);}
+  .wrap{max-width:1100px; margin:0 auto; padding:0 18px;}
+  main.wrap{padding:14px 18px 40px}
   h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 1.6rem; }
   table { border-collapse: collapse; width: 100%; }
-  th, td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid #8884; }
-  .mut { color: #888; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); }
+  .mut { color: var(--mut); font-size: 0.85rem; }
+  .small{font-size:12px; color:var(--mut); line-height:1.4}
+  .big{font-size:15px; line-height:1.5}
   ul { padding-left: 1.2rem; }
-  .nav { font-size: 0.9rem; margin-bottom: 0.6rem; }
-  .nav a { margin-right: 0.9rem; }
-  .card { border: 1px solid #8884; border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
-  .kicker { font-size: 0.72rem; letter-spacing: 0.08em; font-weight: 700;
-            opacity: 0.65; margin: 0.6rem 0 0.25rem; }
+  header{position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--border);}
+  header .wrap{max-width:1100px; margin:0 auto; padding:0 18px;}
+  header h1{font-size:18px; font-weight:800; margin:12px 0 2px; line-height:1.2}
+  header .sub{color:var(--mut); font-size:13px; margin-bottom:10px}
+  .nav { font-size: 0.9rem; margin-bottom:0; display:flex; gap:0.9rem; flex-wrap:wrap; padding:8px 0 10px; align-items:center}
+  .nav a { color:var(--accent); text-decoration:none; font-weight:600}
+  .nav a:hover{text-decoration:underline}
+  .nav .jump{display:flex; gap:6px; align-items:center; margin-left:auto}
+  .nav .jump input{border:1px solid var(--border); border-radius:8px; padding:4px 8px; font:inherit; font-size:13px; background:#fff; color:var(--fg)}
+  .nav .jump button{border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:8px; padding:4px 10px; font-weight:600; cursor:pointer; font-size:12px}
+  .health-strip{display:flex; gap:8px; flex-wrap:wrap; padding:8px 0 12px; font-size:12px}
+  .health-strip .pill{border:1px solid var(--border); border-radius:999px; padding:3px 10px; background:#fff; font-size:12px}
+  .health-strip .pill.ok{background:var(--ok); border-color:#86efac}
+  .health-strip .pill.broken{background:var(--err); border-color:#fca5a5}
+  .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; margin:12px 0; }
+  .kicker { font-size:11px; letter-spacing:.08em; font-weight:700; color:var(--mut); text-transform:uppercase; margin:0.6rem 0 0.25rem; }
+  .kicker:first-child{margin-top:0}
+  .title{font-size:20px; font-weight:700; line-height:1.2; margin:6px 0 4px}
   .label { font-weight: 600; margin: 0.5rem 0 0.15rem; }
   .lead { font-weight: 600; font-size: 1.05rem; margin: 0.2rem 0; }
   .sub { margin: 0.15rem 0 0.15rem 0.9rem; }
-  .pill { display: inline-block; border: 1px solid #8884; border-radius: 999px;
-          padding: 0.05rem 0.55rem; font-size: 0.75rem; margin: 0.1rem 0.3rem 0.1rem 0; }
-  .pill.locked, .pill.broken { border-color: #f87171aa; background: #ef44441a; }
-  .pill.available, .pill.ready-to-start, .pill.verified { border-color: #4ade8088; background: #22c55e1a; }
-  .pill.active, .pill.in-progress, .pill.advisory { border-color: #38bdf888; background: #0ea5e91a; }
-  .pill.passed { border-color: #a78bfa88; background: #8b5cf61a; }
-  .pill.mastered { border-color: #facc1588; background: #eab3081a; }
-  .pill.stale { border-color: #fbbf2488; background: #f59e0b1a; }
-  .banner { padding: 0.45rem 0.7rem; border-radius: 8px; margin: 0.4rem 0; }
-  .banner.warning, .banner.stale-note { background: #f59e0b26; }
-  .banner.error, .banner.fail { background: #ef444433; }
-  .banner.advisory { background: #0ea5e926; }
-  .banner.ok { background: #22c55e26; }
+  .pill { display: inline-block; border: 1px solid var(--border); border-radius: 999px;
+          padding: 2px 8px; font-size: 11px; margin: 0.1rem 0.3rem 0.1rem 0; background:var(--pill); font-weight:600}
+  .pill.locked, .pill.broken { border-color: #fca5a5; background: var(--err); }
+  .pill.available, .pill.ready-to-start, .pill.verified { border-color: #86efac; background: var(--ok); }
+  .pill.active, .pill.in-progress, .pill.advisory { border-color: #7dd3fc; background: var(--advisory); }
+  .pill.passed { border-color: #c4b5fd; background: #ede9fe; }
+  .pill.mastered { border-color: #facc15; background: #fef9c3; }
+  .pill.stale { border-color: #fde68a; background: var(--warn); }
+  .banner { padding: 8px 12px; border-radius: 8px; margin: 0.4rem 0; font-size:13px}
+  .banner.advisory { background: var(--advisory); border:1px solid #bae6fd; }
+  .banner.warn, .banner.warning, .banner.stale-note { background: var(--warn); border:1px solid #fde68a; }
+  .banner.err, .banner.error, .banner.fail { background: var(--err); border:1px solid #fca5a5; }
+  .banner.ok { background: var(--ok); border:1px solid #86efac; }
+  .grid-two{display:grid; grid-template-columns:1.2fr .8fr; gap:16px; align-items:start;}
+  .grid-two > *{min-width:0}
+  @media(max-width:900px){.grid-two{grid-template-columns:1fr}}
+  .grid-two .focus-sub{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media(max-width:900px){.grid-two .focus-sub{grid-template-columns:1fr}}
+  .rail{position:sticky; top:78px; align-self:start}
+  .split{display:grid; grid-template-columns:360px 1fr; gap:16px}
+  @media(max-width:900px){.split{grid-template-columns:1fr} .rail{position:static}}
+  .breadcrumb{font-size:12px; color:var(--mut); margin:8px 0}
+  .breadcrumb a{color:var(--accent)}
   details { margin: 0.5rem 0; }
   summary { cursor: pointer; font-weight: 600; }
   .filters label { margin-right: 0.9rem; }
@@ -103,44 +134,75 @@ _STYLE = """
   .form-row > label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.15rem; }
   input[type="text"], input[type="number"], textarea, select {
     width: 100%; max-width: 34rem; padding: 0.35rem 0.5rem; font: inherit;
-    border: 1px solid #8886; border-radius: 6px; background: transparent; color: inherit;
+    border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--fg);
   }
   textarea { min-height: 3.2rem; }
   .inline-check { font-weight: 400; font-size: 0.9rem; }
   .btn { display: inline-block; border: 1px solid #0c4a6e; background: #0c4a6e; color: #fff;
          border-radius: 8px; padding: 0.35rem 0.75rem; font-weight: 600; cursor: pointer;
          text-decoration: none; font-size: 0.9rem; }
-  .btn.secondary { background: transparent; color: inherit; border-color: #8888; }
+  .btn.secondary { background: #fff; color: var(--fg); border-color: var(--border); }
   .btn.master, .modal.permanent { border-color: #7c3aed; }
   .btn.master { background: #7c3aed; color: #fff; }
   .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.5rem 0; }
-  .modal { border: 2px solid #0c4a6e; border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
-"""
+  .modal { border: 2px solid #0c4a6e; border-radius: 12px; padding: 14px 16px; margin: 12px 0; background:#fff}
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  .list{list-style:none; padding:0; margin:8px 0}
+  .list li{border:1px solid var(--border); border-radius:12px; padding:12px; background:#fff; margin-bottom:8px}
+ """
 
 
 def page(title: str, body: str) -> str:
     """Wrap a body in the single shared layout (one inline style block)."""
+    # Bodies start with a sticky <header> (via _NAV). Lift it outside the
+    # main wrap so its background spans the full viewport width while its
+    # inner .wrap stays 1100px — same shell as prototype/p1b-polish.html.
+    header = ""
+    main = body
+    stripped = body.lstrip()
+    if stripped.startswith("<header>"):
+        end = body.find("</header>")
+        if end != -1:
+            header = body[: end + len("</header>")] + "\n"
+            main = body[end + len("</header>"):].lstrip()
+            # If the header carried its own _NAV, the remaining body may still
+            # start with whitespace; keep it trimmed for clean markup.
     return (
         "<!doctype html>\n"
-        '<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+        '<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n'
         f"<title>{_esc(title)} — SkillTrace</title>\n"
         f"<style>{_STYLE}</style>\n</head>\n<body>\n"
-        f"<h1>{_esc(title)}</h1>\n{body}\n</body>\n</html>\n"
+        f"{header}"
+        f'<main class="wrap">\n<h1>{_esc(title)}</h1>\n{main}\n</main>\n</body>\n</html>\n'
     )
 
 
 _NAV = (
-    '<div class="nav">'
+    '<header>'
+    '<div class="wrap">'
+    '<nav class="nav" aria-label="primary">'
     '<a href="/">Today</a>'
     '<a href="/next">Next</a>'
     '<a href="/health">Health</a>'
-    "</div>\n"
+    '<form class="jump" method="get" action="/nodes/jump">'
+    '<input type="text" name="node_id" placeholder="skill id — e.g. data.pandas.dataframe_basics_01" aria-label="jump to skill" size="32">'
+    '<button type="submit">Go</button>'
+    '</form>'
+    '</nav>'
+    '<div class="health-strip" aria-label="health" data-health-placeholder></div>'
+    '</div>'
+    '</header>\n'
 )
 
 
 def _error_body(message: str) -> str:
+    header_html = _NAV.replace(
+        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
+        '<div class="health-strip" aria-label="health"></div>',
+    )
     return (
-        f'{_NAV}<p class="banner error">{_esc(message)}</p>'
+        f'{header_html}<p class="banner error">{_esc(message)}</p>'
         '<p><a href="/">Back to Today</a></p>'
     )
 
@@ -464,11 +526,47 @@ def _health_strip_card(root) -> str:
     )
 
 
+def _header_health_html(root) -> str:
+    """Compact pills for the sticky header health strip (B viewport)."""
+    report = health_report(Path(root))
+    pills = "".join(
+        f'<span class="pill {"ok" if layer.ok else "broken"}">'
+        f"{_esc(layer.target)}: {'OK' if layer.ok else 'FAILED'}</span>"
+        for layer in report.layers
+    )
+    # Keep the header strip compact — layers plus link, counts live in pressure card.
+    return pills + '<a href="/health" style="margin-left:8px">Full roll-up &rarr;</a>'
+
+
+def _queue_list_html(model, view: JoinedView) -> str:
+    """Rec queue list below the grid — mirrors `derive_next` 60-min recommendations."""
+    items = ""
+    for rec in model.recommendations:
+        node = view.node_map.get(rec.node_id)
+        title = _esc(node.title if node else rec.node_id)
+        state = view.store.state_of(rec.node_id)
+        slug = _slug(state)
+        items += (
+            f'<li><a href="/nodes/{_esc(rec.node_id)}">{title}</a> '
+            f'<span class="pill {slug}">{_esc(state)}</span>'
+            f'<br><span class="small">{_esc(rec.reason[:140])}</span></li>'
+        )
+    if not items:
+        items = '<li class="mut">No recommendations for 60 min — try <a href="/next">Next</a>.</li>'
+    return (
+        '<div class="card">\n'
+        '<div class="kicker">OTHER GOOD CHOICES — 60-MINUTE QUEUE</div>\n'
+        f'<ul class="list">{items}</ul>\n'
+        '<p class="small">Live from <code>skilltrace next --minutes 60</code> — mirrors <code>derive_next</code>.</p>\n'
+        '</div>\n'
+    )
+
+
 # --- Route bodies ---------------------------------------------------------------
 
 
 def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
-    """GET `/` — the today dashboard (P1 variant A: Mentor-first linear).
+    """GET `/` — the today dashboard (B grid — 1.2fr focus + 0.8fr pressure).
 
     Returns ``(page_title, body_html, http_status)``.
     """
@@ -486,16 +584,49 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
             f'<a href="/nodes/{_esc(focus.id)}">{_esc(focus.title)}</a></p>'
         )
 
+    # Sticky header health+nav — live pills, jump form, 1100px wrap.
+    header_health = _header_health_html(root)
+    header_html = _NAV.replace(
+        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
+        f'<div class="health-strip" aria-label="health">{header_health}</div>',
+    )
+
+    # Grid-two: left 1.2fr focus + right 0.8fr rail pressure.
+    left_html = (
+        cards_html(model.lines)
+        + _start_confirm_card(view, root, model.focus_node_id)
+        + _session_strip_card(view, root)
+    )
+    right_html = (
+        '<div class="rail">\n'
+        + _pressure_card(model, view)
+        + _health_strip_card(root)
+        + '\n</div>\n'
+    )
+    grid_html = (
+        '<div class="grid-two">\n'
+        '<div>\n' + left_html + '\n</div>\n'
+        + right_html
+        + '\n</div>\n'
+    )
+
+    # Rec queue below grid — mirrors CLI `next --minutes 60`.
+    try:
+        queue_model = derive_next(view, Path(root), minutes=60, limit=5)
+        queue_html = _queue_list_html(queue_model, view)
+    except Exception:  # pragma: no cover — lenient join already fresh
+        queue_html = ""
+
+    breadcrumb = '<div class="breadcrumb"><a href="/">Today</a></div>\n'
+
     body = (
-        _NAV
+        header_html
         + _flash_html(query or {})
         + _degraded_banner(view)
         + focus_bar
-        + cards_html(model.lines)
-        + _start_confirm_card(view, root, model.focus_node_id)
-        + _session_strip_card(view, root)
-        + _pressure_card(model, view)
-        + _health_strip_card(root)
+        + breadcrumb
+        + grid_html
+        + queue_html
     )
     return "Today", body, 200
 
@@ -656,7 +787,13 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
         "</div>\n"
     )
 
-    return "Next", _NAV + filters + _candidate_cards(model), 200
+    header_health = _header_health_html(root)
+    header_html = _NAV.replace(
+        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
+        f'<div class="health-strip" aria-label="health">{header_health}</div>',
+    )
+    breadcrumb = '<div class="breadcrumb"><a href="/">Today</a> &middot; <a href="/next">Next</a></div>\n'
+    return "Next", header_html + breadcrumb + filters + _candidate_cards(model), 200
 
 
 def _why_details(rec) -> str:
@@ -715,11 +852,20 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
     actions = _node_actions_card(root, view, node_id)
     drill = _drill_down_card(node_id, view, Path(root))
     title = view.node_map[node_id].title
+    header_health = _header_health_html(root)
+    header_html = _NAV.replace(
+        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
+        f'<div class="health-strip" aria-label="health">{header_health}</div>',
+    )
+    breadcrumb = (
+        f'<div class="breadcrumb"><a href="/">Today</a> &middot; '
+        f'<a href="/nodes/{_esc(node_id)}">{_esc(node_id)}</a></div>\n'
+    )
     body = (
-        _NAV
+        header_html
         + _flash_html(query or {})
         + _degraded_banner(view)
-        + f'<p class="mut"><a href="/">Today</a> &middot; <a href="/next">Next</a></p>'
+        + breadcrumb
         + cards_html(lines)
         + actions
         + drill
@@ -1050,8 +1196,15 @@ def health_body(root) -> tuple[str, str, int]:
     )
     verdict_class = "ok" if report.error_count == 0 else "fail"
 
+    header_health = _header_health_html(root)
+    header_html = _NAV.replace(
+        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
+        f'<div class="health-strip" aria-label="health">{header_health}</div>',
+    )
+    breadcrumb = '<div class="breadcrumb"><a href="/">Today</a> &middot; <a href="/health">Health</a></div>\n'
     body = (
-        _NAV
+        header_html
+        + breadcrumb
         + '<div class="card">\n'
         + '<div class="kicker">HEALTH ROLL-UP — FIVE VALIDATORS + LIVENESS</div>\n'
         + _table(["Layer", "Counts", "Status"], rows)
@@ -1084,7 +1237,11 @@ def _modal_shell(
         f"{inner}"
         "</div>"
     )
-    body = _NAV + _degraded_banner(view) + extra_html + modal
+    header_html = _NAV.replace(
+        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
+        '<div class="health-strip" aria-label="health"></div>',
+    )
+    body = header_html + _degraded_banner(view) + extra_html + modal
     return node.title, body, 200
 
 
