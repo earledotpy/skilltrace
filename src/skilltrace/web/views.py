@@ -145,7 +145,7 @@ _STYLE = """
   .btn.master, .modal.permanent { border-color: #7c3aed; }
   .btn.master { background: #7c3aed; color: #fff; }
   .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.4rem 0; }
-  .modal { border: 2px solid #0c4a6e; border-radius: 12px; padding: 14px 16px; margin: 10px 0; background:#fff}
+  .modal { border: 2px solid #0c4a6e; border-radius: 12px; padding: 14px 16px; margin: 10px auto; background:#fff; max-width:860px; box-shadow:0 8px 32px rgba(0,0,0,.08)}
   a{color:var(--accent); text-decoration:none}
   a:hover{text-decoration:underline}
   .list{list-style:none; padding:0; margin:6px 0}
