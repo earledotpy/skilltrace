@@ -75,35 +75,35 @@ _STYLE = """
   html,body{width:100%; overflow-x:clip}
   body{margin:0; font:14px/1.5 ui-sans, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--fg); background:var(--bg);}
   .wrap{max-width:1100px; margin:0 auto; padding:0 18px;}
-  main.wrap{padding:14px 18px 40px}
-  h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 1.6rem; }
+  main.wrap{padding:10px 18px 24px}
+  h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 1.2rem; }
   table { border-collapse: collapse; width: 100%; }
   th, td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); }
   .mut { color: var(--mut); font-size: 0.85rem; }
-  .small{font-size:12px; color:var(--mut); line-height:1.4}
-  .big{font-size:15px; line-height:1.5}
+  .small{font-size:12px; color:var(--mut); line-height:1.35}
+  .big{font-size:15px; line-height:1.45}
   ul { padding-left: 1.2rem; }
   header{position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--border);}
   header .wrap{max-width:1100px; margin:0 auto; padding:0 18px;}
-  header h1{font-size:18px; font-weight:800; margin:12px 0 2px; line-height:1.2}
-  header .sub{color:var(--mut); font-size:13px; margin-bottom:10px}
-  .nav { font-size: 0.9rem; margin-bottom:0; display:flex; gap:0.9rem; flex-wrap:wrap; padding:8px 0 10px; align-items:center}
+  header h1{font-size:18px; font-weight:800; margin:10px 0 2px; line-height:1.2}
+  header .sub{color:var(--mut); font-size:13px; margin-bottom:8px}
+  .nav { font-size: 0.9rem; margin-bottom:0; display:flex; gap:0.9rem; flex-wrap:wrap; padding:6px 0 8px; align-items:center}
   .nav a { color:var(--accent); text-decoration:none; font-weight:600}
   .nav a:hover{text-decoration:underline}
   .nav .jump{display:flex; gap:6px; align-items:center; margin-left:auto}
   .nav .jump input{border:1px solid var(--border); border-radius:8px; padding:4px 8px; font:inherit; font-size:13px; background:#fff; color:var(--fg)}
   .nav .jump button{border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:8px; padding:4px 10px; font-weight:600; cursor:pointer; font-size:12px}
-  .health-strip{display:flex; gap:8px; flex-wrap:wrap; padding:8px 0 12px; font-size:12px}
+  .health-strip{display:flex; gap:6px; flex-wrap:wrap; padding:6px 0 8px; font-size:12px}
   .health-strip .pill{border:1px solid var(--border); border-radius:999px; padding:3px 10px; background:#fff; font-size:12px}
   .health-strip .pill.ok{background:var(--ok); border-color:#86efac}
   .health-strip .pill.broken{background:var(--err); border-color:#fca5a5}
-  .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; margin:12px 0; }
-  .kicker { font-size:11px; letter-spacing:.08em; font-weight:700; color:var(--mut); text-transform:uppercase; margin:0.6rem 0 0.25rem; }
+  .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; margin:10px 0; }
+  .kicker { font-size:11px; letter-spacing:.08em; font-weight:700; color:var(--mut); text-transform:uppercase; margin:0.5rem 0 0.2rem; }
   .kicker:first-child{margin-top:0}
-  .title{font-size:20px; font-weight:700; line-height:1.2; margin:6px 0 4px}
-  .label { font-weight: 600; margin: 0.5rem 0 0.15rem; }
-  .lead { font-weight: 600; font-size: 1.05rem; margin: 0.2rem 0; }
-  .sub { margin: 0.15rem 0 0.15rem 0.9rem; }
+  .title{font-size:20px; font-weight:700; line-height:1.2; margin:4px 0 4px}
+  .label { font-weight: 600; margin: 0.4rem 0 0.12rem; }
+  .lead { font-weight: 600; font-size: 1.05rem; margin: 0.15rem 0; }
+  .sub { margin: 0.12rem 0 0.12rem 0.9rem; }
   .pill { display: inline-block; border: 1px solid var(--border); border-radius: 999px;
           padding: 2px 8px; font-size: 11px; margin: 0.1rem 0.3rem 0.1rem 0; background:var(--pill); font-weight:600}
   .pill.locked, .pill.broken { border-color: #fca5a5; background: var(--err); }
@@ -112,26 +112,26 @@ _STYLE = """
   .pill.passed { border-color: #c4b5fd; background: #ede9fe; }
   .pill.mastered { border-color: #facc15; background: #fef9c3; }
   .pill.stale { border-color: #fde68a; background: var(--warn); }
-  .banner { padding: 8px 12px; border-radius: 8px; margin: 0.4rem 0; font-size:13px}
+  .banner { padding: 7px 10px; border-radius: 8px; margin: 0.35rem 0; font-size:13px}
   .banner.advisory { background: var(--advisory); border:1px solid #bae6fd; }
   .banner.warn, .banner.warning, .banner.stale-note { background: var(--warn); border:1px solid #fde68a; }
   .banner.err, .banner.error, .banner.fail { background: var(--err); border:1px solid #fca5a5; }
   .banner.ok { background: var(--ok); border:1px solid #86efac; }
-  .grid-two{display:grid; grid-template-columns:1.2fr .8fr; gap:16px; align-items:start;}
+  .grid-two{display:grid; grid-template-columns:1.2fr .8fr; gap:14px; align-items:start;}
   .grid-two > *{min-width:0}
   @media(max-width:900px){.grid-two{grid-template-columns:1fr}}
-  .grid-two .focus-sub{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .grid-two .focus-sub{display:grid; grid-template-columns:1fr 1fr; gap:12px}
   @media(max-width:900px){.grid-two .focus-sub{grid-template-columns:1fr}}
-  .rail{position:sticky; top:78px; align-self:start}
-  .split{display:grid; grid-template-columns:360px 1fr; gap:16px}
+  .rail{position:sticky; top:68px; align-self:start}
+  .split{display:grid; grid-template-columns:360px 1fr; gap:14px}
   @media(max-width:900px){.split{grid-template-columns:1fr} .rail{position:static}}
-  .breadcrumb{font-size:12px; color:var(--mut); margin:8px 0}
+  .breadcrumb{font-size:12px; color:var(--mut); margin:6px 0}
   .breadcrumb a{color:var(--accent)}
-  details { margin: 0.5rem 0; }
+  details { margin: 0.4rem 0; }
   summary { cursor: pointer; font-weight: 600; }
   .filters label { margin-right: 0.9rem; }
-  .form-row { margin: 0.45rem 0; }
-  .form-row > label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.15rem; }
+  .form-row { margin: 0.38rem 0; }
+  .form-row > label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.12rem; }
   input[type="text"], input[type="number"], textarea, select {
     width: 100%; max-width: 34rem; padding: 0.35rem 0.5rem; font: inherit;
     border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--fg);
@@ -144,12 +144,12 @@ _STYLE = """
   .btn.secondary { background: #fff; color: var(--fg); border-color: var(--border); }
   .btn.master, .modal.permanent { border-color: #7c3aed; }
   .btn.master { background: #7c3aed; color: #fff; }
-  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.5rem 0; }
-  .modal { border: 2px solid #0c4a6e; border-radius: 12px; padding: 14px 16px; margin: 12px 0; background:#fff}
+  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.4rem 0; }
+  .modal { border: 2px solid #0c4a6e; border-radius: 12px; padding: 14px 16px; margin: 10px 0; background:#fff}
   a{color:var(--accent); text-decoration:none}
   a:hover{text-decoration:underline}
-  .list{list-style:none; padding:0; margin:8px 0}
-  .list li{border:1px solid var(--border); border-radius:12px; padding:12px; background:#fff; margin-bottom:8px}
+  .list{list-style:none; padding:0; margin:6px 0}
+  .list li{border:1px solid var(--border); border-radius:12px; padding:10px; background:#fff; margin-bottom:6px}
  """
 
 
