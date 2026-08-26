@@ -27,6 +27,7 @@ from . import (
     report,
     resource_listing,
     resource_report,
+    retention,
     review,
     session,
     submit,
@@ -69,6 +70,7 @@ def register_all(registry: Registry) -> Registry:
     today.register(registry)
     export.register(registry)
     backup.register(registry)
+    retention.register(registry)
     # Tier 1 local web UI (ADR 0006): READ_ONLY — serve appends no event; the
     # `ui` alias shares this registration via its `_command_name`.
     web_server.register(registry)

@@ -21,6 +21,7 @@ POLICY_FILES: dict[str, str] = {
     "recommendation.yaml": "recommendation_policy",
     "remediation.yaml": "remediation_policy",
     "resource_verification.yaml": "resource_verification_policy",
+    "retention_model.yaml": "retention_model_policy",
     "review_cadence.yaml": "review_cadence_policy",
     "workload.yaml": "workload_policy",
 }

@@ -283,8 +283,8 @@ def report_reviews(ctx: Context) -> CommandResult:
             overdue_count += 1
 
     lines: list[str] = [
-        "Retention & Mastery Health",
-        "--------------------------",
+        "Scheduled Reviews",
+        "------------------",
     ]
     if overdue_count > 0:
         lines.append(f"Your retention checks keep passed skills from fading. You have {overdue_count} overdue review(s) that can unlock mastery.")

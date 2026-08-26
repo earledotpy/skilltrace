@@ -516,6 +516,25 @@ def build_parser() -> argparse.ArgumentParser:
     )
     check_parser.set_defaults(_command_name="check-automation")
 
+    # retention <command> — Tier 2 retention overlay (read-only).
+    retention_parser = subcommands.add_parser(
+        "retention", help="Retention model commands (status)."
+    )
+    retention_commands = retention_parser.add_subparsers(
+        dest="_retention_cmd", metavar="<command>"
+    )
+    retention_commands.required = True
+    retention_status_parser = retention_commands.add_parser(
+        "status",
+        help="Show the retention model's memory state for passed/mastered nodes (or one).",
+    )
+    retention_status_parser.add_argument(
+        "--node-id",
+        default=None,
+        help="Optional single node id to show retention state for.",
+    )
+    retention_status_parser.set_defaults(_command_name="retention status")
+
     # top-level aliases (resolution of #32: cheap keystroke wins for the
     # most-typed multi-word commands, wired to the same handler and
     # `_command_name` as their canonical form so the audit log records

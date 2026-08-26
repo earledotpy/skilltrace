@@ -224,7 +224,7 @@ def test_report_reviews_seed_data(tmp_path, capsys):
     assert rc == 0
     out = capsys.readouterr().out
 
-    assert "Retention & Mastery Health" in out
+    assert "Scheduled Reviews" in out
     assert "No reviews currently scheduled." in out
     assert "No completed reviews in history." in out
 
@@ -279,7 +279,7 @@ def test_report_reviews_with_scheduled_and_completed(tmp_path, capsys):
     assert rc == 0
     out = capsys.readouterr().out
 
-    assert "Retention & Mastery Health" in out
+    assert "Scheduled Reviews" in out
     assert "Apply order of operations" in out
     assert "Why this matters: Passed node awaiting retention verification." in out
     assert "Do this next: `skilltrace review complete rev.math.arithmetic.order_operations_01.001 --outcome satisfactory --summary \"...\"`" in out

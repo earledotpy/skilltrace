@@ -5,6 +5,13 @@ remediation pressure with the policy suggestion defaults attached, and the
 scheduled reviews at or past their date. Suggestions are words, not writes:
 acting on one is always a separate learner command (`remediation create`,
 `review complete`), so nothing here mutates records or appends an event.
+
+`suggest reviews` (Tier 2) renders two sections: the existing calendar-due
+list and a derived retention-suggestions block sourced from the retention
+model. The two are visually distinct blocks; the calendar-due list is never
+reordered by retention pressure (G-Authority / T-Exit §5). The retention
+section appends a single count-based advisory line that downstream surfaces
+(notably `next` and the Tier 1 home pressure strip) can pick up verbatim.
 """
 
 from __future__ import annotations
@@ -12,7 +19,8 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..context import load_context_lenient
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..evidence._schema import EvidenceLoadError
 from ..evidence.attempts import load_assessment_attempts
 from ..execution._store import ExecutionLoadError
@@ -25,6 +33,7 @@ from ..policy.remediation_edges import (
     active_remediations,
     load_failed_attempt_threshold,
 )
+from ..policy.retention_model import derive_memory_states, retention_seed_from_doc
 
 _EDGES_RELPATH = Path("graph") / "edges.yaml"
 _ATTEMPTS_RELPATH = Path("evidence") / "attempts.yaml"
@@ -132,11 +141,46 @@ def _grace_days(root) -> int | None:
     return value if isinstance(value, int) else None
 
 
-def suggest_reviews(ctx: Context) -> CommandResult:
-    """List the scheduled reviews at or past their date, oldest first.
+def _retention_suggestions(root: Path, today: date) -> list:
+    """Derived retention suggestions for passed/mastered nodes.
 
-    Overdue is derived, never stored; the cadence seed's grace window only
-    sharpens the wording (advisory policies warn, they never block).
+    Returns the list sorted ascending by confidence (lowest first = most
+    urgent), or an empty list when the seed is missing or the joined view
+    cannot be loaded. Missing seed is a soft pass: the calendar section
+    still renders; the retention section is omitted without an error.
+    """
+    try:
+        view = load_context_lenient(root)
+        seed_doc = load_policy_doc(root, "retention_model.yaml")
+    except (PolicyLoadError, NodeLoadError, ProgressStoreError, Exception):  # noqa: BLE001 — soft pass per spec §2.2
+        return []
+    seed = retention_seed_from_doc(seed_doc)
+    below = [
+        s for s in derive_memory_states(
+            nodes=view.nodes, store=view.store, reviews=view.reviews,
+            seed=seed, today=today,
+        ) if s.below_threshold
+    ]
+    below.sort(key=lambda s: s.confidence)
+    return below
+
+
+def suggest_reviews(ctx: Context) -> CommandResult:
+    """List the scheduled reviews at or past their date, oldest first,
+    then the derived retention suggestions from the model.
+
+    Two sections, in order:
+
+    1. **Calendar-due** — existing behavior over real ``Review`` records.
+       The header is present iff there is at least one such review.
+    2. **Retention suggestions** — derived from the model, sorted by
+       confidence (lowest first). The empty case renders a calm
+       "nothing fading" line.
+
+    The two blocks are visually distinct; the calendar-due list is never
+    reordered by retention pressure (T-Exit safety gate #5). When the
+    retention section is non-empty, a single count-based warning line is
+    appended for downstream surfaces to surface verbatim.
     """
     root = ctx.root
     try:
@@ -160,20 +204,42 @@ def suggest_reviews(ctx: Context) -> CommandResult:
         else:
             upcoming += 1
 
+    calendar_header_printed = False
     if not due:
         print(f"suggest reviews: nothing due — {upcoming} scheduled ahead.")
-        return CommandResult()
+    else:
+        print("suggest reviews: Calendar-due reviews")
+        print("suggest reviews: ---------------------")
+        calendar_header_printed = True
+        grace = _grace_days(root)
+        for scheduled, review_id, node_id in sorted(due):
+            overdue_days = (today - scheduled).days
+            if overdue_days == 0:
+                status = "due today"
+            else:
+                status = f"overdue by {overdue_days} day(s)"
+                if grace is not None and overdue_days > grace:
+                    status += f", past the {grace}-day grace"
+            print(f"suggest reviews: {review_id} on {node_id} — {status}.")
 
-    grace = _grace_days(root)
-    for scheduled, review_id, node_id in sorted(due):
-        overdue_days = (today - scheduled).days
-        if overdue_days == 0:
-            status = "due today"
-        else:
-            status = f"overdue by {overdue_days} day(s)"
-            if grace is not None and overdue_days > grace:
-                status += f", past the {grace}-day grace"
-        print(f"suggest reviews: {review_id} on {node_id} — {status}.")
+    retention = _retention_suggestions(root, today)
+    print()
+    print("suggest reviews: Retention suggestions")
+    print("suggest reviews: ----------------------")
+    if not retention:
+        print("suggest reviews: nothing fading — no retention suggestions right now.")
+    else:
+        for s in retention:
+            print(
+                f"suggest reviews: {s.node_id} — confidence {s.confidence:.4f}, "
+                f"suggested {s.suggested_next_review.isoformat()} "
+                f"(`review schedule` to make it real)."
+            )
+        print(
+            f"suggest reviews: {len(retention)} retention suggestion(s) due — "
+            "`review schedule <node> --date <YYYY-MM-DD>` to schedule a check."
+        )
+
     return CommandResult()
 
 

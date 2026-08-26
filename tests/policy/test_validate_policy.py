@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
 import yaml
 
 from skilltrace import cli
@@ -63,3 +66,43 @@ def _rewrite_boundary_rule(root, action: str, permission: str) -> None:
             {"action": action, "permission": permission, "reason": "test"}
         )
     path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+
+# --- Tier 2 retention_model value-range checks (spec §3.2) -----------------
+
+
+def _retention_path(root) -> Path:
+    return root / "policy" / "retention_model.yaml"
+
+
+def _set_retention_field(root, key: str, value) -> None:
+    path = _retention_path(root)
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    doc["retention_model_policy"][key] = value
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "key,bad_value",
+    [
+        ("default_half_life_days", 0),
+        ("default_half_life_days", -1),
+        ("default_half_life_days", 366),
+        ("default_half_life_days", "seven"),
+        ("satisfactory_growth_factor", 1),
+        ("satisfactory_growth_factor", 0.5),
+        ("unsatisfactory_reduction_factor", 0),
+        ("unsatisfactory_reduction_factor", 1),
+        ("unsatisfactory_reduction_factor", 1.5),
+        ("attention_threshold", 0),
+        ("attention_threshold", 1),
+        ("attention_threshold", 1.5),
+    ],
+)
+def test_retention_seed_value_range_violation_fails_validation(policy_repo, capsys, key, bad_value):
+    _set_retention_field(policy_repo, key, bad_value)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert key in out

@@ -59,6 +59,7 @@ def test_registry_has_the_expected_commands():
         "report resources",
         "suggest remediation",
         "suggest reviews",
+        "retention status",
         "export markdown",
         "export sqlite",
         "export html",
