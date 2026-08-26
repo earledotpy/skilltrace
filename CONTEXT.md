@@ -251,6 +251,34 @@ first review is auto-scheduled when a node is passed (cadence values are
 seed data); overdue reviews warn and raise recommendation pressure but never
 block anything.
 
+**Memory state** — the retention model's derived picture of how well a
+passed or mastered node is currently retained. It exists only at read
+time: recomputed from review history and policy values, never stored,
+and never written by the engine on the learner's behalf. The core quantity
+it exposes is **Retention confidence** — a single 0–1 measure of how well a
+node is currently retained. Memory state may warn and reorder recommendations,
+alongside retention suggestions; it never blocks anything and never moves
+asserted progress.
+
+**Retention confidence** — the retention model's derived, 0–1 measure of how
+well a passed or mastered node is currently retained, where 1 means freshly
+reviewed and 0 means fully faded. It is recomputed at read time from review
+history and policy seed values (the decay model's half-life and multipliers),
+never stored, and never written by the engine on the learner's behalf. A node
+falls below the policy `attention_threshold` when roughly a half-life has
+elapsed since its last contact, at which point a retention suggestion is due.
+Retention confidence may warn and reorder recommendations; it never blocks
+anything and never moves asserted progress.
+
+**Retention suggestion** — a derived, never-stored recommended date for the
+next retention check on a passed or mastered node, produced by the retention
+model and recomputed from review history and the current date at read time
+whenever the node's **Retention confidence** is below the policy
+`attention_threshold`. A retention suggestion is not a Review: it creates no
+record, is recomputed from review history and the current date at read time,
+and becomes real only when the learner schedules a review by hand. Retention
+suggestions may warn and reorder recommendations; they never block anything.
+
 **LearningResource** — a pointer to study material (URL or local path) with
 provider, cost, license, and verification metadata. Resources are pure
 advice: their status never affects a node's readiness, eligibility, or
