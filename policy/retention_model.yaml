@@ -1,0 +1,17 @@
+retention_model_policy:
+  id: policy.retention.default_v0_9
+  status: active
+  title: Retention model
+  description: >
+    Advisory-only retention overlay. The model derives per-node confidence and
+    suggestion dates from the review history and the decay parameters below; it
+    never writes. Cancelled reviews feed nothing. The model may warn and reorder
+    recommendations on its own surfaces, never block a human command, and never
+    move asserted progress.
+  model: exponential_decay
+  default_half_life_days: 7
+  satisfactory_growth_factor: 2.0
+  unsatisfactory_reduction_factor: 0.5
+  attention_threshold: 0.5
+  created_at: 2026-08-26
+  updated_at: 2026-08-26

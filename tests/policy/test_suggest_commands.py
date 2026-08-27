@@ -133,3 +133,94 @@ def test_suggest_reviews_with_nothing_due_says_so(policy_repo, capsys):
     _write_yaml(policy_repo, "execution/reviews.yaml", {"reviews": []})
     out = _run(policy_repo, capsys, "suggest", "reviews")
     assert "nothing due" in out
+
+
+# --- Tier 2 retention-suggestions section ----------------------------------
+
+
+def test_suggest_reviews_calendar_section_is_first_when_due(policy_repo, capsys):
+    """The calendar-due list is rendered before the retention section (T-Exit #5)."""
+    today = datetime.now(timezone.utc).date()
+    _write_node(policy_repo, TARGET)
+    _write_yaml(
+        policy_repo,
+        "execution/reviews.yaml",
+        {
+            "reviews": [
+                {
+                    "id": f"rev.{TARGET}.001",
+                    "node_id": TARGET,
+                    "status": "scheduled",
+                    "scheduled_for": (today - timedelta(days=2)).isoformat(),
+                    "created_at": "2026-06-01T10:00:00+00:00",
+                }
+            ]
+        },
+    )
+    # Mark TARGET as passed so the retention section is empty.
+    _write_yaml(
+        policy_repo,
+        "graph/state.yaml",
+        {
+            "progress": {
+                TARGET: {
+                    "state": "passed",
+                    "changed_at": "2026-06-01T10:00:00+00:00",
+                    "transitions": {"passed": "2026-06-01T10:00:00+00:00"},
+                }
+            }
+        },
+    )
+    out = _run(policy_repo, capsys, "suggest", "reviews")
+    cal_idx = out.index("Calendar-due")
+    ret_idx = out.index("Retention suggestions")
+    assert cal_idx < ret_idx
+    assert f"rev.{TARGET}.001" in out
+
+
+def test_suggest_reviews_renders_retention_section_for_below_threshold_node(policy_repo, capsys):
+    """A pass well past the default 7-day half-life yields a retention suggestion."""
+    _write_node(policy_repo, TARGET)
+    _write_yaml(
+        policy_repo,
+        "graph/state.yaml",
+        {
+            "progress": {
+                TARGET: {
+                    "state": "passed",
+                    "changed_at": "2026-01-01T10:00:00+00:00",
+                    "transitions": {"passed": "2026-01-01T10:00:00+00:00"},
+                }
+            }
+        },
+    )
+    out = _run(policy_repo, capsys, "suggest", "reviews")
+    assert "Retention suggestions" in out
+    assert TARGET in out
+    assert "confidence" in out
+    # The count-based warning line is emitted when the section is non-empty.
+    assert "retention suggestion(s) due" in out
+
+
+def test_suggest_reviews_renders_nothing_fading_when_no_suggestions(policy_repo, capsys):
+    """Fresh pass (today): no retention suggestions; the calm empty line renders."""
+    today = datetime.now(timezone.utc).date()
+    _write_node(policy_repo, TARGET)
+    _write_yaml(
+        policy_repo,
+        "graph/state.yaml",
+        {
+            "progress": {
+                TARGET: {
+                    "state": "passed",
+                    "changed_at": today.isoformat() + "T10:00:00+00:00",
+                    "transitions": {"passed": today.isoformat() + "T10:00:00+00:00"},
+                }
+            }
+        },
+    )
+    out = _run(policy_repo, capsys, "suggest", "reviews")
+    assert "Retention suggestions" in out
+    assert "nothing fading" in out
+    # No count-based warning line when the section is empty.
+    assert "retention suggestion(s) due" not in out

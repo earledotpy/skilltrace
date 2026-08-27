@@ -1,10 +1,14 @@
 """`skilltrace export sqlite` — the boring mirror at `data/skilltrace.db`.
 
 Per the #33 resolution: one table per record type, column names identical to
-the YAML field names, no derived or joined tables. The sole exception is
-`nodes.state`, which mirrors the state the progress store already persists —
-everywhere else, a table is exactly the list a loader returned, in loader
-(file) order, one row per record.
+the YAML field names, no derived or joined tables. Two explicit exceptions:
+
+- `nodes.state`, which mirrors the state the progress store already persists;
+- `retention_memory`, which is the Tier 2 retention overlay's derived picture
+  for passed/mastered nodes (one row per node per rebuild) — see
+  `docs/spec-tier2-retention-analytics.md` §5 and G-Storage. The table is
+  computed during the mirror's existing rebuild pass and is disposable output
+  only; the engine never reads the db.
 
 List and mapping fields (`tags`, `roadmap_anchors`, `supports`, event `args`,
 …) have no native SQLite representation; each is stored as a JSON string
@@ -100,6 +104,59 @@ _RESOURCE_COLUMNS = (
     "supports", "last_verified", "broken",
 )
 _POLICY_COLUMNS = ("filename", "policy_name", "document")
+_RETENTION_COLUMNS = (
+    "node_id", "asserted_state", "anchor_kind", "anchored_at", "half_life_days",
+    "confidence", "suggested_next_review", "computed_at",
+)
+
+
+def _retention_rows(data: ExportData) -> list[tuple]:
+    """Derive one row per passed/mastered node for the `retention_memory` table.
+
+    Computed on the fly during the mirror's rebuild pass from
+    `data.reviews`, the progress store, and the `retention_model.yaml`
+    policy document. A missing seed or no passed/mastered nodes yields
+    no rows (the table exists with the documented shape regardless).
+
+    The mirror is the only place this derivation runs for export
+    purposes; the live CLI surfaces (`retention status`,
+    `suggest reviews`) run the same pure function against the live
+    store, so the two share the formula by construction. This is the
+    documented exception to the CLI-only-clock rule (T-Clock D1):
+    ``date.today()`` lives in three call sites, all behind the
+    retention derivation; tests pin the clock by exercising the
+    ``retention_model.compute_memory_state`` function directly.
+    """
+    from datetime import datetime, timezone
+
+    from .policy.retention_model import (
+        derive_memory_states,
+        retention_seed_from_doc,
+    )
+
+    policy_doc = data.policies.get("retention_model.yaml")
+    if policy_doc is None:
+        return []
+    seed = retention_seed_from_doc(policy_doc)
+    today = datetime.now(timezone.utc).date()
+    computed_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    states = derive_memory_states(
+        nodes=data.nodes, store=data.state, reviews=data.reviews,
+        seed=seed, today=today,
+    )
+    return [
+        (
+            ms.node_id,
+            ms.asserted_state,
+            ms.anchor_kind,
+            ms.anchored_at.isoformat(),
+            ms.half_life_days,
+            ms.confidence,
+            ms.suggested_next_review.isoformat(),
+            computed_at,
+        )
+        for ms in states
+    ]
 
 
 def write_sqlite_export(data: ExportData, path: Path | str) -> Path:
@@ -228,6 +285,10 @@ def write_sqlite_export(data: ExportData, path: Path | str) -> Path:
                 (filename, POLICY_FILES[filename], _v(document))
                 for filename, document in data.policies.items()
             ),
+        )
+        _create_and_fill(
+            conn, "retention_memory", _RETENTION_COLUMNS,
+            _retention_rows(data),
         )
         conn.commit()
     finally:
