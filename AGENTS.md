@@ -84,12 +84,10 @@ See \docs/agents/domain.md\.
 
 ## Working conventions
 
-- Current phase: v0.8.0-rc1 complete (foundations production seed graph —
-  81 nodes / 124 edges / 29 verified resources, all six slices merged;
-  curriculum doctrine lives in `docs/curriculum-authoring.md`). Next per the
-  roadmap: v0.9.0-rc1 — daily-use polish and reports. The old AI learning
-  roadmap remains `reference_only` even for curriculum shape. Follow the
-  roadmap's RC scope; don't build ahead of the current slice.
+- Current phase: v1.0.0 stable released; v1.4 (Tier 1 Web UI / `skilltrace serve`)
+  and v1.5 (Tier 2 FSRS retention analytics) shipped. Next per
+  `docs/POST_V1_ROADMAP.md`: v1.6 — Event-log analytics v1. Follow the roadmap's
+  slot sequence; see `docs/POST_V1_ROADMAP.md` for the active direction.
 - Tests: `pytest` (per-layer suites under `tests/<layer>` as RCs land).
   Every RC's exit-gate commands must pass before it's done.
 - When a domain term is added or changed, update `CONTEXT.md` in the same
