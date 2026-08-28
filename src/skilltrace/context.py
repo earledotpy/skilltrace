@@ -55,6 +55,8 @@ from .graph.nodes import NodeLoadError, SkillNode, load_nodes
 from .graph.state import ProgressStore, ProgressStoreError, load_state
 from .policy.loading import POLICY_FILES, PolicyLoadError, load_policy_doc
 from .policy.retention_model import RetentionPolicySeed, retention_seed_from_doc
+from .policy.cadence import Cadence, CadenceInterval
+from .policy.mastery import MasteryValues
 from .resources.registry import LearningResource, ResourceLoadError, load_resources
 from .resources.registry import resources_for_node as _resources_for_node
 
@@ -220,6 +222,40 @@ class PolicyAccess:
     def resource_stale_after_days(self) -> int:
         value = self._document("resource_verification.yaml").get("stale_after_days")
         return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else 30
+
+    @property
+    def session_templates(self) -> set[str]:
+        document = self._document("workload.yaml")
+        values = document.get("session_templates")
+        return {str(name) for name in values} if isinstance(values, dict) else set()
+
+    @property
+    def cadence(self) -> Cadence:
+        document = self._document("review_cadence.yaml")
+        cadence = Cadence(
+            schedule_reviews_after_pass=document.get("schedule_reviews_after_pass") is True
+        )
+        for raw in document.get("intervals") or []:
+            if not isinstance(raw, dict) or not isinstance(raw.get("days_after_pass"), int):
+                continue
+            cadence.intervals.append(
+                CadenceInterval(
+                    label=str(raw.get("label", f"day_{raw['days_after_pass']}")),
+                    days_after_pass=raw["days_after_pass"],
+                    expected_minutes=raw.get("expected_minutes"),
+                )
+            )
+        return cadence
+
+    @property
+    def mastery(self) -> MasteryValues:
+        document = self._document("mastery_promotion.yaml")
+        values = MasteryValues()
+        if isinstance(document.get("min_accepted_evidence"), int):
+            values.min_accepted_evidence = document["min_accepted_evidence"]
+        if isinstance(document.get("min_days_pass_to_review"), int):
+            values.min_days_pass_to_review = document["min_days_pass_to_review"]
+        return values
 
 
 @dataclass

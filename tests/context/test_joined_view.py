@@ -171,6 +171,11 @@ def test_policy_access_is_typed_and_snapshot_local(tmp_path: Path):
                 },
             },
             "review_cadence.yaml": {"missed_review_grace_days": 2},
+            "workload.yaml": {"session_templates": {"focused": {"expected_minutes": 30}}},
+            "mastery_promotion.yaml": {
+                "min_accepted_evidence": 2,
+                "min_days_pass_to_review": 5,
+            },
             "retention_model.yaml": {
                 "default_half_life_days": 10,
                 "satisfactory_growth_factor": 1.2,
@@ -185,6 +190,10 @@ def test_policy_access_is_typed_and_snapshot_local(tmp_path: Path):
     assert view.policy.failed_attempt_threshold == 3
     assert view.policy.remediation_suggestion_defaults == (20, 4)
     assert view.policy.review_grace_days == 2
+    assert view.policy.session_templates == {"focused"}
+    assert view.policy.cadence.schedule_reviews_after_pass is False
+    assert view.policy.mastery.min_accepted_evidence == 2
+    assert view.policy.mastery.min_days_pass_to_review == 5
     assert view.policy.retention is not None
 
 

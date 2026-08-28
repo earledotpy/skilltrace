@@ -364,7 +364,7 @@ def report_evidence(ctx: Context) -> CommandResult:
     gates = joined.gates
     records = joined.records
 
-    node_map = {n.id: n for n in nodes}
+    node_map = joined.node_map
     if node_id_filter:
         if node_id_filter not in node_map:
             print(f"report evidence: FAILED -- unknown node {node_id_filter}.")
@@ -384,7 +384,7 @@ def report_evidence(ctx: Context) -> CommandResult:
 
     item_idx = 1
     for node in target_nodes:
-        n_specs = [s for s in specs if s.node_id == node.id]
+        n_specs = joined.specs_by_node.get(node.id, [])
         n_gate = next((g for g in gates if g.node_id == node.id), None)
         n_records = [r for r in records if any(s.id == r.artifact_spec_id for s in n_specs)]
         state = store.state_of(node.id)

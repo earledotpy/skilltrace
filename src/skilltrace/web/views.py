@@ -52,13 +52,11 @@ from ..context import JoinedView, load_context_lenient
 from ..dispatch import Context, dispatch
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
 from ..execution.sessions import open_session
-from ..execution.templates import known_templates
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
-from ..policy.cadence import load_cadence
-from ..policy.mastery import compute_mastery_eligibility, load_mastery_values
-from ..resources.status import VerificationStatus, derive_status, stale_after_days
+from ..policy.mastery import compute_mastery_eligibility
+from ..resources.status import VerificationStatus, derive_status
 
 
 def _esc(value: object) -> str:
@@ -661,7 +659,7 @@ def _start_confirm_form(view: JoinedView, root, node_id: str) -> str:
         )
     return (
         '<div class="form-row"><label>Session template</label>'
-        f"{_template_select(known_templates(root), '(none)')}</div>"
+        f"{_template_select(view.policy.session_templates, '(none)')}</div>"
         f"{advisory}"
         '<div class="actions">'
         f'<form method="post" action="/nodes/{_esc(node_id)}/start">'
@@ -1057,7 +1055,7 @@ def _drill_down_card(node_id: str, view: JoinedView, root: Path) -> str:
         gate_line = f"Gate: {_esc(gate.id)} — {_esc(authority)}."
 
     today = datetime.now(timezone.utc).date()
-    window = stale_after_days(root)
+    window = view.policy.resource_stale_after_days
     resource_rows = []
     for r in view.resources_by_node.get(node_id, []):
         status = derive_status(r, today=today, stale_after_days=window).value
@@ -1309,7 +1307,7 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
             "longer backed by live evidence; it stands regardless, never demotes.</p>"
         )
 
-    cadence = load_cadence(root)
+    cadence = view.policy.cadence
     if cadence.schedule_reviews_after_pass and cadence.intervals:
         schedule = ", ".join(
             f"{interval.label} (+{interval.days_after_pass}d)"
@@ -1355,7 +1353,7 @@ def master_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int
         return "Not found", body, status
 
     state = view.store.state_of(node_id)
-    values = load_mastery_values(root)
+    values = view.policy.mastery
     passed_at = passed_at_of(view.store, node_id)
     mastery = compute_mastery_eligibility(
         node_id,
