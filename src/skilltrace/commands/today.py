@@ -38,24 +38,11 @@ from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError, SkillNode
 from ..graph.recommendation import recommend
 from ..graph.state import ProgressStoreError
-from ..policy.remediation_edges import (
-    active_remediations,
-    load_failed_attempt_threshold,
-)
-from ..policy.weights import load_factor_weights, load_track_weights
+from ..policy.remediation_edges import active_remediations
 from ..resources.registry import LearningResource
 
 
 # --- Small loaders and helpers -------------------------------------------------
-
-
-def _load_weight_map(root: Path, key: str) -> dict[str, float]:
-    """Delegates to the single deep module ``policy.weights`` (C5)."""
-    if key == "track_weights":
-        return load_track_weights(root)
-    if key == "factor_weights":
-        return load_factor_weights(root)
-    return {}
 
 
 def _parse_date(val: Any) -> date | None:
@@ -267,16 +254,16 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
         store=store,
         blockers=blockers,
         attempts=attempts,
-        failed_attempt_threshold=load_failed_attempt_threshold(root),
+        failed_attempt_threshold=joined.policy.failed_attempt_threshold,
     )
     result = recommend(
         nodes,
         edges,
         store,
-        _load_weight_map(root, "track_weights"),
+        joined.policy.track_weights,
         minutes=minutes,
         limit=3,
-        factor_weights=_load_weight_map(root, "factor_weights"),
+        factor_weights=joined.policy.factor_weights,
         remediation_boosted={r.remediation_node for r in active},
         open_blocked=open_blocked,
     )

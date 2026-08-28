@@ -16,10 +16,8 @@ from ..context import load_context_lenient
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
-from ..policy.loading import PolicyLoadError, load_policy_doc
 from ..policy.retention_model import (
     derive_memory_states,
-    retention_seed_from_doc,
 )
 from ._common import now_iso
 
@@ -41,11 +39,9 @@ def _state_for_all(root: Path, today: date):
         view = load_context_lenient(root)
     except (NodeLoadError, ProgressStoreError) as exc:
         return None, None, f"retention status: FAILED -- {exc}"
-    try:
-        seed_doc = load_policy_doc(root, "retention_model.yaml")
-    except PolicyLoadError as exc:
-        return None, view, f"retention status: FAILED -- {exc}"
-    seed = retention_seed_from_doc(seed_doc)
+    seed = view.policy.retention
+    if seed is None:
+        return None, view, "retention status: FAILED -- retention policy is unavailable."
     states = derive_memory_states(
         nodes=view.nodes,
         store=view.store,

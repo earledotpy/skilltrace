@@ -128,7 +128,7 @@ def test_strict_collects_evidence_and_execution_errors(tmp_path: Path):
     assert view.blockers == []
 
 
-def test_strict_produces_joined_view_even_when_all_fail(tmp_path: Path):
+def test_strict_propagates_unexpected_loader_exception(tmp_path: Path):
     def boom(_root: Path):
         raise RuntimeError("boom")
 
@@ -149,9 +149,43 @@ def test_strict_produces_joined_view_even_when_all_fail(tmp_path: Path):
         load_events=boom,
         load_policies=boom,
     )
-    view = load_context_strict(tmp_path, loaders=loaders)
-    assert not view.ok
-    assert len(view.errors) >= 10
+    with pytest.raises(RuntimeError, match="boom"):
+        load_context_strict(tmp_path, loaders=loaders)
+
+
+def test_policy_access_is_typed_and_snapshot_local(tmp_path: Path):
+    loaders = Loaders(
+        load_nodes=lambda _r: [],
+        load_edges=lambda _r: [],
+        load_state=lambda _r: ProgressStore(),
+        load_policies=lambda _r: {
+            "recommendation.yaml": {
+                "track_weights": {"foundational": "2.5"},
+                "factor_weights": {"leverage": 1},
+            },
+            "remediation.yaml": {
+                "failed_attempt_threshold": 3,
+                "suggestion_defaults": {
+                    "suggested_minutes": 20,
+                    "due_in_days": 4,
+                },
+            },
+            "review_cadence.yaml": {"missed_review_grace_days": 2},
+            "retention_model.yaml": {
+                "default_half_life_days": 10,
+                "satisfactory_growth_factor": 1.2,
+                "unsatisfactory_reduction_factor": 0.5,
+                "attention_threshold": 0.6,
+            },
+        },
+    )
+    view = load_context_lenient(tmp_path, loaders=loaders)
+    assert view.policy.track_weights == {"foundational": 2.5}
+    assert view.policy.factor_weights == {"leverage": 1.0}
+    assert view.policy.failed_attempt_threshold == 3
+    assert view.policy.remediation_suggestion_defaults == (20, 4)
+    assert view.policy.review_grace_days == 2
+    assert view.policy.retention is not None
 
 
 # -- derived indexes --

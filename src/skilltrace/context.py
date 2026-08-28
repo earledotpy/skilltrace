@@ -4,8 +4,9 @@ Every Mentor view and the disposable exports load the same five layers
 (graph, evidence, execution, policy, resources) with slightly different
 error policies. This module is the single deep module that owns the join:
 
-* ``load_context_strict(root, loaders) -> JoinedView`` — any loader failure
-  is collected into ``view.errors``; the view is returned and never raises.
+* ``load_context_strict(root, loaders) -> JoinedView`` — expected repository
+  loader failures are collected into ``view.errors``; unexpected programming
+  exceptions propagate.
   For ``export`` and other snapshot concerns a non-empty ``errors`` means
   "refuse to write".
 
@@ -35,6 +36,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+import yaml
+
 from .evidence._schema import EvidenceLoadError
 from .evidence.attempts import AssessmentAttempt, load_assessment_attempts
 from .evidence.gates import ValidationGate, load_validation_gates
@@ -51,6 +54,7 @@ from .graph.edges import EdgeLoadError, GraphEdge, load_edges
 from .graph.nodes import NodeLoadError, SkillNode, load_nodes
 from .graph.state import ProgressStore, ProgressStoreError, load_state
 from .policy.loading import POLICY_FILES, PolicyLoadError, load_policy_doc
+from .policy.retention_model import RetentionPolicySeed, retention_seed_from_doc
 from .resources.registry import LearningResource, ResourceLoadError, load_resources
 from .resources.registry import resources_for_node as _resources_for_node
 
@@ -144,6 +148,75 @@ class Loaders:
     load_policies: Callable[[Path], dict[str, dict]] = _default_load_policies
 
 
+@dataclass(frozen=True)
+class PolicyAccess:
+    """Typed access to policy values loaded as part of a joined snapshot."""
+
+    documents: dict[str, dict] = field(default_factory=dict)
+
+    def _document(self, filename: str) -> dict:
+        value = self.documents.get(filename)
+        return value if isinstance(value, dict) else {}
+
+    @staticmethod
+    def _weights(raw: object) -> dict[str, float]:
+        if not isinstance(raw, dict):
+            return {}
+        weights: dict[str, float] = {}
+        for name, value in raw.items():
+            try:
+                weights[str(name)] = float(value)
+            except (TypeError, ValueError):
+                continue
+        return weights
+
+    @property
+    def track_weights(self) -> dict[str, float]:
+        return self._weights(self._document("recommendation.yaml").get("track_weights"))
+
+    @property
+    def factor_weights(self) -> dict[str, float]:
+        return self._weights(self._document("recommendation.yaml").get("factor_weights"))
+
+    @property
+    def failed_attempt_threshold(self) -> int | None:
+        value = self._document("remediation.yaml").get("failed_attempt_threshold")
+        return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else None
+
+    @property
+    def retention(self) -> RetentionPolicySeed | None:
+        document = self._document("retention_model.yaml")
+        required = (
+            "default_half_life_days",
+            "satisfactory_growth_factor",
+            "unsatisfactory_reduction_factor",
+            "attention_threshold",
+        )
+        if not all(key in document for key in required):
+            return None
+        try:
+            return retention_seed_from_doc(document)
+        except (KeyError, TypeError, ValueError):
+            return None
+
+    @property
+    def review_grace_days(self) -> int | None:
+        value = self._document("review_cadence.yaml").get("missed_review_grace_days")
+        return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+    @property
+    def remediation_suggestion_defaults(self) -> tuple[int | None, int | None]:
+        defaults = self._document("remediation.yaml").get("suggestion_defaults")
+        if not isinstance(defaults, dict):
+            return None, None
+        minutes = defaults.get("suggested_minutes")
+        due_in_days = defaults.get("due_in_days")
+        return (
+            minutes if isinstance(minutes, int) and not isinstance(minutes, bool) else None,
+            due_in_days if isinstance(due_in_days, int) and not isinstance(due_in_days, bool) else None,
+        )
+
+
 @dataclass
 class JoinedView:
     """Flat joined view over all layers plus precomputed derived indexes.
@@ -169,6 +242,7 @@ class JoinedView:
     resources: list[LearningResource] = field(default_factory=list)
     events: list[dict] = field(default_factory=list)
     policies: dict[str, dict] = field(default_factory=dict)
+    policy: PolicyAccess = field(default_factory=PolicyAccess)
     errors: list[str] = field(default_factory=list)
     # Lenient-only: names of the optional layers that failed to load and were
     # degraded to empty (strict collects the same failures into ``errors``).
@@ -200,10 +274,11 @@ def _build_derived(view: JoinedView) -> None:
     for spec in view.specs:
         specs_map.setdefault(spec.node_id, []).append(spec)
     view.specs_by_node = specs_map
+    view.policy = PolicyAccess(view.policies)
 
 
 def load_context_strict(root: Path | str, loaders: Loaders | None = None) -> JoinedView:
-    """Strict: any loader failure is collected into ``view.errors``."""
+    """Strict: expected loader failures are collected; defects propagate."""
     root_path = Path(root)
     ld = loaders or Loaders()
     view = JoinedView(errors=[])
@@ -211,19 +286,19 @@ def load_context_strict(root: Path | str, loaders: Loaders | None = None) -> Joi
 
     try:
         view.nodes = ld.load_nodes(root_path)
-    except (NodeLoadError, Exception) as exc:  # noqa: BLE001 — collect, not crash
+    except NodeLoadError as exc:
         errors.append(str(exc))
         view.nodes = []
 
     try:
         view.edges = ld.load_edges(root_path)
-    except (EdgeLoadError, Exception) as exc:  # noqa: BLE001
+    except EdgeLoadError as exc:
         errors.append(str(exc))
         view.edges = []
 
     try:
         view.store = ld.load_state(root_path)
-    except (ProgressStoreError, Exception) as exc:  # noqa: BLE001
+    except ProgressStoreError as exc:
         errors.append(str(exc))
         view.store = ProgressStore()
 
@@ -241,20 +316,20 @@ def load_context_strict(root: Path | str, loaders: Loaders | None = None) -> Joi
     ):
         try:
             setattr(view, attr, loader(root_path))
-        except (EvidenceLoadError, ExecutionLoadError, ResourceLoadError, Exception) as exc:  # noqa: BLE001
+        except (EvidenceLoadError, ExecutionLoadError, ResourceLoadError) as exc:
             errors.append(str(exc))
             setattr(view, attr, [])
 
     # events is audit-only and never raises (load_events returns [] on miss)
     try:
         view.events = ld.load_events(root_path)
-    except Exception as exc:  # noqa: BLE001 — defensive
+    except (OSError, yaml.YAMLError) as exc:
         errors.append(str(exc))
         view.events = []
 
     try:
         view.policies = ld.load_policies(root_path)
-    except (PolicyLoadError, Exception) as exc:  # noqa: BLE001
+    except PolicyLoadError as exc:
         errors.append(str(exc))
         view.policies = {}
 
@@ -295,19 +370,19 @@ def load_context_lenient(root: Path | str, loaders: Loaders | None = None) -> Jo
     ):
         try:
             setattr(view, attr, loader(root_path))
-        except (EvidenceLoadError, ExecutionLoadError, ResourceLoadError, Exception):  # noqa: BLE001
+        except (EvidenceLoadError, ExecutionLoadError, ResourceLoadError):
             setattr(view, attr, [])
             view.degraded.append(attr)
 
     # events and policies are lenient too (today/next never fail on them)
     try:
         view.events = ld.load_events(root_path)
-    except Exception:  # noqa: BLE001
+    except (OSError, yaml.YAMLError):
         view.events = []
         view.degraded.append("events")
     try:
         view.policies = ld.load_policies(root_path)
-    except (PolicyLoadError, Exception):  # noqa: BLE001
+    except PolicyLoadError:
         view.policies = {}
         view.degraded.append("policies")
 

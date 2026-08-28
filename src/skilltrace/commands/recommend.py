@@ -39,10 +39,9 @@ from ..graph.state import ProgressStoreError
 from ..policy.remediation_edges import (
     ActiveRemediation,
     active_remediations,
-    load_failed_attempt_threshold,
 )
 from ..policy.weights import load_factor_weights, load_track_weights
-from ..resources.registry import LearningResource, resources_for_node
+from ..resources.registry import LearningResource
 
 
 # --- Mentor-voice prose helpers -----------------------------------------------
@@ -184,7 +183,7 @@ def _mentor_lines(
     minutes: int,
     limit: int,
     node_map: dict[str, SkillNode],
-    all_resources: list[LearningResource],
+    resources_by_node: dict[str, list[LearningResource]],
     store,
     active_remediations_list: list[ActiveRemediation],
 ) -> list[str]:
@@ -230,7 +229,7 @@ def _mentor_lines(
             continue
 
         state = store.state_of(rec.node_id)
-        node_resources = resources_for_node(rec.node_id, all_resources)
+        node_resources = resources_by_node.get(rec.node_id, [])
 
         lines = []
         lines.append(render.section_kicker(f"Option {rank} — {session_label}"))
@@ -287,23 +286,23 @@ class NextModel:
 
 def derive_next(
     joined,
-    root: Path,
+    root: Path | None = None,
     *,
     minutes: int = 60,
     limit: int = 5,
     show_locked: bool = False,
 ) -> NextModel:
     """Load-free ranking over one loaded JoinedView. Pure of printing."""
-    active, blocked = _policy_pressure(root, joined)
+    active, blocked = _policy_pressure(joined)
     result = recommend(
         joined.nodes,
         joined.edges,
         joined.store,
-        load_track_weights(root),
+        joined.policy.track_weights,
         minutes=minutes,
         limit=limit,
         show_locked=show_locked,
-        factor_weights=load_factor_weights(root),
+        factor_weights=joined.policy.factor_weights,
         remediation_boosted={r.remediation_node for r in active},
         open_blocked=blocked,
     )
@@ -313,7 +312,7 @@ def derive_next(
             minutes,
             limit,
             joined.node_map,
-            joined.resources,
+            joined.resources_by_node,
             joined.store,
             active,
         ),
@@ -344,9 +343,7 @@ def recommend_next(ctx: Context) -> CommandResult:
     return CommandResult()
 
 
-def _policy_pressure(
-    root: Path, joined
-) -> tuple[list[ActiveRemediation], set[str]]:
+def _policy_pressure(joined) -> tuple[list[ActiveRemediation], set[str]]:
     """Derive the active remediation edges and open-blocked nodes (advisory-only).
 
     Uses the already-joined blockers/attempts so no extra file reads are needed.
@@ -361,7 +358,7 @@ def _policy_pressure(
         store=store,
         blockers=blockers,
         attempts=attempts,
-        failed_attempt_threshold=load_failed_attempt_threshold(root),
+        failed_attempt_threshold=joined.policy.failed_attempt_threshold,
     )
     return active, blocked
 

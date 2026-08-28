@@ -17,49 +17,31 @@ section appends a single count-based advisory line that downstream surfaces
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
-from pathlib import Path
 
 from ..context import load_context_lenient
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
-from ..evidence._schema import EvidenceLoadError
-from ..evidence.attempts import load_assessment_attempts
-from ..execution._store import ExecutionLoadError
-from ..execution.blockers import load_blockers
-from ..execution.reviews import load_reviews
-from ..graph.edges import EdgeLoadError, load_edges
-from ..graph.state import ProgressStoreError, load_state
-from ..policy.loading import PolicyLoadError, load_policy_doc
+from ..graph.edges import EdgeLoadError
+from ..graph.nodes import NodeLoadError
+from ..graph.state import ProgressStoreError
 from ..policy.remediation_edges import (
     active_remediations,
-    load_failed_attempt_threshold,
 )
-from ..policy.retention_model import derive_memory_states, retention_seed_from_doc
-
-_EDGES_RELPATH = Path("graph") / "edges.yaml"
-_ATTEMPTS_RELPATH = Path("evidence") / "attempts.yaml"
+from ..policy.retention_model import derive_memory_states
 
 
 def _today() -> date:
     return datetime.now(timezone.utc).date()
 
 
-def _suggestion_defaults(root) -> tuple[int | None, str | None]:
+def _suggestion_defaults(view, today: date) -> tuple[int | None, str | None]:
     """(suggested minutes, ISO due date) from the remediation seed, or Nones.
 
     A missing or unreadable seed omits the sizing clause rather than inventing
     engine defaults — policy values live in seed data, not code.
     """
-    try:
-        doc = load_policy_doc(root, "remediation.yaml")
-    except PolicyLoadError:
-        return None, None
-    defaults = doc.get("suggestion_defaults")
-    if not isinstance(defaults, dict):
-        return None, None
-    minutes = defaults.get("suggested_minutes")
-    due_in_days = defaults.get("due_in_days")
+    minutes, due_in_days = view.policy.remediation_suggestion_defaults
     due = (
-        (_today() + timedelta(days=due_in_days)).isoformat()
+        (today + timedelta(days=due_in_days)).isoformat()
         if isinstance(due_in_days, int)
         else None
     )
@@ -85,26 +67,19 @@ def suggest_remediation(ctx: Context) -> CommandResult:
     """
     root = ctx.root
     try:
-        edges = load_edges(root) if (root / _EDGES_RELPATH).exists() else []
-        store = load_state(root)
-        blockers = load_blockers(root)
-        attempts = (
-            load_assessment_attempts(root)
-            if (root / _ATTEMPTS_RELPATH).exists()
-            else []
-        )
-    except (EdgeLoadError, ProgressStoreError, ExecutionLoadError, EvidenceLoadError) as exc:
+        view = load_context_lenient(root)
+    except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
         print(f"suggest remediation: FAILED — {exc}")
         return CommandResult(exit_code=1)
 
     active = active_remediations(
-        edges,
-        store=store,
-        blockers=blockers,
-        attempts=attempts,
-        failed_attempt_threshold=load_failed_attempt_threshold(root),
+        view.edges,
+        store=view.store,
+        blockers=view.blockers,
+        attempts=view.attempts,
+        failed_attempt_threshold=view.policy.failed_attempt_threshold,
     )
-    sizing = _sizing_clause(*_suggestion_defaults(root))
+    sizing = _sizing_clause(*_suggestion_defaults(view, _today()))
 
     lines: list[str] = []
     for remediation in active:
@@ -113,7 +88,7 @@ def suggest_remediation(ctx: Context) -> CommandResult:
             f"{remediation.target} ({remediation.trigger}){sizing}."
         )
     covered = {remediation.target for remediation in active}
-    for blocker in blockers:
+    for blocker in view.blockers:
         if blocker.status == "open" and blocker.node_id not in covered:
             lines.append(
                 f"no remediation edge covers blocker {blocker.id} on "
@@ -132,16 +107,11 @@ def suggest_remediation(ctx: Context) -> CommandResult:
     return CommandResult()
 
 
-def _grace_days(root) -> int | None:
-    try:
-        doc = load_policy_doc(root, "review_cadence.yaml")
-    except PolicyLoadError:
-        return None
-    value = doc.get("missed_review_grace_days")
-    return value if isinstance(value, int) else None
+def _grace_days(view) -> int | None:
+    return view.policy.review_grace_days
 
 
-def _retention_suggestions(root: Path, today: date) -> list:
+def _retention_suggestions(view, today: date) -> list:
     """Derived retention suggestions for passed/mastered nodes.
 
     Returns the list sorted ascending by confidence (lowest first = most
@@ -149,12 +119,9 @@ def _retention_suggestions(root: Path, today: date) -> list:
     cannot be loaded. Missing seed is a soft pass: the calendar section
     still renders; the retention section is omitted without an error.
     """
-    try:
-        view = load_context_lenient(root)
-        seed_doc = load_policy_doc(root, "retention_model.yaml")
-    except (PolicyLoadError, NodeLoadError, ProgressStoreError, Exception):  # noqa: BLE001 — soft pass per spec §2.2
+    seed = view.policy.retention
+    if seed is None:
         return []
-    seed = retention_seed_from_doc(seed_doc)
     below = [
         s for s in derive_memory_states(
             nodes=view.nodes, store=view.store, reviews=view.reviews,
@@ -184,10 +151,11 @@ def suggest_reviews(ctx: Context) -> CommandResult:
     """
     root = ctx.root
     try:
-        reviews = load_reviews(root)
-    except ExecutionLoadError as exc:
+        view = load_context_lenient(root)
+    except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
         print(f"suggest reviews: FAILED — {exc}")
         return CommandResult(exit_code=1)
+    reviews = view.reviews
 
     today = _today()
     due: list[tuple[date, str, str]] = []
@@ -211,7 +179,7 @@ def suggest_reviews(ctx: Context) -> CommandResult:
         print("suggest reviews: Calendar-due reviews")
         print("suggest reviews: ---------------------")
         calendar_header_printed = True
-        grace = _grace_days(root)
+        grace = _grace_days(view)
         for scheduled, review_id, node_id in sorted(due):
             overdue_days = (today - scheduled).days
             if overdue_days == 0:
@@ -222,7 +190,7 @@ def suggest_reviews(ctx: Context) -> CommandResult:
                     status += f", past the {grace}-day grace"
             print(f"suggest reviews: {review_id} on {node_id} — {status}.")
 
-    retention = _retention_suggestions(root, today)
+    retention = _retention_suggestions(view, today)
     print()
     print("suggest reviews: Retention suggestions")
     print("suggest reviews: ----------------------")
