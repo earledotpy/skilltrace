@@ -1,169 +1,206 @@
-# Runbook
+# SkillTrace Runbook
 
-Operational reference for daily SkillTrace use. All commands assume the
-virtual environment is activated and you are in the repo root.
+Operational reference and command cheatsheet for SkillTrace. All commands assume the virtual environment is activated and you are in the repository root.
 
-## Daily study loop
+---
 
-```bash
-# 1. See what's due today
-skilltrace today
-
-# 2. Get session-sized recommendations
-skilltrace next --minutes 60
-
-# 3. Start studying a node
-skilltrace start <node_id>
-
-# 4. Record work as you go
-skilltrace work <node_id> --minutes 25 --notes "Worked through examples"
-
-# 5. Submit evidence when ready
-skilltrace evidence submit <node_id> --location artifacts/<file> --accept
-
-# 6. Check pass eligibility
-skilltrace eligibility <node_id>
-
-# 7. Pass the node (explicit learner command)
-skilltrace pass <node_id>
-
-# 8. Close the session when done
-skilltrace close
-```
-
-## Node detail and resources
+## 1. Daily Study Loop
 
 ```bash
-# View a node's full detail (curriculum + progress + evidence + resources)
-skilltrace node <node_id>
+# 1. Inspect morning agenda (open session, due reviews, active blockers, top recommendation)
+st today
 
-# List resources supporting a node
-skilltrace resources --node-id <node_id>
+# 2. Get recommendations sized to your available time (e.g. 45 or 60 minutes)
+st next --minutes 60
+st next --minutes 45 --limit 3 --show-locked
+
+# 3. Open a study session on a target skill node
+st start <node_id>
+
+# 4. Record work items and notes as you make progress
+st work <node_id> --minutes 25 --notes "Read documentation and worked through exercises"
+
+# 5. Submit proof of work against the node's evidence gate
+st evidence submit <node_id> --location artifacts/<filename>
+# For manual gates (self-assessed):
+st submit <node_id> --location artifacts/<filename> --accept
+
+# 6. Check pass eligibility (verifies all required gate constraints)
+st eligibility <node_id>
+
+# 7. Explicitly pass the node (learner-initiated command)
+st pass <node_id>
+
+# 8. Close the active session when done
+st close
 ```
 
-## Validation
+---
+
+## 2. Web UI & Localhost Server
+
+SkillTrace provides a built-in, zero-dependency localhost web server for visual study sessions:
 
 ```bash
-skilltrace validate graph        # nodes, edges, cycles
-skilltrace validate evidence     # specs, gates, records, attempts
-skilltrace validate execution    # sessions, work, blockers, reviews
-skilltrace validate policy       # boundary agreement, structural shape
-skilltrace validate resources    # slug IDs, URL-or-path, node links
+# Launch localhost web server and auto-open browser (default: port 8341)
+st ui
+# Or canonical command:
+skilltrace serve
+
+# Custom port or headless (no auto-open) options:
+skilltrace serve --port 9000 --no-browser
 ```
 
-## Health check
+---
+
+## 3. Node Detail & Learning Resources
 
 ```bash
-# Roll up all five validate targets plus liveness warnings
-skilltrace health
+# Inspect complete node detail (curriculum brief, prerequisite edges, resources, eligibility)
+st node <node_id>
+
+# Reverse index: list all resources that support a given node
+st resources --node-id <node_id>
+
+# Verify an external resource link or mark as broken
+st verify-resource res.<provider>.<slug>
+st verify-resource res.<provider>.<slug> --broken --note "URL 404s"
+
+# Whole-registry resource verification report
+st resource-report
 ```
 
-## Reports
+---
+
+## 4. Retention & FSRS Spaced Reviews
+
+SkillTrace implements the FSRS (Free Spaced Repetition Scheduler) model for memory retention:
 
 ```bash
-skilltrace report progress       # curriculum progress and track completion
-skilltrace report blockers       # obstacles, open remediation, rescue nodes
-skilltrace report reviews        # retention checks, overdue reviews, mastery candidates
-skilltrace report evidence       # proof trail audit, gates, supersession chains
-skilltrace report resources      # resource verification status
+# Check memory stability, retention confidence, and overall retention health
+st retention status
+
+# List scheduled, due, and overdue spaced retention reviews
+st reviews
+
+# Schedule an ad-hoc retention review
+st review schedule <node_id> --date 2026-09-15
+
+# Record review outcome (satisfactory or unsatisfactory)
+st review complete rev.<node>.<seq> --outcome satisfactory --summary "Passed recall quiz"
+st review complete rev.<node>.<seq> --outcome unsatisfactory --summary "Needed refresher on proofs"
+
+# Cancel a scheduled review
+st review cancel rev.<node>.<seq> --reason "Superseded by capstone project"
+
+# Get advisory suggestions for decaying retention candidates
+st suggest reviews
 ```
 
-## Blockers and reviews
+---
+
+## 5. Blockers & Remediation Workflow
 
 ```bash
-# Create a blocker when stuck
-skilltrace blocker create <node_id> --description "Can't understand X"
+# Create an obstacle record when blocked on a skill
+st blocker create <node_id> --description "Unclear on loss function backpropagation"
 
-# Resolve a blocker
-skilltrace blocker resolve blk.<node>.NNN --summary "Clarified via Y"
+# Resolve a blocker once cleared
+st blocker resolve blk.<node>.<seq> --summary "Worked through micrograd tutorial"
 
-# List open blockers
-skilltrace blockers
+# List active blockers
+st blockers
 
-# Schedule a retention review
-skilltrace review schedule <node_id> --date 2026-09-01
+# Log an ad-hoc remediation action
+st remediation create <node_id> --description "Re-read linear algebra chapter 2"
+st remediation complete rem.<node>.<seq> --summary "Completed matrix transformations review"
 
-# Complete a review
-skilltrace review complete rev.<node>.NNN --outcome satisfactory --summary "Retained"
-
-# Cancel a review
-skilltrace review cancel rev.<node>.NNN --reason "No longer relevant"
-
-# List scheduled reviews
-skilltrace reviews
+# Get remediation rescue node suggestions
+st suggest remediation
 ```
 
-## Remediation
+---
+
+## 6. Assessment Attempts & Permanent Mastery
 
 ```bash
-# Log a corrective intervention
-skilltrace remediation create <node_id> --description "Re-read chapter 3"
+# Record an immutable pass/fail assessment attempt
+st attempt record <node_id> --outcome passed
+st attempt record <node_id> --outcome failed --note "Missed edge case handling"
 
-# Complete a remediation
-skilltrace remediation complete rem.<node>.NNN --summary "Covered the gap"
+# Check mastery eligibility (requires passed status + valid evidence + spaced satisfactory review)
+st eligibility <node_id> --mastery
 
-# Get advisory suggestions
-skilltrace suggest remediation
-skilltrace suggest reviews
+# Assert permanent mastery
+st master <node_id>
 ```
 
-## Assessment attempts
+---
+
+## 7. Reports
 
 ```bash
-# Record a pass/fail attempt (immutable fact)
-skilltrace attempt record <node_id> --outcome passed
-skilltrace attempt record <node_id> --outcome failed --note "Misread question"
+st report progress       # Curriculum progress and track completion breakdown
+st report blockers       # Active blockers, remediation pressure, and rescue targets
+st report reviews        # Retention review queue, overdue items, mastery candidates
+st report evidence       # Proof trail audit, validation gates, supersession chains
+st report resources      # External resource verification and staleness audit
 ```
 
-## Mastery
+---
+
+## 8. Layer Validation & Engine Diagnostics
 
 ```bash
-# Check mastery eligibility (requires passed + accepted evidence + spaced satisfactory review)
-skilltrace eligibility <node_id> --mastery
+# Holistic health verdict rolling up all 5 layer validators + liveness warnings
+st health
 
-# Assert mastery (explicit learner command)
-skilltrace master <node_id>
+# Per-layer validator subcommands
+st validate graph        # Node IDs, frontmatter, edges, and cycle detection
+st validate evidence     # Specs, gates, records, attempts, and supersession chains
+st validate execution    # Sessions, work items, blockers, reviews, and event log
+st validate policy       # Hard boundary checks and advisory parameter schemas
+st validate resources    # Resource registry IDs, URLs, and node links
 ```
 
-## Data export and backup
+---
+
+## 9. Data Exports, Sync & Backups
 
 ```bash
-# Markdown snapshot (overwrites data/export.md each time)
-skilltrace export markdown
+# Recompute derived readiness (locked/available) for all nodes
+st sync
 
-# SQLite mirror (rebuilt each run at data/skilltrace.db)
-skilltrace export sqlite
+# Generate disposable derived exports
+st export html           # Self-contained HTML dashboard snapshot (data/export.html)
+st export markdown       # Consolidated single-file Markdown export (data/export.md)
+st export sqlite         # SQLite database mirror for SQL queries (data/skilltrace.db)
 
-# Self-contained HTML snapshot (whole-file rewrite at data/export.html)
-skilltrace export html
-
-# Timestamped zip backup into backups/
-skilltrace backup
+# Create a timestamped backup archive in backups/
+st backup
 ```
 
-## Automation boundary checks
+---
+
+## 10. Automation Boundary Verification
+
+Verify that the engine's hard safety boundaries are strictly enforced:
 
 ```bash
-skilltrace check-automation pass_node     # forbidden
-skilltrace check-automation master_node   # forbidden
-skilltrace check-automation delete_record # forbidden
+st check-automation pass_node     # Must refuse (forbidden automation)
+st check-automation master_node   # Must refuse (forbidden automation)
+st check-automation delete_record # Must refuse (forbidden automation)
 ```
 
-## Sync
+---
 
-```bash
-# Recompute derived readiness (locked/available) for every node
-skilltrace sync
-```
+## 11. Command Aliases
 
-## Aliases
-
-Two top-level aliases are available for the most-typed commands:
-
-| Alias | Canonical command |
-|-------|-------------------|
-| `st`  | `skilltrace` (same entry point) |
-| `submit` | `evidence submit` |
-| `close` | `session close` |
-
-The audit log records the canonical command name, not the alias.
+| Alias | Canonical Subcommand | Notes |
+| :--- | :--- | :--- |
+| `st` | `skilltrace` | Primary entrypoint alias |
+| `st ui` | `skilltrace serve` | Localhost web dashboard server |
+| `st submit` | `skilltrace evidence submit` | Evidence submission shortcut |
+| `st close` | `skilltrace session close` | Session close shortcut |
+| `st blockers` | `skilltrace report blockers` | Quick blockers list |
+| `st reviews` | `skilltrace report reviews` | Quick reviews list |

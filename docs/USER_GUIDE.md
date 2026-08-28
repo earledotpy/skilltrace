@@ -1,154 +1,171 @@
-# User Guide
+# SkillTrace User Guide
 
-SkillTrace is a local-first study tool that answers "What should I study
-next?" and tracks your progress through a skill graph. Everything runs
-locally on your machine -- no cloud, no account, no network required after
-install.
+SkillTrace is your local-first study cockpit. It models your technical learning journey as a dependency graph, enforces real evidence gates before skills are checked off, and keeps track of your retention over months of practice.
 
-## Getting started
+No accounts, no cloud dependencies, and no magic checkboxes. Everything is driven by plain Markdown and YAML files in this repository.
 
-See [INSTALL.md](INSTALL.md) for installation. Once installed, run:
+---
 
-```bash
-skilltrace health
-```
+## 1. Quickstart & Daily Rhythm
 
-This confirms everything is working. On first use, the seed graph is ready
-with 81 nodes across math, programming, data, and tooling skills.
+Once you have followed [INSTALL.md](INSTALL.md) and activated your virtual environment, the CLI is available as `skilltrace` or the shortcut `st`.
 
-## Your daily study loop
+### The Daily CLI Workflow
 
-### 1. See what's due
+Here is what a typical study session looks like:
 
 ```bash
-skilltrace today
+# 1. Check your morning board (due reviews, open blockers, top recommendation)
+st today
+
+# 2. Get recommendations tailored to your available time
+st next --minutes 60
+
+# 3. Pick a skill and open your study session
+st start math.linear_algebra.vectors_01
+
+# 4. As you work through books, code, or exercises, log your time and notes
+st work math.linear_algebra.vectors_01 --minutes 30 --notes "Completed practice exercises 1-15"
+
+# 5. Submit your proof artifact against the node's evidence gate
+# For objective code gates (checked by exit code / test):
+st evidence submit math.linear_algebra.vectors_01 --location artifacts/vector_math.py
+
+# For manual essay/notes gates (self-evaluated):
+st submit math.linear_algebra.vectors_01 --location artifacts/notes.md --accept
+
+# 6. Verify pass readiness
+st eligibility math.linear_algebra.vectors_01
+
+# 7. Explicitly pass the node (the engine never auto-passes for you!)
+st pass math.linear_algebra.vectors_01
+
+# 8. Close the session when you wrap up
+st close
 ```
 
-Shows your open session (if any), due reviews, active blockers, and the top
-recommendation for right now.
+---
 
-### 2. Get recommendations
+## 2. Using the Local Web Dashboard (`st ui`)
+
+If you prefer a visual interface alongside your code editor or terminal, SkillTrace includes a built-in, stdlib-pure localhost web server:
 
 ```bash
-skilltrace next --minutes 60
+st ui
+# or explicitly:
+skilltrace serve --port 8341
 ```
 
-Lists nodes sized to your available time, ranked by learning impact. Each
-recommendation explains why it was chosen and what passing it unlocks.
+This launches your default browser at `http://127.0.0.1:8341` with a zero-JavaScript, server-rendered dashboard:
 
-### 3. Start studying
+* **Today Dashboard (`/`):** View your active session strip, due retention reviews, active blockers, and top recommendations at a glance.
+* **Recommendations (`/next`):** Interactive view of prerequisite-ready nodes with filters for study time and locked skills.
+* **Node Detail (`/nodes/<id>`):** Full breakdown of curriculum descriptions, prerequisite links, learning resources, and evidence requirements.
+* **Safe State Mutations:** Start sessions, submit work notes, and trigger explicit `pass` / `master` confirmation modals directly from your browser. Every browser write dispatches through the exact same safety engine as the CLI.
+
+---
+
+## 3. Evidence, Eligibility & Passing
+
+SkillTrace treats progress as **provable claims**, not subjective checkboxes:
+
+* **Artifacts & Gates:** Each skill node defines an `ArtifactSpec` (what you must produce) and a `ValidationGate` (how it is evaluated).
+* **Objective Gates:** Checked automatically by running a command (like a unit test suite or verification script).
+* **Manual Gates:** Reviewed and accepted explicitly by you (`--accept`).
+* **Immutability:** Once evidence is recorded, it is never edited or deleted. If you fix an error, you submit a new record that supersedes the prior one.
+* **Pass Enforcement:** `st pass <node_id>` will refuse to execute unless all required evidence gates are satisfied.
+
+---
+
+## 4. Retention & Spaced Review (FSRS Analytics)
+
+Passing a skill is just the start; retaining it over months requires spaced recall. SkillTrace includes a built-in **FSRS (Free Spaced Repetition Scheduler)** retention model:
 
 ```bash
-skilltrace start <node_id>
+# Inspect your overall retention health and memory stability
+st retention status
+
+# See what retention reviews are due today
+st reviews
+
+# Log a review outcome (satisfactory or unsatisfactory)
+st review complete rev.math.linear_algebra.vectors_01.001 --outcome satisfactory --summary "Solved recall quiz"
+
+# Get advisory suggestions for skills whose retention confidence has decayed
+st suggest reviews
 ```
 
-Opens a session and marks the node as active. You can only have one open
-session at a time.
+When you pass a node, the engine automatically schedules initial retention reviews based on policy cadence. Overdue reviews generate advisory warnings on `st today` and `st next`, helping you prioritize recall before charging into advanced topics.
 
-### 4. Record your work
+---
+
+## 5. Handling Obstacles & Remediation
+
+When you get stuck on a tricky concept:
 
 ```bash
-skilltrace work <node_id> --minutes 25 --notes "Worked through practice problems"
+# 1. Log a blocker describing the obstacle
+st blocker create math.calculus.derivatives_01 --description "Struggling with the chain rule on composite functions"
+
+# 2. Ask the engine for remediation suggestions (rescue nodes)
+st suggest remediation
+
+# 3. Once you overcome the hurdle, resolve the blocker
+st blocker resolve blk.math.calculus.derivatives_01.001 --summary "Reviewed 3Blue1Brown visual calculus chapter 4"
 ```
 
-Add work items as you go. You can work on multiple nodes in one session.
+Logging blockers applies **remediation pressure**, dynamically prioritizing foundational rescue nodes in your daily recommendations until the obstacle is cleared.
 
-### 5. Submit evidence
+---
 
-When your work is ready, submit it as evidence:
+## 6. Reports & Analytics
+
+Keep an eye on the big picture across your entire curriculum:
 
 ```bash
-# For objective gates (auto-checked):
-skilltrace evidence submit <node_id> --location artifacts/my-solution.py
+# High-level curriculum progress across all tracks
+st report progress
 
-# For manual gates (self-assessed):
-skilltrace evidence submit <node_id> --location artifacts/essay.md --accept
+# Active blockers, remediation actions, and rescue targets
+st report blockers
+
+# Spaced review queue, overdue reviews, and mastery candidates
+st report reviews
+
+# Full evidence audit trail and gate completion status
+st report evidence
+
+# Verification status of all external learning resources
+st report resources
 ```
 
-### 6. Check if you can pass
+---
+
+## 7. Data Exports, Backups & Portability
+
+Your Markdown curriculum files and `graph/state.yaml` are the sole sources of truth. For external sharing, querying, or peace of mind, SkillTrace can generate disposable derived views:
 
 ```bash
-skilltrace eligibility <node_id>
+# Generate a self-contained HTML review snapshot (written to data/export.html)
+st export html
+
+# Generate a single Markdown summary (written to data/export.md)
+st export markdown
+
+# Rebuild the SQLite mirror for SQL queries (written to data/skilltrace.db)
+st export sqlite
+
+# Create a timestamped, portable zip archive of all source files
+st backup
 ```
 
-Shows whether you meet all requirements to pass, with per-spec counts.
+Exports in `data/` and archives in `backups/` are gitignored and completely disposable—the engine never reads them back to compute state.
 
-### 7. Pass the node
+---
 
-```bash
-skilltrace pass <node_id>
-```
+## 8. Common Troubleshooting
 
-This is your explicit decision. No automated process can do this for you.
-
-### 8. Close the session
-
-```bash
-skilltrace close
-```
-
-## Exploring the graph
-
-```bash
-# View a node's full detail (curriculum, progress, evidence, resources)
-skilltrace node <node_id>
-
-# See what resources support a node
-skilltrace resources --node-id <node_id>
-```
-
-## Reports
-
-```bash
-skilltrace report progress       # Your progress across all tracks
-skilltrace report blockers       # What's blocking you
-skilltrace report reviews        # Due and overdue retention checks
-skilltrace report evidence       # Your proof trail
-skilltrace report resources      # Resource verification status
-```
-
-## Blockers and reviews
-
-If you're stuck on a node:
-
-```bash
-skilltrace blocker create <node_id> --description "Can't understand X"
-```
-
-When resolved:
-
-```bash
-skilltrace blocker resolve blk.<node>.NNN --summary "Found a good explanation"
-```
-
-Retention reviews are scheduled automatically when you pass a node. Check
-them with:
-
-```bash
-skilltrace reviews
-```
-
-## Data management
-
-```bash
-skilltrace export markdown   # Human-readable snapshot
-skilltrace export sqlite     # SQLite mirror for querying
-skilltrace export html       # Self-contained HTML snapshot (data/export.html)
-skilltrace backup            # Timestamped zip of all data
-```
-
-Exports and backups are in the `data/` and `backups/` directories, which are
-gitignored. They are disposable -- the source files are always the truth.
-
-## Troubleshooting
-
-**"No session open"** -- run `skilltrace start <node_id>` to begin.
-
-**"Node is locked"** -- check `skilltrace next` to see what prerequisites
-you need to pass first.
-
-**"Not eligible to pass"** -- run `skilltrace eligibility <node_id>` to see
-what's missing.
-
-**Health shows warnings** -- run `skilltrace health` for details. Warnings
-don't block use but indicate something to address.
+* **"No session open"**: Run `st start <node_id>` to open a study session.
+* **"Node is locked"**: The skill has unsatisfied `hard_prerequisite` dependencies. Run `st node <node_id>` to see which prerequisites need to be passed first.
+* **"Not eligible to pass"**: Run `st eligibility <node_id>` to see which evidence specs or gates are still missing.
+* **`st health` reports warnings**: Review the output. Advisory warnings (e.g. overdue reviews or stale resources) do not block study actions, but highlight areas that need attention.
