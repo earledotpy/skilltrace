@@ -506,8 +506,8 @@ def _pressure_card(model, view: JoinedView) -> str:
     )
 
 
-def _health_strip_card(root) -> str:
-    report = health_report(Path(root))
+def _health_strip_card(root, report=None) -> str:
+    report = report or health_report(Path(root))
     pills = "".join(
         f'<span class="pill {"verified" if layer.ok else "broken"}">'
         f"{_esc(layer.target)}: {'OK' if layer.ok else 'FAILED'}</span>"
@@ -524,9 +524,9 @@ def _health_strip_card(root) -> str:
     )
 
 
-def _header_health_html(root) -> str:
+def _header_health_html(root, report=None) -> str:
     """Compact pills for the sticky header health strip (B viewport)."""
-    report = health_report(Path(root))
+    report = report or health_report(Path(root))
     pills = "".join(
         f'<span class="pill {"ok" if layer.ok else "broken"}">'
         f"{_esc(layer.target)}: {'OK' if layer.ok else 'FAILED'}</span>"
@@ -583,7 +583,8 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
         )
 
     # Sticky header health+nav — live pills, jump form, 1100px wrap.
-    header_health = _header_health_html(root)
+    health = health_report(Path(root))
+    header_health = _header_health_html(root, health)
     header_html = _NAV.replace(
         '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
         f'<div class="health-strip" aria-label="health">{header_health}</div>',
@@ -598,7 +599,7 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
     right_html = (
         '<div class="rail">\n'
         + _pressure_card(model, view)
-        + _health_strip_card(root)
+        + _health_strip_card(root, health)
         + '\n</div>\n'
     )
     grid_html = (
@@ -785,7 +786,7 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
         "</div>\n"
     )
 
-    header_health = _header_health_html(root)
+    header_health = _header_health_html(root, health_report(Path(root)))
     header_html = _NAV.replace(
         '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
         f'<div class="health-strip" aria-label="health">{header_health}</div>',
@@ -850,7 +851,7 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
     actions = _node_actions_card(root, view, node_id)
     drill = _drill_down_card(node_id, view, Path(root))
     title = view.node_map[node_id].title
-    header_health = _header_health_html(root)
+    header_health = _header_health_html(root, health_report(Path(root)))
     header_html = _NAV.replace(
         '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
         f'<div class="health-strip" aria-label="health">{header_health}</div>',

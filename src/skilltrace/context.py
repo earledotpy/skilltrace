@@ -59,6 +59,7 @@ from .policy.cadence import Cadence, CadenceInterval
 from .policy.mastery import MasteryValues
 from .resources.registry import LearningResource, ResourceLoadError, load_resources
 from .resources.registry import resources_for_node as _resources_for_node
+from .resources.status import DEFAULT_STALE_AFTER_DAYS
 
 _EDGES_RELPATH = Path("graph") / "edges.yaml"
 
@@ -221,7 +222,11 @@ class PolicyAccess:
     @property
     def resource_stale_after_days(self) -> int:
         value = self._document("resource_verification.yaml").get("stale_after_days")
-        return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else 30
+        return (
+            value
+            if isinstance(value, int) and not isinstance(value, bool) and value > 0
+            else DEFAULT_STALE_AFTER_DAYS
+        )
 
     @property
     def session_templates(self) -> set[str]:

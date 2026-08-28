@@ -76,7 +76,7 @@ def resource_report(ctx: Context) -> CommandResult:
 
     _print_statuses(resources, today=today, window=window)
     _print_warnings(root, resources)
-    _print_coverage(node_ids, resources)
+    _print_coverage(node_ids, resources, ctx.joined)
     return CommandResult()
 
 
@@ -177,16 +177,23 @@ def _resolve(root: Path, local_path: str) -> Path:
     return candidate if candidate.is_absolute() else root / candidate
 
 
-def _print_coverage(node_ids: list[str], resources: list[LearningResource]) -> None:
+def _print_coverage(
+    node_ids: list[str],
+    resources: list[LearningResource],
+    joined=None,
+) -> None:
     """List nodes with no linked resource as information, not a warning.
 
     Coverage is stated positively — many nodes legitimately need no external
     material — so an uncovered node is surfaced for awareness, never flagged as a
     problem. Nodes keep graph load order.
     """
-    uncovered = [
-        node_id for node_id in node_ids if not resources_for_node(node_id, resources)
-    ]
+    if joined is not None:
+        uncovered = [node_id for node_id in node_ids if not joined.resources_by_node.get(node_id)]
+    else:
+        uncovered = [
+            node_id for node_id in node_ids if not resources_for_node(node_id, resources)
+        ]
     if not node_ids:
         return
     print(
