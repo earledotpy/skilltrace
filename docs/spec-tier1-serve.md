@@ -1,7 +1,7 @@
 # Spec — Tier 1 Web UI and Dashboard (serve + static report)
 
 **Status:** locked hand-off (map #62) — no open product or architecture decisions block v1.1 build.
-**Target:** `v1.1` nearest post-v1 (`docs/POST_V1_BACKLOG.md:7-14`, `docs/skilltrace-application-roadmap.md:596-598`); `v1.4` reserved for polish.
+**Target:** `v1.1` nearest post-v1 (`docs/POST_V1_ROADMAP.md` v1.7 slot, `docs/skilltrace-application-roadmap.md` v1 timeline); `v1.4` reserved for polish.
 **Map:** [#62 Map — Tier 1 Web UI and Dashboard (serve + static report)](https://github.com/earledotpy/skilltrace/issues/62)
 **Decisions:** [R1#63](https://github.com/earledotpy/skilltrace/issues/63) · [G1#64](https://github.com/earledotpy/skilltrace/issues/64) · [P1#65](https://github.com/earledotpy/skilltrace/issues/65) · [G2#66](https://github.com/earledotpy/skilltrace/issues/66) · [G3#67](https://github.com/earledotpy/skilltrace/issues/67) · [G4#68](https://github.com/earledotpy/skilltrace/issues/68) · [G5#69](https://github.com/earledotpy/skilltrace/issues/69) + report-curation gist (joint G1/G4/G5). ADR 0002, ADR 0006 (`docs/adr/0006-stdlib-only-serve-shell.md:1`), `CONTEXT.md:296` Serve / `CONTEXT.md:274` Export.
 **Prototype:** `prototype/p1-daily-home-view.html` (3 variants, `@02af61e`) + `prototype/p1-modals.html` (pass/master/start confirms).
@@ -62,7 +62,7 @@
 ### E. Report curation — live vs snapshot (joint G1/G4/G5 gist, no separate ticket)
 
 - [ ] **Live `serve` shows daily-relevant excerpts only:** health strip, pressure excerpts (overdue reviews via `execution/reviews.yaml` derived, open blockers, `45 available · 36 locked` counts), plus `today` top recommendation. Full `report progress/blockers/reviews/evidence/resources` tables are **not** live UI in Tier 1.
-- [ ] **Full review is the snapshot:** curated single-page `data/export.html` (see §D) plus CLI `report *` and `resource-report`. Search/filter deferred to `v1.5` (`docs/skilltrace-application-roadmap.md:606`, `docs/POST_V1_BACKLOG.md:38`) — not Tier 1.
+- [ ] **Full review is the snapshot:** curated single-page `data/export.html` (see §D) plus CLI `report *` and `resource-report`. Search/filter deferred to `v1.6` (`docs/POST_V1_ROADMAP.md` v1.6 slot) — not Tier 1.
 
 ### F. Remaining study-loop writes → browser affordances (G5) — complete mutation inventory
 
@@ -91,7 +91,7 @@ Cross-cutting: every write below dispatches in-process per §B, same `source: "w
 
 ### I. Analytics — past hand-off
 
-- [ ] Tier 1 dashboard shows `health` strip only. Velocity, blocker breakdown, evidence coverage, review completion, and any telemetry-free counting are `v1.5`/Tier 2 (`docs/POST_V1_BACKLOG.md:38-40`) and sit beyond this map; FSRS/Tier 2 retention analytics (`docs/POST_V1_BACKLOG.md:16-20`) out of scope.
+- [ ] Tier 1 dashboard shows `health` strip only. Velocity, blocker breakdown, evidence coverage, review completion, and any telemetry-free counting are `v1.6`/`v1.5` (Tier 2 via map #86, retro-numbered to v1.5 per map #95 G-Retro; see `docs/POST_V1_ROADMAP.md` Shipped + v1.6 slot) and sit beyond this map; FSRS/Tier 2 retention analytics (same source) out of scope.
 
 ### J. Prototype sketches (linked, not built here)
 
@@ -117,4 +117,4 @@ Tickets `T1`–`T5` are `wayfinder:task` children of #62, wired `T1 → T2 → T
 
 ## References
 
-`CONTEXT.md`, `docs/skilltrace-application-roadmap.md`, `docs/adr/0001-0005` + `docs/adr/0006-stdlib-only-serve-shell.md`, `docs/curriculum-authoring.md`, `docs/SCHEMA_REFERENCE.md`, `docs/POST_V1_BACKLOG.md`, `archive/scaffold-v0.1/interface/` + `archive/scaffold-v0.1/web-app-vision/reference-research-document.md` (ref-only), `src/skilltrace/context.py:146` `JoinedView`, `src/skilltrace/context.py:200` strict / `src/skilltrace/context.py:260` lenient, `src/skilltrace/render.py:42`, `src/skilltrace/cli.py:68` `REGISTRY` + `src/skilltrace/dispatch.py:116`, `src/skilltrace/export_data.py:88`, `src/skilltrace/graph/state.py:118`.
+`CONTEXT.md`, `docs/skilltrace-application-roadmap.md`, `docs/adr/0001-0005` + `docs/adr/0006-stdlib-only-serve-shell.md`, `docs/curriculum-authoring.md`, `docs/SCHEMA_REFERENCE.md`, `docs/POST_V1_ROADMAP.md`, `archive/scaffold-v0.1/interface/` + `archive/scaffold-v0.1/web-app-vision/reference-research-document.md` (ref-only), `src/skilltrace/context.py:146` `JoinedView`, `src/skilltrace/context.py:200` strict / `src/skilltrace/context.py:260` lenient, `src/skilltrace/render.py:42`, `src/skilltrace/cli.py:68` `REGISTRY` + `src/skilltrace/dispatch.py:116`, `src/skilltrace/export_data.py:88`, `src/skilltrace/graph/state.py:118`.

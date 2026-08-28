@@ -590,26 +590,3 @@ Tag:
 git tag v1.0.0
 git push origin v1.0.0
 ```
-
-## Post-v1 backlog
-
-These do not block v1.
-
-- **v1.1** — resource web-verification automation and stale-resource
-  replacement suggestions
-- **v1.2** — Phase 2 ML seed graph (Google ML Crash Course, Andrew Ng, ISLR,
-  Kaggle, FastAPI, Docker)
-- **v1.3** — Phase 3 LLM/agents/MCP seed graph
-- **v1.4** — optional local dashboard or static HTML report; its view model
-  is designed fresh from real usage (ADR 0002), not from the cut scaffold
-  interface layer
-- **v1.5** — analytics v1: study velocity, blockers by domain, review
-  completion, evidence coverage (mine the event log)
-- **v1.6** — portfolio builder and GitHub project report
-- **v2.0** — adaptive sequencing beyond rule-based recommendations;
-  retention/confidence modeling as a derived overlay (mastery state remains
-  permanent)
-
-The framework document's advanced ideas — diagnostic analytics, Elo/BKT-style
-mastery modeling, adaptive sequencing, badge issuance, generative AI
-tutoring — belong after the stable v1 engine, not before it.
