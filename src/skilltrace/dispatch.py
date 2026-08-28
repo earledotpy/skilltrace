@@ -48,6 +48,7 @@ class Context:
     root: Path
     args: argparse.Namespace
     source: str | None = None
+    joined: Any | None = None
 
 
 @dataclass

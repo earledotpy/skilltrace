@@ -59,9 +59,13 @@ def resource_report(ctx: Context) -> CommandResult:
     """
     root = ctx.root
     today = datetime.now(timezone.utc).date()
-    window = stale_after_days(root)
+    window = (
+        ctx.joined.policy.resource_stale_after_days
+        if ctx.joined is not None
+        else stale_after_days(root)
+    )
 
-    resources, node_ids, load_notes = _load(root)
+    resources, node_ids, load_notes = _load(root, ctx.joined)
 
     print(
         f"resource-report: {len(resources)} resource(s), {len(node_ids)} node(s); "
@@ -78,6 +82,7 @@ def resource_report(ctx: Context) -> CommandResult:
 
 def _load(
     root: Path,
+    joined=None,
 ) -> tuple[list[LearningResource], list[str], list[str]]:
     """Load resources and node IDs, folding any load failure into report notes.
 
@@ -85,6 +90,9 @@ def _load(
     half of the report. A failure yields an empty list plus a note; the command
     stays exit 0 regardless.
     """
+    if joined is not None:
+        return joined.resources, list(joined.node_map), []
+
     notes: list[str] = []
     try:
         resources = load_resources(root)

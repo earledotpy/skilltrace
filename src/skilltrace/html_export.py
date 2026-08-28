@@ -89,9 +89,18 @@ def render_html(ctx) -> str:
     """Build the full self-contained HTML page from the captured report lines."""
     from .web.views import cards_html, page
 
+    snapshot = load_context_strict(ctx.root)
+    if not snapshot.ok:
+        raise RuntimeError("HTML export requires a complete JoinedView snapshot.")
+    report_ctx = type(ctx)(
+        root=ctx.root,
+        args=ctx.args,
+        source=ctx.source,
+        joined=snapshot,
+    )
     sections_html = ""
     for title, handler in _SECTIONS:
-        lines = _capture(handler, ctx)
+        lines = _capture(handler, report_ctx)
         inner = cards_html(lines) if lines else '<p class="mut">No data.</p>'
         sections_html += (
             f"<section>\n<h2>{html.escape(title)}</h2>\n{inner}\n</section>\n"

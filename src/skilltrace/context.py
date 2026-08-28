@@ -216,6 +216,11 @@ class PolicyAccess:
             due_in_days if isinstance(due_in_days, int) and not isinstance(due_in_days, bool) else None,
         )
 
+    @property
+    def resource_stale_after_days(self) -> int:
+        value = self._document("resource_verification.yaml").get("stale_after_days")
+        return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else 30
+
 
 @dataclass
 class JoinedView:

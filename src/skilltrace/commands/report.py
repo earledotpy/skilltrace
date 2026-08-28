@@ -54,11 +54,13 @@ def _parse_date(val: Any) -> date | None:
 def report_progress(ctx: Context) -> CommandResult:
     """Whole-curriculum completion, states roll-up, tracks, session hours."""
     root = ctx.root
-    try:
-        joined = load_context_lenient(root)
-    except (NodeLoadError, ProgressStoreError) as exc:
-        print(f"report progress: FAILED -- {exc}")
-        return CommandResult(exit_code=1)
+    joined = ctx.joined
+    if joined is None:
+        try:
+            joined = load_context_lenient(root)
+        except (NodeLoadError, ProgressStoreError) as exc:
+            print(f"report progress: FAILED -- {exc}")
+            return CommandResult(exit_code=1)
     nodes = joined.nodes
     store = joined.store
     sessions = joined.sessions
@@ -166,7 +168,7 @@ def report_blockers(ctx: Context) -> CommandResult:
     """Persistent stuckness diagnostic, open blockers, and rescue nodes."""
     root = ctx.root
     try:
-        joined = load_context_lenient(root)
+        joined = ctx.joined or load_context_lenient(root)
     except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
         print(f"report blockers: FAILED -- {exc}")
         return CommandResult(exit_code=1)
@@ -262,7 +264,7 @@ def report_reviews(ctx: Context) -> CommandResult:
     """Retention & spaced-repetition health, overdue checks, and mastery candidates."""
     root = ctx.root
     try:
-        joined = load_context_lenient(root)
+        joined = ctx.joined or load_context_lenient(root)
     except (NodeLoadError, ProgressStoreError) as exc:
         print(f"report reviews: FAILED -- {exc}")
         return CommandResult(exit_code=1)
@@ -352,7 +354,7 @@ def report_evidence(ctx: Context) -> CommandResult:
     node_id_filter = getattr(ctx.args, "node_id", None)
 
     try:
-        joined = load_context_lenient(root)
+        joined = ctx.joined or load_context_lenient(root)
     except (NodeLoadError, ProgressStoreError) as exc:
         print(f"report evidence: FAILED -- {exc}")
         return CommandResult(exit_code=1)
