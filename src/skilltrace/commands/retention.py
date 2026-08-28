@@ -14,6 +14,7 @@ from pathlib import Path
 
 from ..context import load_context_lenient
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
+from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
 from ..policy.retention_model import (
@@ -37,7 +38,7 @@ def _state_for_all(root: Path, today: date):
     """
     try:
         view = load_context_lenient(root)
-    except (NodeLoadError, ProgressStoreError) as exc:
+    except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
         return None, None, f"retention status: FAILED -- {exc}"
     seed = view.policy.retention
     if seed is None:
