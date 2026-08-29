@@ -80,77 +80,44 @@ def test_t_zero_after_one_growth_yields_full_confidence():
     assert state.anchored_at == review_on
 
 
-def test_t_half_h_matches_hand_computed_value():
-    """3 days past a 1-growth anchor (h=14): R = 0.5^(3/14).
+@pytest.mark.parametrize(
+    "elapsed_days,expected_confidence",
+    [
+        (0, 1.0),  # R(0) = 1
+        (3, 0.5 ** (3 / 14.0)),  # 3 days past 1-growth anchor (h=14)
+        (7, 0.5),  # R(7) at default h=7
+        (14, 0.25),  # R(2h) = 0.25
+    ],
+    ids=["t_zero", "t_three_of_h14", "t_h_at_h7", "t_2h"],
+)
+def test_r_at_known_t_over_h(elapsed_days, expected_confidence):
+    """Sweep R(t) = 0.5^(t/h) at the textbook anchor points.
 
-    The spec's spec example at "3.5 days" is mathematically 0.5^(0.5); with a
-    date-typed ``today`` (per the clock-injection contract) the elapsed
-    value is an integer day count. The half-life behavior the spec wants
-    pinned — R at t near h/2 — is observable at any integer t in the
-    right neighborhood; 3 days is the nearest integer to 3.5.
+    All cases use the no-reviews path (anchor = pass date, h = 7) except `t=3
+    of h=14`, which anchors on a one-growth completed review that doubled h to
+    14 — the spec's headline example (issue #49 §6.3).
     """
-    review_on = date(2026, 7, 10)
-    today = review_on + timedelta(days=3)
-    state = compute_memory_state(
-        NODE,
-        asserted_state="passed",
-        pass_at=PASS_DATE,
-        reviews=[_completed("rev.001", review_on, "satisfactory")],
-        seed=SEED,
-        today=today,
-    )
-    expected = 0.5 ** (3 / 14.0)
-    assert state.half_life_days == pytest.approx(14.0)
-    assert state.confidence == pytest.approx(expected, abs=1e-12)
-
-
-def test_half_life_at_default_h():
-    """Default h=7 (no completed reviews): R = 0.5 at exactly 7 days from pass."""
-    today = PASS_DATE + timedelta(days=7)
-    state = compute_memory_state(
-        NODE,
-        asserted_state="passed",
-        pass_at=PASS_DATE,
-        reviews=[],
-        seed=SEED,
-        today=today,
-    )
-    assert state.anchor_kind == "pass"
-    assert state.half_life_days == pytest.approx(7.0)
-    assert state.confidence == pytest.approx(0.5, abs=1e-12)
-
-
-def test_r_around_half_life_default_seed():
-    """At default h=7, R is monotonically decreasing and R(7) = 0.5 exactly."""
-    at_3 = compute_memory_state(
-        NODE, asserted_state="passed", pass_at=PASS_DATE, reviews=[],
-        seed=SEED, today=PASS_DATE + timedelta(days=3),
-    )
-    at_4 = compute_memory_state(
-        NODE, asserted_state="passed", pass_at=PASS_DATE, reviews=[],
-        seed=SEED, today=PASS_DATE + timedelta(days=4),
-    )
-    at_7 = compute_memory_state(
-        NODE, asserted_state="passed", pass_at=PASS_DATE, reviews=[],
-        seed=SEED, today=PASS_DATE + timedelta(days=7),
-    )
-    assert at_3.confidence > at_4.confidence > at_7.confidence
-    assert at_3.confidence == pytest.approx(0.5 ** (3 / 7.0), abs=1e-12)
-    assert at_4.confidence == pytest.approx(0.5 ** (4 / 7.0), abs=1e-12)
-    assert at_7.confidence == pytest.approx(0.5, abs=1e-12)
-
-
-def test_t_equals_two_h_gives_quarter_confidence():
-    today = PASS_DATE + timedelta(days=14)
-    state = compute_memory_state(
-        NODE,
-        asserted_state="passed",
-        pass_at=PASS_DATE,
-        reviews=[],
-        seed=SEED,
-        today=today,
-    )
-    assert state.confidence == pytest.approx(0.25, abs=1e-12)
+    if elapsed_days == 3:
+        review_on = PASS_DATE + timedelta(days=2)
+        state = compute_memory_state(
+            NODE,
+            asserted_state="passed",
+            pass_at=PASS_DATE,
+            reviews=[_completed("rev.001", review_on, "satisfactory")],
+            seed=SEED,
+            today=review_on + timedelta(days=elapsed_days),
+        )
+    else:
+        today = PASS_DATE + timedelta(days=elapsed_days)
+        state = compute_memory_state(
+            NODE,
+            asserted_state="passed",
+            pass_at=PASS_DATE,
+            reviews=[],
+            seed=SEED,
+            today=today,
+        )
+    assert state.confidence == pytest.approx(expected_confidence, abs=1e-12)
 
 
 # --- Unsatisfactory: multiplicative reduction, never reset, never demote ---

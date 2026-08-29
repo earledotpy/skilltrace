@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
+from pathlib import Path
+
 from skilltrace import cli
 from skilltrace.events import load_events
 
@@ -98,3 +103,51 @@ def test_root_flag_overrides_detection(tmp_path):
     rc = cli.run(["--root", str(tmp_path), "sync"])
     assert rc == 0
     assert len(load_events(tmp_path)) == 1
+
+
+# --- Entry-point smoke tests ---------------------------------------------------
+#
+# The console-script wiring in `pyproject.toml` and the `-m skilltrace` shim in
+# `src/skilltrace/__main__.py` both reach `cli.main`; a `pyproject.toml` typo
+# would silently ship a broken install. These two subprocess tests pin the
+# contract from outside the in-process seam.
+
+PYPROJECT = Path(__file__).resolve().parents[2] / "pyproject.toml"
+
+
+def test_python_m_skilltrace_reaches_cli_main():
+    result = subprocess.run(
+        [sys.executable, "-m", "skilltrace", "--help"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+    # The help text comes from the same parser the in-process tests use, so a
+    # shared command name proves the shim reached `cli.main`.
+    assert "validate" in result.stdout
+
+
+def test_pyproject_declares_skilltrace_console_script_pointing_at_cli_main():
+    # Read-only: the wiring must point at the module that defines `main`.
+    text = PYPROJECT.read_text(encoding="utf-8")
+    assert 'skilltrace = "skilltrace.cli:main"' in text
+    assert 'st = "skilltrace.cli:main"' in text
+
+
+# --- Cwd auto-detect ----------------------------------------------------------
+#
+# The CLI's `--root` override is the test-only path; the in-the-wild path is
+# `cli.run(argv)` with no `root` argument, which calls `find_root()` walking
+# up from cwd. This test seeds a real `graph/` under a subdir of a tmp repo
+# and chdirs into that subdir to prove the walker picks it up.
+
+def test_cwd_auto_detect_finds_the_repo_root_from_a_subdir(tmp_path, monkeypatch):
+    sub = tmp_path / "src" / "skilltrace_pkg"
+    sub.mkdir(parents=True)
+    (sub / "graph").mkdir()
+    (sub / "graph" / "edges.yaml").write_text("edges: []\n", encoding="utf-8")
+
+    monkeypatch.chdir(sub)
+    rc = cli.run(["validate", "graph"], root=None)
+    assert rc == 0

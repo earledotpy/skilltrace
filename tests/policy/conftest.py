@@ -14,6 +14,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from _builders import write_node
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -43,7 +45,7 @@ def mastery_repo(policy_repo):
         reviews: list[dict] | None = None,
     ) -> Path:
         root = policy_repo
-        _write_node(root, NODE)
+        write_node(root, NODE)
         _write_yaml(
             root,
             "evidence/artifact_specs.yaml",
@@ -130,20 +132,4 @@ def _write_yaml(root: Path, relpath: str, doc: dict) -> None:
     path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
 
 
-def _write_node(root: Path, node_id: str, *, track: str = "foundational") -> None:
-    frontmatter = {
-        "id": node_id,
-        "title": f"Title for {node_id}",
-        "summary": f"Summary for {node_id}.",
-        "domain": "testing",
-        "track": track,
-        "micro_session_fit": {
-            "can_fit_15_min": True,
-            "can_fit_30_min": True,
-            "requires_long_block": False,
-        },
-    }
-    block = yaml.safe_dump(frontmatter, sort_keys=False)
-    path = root / "graph" / "nodes" / f"{node_id}.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"---\n{block}---\n\n# {node_id}\n", encoding="utf-8")
+_write_node = write_node

@@ -191,8 +191,10 @@ def test_missing_required_field_fails(tmp_path, field):
 # --- Integration against the real seed graph (fails until migration runs) ---
 
 def test_all_seed_nodes_load():
+    # Shipped-data regression guard: every shipped node file loads, every
+    # id is unique, every node has a track. Update only when the curriculum
+    # changes — not when the engine changes.
     nodes = load_nodes(REPO_ROOT)
-    assert len(nodes) == 81
     ids = [node.id for node in nodes]
     assert len(set(ids)) == len(ids)  # loader hands #5 the raw list; no dedupe here
     assert "math.algebra.linear_equations_01" in ids

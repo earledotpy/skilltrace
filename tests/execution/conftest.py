@@ -16,6 +16,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from _builders import write_node
+
 
 def write_state(root: Path, states: dict[str, str]) -> None:
     """Write `graph/state.yaml` with one entry per node id."""
@@ -23,26 +25,6 @@ def write_state(root: Path, states: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     progress = {node_id: {"state": state} for node_id, state in states.items()}
     path.write_text(yaml.safe_dump({"progress": progress}, sort_keys=False), encoding="utf-8")
-
-
-def write_node(root: Path, node_id: str) -> None:
-    """Write one minimal-valid node markdown file (mirrors EvidenceBuilder)."""
-    frontmatter = {
-        "id": node_id,
-        "title": f"Title for {node_id}",
-        "summary": f"Summary for {node_id}.",
-        "domain": "testing",
-        "track": "foundational",
-        "micro_session_fit": {
-            "can_fit_15_min": True,
-            "can_fit_30_min": True,
-            "requires_long_block": False,
-        },
-    }
-    block = yaml.safe_dump(frontmatter, sort_keys=False)
-    path = root / "graph" / "nodes" / f"{node_id}.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"---\n{block}---\n\n# {node_id}\n", encoding="utf-8")
 
 
 def write_workload_policy(root: Path) -> None:

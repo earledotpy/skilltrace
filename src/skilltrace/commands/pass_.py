@@ -23,6 +23,7 @@ failures (exit 1, no event); a refusal is exit 2 with nothing written.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Callable
 
 from ..automation import check_automation
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
@@ -89,18 +90,29 @@ def pass_node(ctx: Context) -> CommandResult:
         # The one sanctioned automation (v0.6): schedule every cadence interval,
         # dated from the pass. The created ids ride in this command's single
         # audit event via records_touched.
-        outcome.records_touched.extend(_auto_schedule_reviews(root, node_id))
+        outcome.records_touched.extend(
+            _auto_schedule_reviews(root, node_id, clock=ctx.clock)
+        )
 
     return CommandResult(records_touched=outcome.records_touched, exit_code=outcome.exit_code)
 
 
-def _auto_schedule_reviews(root, node_id: str) -> list[str]:
+def _auto_schedule_reviews(
+    root,
+    node_id: str,
+    *,
+    clock: Callable[[], datetime] | None = None,
+) -> list[str]:
     """Create the cadence policy's scheduled reviews for a fresh pass.
 
     Consults the automation boundary first — `schedule_review` is checked at
     the moment of automation, so a boundary that forbids it skips scheduling
     (with a warning) while the pass itself stands. Any failure here degrades
     to "no reviews scheduled", never to a failed pass.
+
+    `clock` is an optional wall-clock override. Tests that pin the scheduled
+    review dates against the wall clock pass a fixed `clock` here so a
+    midnight-UTC transition cannot turn a passing test red.
     """
     verdict = check_automation("schedule_review", root)
     if verdict.forbidden:
@@ -114,7 +126,7 @@ def _auto_schedule_reviews(root, node_id: str) -> list[str]:
     if not cadence.schedule_reviews_after_pass or not cadence.intervals:
         return []
 
-    now = datetime.now(timezone.utc)
+    now = clock() if clock is not None else datetime.now(timezone.utc)
     try:
         existing_ids = [review.id for review in load_reviews(root)]
     except ExecutionLoadError as exc:

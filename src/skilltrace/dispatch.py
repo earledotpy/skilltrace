@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
@@ -43,12 +44,19 @@ class Context:
     here rather than in ``args`` so ``_event_args``' underscore exclusion stays
     untouched; when set it lands in the single audit event's args beside the
     invocation arguments.
+
+    ``clock`` is an optional wall-clock override for tests. When ``None``,
+    handlers that need a current timestamp fall back to ``datetime.now``. Tests
+    that compare dates derived from the wall clock (e.g. scheduled review
+    dates) inject a fixed ``clock`` here so a midnight-UTC transition cannot
+    turn a passing test red.
     """
 
     root: Path
     args: argparse.Namespace
     source: str | None = None
     joined: Any | None = None
+    clock: Callable[[], datetime] | None = None
 
 
 @dataclass

@@ -16,6 +16,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from _builders import write_node
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -49,21 +51,6 @@ def resource_named(entries: list[dict], resource_id: str) -> dict:
     matches = [entry for entry in entries if entry.get("id") == resource_id]
     assert matches, f"no resource {resource_id!r} in registry"
     return matches[0]
-
-
-def write_node(root: Path, node_id: str, *, track: str = "foundational") -> None:
-    """Write one minimal, load-clean node markdown file."""
-    frontmatter = {
-        "id": node_id,
-        "title": f"Title for {node_id}",
-        "summary": f"Summary for {node_id}.",
-        "domain": "testing",
-        "track": track,
-    }
-    block = yaml.safe_dump(frontmatter, sort_keys=False)
-    path = root / "graph" / "nodes" / f"{node_id}.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"---\n{block}---\n\n# {node_id}\n", encoding="utf-8")
 
 
 def _write_yaml(root: Path, relpath: str, doc: dict) -> None:

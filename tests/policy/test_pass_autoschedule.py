@@ -8,24 +8,32 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from skilltrace import cli
 from skilltrace.events import load_events
 from skilltrace.execution.reviews import load_reviews
 
 from .conftest import NODE
 
+# A frozen "now" the auto-scheduling test pins the cadence dates against.
+# Without this, a midnight-UTC transition can flip the test red for no reason
+# — the wall clock and the test's `(today + n days)` derivation can disagree
+# by one day across the boundary. Injected through `cli.run(..., clock=)`.
+FROZEN_NOW = datetime(2026, 8, 15, 10, 0, 0, tzinfo=timezone.utc)
+
 
 def test_pass_schedules_every_cadence_interval(mastery_repo, capsys):
     root = mastery_repo(state="available", passed_at=None)
 
-    rc = cli.run(["pass", NODE], root=root)
+    rc = cli.run(["pass", NODE], root=root, clock=lambda: FROZEN_NOW)
     assert rc == 0
 
     reviews = load_reviews(root)
     assert len(reviews) == 3
     assert all(r.node_id == NODE and r.status == "scheduled" for r in reviews)
 
-    today = datetime.now(timezone.utc).date()
+    today = FROZEN_NOW.date()
     expected_dates = {(today + timedelta(days=n)).isoformat() for n in (1, 3, 7)}
     assert {r.scheduled_for for r in reviews} == expected_dates
 
@@ -50,7 +58,7 @@ def test_forbidding_schedule_review_skips_scheduling_but_pass_stands(
             rule["permission"] = "forbidden"
     path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
 
-    rc = cli.run(["pass", NODE], root=root)
+    rc = cli.run(["pass", NODE], root=root, clock=lambda: FROZEN_NOW)
     assert rc == 0  # the pass is a human command; the boundary gates only automation
     out = capsys.readouterr().out
     assert "now passed" in out

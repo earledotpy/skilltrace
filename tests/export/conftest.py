@@ -18,6 +18,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from _builders import write_node
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 MASTERED_NODE = "testing.export.mastered_node_01"
@@ -30,28 +32,13 @@ def _write_yaml(root: Path, relpath: str, doc: dict) -> None:
     path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
 
 
-def _write_node(root: Path, node_id: str) -> None:
-    frontmatter = {
-        "id": node_id,
-        "title": f"Title for {node_id}",
-        "summary": f"Summary for {node_id}.",
-        "domain": "testing",
-        "track": "foundational",
-        "tags": ["export-fixture"],
-    }
-    block = yaml.safe_dump(frontmatter, sort_keys=False)
-    path = root / "graph" / "nodes" / f"{node_id}.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"---\n{block}---\n\n# {node_id}\n", encoding="utf-8")
-
-
 @pytest.fixture
 def export_repo(tmp_path: Path) -> Path:
     root = tmp_path
     shutil.copytree(REPO_ROOT / "policy", root / "policy")
 
-    _write_node(root, MASTERED_NODE)
-    _write_node(root, AVAILABLE_NODE)
+    write_node(root, MASTERED_NODE, tags=["export-fixture"])
+    write_node(root, AVAILABLE_NODE, tags=["export-fixture"])
 
     _write_yaml(
         root,

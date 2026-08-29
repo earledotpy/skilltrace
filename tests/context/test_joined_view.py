@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from _builders import write_node as _shared_write_node
+
 from skilltrace.context import JoinedView, Loaders, load_context_lenient, load_context_strict
 from skilltrace.evidence._schema import EvidenceLoadError
 from skilltrace.evidence.gates import ValidationGate
@@ -312,24 +314,7 @@ def test_resources_by_node_uses_reverse_index(tmp_path: Path):
 
 
 def _write_node_file(root: Path, node_id: str) -> None:
-    import yaml as yaml_mod
-
-    frontmatter = {
-        "id": node_id,
-        "title": f"Title for {node_id}",
-        "summary": "summary",
-        "domain": "testing",
-        "track": "foundational",
-        "micro_session_fit": {
-            "can_fit_15_min": True,
-            "can_fit_30_min": True,
-            "requires_long_block": False,
-        },
-    }
-    block = yaml_mod.safe_dump(frontmatter, sort_keys=False)
-    path = root / "graph" / "nodes" / f"{node_id}.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"---\n{block}---\n", encoding="utf-8")
+    _shared_write_node(root, node_id)
 
 
 def _write_yaml(root: Path, relpath: str, doc: dict) -> None:

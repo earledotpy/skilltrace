@@ -183,9 +183,10 @@ def test_derive_readiness_direct():
 # --- Integration: real seed is already in sync (idempotent) -----------------
 
 def test_seed_graph_is_already_in_sync():
-    # Verified empirically: no seed source is passed/mastered, so every node with
-    # an active hard prerequisite is locked and all others available — a clean
-    # sync produces zero changes. Pinned as a regression guard.
+    # Shipped-data regression guard: no seed source is passed/mastered, so
+    # every node with an active hard prerequisite is locked and all others
+    # available — a clean sync produces zero changes. Update only when the
+    # curriculum changes — not when the engine changes.
     nodes = load_nodes(REPO_ROOT)
     edges = load_edges(REPO_ROOT)
     store = load_state(REPO_ROOT)

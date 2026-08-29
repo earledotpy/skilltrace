@@ -19,6 +19,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from _builders import write_node as _shared_write_node
+
 from skilltrace.context import load_context_lenient, load_context_strict
 from skilltrace.web import views
 
@@ -41,17 +43,20 @@ def _write_yaml(root: Path, relpath: str, doc: dict) -> None:
 
 
 def _write_node(root: Path, node_id: str, title: str | None = None) -> None:
-    frontmatter = {
-        "id": node_id,
-        "title": title or f"Title for {node_id}",
-        "summary": f"Summary for {node_id}.",
-        "domain": "testing",
-        "track": "foundational",
-    }
-    block = yaml.safe_dump(frontmatter, sort_keys=False)
-    path = root / "graph" / "nodes" / f"{node_id}.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"---\n{block}---\n\n# {node_id}\n", encoding="utf-8")
+    """Write a node file via the shared helper; optionally override the title.
+
+    The shared helper produces a default title; this in-suite wrapper preserves
+    the historical `title=` override used by one XSS-rejection test that needs
+    a hostile title string.
+    """
+    _shared_write_node(root, node_id)
+    if title is not None:
+        path = root / "graph" / "nodes" / f"{node_id}.md"
+        text = path.read_text(encoding="utf-8")
+        path.write_text(
+            text.replace(f"title: Title for {node_id}", f"title: {title}"),
+            encoding="utf-8",
+        )
 
 
 def _set_state(root: Path, node_id: str, state: str) -> None:

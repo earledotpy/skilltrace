@@ -24,6 +24,8 @@ from typing import Any
 import pytest
 import yaml
 
+from _builders import write_node as _write_node_impl
+
 
 class GraphBuilder:
     """Writes a real SkillTrace mini-repo so tests hit the loader path.
@@ -80,28 +82,40 @@ class GraphBuilder:
         (`overrides={"state": "active"}`) to exercise loader rejection. `filename`
         defaults to `<node_id>.md`; pass it to give two files the *same* id (the
         duplicate-id case) without a filename collision.
+
+        The non-default `can_fit_15` / `can_fit_30` toggles exist for one
+        historical test (the readiness suite pins the micro-session-fit shape);
+        they are mapped to the shared `micro_session_fit` block by hand below
+        because the shared helper only takes the on/off toggle.
         """
-        frontmatter: dict[str, Any] = {
-            "id": node_id,
-            "title": f"Title for {node_id}",
-            "summary": f"Summary for {node_id}.",
-            "domain": "testing",
-            "track": track,
-            "micro_session_fit": {
+        micro_session_fit: bool | dict[str, Any]
+        if can_fit_15 is True and can_fit_30 is True:
+            micro_session_fit = True
+        else:
+            micro_session_fit = {
                 "can_fit_15_min": can_fit_15,
                 "can_fit_30_min": can_fit_30,
                 "requires_long_block": False,
-            },
-        }
-        if anchors is not None:
-            frontmatter["roadmap_anchors"] = anchors
-        if overrides:
-            frontmatter.update(overrides)
-
-        block = yaml.safe_dump(frontmatter, sort_keys=False)
-        text = f"---\n{block}---\n\n# {node_id}\n"
-        name = filename or f"{node_id}.md"
-        (self.root / "graph" / "nodes" / name).write_text(text, encoding="utf-8")
+            }
+        _write_node_impl(
+            self.root,
+            node_id,
+            track=track,
+            micro_session_fit=micro_session_fit
+            if isinstance(micro_session_fit, bool)
+            else True,
+            anchors=anchors,
+            extra=(
+                {
+                    **(
+                        {} if micro_session_fit is True
+                        else {"micro_session_fit": micro_session_fit}
+                    ),
+                    **(overrides or {}),
+                }
+            ) or None,
+            filename=filename,
+        )
         return self
 
     def edges(self, edges: list[dict[str, Any]]) -> "GraphBuilder":

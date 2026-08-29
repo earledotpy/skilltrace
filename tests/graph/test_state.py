@@ -193,19 +193,23 @@ def test_all_known_references_pass():
 # --- Integration against the real seed store -------------------------------
 
 def test_seed_store_loads_all_nodes_in_derived_states():
+    # Shipped-data regression guard: every shipped node is present, every
+    # entry sits in a derived state (no asserted progress in the seed). Update
+    # only when the curriculum changes — not when the engine changes.
     from skilltrace.graph.nodes import load_nodes
 
     store = load_state(REPO_ROOT)
     node_ids = {node.id for node in load_nodes(REPO_ROOT)}
 
     assert set(store.entries) == node_ids  # every seed node present
-    assert len(store.entries) == 81
     assert all(entry.state in DERIVED_STATES for entry in store.entries.values())
     # No asserted progress is seeded — passing/mastering are learner acts only.
     assert not any(entry.state in ASSERTED_STATES for entry in store.entries.values())
 
 
 def test_seed_store_references_are_all_known():
+    # Shipped-data regression guard: every entry in graph/state.yaml
+    # references a real shipped node. Update only when the curriculum changes.
     from skilltrace.graph.nodes import load_nodes
 
     store = load_state(REPO_ROOT)

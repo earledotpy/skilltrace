@@ -14,6 +14,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from _builders import write_node as _write_node
+
 from skilltrace import cli
 from skilltrace.events import load_events
 
@@ -24,20 +26,6 @@ def _write_yaml(root: Path, relpath: str, doc: dict) -> None:
     path = root / relpath
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
-
-
-def _write_node(root: Path, node_id: str, track: str = "foundational") -> None:
-    frontmatter = {
-        "id": node_id,
-        "title": f"Title for {node_id}",
-        "summary": f"Summary for {node_id}.",
-        "domain": "testing",
-        "track": track,
-    }
-    block = yaml.safe_dump(frontmatter, sort_keys=False)
-    path = root / "graph" / "nodes" / f"{node_id}.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"---\n{block}---\n\n# {node_id}\n", encoding="utf-8")
 
 
 @pytest.fixture

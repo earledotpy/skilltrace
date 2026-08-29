@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
 import yaml
 
 from skilltrace import cli
@@ -82,21 +83,20 @@ def test_close_alias_behaves_like_session_close_and_audits_canonical(exec_repo):
     assert [e["command"] for e in load_events(root)] == ["start", "session close"]
 
 
-def test_close_refuses_an_end_before_the_start(exec_repo):
+@pytest.mark.parametrize(
+    "hours_offset",
+    [-1, 2],
+    ids=["end_before_start", "end_in_future"],
+)
+def test_close_refuses_an_out_of_range_end(exec_repo, hours_offset):
+    """Both an end before the start and an end in the future are refused.
+
+    The session stays open; no event is logged for the refusal.
+    """
     root = exec_repo({NODE: "available"})
     assert cli.run(["start", NODE], root=root) == 0
 
-    end = _iso(datetime.now(timezone.utc) - timedelta(hours=1))
-    rc = cli.run(["session", "close", "--end", end], root=root)
-    assert rc != 0
-    assert load_sessions(root)[0].status == "open"
-
-
-def test_close_refuses_an_end_in_the_future(exec_repo):
-    root = exec_repo({NODE: "available"})
-    assert cli.run(["start", NODE], root=root) == 0
-
-    end = _iso(datetime.now(timezone.utc) + timedelta(hours=2))
+    end = _iso(datetime.now(timezone.utc) + timedelta(hours=hours_offset))
     rc = cli.run(["session", "close", "--end", end], root=root)
     assert rc != 0
     assert load_sessions(root)[0].status == "open"

@@ -7,6 +7,8 @@ core in isolation: which stored state + eligibility verdict lead to a written
 
 from __future__ import annotations
 
+import pytest
+
 from skilltrace.evidence.eligibility import EligibilityResult, SpecEligibility
 from skilltrace.evidence.passing import plan_pass
 
@@ -37,21 +39,18 @@ def _not_eligible(node_id: str = NODE) -> EligibilityResult:
 # --- Proceed cases ----------------------------------------------------------
 
 
-def test_available_and_eligible_proceeds():
-    outcome = plan_pass(NODE, current_state="available", eligibility=_eligible())
+@pytest.mark.parametrize("current_state", ["available", "active"])
+def test_eligible_proceeds(current_state):
+    """Both `available` and `active` are legal pre-pass states when eligible.
+
+    `active -> passed` is a forward move; `active` is not a precondition for
+    passing, but it is also not a blocker.
+    """
+    outcome = plan_pass(NODE, current_state=current_state, eligibility=_eligible())
     assert outcome.proceed is True
     assert outcome.exit_code == 0
     assert outcome.records_touched == [NODE]
     assert not outcome.errors
-
-
-def test_active_and_eligible_proceeds_skipping_no_step():
-    # `active -> passed` is a legal forward move; `active` is not a precondition
-    # for passing, but it is also not a blocker.
-    outcome = plan_pass(NODE, current_state="active", eligibility=_eligible())
-    assert outcome.proceed is True
-    assert outcome.exit_code == 0
-    assert outcome.records_touched == [NODE]
 
 
 # --- Refusals ---------------------------------------------------------------
@@ -74,15 +73,10 @@ def test_not_eligible_refuses_and_surfaces_reasons():
     assert any("below minimum" in e for e in outcome.errors)
 
 
-def test_already_passed_refuses():
-    outcome = plan_pass(NODE, current_state="passed", eligibility=_eligible())
+@pytest.mark.parametrize("current_state", ["passed", "mastered"])
+def test_already_terminal_refuses(current_state):
+    """`passed` and `mastered` are terminal; re-asserting them is a refusal."""
+    outcome = plan_pass(NODE, current_state=current_state, eligibility=_eligible())
     assert outcome.proceed is False
     assert outcome.exit_code == 2
-    assert any("passed" in e for e in outcome.errors)
-
-
-def test_already_mastered_refuses():
-    outcome = plan_pass(NODE, current_state="mastered", eligibility=_eligible())
-    assert outcome.proceed is False
-    assert outcome.exit_code == 2
-    assert any("mastered" in e for e in outcome.errors)
+    assert any(current_state in e for e in outcome.errors)

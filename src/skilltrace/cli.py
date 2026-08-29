@@ -18,7 +18,9 @@ same `main`.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 from pathlib import Path
+from typing import Callable
 
 from .commands import register_all
 from .dispatch import Context, Registry, dispatch
@@ -554,10 +556,17 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run(argv: list[str] | None = None, root: Path | str | None = None) -> int:
+def run(
+    argv: list[str] | None = None,
+    root: Path | str | None = None,
+    *,
+    clock: Callable[[], datetime] | None = None,
+) -> int:
     """Parse `argv`, resolve the root, and dispatch. Returns an exit code.
 
     `root` (or `--root`) overrides auto-detection; tests pass a temp copy.
+    `clock` is an optional wall-clock override threaded through to handlers
+    via `Context`; production callers leave it at the default.
     """
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -573,7 +582,7 @@ def run(argv: list[str] | None = None, root: Path | str | None = None) -> int:
     if command is None:  # pragma: no cover - guarded by required subparsers
         parser.error("no command selected")
 
-    return dispatch(command, Context(root=resolved_root, args=args))
+    return dispatch(command, Context(root=resolved_root, args=args, clock=clock))
 
 
 def main() -> None:

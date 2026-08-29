@@ -27,6 +27,8 @@ from typing import Any
 import pytest
 import yaml
 
+from _builders import write_node as _write_node_impl
+
 def _apply(
     base: dict[str, Any],
     overrides: dict[str, Any] | None,
@@ -187,21 +189,7 @@ class EvidenceBuilder:
     # --- Persist ------------------------------------------------------------
 
     def _write_node(self, node_id: str) -> None:
-        frontmatter = {
-            "id": node_id,
-            "title": f"Title for {node_id}",
-            "summary": f"Summary for {node_id}.",
-            "domain": "testing",
-            "track": "foundational",
-            "micro_session_fit": {
-                "can_fit_15_min": True,
-                "can_fit_30_min": True,
-                "requires_long_block": False,
-            },
-        }
-        block = yaml.safe_dump(frontmatter, sort_keys=False)
-        text = f"---\n{block}---\n\n# {node_id}\n"
-        (self.root / "graph" / "nodes" / f"{node_id}.md").write_text(text, encoding="utf-8")
+        _write_node_impl(self.root, node_id)
 
     def _write_list(self, relpath: str, top_key: str, items: list[Any]) -> None:
         if relpath in self._raw:
