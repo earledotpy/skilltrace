@@ -71,6 +71,15 @@ def test_lenient_degrades_evidence_to_empty_on_error(tmp_path: Path):
     assert view.errors == []  # lenient never collects
 
 
+def test_lenient_propagates_unexpected_optional_loader_exception(tmp_path: Path):
+    def boom(_root: Path):
+        raise RuntimeError("optional boom")
+
+    loaders = Loaders(load_specs=boom)
+    with pytest.raises(RuntimeError, match="optional boom"):
+        load_context_lenient(tmp_path, loaders=loaders)
+
+
 def test_lenient_degrades_execution_and_resources_to_empty(tmp_path: Path):
     def failing_sessions(_root: Path):
         raise ExecutionLoadError("sessions boom")

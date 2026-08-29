@@ -187,6 +187,15 @@ def test_home_pressure_excerpts_escape_blocker_text(repo):
     assert "&lt;img src=x" in body
 
 
+def test_home_surfaces_unexpected_queue_render_error(repo, monkeypatch):
+    def boom(*args, **kwargs):
+        raise RuntimeError("queue boom")
+
+    monkeypatch.setattr(views, "derive_next", boom)
+    with pytest.raises(RuntimeError, match="queue boom"):
+        views.home_body(repo)
+
+
 # --- GET /next — flags mirror the CLI --------------------------------------------
 
 

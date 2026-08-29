@@ -610,11 +610,8 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
     )
 
     # Rec queue below grid — mirrors CLI `next --minutes 60`.
-    try:
-        queue_model = derive_next(view, Path(root), minutes=60, limit=5)
-        queue_html = _queue_list_html(queue_model, view)
-    except Exception:  # pragma: no cover — lenient join already fresh
-        queue_html = ""
+    queue_model = derive_next(view, Path(root), minutes=60, limit=5)
+    queue_html = _queue_list_html(queue_model, view)
 
     breadcrumb = '<div class="breadcrumb"><a href="/">Today</a></div>\n'
 
