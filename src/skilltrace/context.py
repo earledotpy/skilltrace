@@ -162,15 +162,23 @@ class PolicyAccess:
         return value if isinstance(value, dict) else {}
 
     @staticmethod
+    def _float_value(value: object) -> float | None:
+        if isinstance(value, bool) or value is None:
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
     def _weights(raw: object) -> dict[str, float]:
         if not isinstance(raw, dict):
             return {}
         weights: dict[str, float] = {}
         for name, value in raw.items():
-            try:
-                weights[str(name)] = float(value)
-            except (TypeError, ValueError):
-                continue
+            numeric = PolicyAccess._float_value(value)
+            if numeric is not None:
+                weights[str(name)] = numeric
         return weights
 
     @property
@@ -232,7 +240,9 @@ class PolicyAccess:
     def session_templates(self) -> set[str]:
         document = self._document("workload.yaml")
         values = document.get("session_templates")
-        return {str(name) for name in values} if isinstance(values, dict) else set()
+        if not isinstance(values, dict):
+            return set()
+        return {str(name) for name in values if not isinstance(name, bool)}
 
     @property
     def cadence(self) -> Cadence:
@@ -241,13 +251,21 @@ class PolicyAccess:
             schedule_reviews_after_pass=document.get("schedule_reviews_after_pass") is True
         )
         for raw in document.get("intervals") or []:
-            if not isinstance(raw, dict) or not isinstance(raw.get("days_after_pass"), int):
+            if not isinstance(raw, dict):
                 continue
+            day_count = raw.get("days_after_pass")
+            if not isinstance(day_count, int) or isinstance(day_count, bool):
+                continue
+            expected_minutes = raw.get("expected_minutes")
+            if isinstance(expected_minutes, bool):
+                expected_minutes = None
             cadence.intervals.append(
                 CadenceInterval(
-                    label=str(raw.get("label", f"day_{raw['days_after_pass']}")),
-                    days_after_pass=raw["days_after_pass"],
-                    expected_minutes=raw.get("expected_minutes"),
+                    label=str(raw.get("label", f"day_{day_count}")),
+                    days_after_pass=day_count,
+                    expected_minutes=(
+                        expected_minutes if isinstance(expected_minutes, int) else None
+                    ),
                 )
             )
         return cadence
@@ -256,10 +274,12 @@ class PolicyAccess:
     def mastery(self) -> MasteryValues:
         document = self._document("mastery_promotion.yaml")
         values = MasteryValues()
-        if isinstance(document.get("min_accepted_evidence"), int):
-            values.min_accepted_evidence = document["min_accepted_evidence"]
-        if isinstance(document.get("min_days_pass_to_review"), int):
-            values.min_days_pass_to_review = document["min_days_pass_to_review"]
+        min_accepted = document.get("min_accepted_evidence")
+        if isinstance(min_accepted, int) and not isinstance(min_accepted, bool):
+            values.min_accepted_evidence = min_accepted
+        min_days = document.get("min_days_pass_to_review")
+        if isinstance(min_days, int) and not isinstance(min_days, bool):
+            values.min_days_pass_to_review = min_days
         return values
 
 

@@ -14,6 +14,7 @@ from skilltrace.execution._store import ExecutionLoadError
 from skilltrace.graph.nodes import NodeLoadError, SkillNode
 from skilltrace.graph.state import ProgressStore, ProgressStoreError
 from skilltrace.resources.registry import ResourceLoadError
+from skilltrace.resources.status import DEFAULT_STALE_AFTER_DAYS
 
 
 # -- helpers --
@@ -195,6 +196,50 @@ def test_policy_access_is_typed_and_snapshot_local(tmp_path: Path):
     assert view.policy.mastery.min_accepted_evidence == 2
     assert view.policy.mastery.min_days_pass_to_review == 5
     assert view.policy.retention is not None
+
+
+def test_policy_access_ignores_boolean_malformed_values(tmp_path: Path):
+    loaders = Loaders(
+        load_nodes=lambda _r: [],
+        load_edges=lambda _r: [],
+        load_state=lambda _r: ProgressStore(),
+        load_policies=lambda _r: {
+            "recommendation.yaml": {
+                "track_weights": {"core": True, "oops": "2.0"},
+                "factor_weights": {"quality": False, "impact": 3.5},
+            },
+            "remediation.yaml": {
+                "failed_attempt_threshold": True,
+                "suggestion_defaults": {
+                    "suggested_minutes": False,
+                    "due_in_days": True,
+                },
+            },
+            "review_cadence.yaml": {
+                "missed_review_grace_days": True,
+                "schedule_reviews_after_pass": True,
+                "intervals": [{"days_after_pass": True, "label": "bad"}],
+            },
+            "workload.yaml": {"session_templates": {True: {"expected_minutes": 30}}},
+            "mastery_promotion.yaml": {
+                "min_accepted_evidence": False,
+                "min_days_pass_to_review": True,
+            },
+            "resource_verification.yaml": {"stale_after_days": False},
+        },
+    )
+    view = load_context_lenient(tmp_path, loaders=loaders)
+    assert view.policy.track_weights == {"oops": 2.0}
+    assert view.policy.factor_weights == {"impact": 3.5}
+    assert view.policy.failed_attempt_threshold is None
+    assert view.policy.remediation_suggestion_defaults == (None, None)
+    assert view.policy.review_grace_days is None
+    assert view.policy.session_templates == set()
+    assert view.policy.cadence.schedule_reviews_after_pass is True
+    assert view.policy.cadence.intervals == []
+    assert view.policy.mastery.min_accepted_evidence == 1
+    assert view.policy.mastery.min_days_pass_to_review == 3
+    assert view.policy.resource_stale_after_days == DEFAULT_STALE_AFTER_DAYS
 
 
 # -- derived indexes --
