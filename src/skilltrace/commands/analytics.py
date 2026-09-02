@@ -16,8 +16,6 @@ than `min_sessions_for_full_data`, output is preceded by an
 `[advisory] Limited data — ...` line (render.advisory()).
 
 Read-only: no audit events emitted by this command family (Kind.READ_ONLY).
-Advisory integration (`analytics_warnings()`) is deferred to T-Build-Advisory
-(#129); the warning block is absent here.
 """
 
 from __future__ import annotations
@@ -39,6 +37,7 @@ from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
+from ..policy.advisory import analytics_warnings
 
 # ---------------------------------------------------------------------------
 # Policy helpers
@@ -246,6 +245,9 @@ def analytics_umbrella(ctx: Context) -> CommandResult:
 
     if view.is_limited:
         lines.append(render.advisory(_limited_advisory(view)))
+
+    for warning in analytics_warnings(ctx.root, view):
+        lines.append(render.advisory(warning))
 
     lines += _render_velocity(view.velocity, view.group_by)
     lines += _render_blockers(view.blockers, view.group_by)

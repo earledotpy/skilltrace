@@ -11,9 +11,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from ..execution.reviews import Review
 from .loading import PolicyLoadError, load_policy_doc
+
+if TYPE_CHECKING:
+    from ..analytics.models import AnalyticsView
 
 
 @dataclass
@@ -98,4 +102,75 @@ def start_warnings(
             f"{open_remediations} open remediation actions exceed the advisory "
             f"maximum of {max_open_remediations}."
         )
+    return warnings
+
+
+
+def analytics_warnings(root: "Path | str", view: "AnalyticsView") -> list[str]:
+    """Return advisory warning strings derived from an AnalyticsView.
+
+    Reads the four thresholds locked by G3 from ``policy/analytics.yaml``
+    (``advisory_thresholds`` sub-key).  Returns ``[]`` on ``PolicyLoadError``
+    — an unreadable policy file simply stands down (same pattern as
+    ``load_workload_limits``).
+
+    Threshold semantics:
+    - ``velocity_below_target_per_week``   — lower bound (warn when avg < value)
+    - ``review_completion_below_target``   — lower bound (warn when rate < value)
+    - ``evidence_coverage_below_target``   — lower bound (warn when rate < value)
+    - ``blockers_active_threshold``        — upper bound (warn when count >= value)
+
+    Threshold comparison lives here; derivations (``derive.py``) stay pure
+    of policy (G6).  This function does not call ``start_warnings()`` or
+    any other advisory function — the two coexist independently (G6: "two
+    functions, no unifying facade yet").
+    """
+    try:
+        doc = load_policy_doc(root, "analytics.yaml")
+    except PolicyLoadError:
+        return []
+
+    thresholds = doc.get("advisory_thresholds") or {}
+    warnings: list[str] = []
+
+    # --- Velocity: average sessions per week across all weekly buckets -------
+    velocity_target = thresholds.get("velocity_below_target_per_week", 2)
+    weeks = view.velocity.weeks
+    if weeks:
+        avg_sessions = sum(w.session_count for w in weeks) / len(weeks)
+        if avg_sessions < velocity_target:
+            warnings.append(
+                f"Study velocity is below target: "
+                f"{avg_sessions:.1f} sessions/week average "
+                f"(target: {velocity_target})."
+            )
+
+    # --- Review completion rate -----------------------------------------------
+    review_target = thresholds.get("review_completion_below_target", 0.80)
+    if view.reviews.completion_rate < review_target:
+        pct_actual = int(view.reviews.completion_rate * 100)
+        pct_target = int(review_target * 100)
+        warnings.append(
+            f"Review completion is below target: "
+            f"{pct_actual}% (target: {pct_target}%)."
+        )
+
+    # --- Evidence coverage rate -----------------------------------------------
+    evidence_target = thresholds.get("evidence_coverage_below_target", 0.60)
+    if view.evidence.coverage_rate < evidence_target:
+        pct_actual = int(view.evidence.coverage_rate * 100)
+        pct_target = int(evidence_target * 100)
+        warnings.append(
+            f"Evidence coverage is below target: "
+            f"{pct_actual}% (target: {pct_target}%)."
+        )
+
+    # --- Active blockers ------------------------------------------------------
+    blockers_threshold = thresholds.get("blockers_active_threshold", 3)
+    if view.blockers.open_count >= blockers_threshold:
+        warnings.append(
+            f"Active blocker spike: {view.blockers.open_count} open blockers "
+            f"(threshold: {blockers_threshold})."
+        )
+
     return warnings

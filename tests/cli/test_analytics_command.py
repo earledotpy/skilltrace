@@ -134,8 +134,8 @@ def test_analytics_umbrella_with_sessions_no_limited_advisory(tmp_path, capsys):
     rc = cli.run(["analytics"], root=root)
     assert rc == 0
     out = capsys.readouterr().out
-    # 3 sessions in window >= min_sessions_for_full_data=3, so no advisory
-    assert "[advisory]" not in out
+    # 3 sessions in window >= min_sessions_for_full_data=3, so no "Limited data" advisory
+    assert "Limited data" not in out
 
 
 def test_analytics_umbrella_below_threshold_shows_advisory(tmp_path, capsys):
@@ -309,3 +309,51 @@ def test_analytics_blockers_with_open_blocker(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "BLOCKERS" in out
     assert "1" in out  # open_count
+
+
+
+# ---------------------------------------------------------------------------
+# analytics_warnings() surface — warning block renders when threshold tripped
+# (T-TestArch D5, issue #129)
+# ---------------------------------------------------------------------------
+
+
+def test_analytics_umbrella_warning_block_renders_when_blockers_spike(tmp_path, capsys):
+    """analytics_warnings() block appears when open_count >= blockers_active_threshold (3)."""
+    root = _seed_with_sessions(tmp_path)
+    blockers_doc = {
+        "blockers": [
+            {
+                "id": f"blk.math.arithmetic.order_operations_01.{n:03d}",
+                "node_id": "math.arithmetic.order_operations_01",
+                "status": "open",
+                "description": f"stuck on step {n}",
+                "created_at": "2026-08-01T10:00:00Z",
+            }
+            for n in range(1, 4)  # 3 open blockers >= threshold
+        ]
+    }
+    _write_yaml(root, "execution/blockers.yaml", blockers_doc)
+    rc = cli.run(["analytics"], root=root)
+    assert rc == 0
+    out = capsys.readouterr().out
+    # At least one [advisory] line must mention blockers
+    advisory_lines = [ln for ln in out.splitlines() if ln.startswith("[advisory]")]
+    assert any("blocker" in ln.lower() for ln in advisory_lines), (
+        f"Expected a blocker advisory line; got advisory lines: {advisory_lines}"
+    )
+
+
+def test_analytics_umbrella_no_warning_block_when_all_healthy(tmp_path, capsys):
+    """analytics command exits 0 and no Limited-data advisory with sufficient sessions."""
+    root = _seed_with_sessions(tmp_path)
+    rc = cli.run(["analytics"], root=root)
+    assert rc == 0
+    out = capsys.readouterr().out
+    # The limited-data advisory is absent when sessions >= min_sessions threshold
+    assert "Limited data" not in out
+    # All four theme headers are still present regardless of any advisory warnings
+    assert "VELOCITY" in out
+    assert "BLOCKERS" in out
+    assert "REVIEWS" in out
+    assert "EVIDENCE" in out

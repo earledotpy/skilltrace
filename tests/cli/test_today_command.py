@@ -177,3 +177,144 @@ def test_today_with_no_focus_suggests_next(today_repo, capsys):
     assert rc == 0
     assert "nothing stands out" in out
     assert "skilltrace next" in out
+
+
+
+# ---------------------------------------------------------------------------
+# analytics_warnings() pressure paragraph extension — at most 2 bits
+# (T-TestArch D5, issue #129)
+# ---------------------------------------------------------------------------
+
+
+def test_today_analytics_warning_appears_in_pressure_paragraph(today_repo, capsys):
+    """When blockers spike (>= 3), an analytics bit surfaces in the today brief."""
+    from datetime import datetime, timezone
+
+    # Plant 3 open blockers to trip the blockers_active_threshold
+    _write_yaml(
+        today_repo,
+        "execution/blockers.yaml",
+        {
+            "blockers": [
+                {
+                    "id": f"blk.testing.today.subject_01.{n:03d}",
+                    "node_id": "testing.today.subject_01",
+                    "status": "open",
+                    "description": f"stuck on step {n}",
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+                for n in range(1, 4)  # 3 open blockers >= threshold 3
+            ]
+        },
+    )
+    # Seed enough sessions so velocity isn't the only warning (keeps the test
+    # focused on the blocker spike path)
+    _write_yaml(
+        today_repo,
+        "execution/sessions.yaml",
+        {
+            "sessions": [
+                {
+                    "id": f"ses.2026-08-{15 + n}.001",
+                    "status": "completed",
+                    "started_at": f"2026-08-{15 + n}T10:00:00Z",
+                    "ended_at": f"2026-08-{15 + n}T11:00:00Z",
+                }
+                for n in range(3)
+            ]
+        },
+    )
+    _write_yaml(
+        today_repo,
+        "execution/session_work.yaml",
+        {
+            "session_work": [
+                {
+                    "id": f"wrk.{n:03d}",
+                    "session_id": f"ses.2026-08-{15 + n}.001",
+                    "node_id": "testing.today.subject_01",
+                    "created_at": f"2026-08-{15 + n}T10:30:00Z",
+                    "minutes": 30,
+                }
+                for n in range(3)
+            ]
+        },
+    )
+    rc = cli.run(["today"], root=today_repo)
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "blocker" in out.lower()
+
+
+def test_today_analytics_bits_capped_at_two(today_repo, capsys):
+    """Even when all four analytics thresholds fire, at most 2 analytics bits
+    appear in the today pressure paragraph (cap per G6 resolution)."""
+    from datetime import datetime, timezone
+
+    # Trip all four thresholds:
+    # - velocity: no sessions → 0 avg/week < 2
+    # - reviews: 0 completion rate (no completed reviews, 1 scheduled) < 0.80
+    # - evidence: coverage 0% (no accepted records, specs exist) < 0.60
+    # - blockers: 3 open >= 3
+    _write_yaml(
+        today_repo,
+        "execution/blockers.yaml",
+        {
+            "blockers": [
+                {
+                    "id": f"blk.testing.today.subject_01.{n:03d}",
+                    "node_id": "testing.today.subject_01",
+                    "status": "open",
+                    "description": f"stuck {n}",
+                    "created_at": "2026-08-01T10:00:00Z",
+                }
+                for n in range(1, 4)
+            ]
+        },
+    )
+    from datetime import date, timedelta
+    overdue_date = (date.today() - timedelta(days=5)).isoformat()
+    _write_yaml(
+        today_repo,
+        "execution/reviews.yaml",
+        {
+            "reviews": [
+                {
+                    "id": "rev.testing.today.subject_01.001",
+                    "node_id": "testing.today.subject_01",
+                    "status": "scheduled",
+                    "scheduled_for": overdue_date,
+                    "created_at": "2026-07-01T10:00:00Z",
+                }
+            ]
+        },
+    )
+    # Add a required spec so evidence coverage can be below target
+    _write_yaml(
+        today_repo,
+        "evidence/artifact_specs.yaml",
+        {
+            "artifact_specs": [
+                {
+                    "id": "spec.testing.today.subject_01.main",
+                    "node_id": "testing.today.subject_01",
+                    "title": "Main artifact",
+                    "artifact_kind": "problem_set",
+                    "required": True,
+                    "minimum_count": 1,
+                }
+            ]
+        },
+    )
+
+    rc = cli.run(["today"], root=today_repo)
+    out = capsys.readouterr().out
+    assert rc == 0
+
+    # Count the distinct analytics-warning phrases in the single pressure sentence.
+    # The sentence is built from pressure_bits joined with " and "; analytics_bits
+    # are sliced to [:2] before being appended. We verify the total advisory content
+    # does not exceed the cap by counting known analytics warning keywords.
+    analytics_keywords = ["velocity", "review completion", "evidence coverage", "blocker spike"]
+    hits = sum(1 for kw in analytics_keywords if kw in out.lower())
+    assert hits <= 2, f"Expected at most 2 analytics bits in today output, found {hits}: {out}"

@@ -28,6 +28,7 @@ from typing import Any
 import yaml
 
 from .. import render
+from ..analytics.derive import derive_analytics
 from ..context import load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
@@ -38,6 +39,7 @@ from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError, SkillNode
 from ..graph.recommendation import recommend
 from ..graph.state import ProgressStoreError
+from ..policy.advisory import analytics_warnings
 from ..policy.remediation_edges import active_remediations
 from ..resources.registry import LearningResource
 
@@ -100,6 +102,7 @@ def _study_day_brief(
     overdue: list,  # list[Review]
     open_blockers: list[Blocker],
     titles: dict[str, str],
+    analytics_bits: list[str] | None = None,
 ) -> str:
     """One conversational paragraph of the day's study state."""
     sentences: list[str] = []
@@ -131,6 +134,11 @@ def _study_day_brief(
         extra = "" if len(open_blockers) <= 2 else f" (+{len(open_blockers) - 2} more)"
         noun = "blocker" if len(open_blockers) == 1 else "blockers"
         pressure_bits.append(f"{len(open_blockers)} open {noun} ({', '.join(names)}{extra})")
+
+    # Analytics-derived pressure bits: at most 2, appended after the
+    # execution-layer pressure (overdue reviews / open blockers).
+    for bit in (analytics_bits or [])[:2]:
+        pressure_bits.append(bit)
 
     if pressure_bits:
         sentences.append(
@@ -302,6 +310,28 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
     ]
     open_blocker_list = [b for b in blockers if b.status == "open"]
 
+    # Analytics-derived pressure: derive the view with policy defaults, call
+    # analytics_warnings(), cap at 2 bits so the brief doesn't become a nag screen.
+    _analytics_policy = joined.policy.analytics if joined.policy.analytics else {}
+    _window_days = _analytics_policy.get("default_window_days", 30)
+    _min_sessions = _analytics_policy.get("min_sessions_for_full_data", 3)
+    _group_by = _analytics_policy.get("default_group_by", "prefix")
+    if _group_by not in ("prefix", "track"):
+        _group_by = "prefix"
+    try:
+        _analytics_view = derive_analytics(
+            joined,
+            today=today_dt,
+            window_days=int(_window_days) if isinstance(_window_days, (int, float)) else 30,
+            group_by=_group_by,
+            state_filter=[],
+            min_sessions_for_full_data=int(_min_sessions) if isinstance(_min_sessions, (int, float)) else 3,
+        )
+        _raw_analytics_bits = analytics_warnings(root, _analytics_view)
+    except Exception:  # noqa: BLE001 — advisory never raises to the surface
+        _raw_analytics_bits = []
+    analytics_bits = _raw_analytics_bits[:2]
+
     # Build the Mentor view.
     lines: list[str] = []
     lines.append(render.section_kicker("Today"))
@@ -314,6 +344,7 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
                 overdue=overdue,
                 open_blockers=open_blocker_list,
                 titles=titles,
+                analytics_bits=analytics_bits,
             )
         )
     )
