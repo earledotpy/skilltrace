@@ -518,6 +518,67 @@ def build_parser() -> argparse.ArgumentParser:
     )
     check_parser.set_defaults(_command_name="check-automation")
 
+    # analytics <command> — v1.6 event-log analytics (issue #128).
+    # `analytics` with no subcommand renders the umbrella (all four themes);
+    # per-theme subcommands share the same shared flags.
+    analytics_parser = subcommands.add_parser(
+        "analytics", help="Event-log analytics (velocity, blockers, reviews, evidence)."
+    )
+    analytics_parser.set_defaults(_command_name="analytics")
+    analytics_commands = analytics_parser.add_subparsers(
+        dest="_analytics_cmd", metavar="<command>"
+    )
+    analytics_commands.required = False  # bare `analytics` is the umbrella
+
+    def _add_analytics_shared_arguments(p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--days",
+            type=int,
+            default=None,
+            metavar="N",
+            help="Rolling window in days (default from policy/analytics.yaml).",
+        )
+        p.add_argument(
+            "--group-by",
+            default=None,
+            choices=["prefix", "track"],
+            metavar="<prefix|track>",
+            help="Grouping dimension (default from policy/analytics.yaml).",
+        )
+        p.add_argument(
+            "--state",
+            action="append",
+            default=None,
+            metavar="STATE",
+            help="Filter by node state (repeatable; OR semantics): active, passed, mastered, locked, available.",
+        )
+
+    _add_analytics_shared_arguments(analytics_parser)
+
+    analytics_velocity_parser = analytics_commands.add_parser(
+        "velocity", help="Study-velocity analytics: session cadence and node progress."
+    )
+    _add_analytics_shared_arguments(analytics_velocity_parser)
+    analytics_velocity_parser.set_defaults(_command_name="analytics velocity")
+
+    analytics_blockers_parser = analytics_commands.add_parser(
+        "blockers", help="Blocker analytics: active stuckness grouped by domain or track."
+    )
+    _add_analytics_shared_arguments(analytics_blockers_parser)
+    analytics_blockers_parser.set_defaults(_command_name="analytics blockers")
+
+    analytics_reviews_parser = analytics_commands.add_parser(
+        "reviews", help="Review analytics: completion rate and overdue highlighting."
+    )
+    _add_analytics_shared_arguments(analytics_reviews_parser)
+    analytics_reviews_parser.set_defaults(_command_name="analytics reviews")
+
+    analytics_evidence_parser = analytics_commands.add_parser(
+        "evidence", help="Evidence-coverage analytics: per-node gap analysis."
+    )
+    _add_analytics_shared_arguments(analytics_evidence_parser)
+    analytics_evidence_parser.set_defaults(_command_name="analytics evidence")
+
     # retention <command> — Tier 2 retention overlay (read-only).
     retention_parser = subcommands.add_parser(
         "retention", help="Retention model commands (status)."

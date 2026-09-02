@@ -271,6 +271,11 @@ class PolicyAccess:
         return cadence
 
     @property
+    def analytics(self) -> dict:
+        """The analytics policy document (advisory only — never blocks commands)."""
+        return self._document("analytics.yaml")
+
+    @property
     def mastery(self) -> MasteryValues:
         document = self._document("mastery_promotion.yaml")
         values = MasteryValues()

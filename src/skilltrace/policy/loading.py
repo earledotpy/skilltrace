@@ -16,6 +16,7 @@ _POLICY_DIR = "policy"
 
 # filename -> required top-level key. The seed documents of the layer.
 POLICY_FILES: dict[str, str] = {
+    "analytics.yaml": "analytics_policy",
     "automation_boundary.yaml": "automation_boundary_policy",
     "mastery_promotion.yaml": "mastery_promotion_policy",
     "recommendation.yaml": "recommendation_policy",

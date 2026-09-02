@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from ..dispatch import Registry
 from . import (
+    analytics,
     attempt,
     backup,
     blocker,
@@ -71,6 +72,7 @@ def register_all(registry: Registry) -> Registry:
     export.register(registry)
     backup.register(registry)
     retention.register(registry)
+    analytics.register(registry)
     # Tier 1 local web UI (ADR 0006): READ_ONLY — serve appends no event; the
     # `ui` alias shares this registration via its `_command_name`.
     web_server.register(registry)

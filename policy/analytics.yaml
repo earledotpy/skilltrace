@@ -1,0 +1,21 @@
+analytics_policy:
+  id: policy.analytics.default_v1_6
+  status: active
+  title: Event-log analytics
+  description: >
+    Read-only operational analytics over the four themes: study velocity,
+    blockers by domain, review completion, and evidence coverage.
+    Rolling windows default from this file; per-metric advisory thresholds
+    drive the analytics_warnings() surface. Advisory only — never blocks
+    a human command, never alters state.
+  default_window_days: 30
+  default_group_by: prefix
+  min_sessions_for_full_data: 3
+  sparkline_bucket: weekly
+  advisory_thresholds:
+    velocity_below_target_per_week: 2
+    review_completion_below_target: 0.80
+    evidence_coverage_below_target: 0.60
+    blockers_active_threshold: 3
+  created_at: 2026-09-01
+  updated_at: 2026-09-01
