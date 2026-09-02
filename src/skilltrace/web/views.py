@@ -50,12 +50,15 @@ from ..commands.recommend import derive_next
 from ..commands.today import derive_today
 from ..context import JoinedView, load_context_lenient
 from ..dispatch import Context, dispatch
+from ..analytics.derive import derive_analytics
+from ..analytics.sparkline import sparkline_svg
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
 from ..execution.sessions import open_session
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
 from ..policy.mastery import compute_mastery_eligibility
+from ..policy.advisory import analytics_warnings
 from ..resources.status import VerificationStatus, derive_status
 
 
@@ -120,6 +123,13 @@ _STYLE = """
   @media(max-width:900px){.grid-two{grid-template-columns:1fr}}
   .grid-two .focus-sub{display:grid; grid-template-columns:1fr 1fr; gap:12px}
   @media(max-width:900px){.grid-two .focus-sub{grid-template-columns:1fr}}
+  .analytics-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media(max-width:900px){.analytics-grid{grid-template-columns:1fr}}
+  .analytics-card{margin:0}
+  .analytics-card summary{font-size:1.05rem}
+  .analytics-card svg{display:block; margin:8px 0}
+  .analytics-controls{display:flex; gap:12px; flex-wrap:wrap; align-items:end}
+  .analytics-controls .form-row{min-width:10rem}
   .rail{position:sticky; top:68px; align-self:start}
   .split{display:grid; grid-template-columns:360px 1fr; gap:14px}
   @media(max-width:900px){.split{grid-template-columns:1fr} .rail{position:static}}
@@ -183,6 +193,7 @@ _NAV = (
     '<a href="/">Today</a>'
     '<a href="/next">Next</a>'
     '<a href="/health">Health</a>'
+    '<a href="/analytics">Analytics</a>'
     '<form class="jump" method="get" action="/nodes/jump">'
     '<input type="text" name="node_id" placeholder="skill id — e.g. data.pandas.dataframe_basics_01" aria-label="jump to skill" size="32">'
     '<button type="submit">Go</button>'
@@ -1213,6 +1224,163 @@ def health_body(root) -> tuple[str, str, int]:
     return "Health", body, 200
 
 
+# --- Analytics dashboard (G5) ---------------------------------------------------
+
+
+def _analytics_view(root: Path, query: dict) -> tuple[object | None, tuple[str, str, int] | None]:
+    view, failure = _fresh_join(root)
+    if view is None:
+        return None, ("Error", failure[0], failure[1])
+    policy = view.policy.analytics
+    default_days = policy.get("default_window_days", 30)
+    if not isinstance(default_days, int) or default_days <= 0:
+        default_days = 30
+    raw_days = (query.get("days") or [str(default_days)])[0]
+    try:
+        days = int(raw_days)
+    except (TypeError, ValueError):
+        body, status = _status_page(400, "Analytics days must be a positive integer.")
+        return None, ("Bad request", body, status)
+    if days <= 0:
+        body, status = _status_page(400, "Analytics days must be a positive integer.")
+        return None, ("Bad request", body, status)
+    group_by = (query.get("group-by") or [policy.get("default_group_by", "prefix")])[0]
+    if group_by not in {"prefix", "track"}:
+        body, status = _status_page(400, "Analytics group-by must be prefix or track.")
+        return None, ("Bad request", body, status)
+    min_sessions = policy.get("min_sessions_for_full_data", 3)
+    if not isinstance(min_sessions, int) or min_sessions <= 0:
+        min_sessions = 3
+    return (
+        derive_analytics(
+            view,
+            today=datetime.now(timezone.utc).date(),
+            window_days=days,
+            group_by=group_by,
+            state_filter=[],
+            min_sessions_for_full_data=min_sessions,
+        ),
+        None,
+    )
+
+
+def _analytics_export_form(days: int, group_by: str, theme: str) -> str:
+    return (
+        '<form method="post" action="/analytics/export" class="actions">'
+        f'<input type="hidden" name="theme" value="{_esc(theme)}">'
+        f'<input type="hidden" name="days" value="{days}">'
+        f'<input type="hidden" name="group_by" value="{_esc(group_by)}">'
+        '<button class="btn secondary" type="submit" name="format" value="md">Export MD</button>'
+        '<button class="btn secondary" type="submit" name="format" value="html">Export HTML</button>'
+        '<button class="btn secondary" type="submit" name="format" value="json">Export JSON</button>'
+        "</form>"
+    )
+
+
+def _analytics_card(
+    title: str, summary: str, derivation: str, svg: str, detail: str, view, theme: str
+) -> str:
+    return (
+        f'<details open class="card analytics-card"><summary>{_esc(title)}</summary>'
+        f'<p class="big">{_esc(summary)}</p><p class="mut">{_esc(derivation)}</p>{svg}{detail}'
+        f"{_analytics_export_form(view.window_days, view.group_by, theme)}"
+        "</details>"
+    )
+
+
+def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
+    """GET `/analytics` — four read-only analytics themes."""
+    query = query or {}
+    model, failure = _analytics_view(Path(root), query)
+    if model is None:
+        return failure
+
+    warnings = analytics_warnings(Path(root), model)
+    overdue = (
+        f'<p class="banner warning">Overdue reviews: {model.reviews.overdue_count} '
+        "scheduled review(s) need attention.</p>"
+        if model.reviews.overdue_count
+        else ""
+    )
+    days = model.window_days
+    group_by = model.group_by
+    options = "".join(
+        f'<option value="{n}" {"selected" if n == days else ""}>{label}</option>'
+        for n, label in ((7, "Last 7 days"), (30, "Last 30 days"), (90, "Last 90 days"))
+    )
+    controls = (
+        '<div class="card analytics-controls"><form id="analytics-filter" method="get" action="/analytics">'
+        '<div class="form-row"><label for="analytics-days">'
+        "Date range</label>"
+        f'<select id="analytics-days" name="days">{options}'
+        f'<option value="{days}" {"selected" if days not in (7, 30, 90) else ""}>Policy default ({days}d)</option>'
+        f'</select><input type="hidden" name="group-by" value="{_esc(group_by)}">'
+        '<button class="btn secondary" type="submit">Apply</button></div></form>'
+        '<div class="form-row"><label>Group by</label>'
+        f'<a class="btn {"secondary" if group_by == "track" else ""}" href="/analytics?days={days}&amp;group-by=prefix">Prefix</a> '
+        f'<a class="btn {"secondary" if group_by == "prefix" else ""}" href="/analytics?days={days}&amp;group-by=track">Track</a></div>'
+        '</div>'
+    )
+    advisory = "".join(f'<p class="banner advisory">{_esc(warning)}</p>' for warning in warnings)
+
+    velocity = model.velocity
+    velocity_detail = _table(
+        ["Group", "Sessions", "Nodes"],
+        [[_esc(group), _esc(sessions), _esc(nodes)] for group, sessions, nodes in velocity.group_rows],
+    ) if velocity.group_rows else '<p class="mut">No work items in this window.</p>'
+    blockers = model.blockers
+    blocker_detail = _table(
+        ["Node", "Group", "Days open"],
+        [[_esc(row.node_id), _esc(row.group), _esc(row.days_open)] for row in blockers.rows],
+    ) if blockers.rows else '<p class="mut">No open blockers.</p>'
+    reviews = model.reviews
+    review_detail = _table(
+        ["Node", "Due", "Days overdue"],
+        [[_esc(row.node_id), _esc(row.scheduled_for), _esc(row.days_overdue)] for row in reviews.rows],
+    ) if reviews.rows else '<p class="mut">No scheduled reviews.</p>'
+    evidence = model.evidence
+    evidence_detail = _table(
+        ["Node", "Group", "State", "Gap"],
+        [[_esc(row.node_id), _esc(row.group), _esc(row.state), "yes" if row.gap else "no"] for row in evidence.rows],
+    ) if evidence.rows else '<p class="mut">No nodes with artifact specs.</p>'
+    cards = (
+        _analytics_card("Velocity", f"{velocity.sessions_in_window} sessions, "
+                        f"{velocity.total_minutes} minutes",
+                        "Sessions and work items started in the selected window, bucketed by week.",
+                        sparkline_svg(
+                            [(week.label, week.session_count) for week in velocity.weeks]
+                        ), velocity_detail, model, "velocity")
+        + _analytics_card("Blockers", f"{blockers.open_count} open, "
+                        f"{blockers.resolved_in_window} resolved",
+                        "Open blockers are counted now; resolved blockers are counted when resolved in the window.",
+                        sparkline_svg(
+                            [("open", blockers.open_count)]
+                        ), blocker_detail, model, "blockers")
+        + _analytics_card("Reviews", f"{reviews.completed_in_window} completed, "
+                        f"{reviews.overdue_count} overdue",
+                        "Completion rate is completed reviews divided by completed plus scheduled reviews.",
+                        sparkline_svg(
+                            [("completed", reviews.completed_in_window)]
+                        ), review_detail, model, "reviews")
+        + _analytics_card("Evidence", f"{evidence.nodes_with_gaps} nodes with gaps, "
+                        f"{evidence.coverage_rate * 100:.0f}% coverage",
+                        "Coverage is the share of nodes with artifact specs that have no required-spec gap.",
+                        sparkline_svg(
+                            [("accepted", sum(row.accepted_count for row in evidence.rows))]
+                        ), evidence_detail, model, "evidence")
+    )
+    header_html = _NAV.replace(
+        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
+        '<div class="health-strip" aria-label="health"></div>',
+    )
+    body = (
+        header_html + _flash_html(query) + overdue + controls
+        + f'<div id="analytics-advisory">{advisory}</div>'
+        + f'<div class="analytics-grid">{cards}</div>'
+    )
+    return "Analytics", body, 200
+
+
 # --- Confirmation modals (G2#66) — server-fresh facts, domain refusal is truth --
 
 
@@ -1522,3 +1690,36 @@ def post_evidence(root, node_id: str, form: dict):
         reason=_field(form, "reason"),
     )
     return _finish_write(next_url, lines, exit_code)
+
+
+def post_analytics_export(root, form: dict):
+    """POST `/analytics/export` — delegate export to the canonical CLI command."""
+    theme = _field(form, "theme") or "all"
+    fmt = _field(form, "format") or "md"
+    group_by = _field(form, "group_by") or "prefix"
+    raw_days = _field(form, "days")
+    try:
+        days = int(raw_days) if raw_days else None
+    except ValueError:
+        return _redirect_with_notice(
+            "/analytics", ["analytics export: days must be an integer."], "warning"
+        )
+    if theme not in {"all", "velocity", "blockers", "reviews", "evidence"}:
+        return _redirect_with_notice(
+            "/analytics", ["analytics export: unknown theme."], "warning"
+        )
+    if fmt not in {"md", "html", "json"} or group_by not in {"prefix", "track"}:
+        return _redirect_with_notice(
+            "/analytics", ["analytics export: invalid format or grouping."], "warning"
+        )
+    exit_code, lines = _dispatch_web(
+        root,
+        "analytics export",
+        theme=theme,
+        format=fmt,
+        days=days,
+        group_by=group_by,
+        state=[],
+        output=None,
+    )
+    return _finish_write("/analytics", lines, exit_code)

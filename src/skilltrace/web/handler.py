@@ -24,6 +24,7 @@ from .views import (
     Redirect,
     health_body,
     home_body,
+    analytics_body,
     master_body,
     master_confirm_body,
     next_body,
@@ -38,6 +39,7 @@ from .views import (
     post_session_close,
     post_start,
     post_work,
+    post_analytics_export,
 )
 
 _NODE_PASS_RE = re.compile(r"^/nodes/(.+?)/pass$")
@@ -95,6 +97,8 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
                 title, body, status = node_body(self.server.root, node_id, query)
         elif path == "/health":
             title, body, status = health_body(self.server.root)
+        elif path == "/analytics":
+            title, body, status = analytics_body(self.server.root, query)
         else:
             title, body, status = self._not_found()
 
@@ -120,6 +124,8 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
             return post_work(root, form)
         if path == "/session/close":
             return post_session_close(root, form)
+        if path == "/analytics/export":
+            return post_analytics_export(root, form)
         start_match = _NODE_START_RE.match(path)
         if start_match is not None:
             return post_start(root, unquote(start_match.group(1)), form)
