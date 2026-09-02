@@ -330,3 +330,44 @@ its writes are the same explicit, confirmed learner commands as the CLI's,
 never a second path. Serve shows truth but is never a source of it, and
 nothing it renders is ever read back by the engine — unlike an Export,
 it is a view onto truth, not a copy of it.
+
+## Event-log analytics (v1.6)
+
+**Study velocity** — a derived operational metric counting work items
+logged and forward node progress (nodes moving from a lower to a higher
+asserted state) within a rolling window. Measured in work items per week.
+Advisory policy warns when the rate falls below the target in
+`policy/analytics.yaml`. Study velocity is read-only and advisory — it
+never blocks a command or alters state.
+
+**Blockers by domain** — a derived operational metric grouping open and
+recently-resolved Blockers by track or node ID prefix, over a rolling
+window. Advisory policy warns when the count of active blockers exceeds
+the threshold in `policy/analytics.yaml`. Blockers by domain is read-only
+and advisory — it never alters a Blocker record or state.
+
+**Review completion** — a derived operational metric measuring the ratio
+of completed reviews to scheduled-plus-overdue reviews, with prominent
+overdue highlighting, over a rolling window. Advisory policy warns when
+the completion ratio falls below the target in `policy/analytics.yaml`.
+Review completion is read-only and advisory — it never schedules,
+completes, or cancels a review.
+
+**Evidence coverage** — a derived operational metric reporting per-node
+evidence counts, gap analysis (required specs with zero accepted records),
+and submission rate, over a rolling window. Advisory policy warns when the
+coverage ratio falls below the target in `policy/analytics.yaml`.
+Evidence coverage is read-only and advisory — it never submits or alters
+an evidence record.
+
+**Rolling window** — the time span a derivation or analytics command covers,
+counted backwards from today. The default is controlled by
+`default_window_days` in `policy/analytics.yaml` and may be overridden
+per-invocation with `--days`. A rolling window is advisory context for a
+derivation; it never affects node states, evidence records, or progress.
+
+**Soft data threshold** — the minimum number of sessions in the rolling
+window (`min_sessions_for_full_data` in `policy/analytics.yaml`) below
+which an analytics command prefixes its output with a limited-data
+advisory. The threshold is a data-quality warning only; it never blocks
+output or changes exit codes.

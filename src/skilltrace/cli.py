@@ -579,6 +579,33 @@ def build_parser() -> argparse.ArgumentParser:
     _add_analytics_shared_arguments(analytics_evidence_parser)
     analytics_evidence_parser.set_defaults(_command_name="analytics evidence")
 
+    analytics_export_parser = analytics_commands.add_parser(
+        "export",
+        help="Export analytics as Markdown, HTML, or JSON.",
+    )
+    _add_analytics_shared_arguments(analytics_export_parser)
+    analytics_export_parser.add_argument(
+        "--theme",
+        default=None,
+        choices=["all", "velocity", "blockers", "reviews", "evidence"],
+        metavar="<all|velocity|blockers|reviews|evidence>",
+        help="Theme to export (default: all).",
+    )
+    analytics_export_parser.add_argument(
+        "--format",
+        default=None,
+        choices=["md", "html", "json"],
+        metavar="<md|html|json>",
+        help="Output format (default: md).",
+    )
+    analytics_export_parser.add_argument(
+        "--output",
+        default=None,
+        metavar="PATH",
+        help="Output path override (use - for stdout; default: data/analytics-report-<theme>.<ext>).",
+    )
+    analytics_export_parser.set_defaults(_command_name="analytics export")
+
     # retention <command> — Tier 2 retention overlay (read-only).
     retention_parser = subcommands.add_parser(
         "retention", help="Retention model commands (status)."

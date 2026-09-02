@@ -1,4 +1,4 @@
-"""`skilltrace analytics` — event-log analytics command family (issue #128).
+"""`skilltrace analytics` — event-log analytics command family (issue #128/130).
 
 Per the G4 resolution (#122):
 - `skilltrace analytics`                — umbrella, all four themes stacked.
@@ -6,6 +6,9 @@ Per the G4 resolution (#122):
 - `skilltrace analytics blockers`       — per-theme table + Mentor frame.
 - `skilltrace analytics reviews`        — per-theme table + Mentor frame.
 - `skilltrace analytics evidence`       — per-theme table + Mentor frame.
+
+Per the G7 resolution (#125, issue #130):
+- `skilltrace analytics export`         — write Markdown/HTML/JSON export.
 
 Shared flags: `--days <N>`, `--group-by <prefix|track>`,
 `--state <X>` (repeatable; OR semantics).
@@ -15,7 +18,8 @@ Defaults from `policy/analytics.yaml`: `default_window_days=30`,
 than `min_sessions_for_full_data`, output is preceded by an
 `[advisory] Limited data — ...` line (render.advisory()).
 
-Read-only: no audit events emitted by this command family (Kind.READ_ONLY).
+Read-only: no audit events emitted by the analytics read commands (Kind.READ_ONLY).
+Mutating: `analytics export` appends exactly one audit event (Kind.MUTATING).
 """
 
 from __future__ import annotations
@@ -25,6 +29,7 @@ from pathlib import Path
 
 from .. import render
 from ..analytics.derive import derive_analytics
+from ..analytics.export import ExportError, export_analytics
 from ..analytics.models import (
     AnalyticsView,
     BlockersResult,
@@ -371,6 +376,48 @@ def analytics_evidence(ctx: Context) -> CommandResult:
 
 
 # ---------------------------------------------------------------------------
+# Export command handler (G7, issue #130)
+# ---------------------------------------------------------------------------
+
+
+def analytics_export(ctx: Context) -> CommandResult:
+    """Write an analytics export in Markdown, HTML, or JSON format."""
+    args = ctx.args
+    root = ctx.root
+
+    theme = getattr(args, "theme", None) or "all"
+    fmt = getattr(args, "format", None) or "md"
+    days = getattr(args, "days", None)
+    group_by = getattr(args, "group_by", None)
+    state_raw = getattr(args, "state", None) or []
+    state = list(state_raw)
+    output_raw = getattr(args, "output", None)
+    output: Path | None = Path(output_raw) if output_raw is not None else None
+
+    try:
+        dest = export_analytics(
+            root,
+            theme=theme,
+            fmt=fmt,
+            days=days,
+            group_by=group_by,
+            state=state,
+            output=output,
+        )
+    except ExportError as exc:
+        print(f"analytics export: FAILED — {exc}")
+        return CommandResult(exit_code=1)
+    except ValueError as exc:
+        print(f"analytics export: FAILED — {exc}")
+        return CommandResult(exit_code=1)
+
+    if dest != Path("-"):
+        rel = dest.relative_to(root) if dest.is_relative_to(root) else dest
+        print(f"analytics export: wrote {rel.as_posix()}")
+    return CommandResult(exit_code=0)
+
+
+# ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
 
@@ -414,5 +461,13 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=analytics_evidence,
             help="Evidence-coverage analytics: per-node gap analysis.",
+        )
+    )
+    registry.register(
+        Command(
+            name="analytics export",
+            kind=Kind.MUTATING,
+            handler=analytics_export,
+            help="Export analytics as Markdown, HTML, or JSON (default: data/analytics-report.<ext>).",
         )
     )

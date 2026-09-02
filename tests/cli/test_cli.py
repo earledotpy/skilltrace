@@ -70,6 +70,7 @@ def test_registry_has_the_expected_commands():
         "analytics blockers",
         "analytics reviews",
         "analytics evidence",
+        "analytics export",
         "export markdown",
         "export sqlite",
         "export html",
