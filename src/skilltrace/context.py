@@ -276,6 +276,31 @@ class PolicyAccess:
         return self._document("analytics.yaml")
 
     @property
+    def analytics_policy(self) -> "AnalyticsPolicy":
+        """Typed access to the analytics policy values used by the four themes.
+
+        Defensive coercion: malformed values (bool, non-int, zero,
+        negative, missing) collapse to the module-level defaults so
+        callers never need their own try/except. The four themes
+        consume this property instead of re-reading the raw dict.
+        """
+        document = self._document("analytics.yaml")
+        window = document.get("default_window_days")
+        if not isinstance(window, int) or isinstance(window, bool) or window <= 0:
+            window = _AnalyticsPolicyDefaults.window_days
+        group_by = document.get("default_group_by")
+        if group_by not in {"prefix", "track"}:
+            group_by = _AnalyticsPolicyDefaults.group_by
+        min_sessions = document.get("min_sessions_for_full_data")
+        if not isinstance(min_sessions, int) or isinstance(min_sessions, bool) or min_sessions <= 0:
+            min_sessions = _AnalyticsPolicyDefaults.min_sessions_for_full_data
+        return AnalyticsPolicy(
+            default_window_days=window,
+            default_group_by=group_by,
+            min_sessions_for_full_data=min_sessions,
+        )
+
+    @property
     def mastery(self) -> MasteryValues:
         document = self._document("mastery_promotion.yaml")
         values = MasteryValues()
@@ -286,6 +311,32 @@ class PolicyAccess:
         if isinstance(min_days, int) and not isinstance(min_days, bool):
             values.min_days_pass_to_review = min_days
         return values
+
+
+@dataclass(frozen=True)
+class _AnalyticsPolicyDefaults:
+    """Module-level defaults for the typed analytics policy view."""
+
+    window_days: int = 30
+    group_by: str = "prefix"
+    min_sessions_for_full_data: int = 3
+
+
+_AnalyticsPolicyDefaults = _AnalyticsPolicyDefaults()
+
+
+@dataclass(frozen=True)
+class AnalyticsPolicy:
+    """Typed view over ``policy/analytics.yaml`` consumed by the four themes.
+
+    The defensive coercion lives in ``PolicyAccess.analytics_policy``;
+    callers receive this frozen dataclass and read its three fields
+    without re-reading the raw document.
+    """
+
+    default_window_days: int
+    default_group_by: str  # "prefix" | "track"
+    min_sessions_for_full_data: int
 
 
 @dataclass
@@ -325,6 +376,8 @@ class JoinedView:
     resources_by_node: dict[str, list[LearningResource]] = field(default_factory=dict)
     has_gate: set[str] = field(default_factory=set)
     specs_by_node: dict[str, list[ArtifactSpec]] = field(default_factory=dict)
+    gates_by_node: dict[str, ValidationGate] = field(default_factory=dict)
+    events_by_node: dict[str, list[dict]] = field(default_factory=dict)
 
     @property
     def ok(self) -> bool:
@@ -345,6 +398,17 @@ def _build_derived(view: JoinedView) -> None:
     for spec in view.specs:
         specs_map.setdefault(spec.node_id, []).append(spec)
     view.specs_by_node = specs_map
+    # Per-node gate lookup — collapses the eight `next(...)` linear
+    # scans in `web/views.py` and the CLI callers.
+    view.gates_by_node = {g.node_id: g for g in view.gates}
+    # Per-node event index for the drill-down card. The rule
+    # "events are never read to compute state" stays intact — this
+    # is a pure display accessor, precomputed once per join.
+    events_by_node: dict[str, list[dict]] = {}
+    for event in view.events:
+        for touched in event.get("records_touched") or []:
+            events_by_node.setdefault(touched, []).append(event)
+    view.events_by_node = events_by_node
     view.policy = PolicyAccess(view.policies)
 
 

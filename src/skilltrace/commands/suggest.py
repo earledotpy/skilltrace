@@ -16,10 +16,11 @@ section appends a single count-based advisory line that downstream surfaces
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta
 
 from ..context import load_context_lenient
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
+from ..execution.overdue import is_overdue, parse_date, utc_today
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
@@ -30,7 +31,7 @@ from ..policy.retention_model import derive_memory_states
 
 
 def _today() -> date:
-    return datetime.now(timezone.utc).date()
+    return utc_today()
 
 
 def _suggestion_defaults(view, today: date) -> tuple[int | None, str | None]:
@@ -163,9 +164,8 @@ def suggest_reviews(ctx: Context) -> CommandResult:
     for review in reviews:
         if review.status != "scheduled":
             continue
-        try:
-            scheduled = date.fromisoformat(review.scheduled_for)
-        except ValueError:
+        scheduled = parse_date(review.scheduled_for)
+        if scheduled is None:
             continue
         if scheduled <= today:
             due.append((scheduled, review.id, review.node_id))

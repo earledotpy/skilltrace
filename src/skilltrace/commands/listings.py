@@ -2,17 +2,17 @@
 
 Both print current, actionable records and append no audit event. `reviews`
 derives overdue on the fly — a scheduled review past its date — because
-overdue is never stored (CONTEXT.md). Cancelled and completed reviews, like
-resolved blockers, are history: visible in the files, not in the listing.
+overdue is never stored (CONTEXT.md). The overdue predicate lives in
+`execution.overdue` so every surface (today, report, listings, suggest,
+analytics, web) shares one definition.
 """
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution._store import ExecutionLoadError
 from ..execution.blockers import load_blockers
+from ..execution.overdue import is_overdue, utc_today
 from ..execution.reviews import load_reviews
 
 
@@ -45,10 +45,10 @@ def reviews(ctx: Context) -> CommandResult:
         print("no scheduled reviews.")
         return CommandResult()
 
-    today = datetime.now(timezone.utc).date().isoformat()
+    today = utc_today(clock=ctx.clock)
     print(f"{len(scheduled)} scheduled review(s):")
     for review in scheduled:
-        marker = "  [OVERDUE]" if review.scheduled_for < today else ""
+        marker = "  [OVERDUE]" if is_overdue(review, today=today) else ""
         print(f"  {review.id}  {review.node_id}  due {review.scheduled_for}{marker}")
     return CommandResult()
 

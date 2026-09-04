@@ -21,9 +21,8 @@ reports**.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 import yaml
 
@@ -34,26 +33,19 @@ from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
 from ..evidence.specs import ArtifactSpec
 from ..execution.blockers import Blocker
+from ..execution.overdue import overdue_reviews, utc_today
 from ..execution.sessions import open_session
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError, SkillNode
 from ..graph.recommendation import recommend
 from ..graph.state import ProgressStoreError
+from ..mentor.prose import resource_lines
 from ..policy.advisory import analytics_warnings
 from ..policy.remediation_edges import active_remediations
 from ..resources.registry import LearningResource
 
 
 # --- Small loaders and helpers -------------------------------------------------
-
-
-def _parse_date(val: Any) -> date | None:
-    if val is None:
-        return None
-    try:
-        return date.fromisoformat(str(val)[:10])
-    except (ValueError, TypeError):
-        return None
 
 
 def _minutes_open(started_at: str | None) -> int | None:
@@ -69,22 +61,6 @@ def _minutes_open(started_at: str | None) -> int | None:
     delta = datetime.now(timezone.utc) - started
     minutes = int(delta.total_seconds() // 60)
     return minutes if minutes >= 0 else None
-
-
-def _resource_lines(resources: list[LearningResource]) -> list[str]:
-    """Format resource lines for the Where to learn section (mirrors `node`)."""
-    if not resources:
-        return ["(no resources linked to this skill)"]
-    lines = []
-    for r in resources:
-        name = r.id.replace("-", " ").title()
-        if r.url:
-            lines.append(f"{name} -- {r.url}")
-        elif r.local_path:
-            lines.append(f"{name} -- {r.local_path}")
-        else:
-            lines.append(name)
-    return lines
 
 
 def _node_title_map(nodes: list[SkillNode]) -> dict[str, str]:
@@ -249,7 +225,6 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
     reviews = joined.reviews
     attempts = joined.attempts
     specs = joined.specs
-    gates = joined.gates
     records = joined.records
 
     node_map = joined.node_map
@@ -299,33 +274,22 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
     )
     has_gate = (focus_node_id in joined.has_gate) if focus_node_id else False
 
-    # Pressure facts for the brief.
-    today_dt = datetime.now(timezone.utc).date()
-    overdue = [
-        r
-        for r in reviews
-        if r.status == "scheduled"
-        and (d := _parse_date(r.scheduled_for)) is not None
-        and d < today_dt
-    ]
+    # Pressure facts for the brief — overdue funneled through the seam.
+    today_dt = utc_today()
+    overdue = overdue_reviews(reviews, today=today_dt)
     open_blocker_list = [b for b in blockers if b.status == "open"]
 
     # Analytics-derived pressure: derive the view with policy defaults, call
     # analytics_warnings(), cap at 2 bits so the brief doesn't become a nag screen.
-    _analytics_policy = joined.policy.analytics if joined.policy.analytics else {}
-    _window_days = _analytics_policy.get("default_window_days", 30)
-    _min_sessions = _analytics_policy.get("min_sessions_for_full_data", 3)
-    _group_by = _analytics_policy.get("default_group_by", "prefix")
-    if _group_by not in ("prefix", "track"):
-        _group_by = "prefix"
+    _analytics_policy = joined.policy.analytics_policy
     try:
         _analytics_view = derive_analytics(
             joined,
             today=today_dt,
-            window_days=int(_window_days) if isinstance(_window_days, (int, float)) else 30,
-            group_by=_group_by,
+            window_days=_analytics_policy.default_window_days,
+            group_by=_analytics_policy.default_group_by,
             state_filter=[],
-            min_sessions_for_full_data=int(_min_sessions) if isinstance(_min_sessions, (int, float)) else 3,
+            min_sessions_for_full_data=_analytics_policy.min_sessions_for_full_data,
         )
         _raw_analytics_bits = analytics_warnings(root, _analytics_view)
     except Exception:  # noqa: BLE001 — advisory never raises to the surface
@@ -352,7 +316,7 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
     if focus_node is not None:
         lines.extend(
             render.section_where_to_learn(
-                _resource_lines(focus_resources), label="Where to learn (top focus)"
+                resource_lines(focus_resources), label="Where to learn (top focus)"
             )
         )
         lines.extend(

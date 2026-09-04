@@ -28,10 +28,10 @@ obvious:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
 
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..execution.overdue import utc_today
 from ..graph.nodes import NodeLoadError, load_nodes
 from ..resources.registry import (
     LearningResource,
@@ -58,7 +58,7 @@ def resource_report(ctx: Context) -> CommandResult:
     from whatever data loads.
     """
     root = ctx.root
-    today = datetime.now(timezone.utc).date()
+    today = utc_today(clock=ctx.clock)
     window = (
         ctx.joined.policy.resource_stale_after_days
         if ctx.joined is not None

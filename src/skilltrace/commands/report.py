@@ -24,26 +24,21 @@ data, no audit events logged, never reads event log for state).
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from ..context import load_context_lenient
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
+from ..execution.overdue import (
+    days_overdue,
+    is_overdue,
+    overdue_reviews,
+    parse_date,
+    utc_today,
+)
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError, SkillNode
 from ..graph.state import ProgressStoreError
 from .resource_report import resource_report
-
-
-def _parse_date(val: Any) -> date | None:
-    """Safely parse a date string or timestamp into a date object."""
-    if val is None:
-        return None
-    try:
-        return date.fromisoformat(str(val)[:10])
-    except (ValueError, TypeError):
-        return None
 
 
 # ==========================================
@@ -178,7 +173,7 @@ def report_blockers(ctx: Context) -> CommandResult:
     blockers = joined.blockers
     actions = joined.remediations
     titles = joined.titles
-    today = datetime.now(timezone.utc).date()
+    today = utc_today()
 
     open_blockers = [b for b in blockers if b.status == "open"]
     open_blockers.sort(key=lambda b: str(b.created_at))
@@ -210,7 +205,7 @@ def report_blockers(ctx: Context) -> CommandResult:
         lines.append("No open obstacles logged. When you encounter persistent friction, run `skilltrace blocker create`.")
     else:
         for idx, b in enumerate(open_blockers, 1):
-            created_d = _parse_date(b.created_at)
+            created_d = parse_date(b.created_at)
             days_open = (today - created_d).days if created_d else 0
             node_title = titles.get(b.node_id, b.node_id)
             lines.append(f"{idx}. {node_title} ({days_open} days open)")
@@ -236,8 +231,8 @@ def report_blockers(ctx: Context) -> CommandResult:
         lines.append("No resolved blockers in history.")
     else:
         for idx, b in enumerate(resolved_blockers, 1):
-            created_d = _parse_date(b.created_at)
-            resolved_d = _parse_date(getattr(b, "resolved_at", None) or getattr(b, "updated_at", None))
+            created_d = parse_date(b.created_at)
+            resolved_d = parse_date(getattr(b, "resolved_at", None) or getattr(b, "updated_at", None))
             days_stuck = (resolved_d - created_d).days if (created_d and resolved_d) else 0
             node_title = titles.get(b.node_id, b.node_id)
             summary = getattr(b, "summary", "") or getattr(b, "resolution_summary", "") or getattr(b, "description", "")
@@ -272,17 +267,13 @@ def report_reviews(ctx: Context) -> CommandResult:
     store = joined.store
     reviews = joined.reviews
     titles = joined.titles
-    today = datetime.now(timezone.utc).date()
+    today = utc_today()
 
     scheduled = [r for r in reviews if r.status == "scheduled"]
     completed = [r for r in reviews if r.status == "completed"]
     cancelled = [r for r in reviews if r.status == "cancelled"]
 
-    overdue_count = 0
-    for r in scheduled:
-        due_d = _parse_date(r.scheduled_for)
-        if due_d and due_d < today:
-            overdue_count += 1
+    overdue_count = sum(1 for r in scheduled if is_overdue(r, today=today))
 
     lines: list[str] = [
         "Scheduled Reviews",
@@ -302,15 +293,14 @@ def report_reviews(ctx: Context) -> CommandResult:
         lines.append("No reviews currently scheduled. Pass a skill to schedule spaced retention checks.")
     else:
         for idx, r in enumerate(scheduled, 1):
-            due_d = _parse_date(r.scheduled_for)
-            is_overdue = due_d is not None and due_d < today
-            days_overdue = (today - due_d).days if is_overdue and due_d else 0
+            overdue_flag = is_overdue(r, today=today)
+            days_over = days_overdue(r, today=today)
             node_title = titles.get(r.node_id, r.node_id)
             node_state = store.state_of(r.node_id)
 
             due_phrase = f"Due {r.scheduled_for}"
-            if is_overdue:
-                due_phrase += f" / {days_overdue} days overdue"
+            if overdue_flag:
+                due_phrase += f" / {days_over} days overdue"
             lines.append(f"{idx}. {node_title} ({due_phrase})")
             if node_state == "passed":
                 lines.append("   Why this matters: Passed node awaiting retention verification. A satisfactory review today promotes this node toward permanent mastery.")
@@ -361,7 +351,6 @@ def report_evidence(ctx: Context) -> CommandResult:
     nodes = joined.nodes
     store = joined.store
     specs = joined.specs
-    gates = joined.gates
     records = joined.records
 
     node_map = joined.node_map
@@ -385,7 +374,7 @@ def report_evidence(ctx: Context) -> CommandResult:
     item_idx = 1
     for node in target_nodes:
         n_specs = joined.specs_by_node.get(node.id, [])
-        n_gate = next((g for g in gates if g.node_id == node.id), None)
+        n_gate = joined.gates_by_node.get(node.id)
         n_records = [r for r in records if any(s.id == r.artifact_spec_id for s in n_specs)]
         state = store.state_of(node.id)
 

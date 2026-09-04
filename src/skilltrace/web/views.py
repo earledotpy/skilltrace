@@ -45,7 +45,10 @@ from urllib.parse import urlencode
 
 from ..commands.eligibility import passed_at_of
 from ..commands.health import health_report
-from ..commands.node_detail import _unlocked_by, _unsatisfied_prereqs, derive_node_detail
+from ..commands.node_detail import (
+    derive_node_drilldown,
+    derive_node_detail,
+)
 from ..commands.recommend import derive_next
 from ..commands.today import derive_today
 from ..context import JoinedView, load_context_lenient
@@ -53,13 +56,14 @@ from ..dispatch import Context, dispatch
 from ..analytics.derive import derive_analytics
 from ..analytics.sparkline import sparkline_svg
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
+from ..execution.overdue import utc_today
 from ..execution.sessions import open_session
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
 from ..policy.mastery import compute_mastery_eligibility
 from ..policy.advisory import analytics_warnings
-from ..resources.status import VerificationStatus, derive_status
+from ..resources.status import VerificationStatus
 
 
 def _esc(value: object) -> str:
@@ -851,13 +855,13 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
     if view is None:
         return "Error", failure[0], failure[1]
 
-    lines = derive_node_detail(view, node_id)
-    if lines is None:
+    model = derive_node_detail(view, node_id)
+    if model is None:
         body, status = _status_page(404, f"Unknown node {node_id}.")
         return "Not found", body, status
 
     actions = _node_actions_card(root, view, node_id)
-    drill = _drill_down_card(node_id, view, Path(root))
+    drill = _drill_down_card(node_id, view, Path(root), model)
     title = view.node_map[node_id].title
     header_health = _header_health_html(root, health_report(Path(root)))
     header_html = _NAV.replace(
@@ -873,7 +877,7 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
         + _flash_html(query or {})
         + _degraded_banner(view)
         + breadcrumb
-        + cards_html(lines)
+        + cards_html(model.lines)
         + actions
         + drill
     )
@@ -901,7 +905,7 @@ def _evidence_submit_form(root, view: JoinedView, node_id: str) -> str:
     code is the verdict); the supersede flow hides behind an advanced toggle.
     """
     specs = view.specs_by_node.get(node_id, [])
-    gate = next((g for g in view.gates if g.node_id == node_id), None)
+    gate = view.gates_by_node.get(node_id)
 
     if not specs:
         spec_field = '<p class="mut">No artifact spec — the domain refuses any submission.</p>'
@@ -1024,112 +1028,78 @@ def _table(headers: list[str], rows: list[list[str]]) -> str:
     return f"<table><tr>{head}</tr>{body}</table>"
 
 
-def _drill_down_card(node_id: str, view: JoinedView, root: Path) -> str:
-    """Read-only factual drill-downs. No Mentor vocabulary here — tables only."""
-    store = view.store
-    specs = view.specs_by_node.get(node_id, [])
-    records_for_specs = [
-        r for r in view.records if r.artifact_spec_id in {s.id for s in specs}
-    ]
-    superseded_ids = {r.supersedes for r in view.records if r.supersedes}
+def _drill_down_card(
+    node_id: str,
+    view: JoinedView,
+    root: Path,
+    model,
+    *,
+    clock=None,
+) -> str:
+    """Read-only factual drill-downs. No Mentor vocabulary here — tables only.
+
+    Per-node facts come from ``DrilldownModel`` produced by
+    ``commands.node_detail.derive_node_drilldown`` — the web layer
+    no longer imports the per-handler private helpers from
+    ``commands.node_detail``, and it no longer re-derives facts the
+    CLI's ``derive_node_detail`` already produced.
+    """
+    drilldown = derive_node_drilldown(node_id, view, model, clock=clock)
 
     evidence_rows = [
-        [
-            _esc(s.title),
-            _esc(s.artifact_kind),
-            "required" if s.required else "optional",
-            _esc(s.minimum_count),
-            _esc(live_accepted_count(view.records, s.id)),
-        ]
-        for s in specs
+        [_esc(title), _esc(kind), _esc(req), _esc(minimum), _esc(accepted)]
+        for (title, kind, req, minimum, accepted) in drilldown.evidence_rows
     ]
     record_rows = [
-        [
-            _esc(r.id),
-            "accepted" if r.accepted else "rejected",
-            "superseded" if r.id in superseded_ids else "live",
-            _esc(r.location),
-        ]
-        for r in records_for_specs
+        [_esc(rid), _esc(verdict), _esc(standing), _esc(loc)]
+        for (rid, verdict, standing, loc) in drilldown.record_rows
     ]
     attempt_rows = [
-        [_esc(a.id), _esc(a.outcome), _esc(str(a.created_at)[:10])]
-        for a in view.attempts
-        if a.node_id == node_id
+        [_esc(aid), _esc(outcome), _esc(date)]
+        for (aid, outcome, date) in drilldown.attempt_rows
     ]
-    gate_line = "No validation gate."
-    if node_id in view.has_gate:
-        gate = next(g for g in view.gates if g.node_id == node_id)
-        authority = gate.command if gate.command else f"{gate.authority} (learner-stated verdict)"
-        gate_line = f"Gate: {_esc(gate.id)} — {_esc(authority)}."
-
-    today = datetime.now(timezone.utc).date()
-    window = view.policy.resource_stale_after_days
     resource_rows = []
-    for r in view.resources_by_node.get(node_id, []):
-        status = derive_status(r, today=today, stale_after_days=window).value
-        where = _esc(r.url or r.local_path or "")
+    for (rid, where, status) in drilldown.resource_rows:
         pill_class = _STATUS_PILL_CLASSES.get(status, "")
         resource_rows.append(
             [
-                _esc(r.id),
-                f'<a href="{where}">{where}</a>' if r.url else where,
+                _esc(rid),
+                f'<a href="{_esc(where)}">{_esc(where)}</a>' if where.startswith("http") else _esc(where),
                 f'<span class="pill {pill_class}">{_esc(status)}</span>',
             ]
         )
-
     review_rows = [
-        [
-            _esc(rv.id),
-            _esc(rv.status),
-            _esc(str(rv.scheduled_for)[:10]),
-            _esc(rv.outcome or rv.cancel_reason or ""),
-        ]
-        for rv in view.reviews
-        if rv.node_id == node_id
+        [_esc(rid), _esc(status), _esc(due), _esc(outcome)]
+        for (rid, status, due, outcome) in drilldown.review_rows
     ]
     work_rows = [
-        [
-            _esc(w.session_id),
-            _esc(w.minutes if w.minutes is not None else "—"),
-            _esc(w.notes or ""),
-        ]
-        for w in view.work
-        if w.node_id == node_id
+        [_esc(sid), _esc(minutes if minutes is not None else "—"), _esc(notes)]
+        for (sid, minutes, notes) in drilldown.work_rows
     ]
     blocker_rows = [
-        [_esc(b.id), _esc(b.status), _esc(b.description)]
-        for b in view.blockers
-        if b.node_id == node_id
+        [_esc(bid), _esc(status), _esc(desc)]
+        for (bid, status, desc) in drilldown.blocker_rows
     ]
     remediation_rows = [
-        [_esc(ra.id), _esc(ra.status), _esc(ra.description)]
-        for ra in view.remediations
-        if ra.node_id == node_id
+        [_esc(rid), _esc(status), _esc(desc)]
+        for (rid, status, desc) in drilldown.remediation_rows
     ]
-
-    unsatisfied = {(pid, pstate) for pid, pstate in _unsatisfied_prereqs(node_id, view.edges, store)}
     prereq_rows = [
         [
-            f'<a href="/nodes/{_esc(pid)}">{_esc(view.titles.get(pid, pid))}</a>',
+            f'<a href="/nodes/{_esc(title)}">{_esc(title)}</a>',
             _esc(pstate),
-            "no — must pass first" if (pid, pstate) in unsatisfied else "yes",
+            "no — must pass first" if unsatisfied else "yes",
         ]
-        for edge in view.edges
-        if edge.active and edge.edge_type == "hard_prerequisite" and edge.target == node_id
-        for pid, pstate in ((edge.source, store.state_of(edge.source)),)
+        for (title, pstate, unsatisfied) in drilldown.prereq_rows
     ]
     unlock_rows = [
-        [
-            f'<a href="/nodes/{_esc(uid)}">{_esc(view.titles.get(uid, uid))}</a>',
-        ]
-        for uid in _unlocked_by(node_id, view.edges)
+        [f'<a href="/nodes/{_esc(uid)}">{_esc(uid)}</a>']
+        for uid in drilldown.unlock_rows
     ]
-
+    # Display newest first.
     event_rows = [
-        [_esc(e.get("timestamp", ""))[:19], _esc(e.get("command", ""))]
-        for e in reversed(view.events)
-        if node_id in (e.get("records_touched") or [])
+        [_esc(ts)[:19], _esc(cmd)]
+        for (ts, cmd) in reversed(drilldown.event_rows)
     ][:10]
 
     def section(label: str, inner: str) -> str:
@@ -1139,7 +1109,7 @@ def _drill_down_card(node_id: str, view: JoinedView, root: Path) -> str:
     parts.append(
         section(
             "Evidence",
-            f"<p>{gate_line}</p>"
+            f"<p>{_esc(drilldown.gate_line)}</p>"
             + (_table(["Spec", "Kind", "Requirement", "Minimum", "Live accepted"], evidence_rows) if evidence_rows else '<p class="mut">No artifact specs.</p>')
             + (_table(["Record", "Verdict", "Standing", "Location"], record_rows) if record_rows else "")
             + (_table(["Attempt", "Outcome", "Date"], attempt_rows) if attempt_rows else ""),
@@ -1231,10 +1201,8 @@ def _analytics_view(root: Path, query: dict) -> tuple[object | None, tuple[str, 
     view, failure = _fresh_join(root)
     if view is None:
         return None, ("Error", failure[0], failure[1])
-    policy = view.policy.analytics
-    default_days = policy.get("default_window_days", 30)
-    if not isinstance(default_days, int) or default_days <= 0:
-        default_days = 30
+    policy = view.policy.analytics_policy
+    default_days = policy.default_window_days
     raw_days = (query.get("days") or [str(default_days)])[0]
     try:
         days = int(raw_days)
@@ -1244,17 +1212,15 @@ def _analytics_view(root: Path, query: dict) -> tuple[object | None, tuple[str, 
     if days <= 0:
         body, status = _status_page(400, "Analytics days must be a positive integer.")
         return None, ("Bad request", body, status)
-    group_by = (query.get("group-by") or [policy.get("default_group_by", "prefix")])[0]
+    group_by = (query.get("group-by") or [policy.default_group_by])[0]
     if group_by not in {"prefix", "track"}:
         body, status = _status_page(400, "Analytics group-by must be prefix or track.")
         return None, ("Bad request", body, status)
-    min_sessions = policy.get("min_sessions_for_full_data", 3)
-    if not isinstance(min_sessions, int) or min_sessions <= 0:
-        min_sessions = 3
+    min_sessions = policy.min_sessions_for_full_data
     return (
         derive_analytics(
             view,
-            today=datetime.now(timezone.utc).date(),
+            today=utc_today(),
             window_days=days,
             group_by=group_by,
             state_filter=[],
@@ -1433,7 +1399,7 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
         node_state=state,
     )
 
-    gate = next((g for g in view.gates if g.node_id == node_id), None)
+    gate = view.gates_by_node.get(node_id)
     if gate is None:
         authority_line = "No validation gate — no authority can accept its evidence."
     elif gate.command:

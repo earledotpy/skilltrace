@@ -15,13 +15,13 @@ this command. Read-only: it appends no audit event.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 
 from .. import render
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence.validation import EvidenceValidationResult, load_and_validate_evidence
 from ..execution._store import ExecutionLoadError
+from ..execution.overdue import utc_today
 from ..execution.sessions import load_sessions, open_session
 from ..execution.staleness import stale_session_hours, stale_warning
 from ..execution.validation import ExecutionValidationResult, load_and_validate_execution
@@ -146,7 +146,7 @@ def _liveness_lines(root: Path) -> tuple[list[str], int]:
     except ResourceLoadError:
         resources = None
     if resources is not None:
-        today = datetime.now(timezone.utc).date()
+        today = utc_today()
         window = stale_after_days(root)
         summary = verification_summary(resources, today=today, stale_after_days=window)
         lines.append(f"resources: {len(resources)} resource(s); {summary}")

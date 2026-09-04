@@ -22,6 +22,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 from typing import Any
 
+from ..execution.overdue import days_overdue as _days_overdue, is_overdue as _is_overdue, parse_date
 from .models import (
     AnalyticsView,
     BlockerRow,
@@ -37,16 +38,6 @@ from .models import (
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
-
-
-def _parse_date(val: Any) -> date | None:
-    """Safely parse a stored ISO date or timestamp string into a date."""
-    if val is None:
-        return None
-    try:
-        return date.fromisoformat(str(val)[:10])
-    except (ValueError, TypeError):
-        return None
 
 
 def _window_start(today: date, window_days: int) -> date:
@@ -143,7 +134,7 @@ def derive_velocity(
     # Sessions in window (completed or open, started on/after cutoff).
     window_sessions: set[str] = set()
     for s in sessions:
-        started = _parse_date(s.started_at)
+        started = parse_date(s.started_at)
         if started is not None and started >= cutoff:
             window_sessions.add(s.id)
 
@@ -167,7 +158,7 @@ def derive_velocity(
         total_minutes += minutes
 
         # Bucket by the item's created_at date.
-        item_date = _parse_date(item.created_at)
+        item_date = parse_date(item.created_at)
         if item_date is not None:
             wk = _iso_week_label(item_date)
             weekly_sessions[wk].add(item.session_id)
@@ -248,7 +239,7 @@ def derive_blockers(
         if not _state_matches(b.node_id, state_filter, store):
             continue
         if b.status == "open":
-            created = _parse_date(b.created_at)
+            created = parse_date(b.created_at)
             days_open = (today - created).days if created else 0
             grp = _group_value(b.node_id, group_by, nodes, store)
             open_blockers.append(
@@ -261,7 +252,7 @@ def derive_blockers(
                 )
             )
         elif b.status in ("resolved", "closed"):
-            resolved_at = _parse_date(getattr(b, "resolved_at", None))
+            resolved_at = parse_date(getattr(b, "resolved_at", None))
             if resolved_at is not None and resolved_at >= cutoff:
                 resolved_in_window += 1
 
@@ -310,23 +301,23 @@ def derive_reviews(
             continue
 
         if r.status == "scheduled":
-            due = _parse_date(r.scheduled_for)
-            is_overdue = due is not None and due < today
-            days_overdue = (today - due).days if is_overdue and due else 0
+            due = parse_date(r.scheduled_for)
+            overdue = _is_overdue(r, today=today)
+            days_overdue_count = _days_overdue(r, today=today)
             scheduled_count += 1
-            if is_overdue:
+            if overdue:
                 overdue_count += 1
             scheduled_rows.append(
                 ReviewRow(
                     node_id=r.node_id,
                     status="scheduled",
                     scheduled_for=str(r.scheduled_for),
-                    days_overdue=days_overdue,
+                    days_overdue=days_overdue_count,
                     outcome=None,
                 )
             )
         elif r.status == "completed":
-            completed_at = _parse_date(getattr(r, "completed_at", None))
+            completed_at = parse_date(getattr(r, "completed_at", None))
             if completed_at is not None and completed_at >= cutoff:
                 completed_in_window += 1
 

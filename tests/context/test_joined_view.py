@@ -415,3 +415,127 @@ def test_filesystem_loaders_and_in_memory_doubles_agree(tmp_path: Path):
     assert list(fs_view.specs_by_node) == list(double_view.specs_by_node) == ["testing.alpha.subject_01"]
     assert [r.id for r in fs_view.resources_by_node["testing.alpha.subject_01"]] == ["res-01"]
     assert fs_view.resources_by_node["testing.alpha.subject_02"] == []
+
+
+# -- Issue #144: gates_by_node + events_by_node precomputed indexes --------------
+
+
+def test_gates_by_node_one_per_gate(tmp_path: Path):
+    """Every gate is reachable by its node_id; at most one gate per node."""
+    n1 = _node("testing.alpha.subject_01")
+    n2 = _node("testing.alpha.subject_02")
+    gate1 = ValidationGate(id="gate-1", node_id=n1.id, authority="manual")
+    gate2 = ValidationGate(id="gate-2", node_id=n2.id, authority="objective", command="true")
+    view = JoinedView(
+        nodes=[n1, n2],
+        gates=[gate1, gate2],
+        policy=__import__("skilltrace.context", fromlist=["PolicyAccess"]).PolicyAccess({}),
+    )
+    from skilltrace.context import _build_derived
+
+    _build_derived(view)
+    assert set(view.gates_by_node) == {n1.id, n2.id}
+    assert view.gates_by_node[n1.id] is gate1
+    assert view.gates_by_node[n2.id] is gate2
+
+
+def test_gates_by_node_missing_node_returns_empty():
+    """A node with no gate is absent from the index."""
+    n1 = _node("testing.alpha.subject_01")
+    gate1 = ValidationGate(id="gate-1", node_id=n1.id, authority="manual")
+    view = JoinedView(
+        nodes=[n1, _node("testing.alpha.subject_02")],
+        gates=[gate1],
+        policy=__import__("skilltrace.context", fromlist=["PolicyAccess"]).PolicyAccess({}),
+    )
+    from skilltrace.context import _build_derived
+
+    _build_derived(view)
+    assert "testing.alpha.subject_02" not in view.gates_by_node
+
+
+def test_events_by_node_groups_by_records_touched():
+    """Each event appears under each node_id it touched, in original order.
+
+    The per-node list preserves the input order — events are
+    audit-only, never read to compute state, so the display layer
+    reverses them for "newest first" presentation. The accessor
+    itself does not reorder.
+    """
+    e1 = {"timestamp": "2026-08-01T10:00:00Z", "command": "pass", "records_touched": ["n.01"]}
+    e2 = {"timestamp": "2026-08-02T10:00:00Z", "command": "submit", "records_touched": ["n.02"]}
+    e3 = {"timestamp": "2026-08-03T10:00:00Z", "command": "pass", "records_touched": ["n.01", "n.02"]}
+    view = JoinedView(events=[e1, e2, e3])
+    from skilltrace.context import _build_derived
+
+    _build_derived(view)
+    assert view.events_by_node["n.01"] == [e1, e3]
+    assert view.events_by_node["n.02"] == [e2, e3]
+
+
+def test_events_by_node_preserves_order_with_out_of_order_timestamps():
+    """Tied or reversed timestamps still preserve input order (display layer reverses)."""
+    e1 = {"timestamp": "2026-08-03T10:00:00Z", "command": "pass", "records_touched": ["n.01"]}
+    e2 = {"timestamp": "2026-08-01T10:00:00Z", "command": "submit", "records_touched": ["n.01"]}
+    view = JoinedView(events=[e1, e2])
+    from skilltrace.context import _build_derived
+
+    _build_derived(view)
+    assert [e["command"] for e in view.events_by_node["n.01"]] == ["pass", "submit"]
+
+
+def test_events_by_node_skips_events_without_records_touched():
+    """Events with empty `records_touched` do not appear anywhere."""
+    e1 = {"timestamp": "2026-08-01T10:00:00Z", "command": "pass", "records_touched": []}
+    e2 = {"timestamp": "2026-08-02T10:00:00Z", "command": "pass", "records_touched": ["n.01"]}
+    view = JoinedView(events=[e1, e2])
+    from skilltrace.context import _build_derived
+
+    _build_derived(view)
+    assert list(view.events_by_node) == ["n.01"]
+
+
+# -- Issue #144: PolicyAccess.analytics_policy typed coercion --------------------
+
+
+def test_analytics_policy_uses_documented_defaults_when_missing():
+    """A missing analytics policy yields the documented defaults."""
+    from skilltrace.context import PolicyAccess
+
+    access = PolicyAccess({})
+    policy = access.analytics_policy
+    assert policy.default_window_days == 30
+    assert policy.default_group_by == "prefix"
+    assert policy.min_sessions_for_full_data == 3
+
+
+def test_analytics_policy_honors_valid_values():
+    """Valid ints and a valid group-by pass through unchanged."""
+    from skilltrace.context import PolicyAccess
+
+    access = PolicyAccess(
+        {"analytics.yaml": {"default_window_days": 7, "default_group_by": "track", "min_sessions_for_full_data": 5}}
+    )
+    policy = access.analytics_policy
+    assert policy.default_window_days == 7
+    assert policy.default_group_by == "track"
+    assert policy.min_sessions_for_full_data == 5
+
+
+def test_analytics_policy_coerces_malformed_values_to_defaults():
+    """Bool, non-int, zero, negative, and missing values fall back to defaults."""
+    from skilltrace.context import PolicyAccess
+
+    access = PolicyAccess(
+        {
+            "analytics.yaml": {
+                "default_window_days": True,  # bool is not an int for this purpose
+                "default_group_by": "garbage",  # not "prefix" or "track"
+                "min_sessions_for_full_data": -1,  # zero/negative rejected
+            }
+        }
+    )
+    policy = access.analytics_policy
+    assert policy.default_window_days == 30
+    assert policy.default_group_by == "prefix"
+    assert policy.min_sessions_for_full_data == 3

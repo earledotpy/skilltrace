@@ -24,7 +24,6 @@ Mutating: `analytics export` appends exactly one audit event (Kind.MUTATING).
 
 from __future__ import annotations
 
-import datetime
 from pathlib import Path
 
 from .. import render
@@ -39,45 +38,32 @@ from ..analytics.models import (
 )
 from ..context import load_context_lenient
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
+from ..execution.overdue import utc_today
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
 from ..policy.advisory import analytics_warnings
 
-# ---------------------------------------------------------------------------
-# Policy helpers
-# ---------------------------------------------------------------------------
-
-_DEFAULT_WINDOW_DAYS = 30
-_DEFAULT_GROUP_BY = "prefix"
-_DEFAULT_MIN_SESSIONS = 3
-
-
-def _policy_int(doc: dict, key: str, default: int) -> int:
-    val = doc.get(key)
-    if isinstance(val, int) and not isinstance(val, bool) and val > 0:
-        return val
-    return default
-
 
 def _resolve_params(ctx: Context) -> tuple[int, str, list[str], int]:
-    """Resolve window_days, group_by, state_filter, min_sessions from args + policy."""
+    """Resolve window_days, group_by, state_filter, min_sessions from args + policy.
+
+    Typed `analytics_policy` view is the single seam — every arg
+    coercion moves behind it (no per-caller try/except).
+    """
     args = ctx.args
     joined = ctx.joined
-
-    # Read policy defaults when available; fall back to module constants.
     if joined is not None:
-        policy_doc = joined.policy.analytics
+        policy = joined.policy.analytics_policy
+        window_default = policy.default_window_days
+        group_by_default = policy.default_group_by
+        min_sessions = policy.min_sessions_for_full_data
     else:
-        policy_doc = {}
+        window_default = 30
+        group_by_default = "prefix"
+        min_sessions = 3
 
-    window_days_default = _policy_int(policy_doc, "default_window_days", _DEFAULT_WINDOW_DAYS)
-    group_by_default = policy_doc.get("default_group_by", _DEFAULT_GROUP_BY)
-    if group_by_default not in ("prefix", "track"):
-        group_by_default = _DEFAULT_GROUP_BY
-    min_sessions = _policy_int(policy_doc, "min_sessions_for_full_data", _DEFAULT_MIN_SESSIONS)
-
-    days = getattr(args, "days", None) or window_days_default
+    days = getattr(args, "days", None) or window_default
     group_by = getattr(args, "group_by", None) or group_by_default
     state_raw = getattr(args, "state", None) or []
     state_filter = list(state_raw) if state_raw else []
@@ -220,7 +206,7 @@ def _load_view(ctx: Context) -> tuple[AnalyticsView | None, CommandResult | None
     window_days, group_by, state_filter, min_sessions = _resolve_params(
         Context(root=root, args=ctx.args, joined=joined, clock=ctx.clock)
     )
-    today = datetime.date.today()
+    today = utc_today(clock=ctx.clock)
 
     view = derive_analytics(
         joined,

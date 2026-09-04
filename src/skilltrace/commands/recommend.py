@@ -36,6 +36,7 @@ from ..graph.recommendation import (
     recommend,
 )
 from ..graph.state import ProgressStoreError
+from ..mentor.prose import NodeState, resource_lines, state_phrase
 from ..policy.remediation_edges import (
     ActiveRemediation,
     active_remediations,
@@ -45,13 +46,6 @@ from ..resources.registry import LearningResource
 
 
 # --- Mentor-voice prose helpers -----------------------------------------------
-
-
-def _state_label(state: str) -> str:
-    return {
-        "available": "Ready to start",
-        "active": "In progress",
-    }.get(state, state.capitalize())
 
 
 def _effort_phrase(node: SkillNode, minutes: int) -> str:
@@ -159,23 +153,10 @@ def _do_this_next(node: SkillNode, state: str) -> str:
     return f"Start studying {node.id}: `skilltrace session start --node {node.id}`"
 
 
-def _resource_lines(resources: list[LearningResource]) -> list[str]:
-    """Format resource lines for the Where to learn section."""
-    if not resources:
-        return ["(no resources linked to this skill)"]
-    lines = []
-    for r in resources:
-        name = r.id.replace("-", " ").title()
-        if r.url:
-            lines.append(f"{name} -- {r.url}")
-        elif r.local_path:
-            lines.append(f"{name} -- {r.local_path}")
-        else:
-            lines.append(name)
-    return lines
-
-
 # --- Report renderer ----------------------------------------------------------
+
+
+
 
 
 def _mentor_lines(
@@ -233,13 +214,13 @@ def _mentor_lines(
 
         lines = []
         lines.append(render.section_kicker(f"Option {rank} — {session_label}"))
-        lines.extend(render.section_title_state(node.title, _state_label(state)))
+        lines.extend(render.section_title_state(node.title, state_phrase(NodeState(state))))
         lines.extend(
             render.section_brief(
                 _contrastive_brief(rec, rank, total, node, minutes)
             )
         )
-        lines.extend(render.section_where_to_learn(_resource_lines(node_resources)))
+        lines.extend(render.section_where_to_learn(resource_lines(node_resources)))
         lines.extend(render.section_how_to_proceed(_how_to_proceed(node, state, minutes)))
         lines.extend(render.section_do_this_next(_do_this_next(node, state)))
 

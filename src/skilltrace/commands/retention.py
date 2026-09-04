@@ -9,11 +9,12 @@ history and the policy seed, with no writes and no audit event. The
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date
 from pathlib import Path
 
 from ..context import load_context_lenient
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
+from ..execution.overdue import utc_today
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
@@ -24,7 +25,7 @@ from ._common import now_iso
 
 
 def _today() -> date:
-    return datetime.now(timezone.utc).date()
+    return utc_today()
 
 
 def _state_for_all(root: Path, today: date):

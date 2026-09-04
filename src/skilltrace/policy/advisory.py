@@ -13,7 +13,7 @@ from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ..execution.reviews import Review
+from ..execution.overdue import overdue_reviews
 from .loading import PolicyLoadError, load_policy_doc
 
 if TYPE_CHECKING:
@@ -57,18 +57,13 @@ def load_max_open_remediations(root: Path | str) -> int | None:
 
 
 def overdue_review_count(reviews: list[Review], *, today: date) -> int:
-    """Overdue is derived, never stored: scheduled and past its date."""
-    count = 0
-    for review in reviews:
-        if review.status != "scheduled":
-            continue
-        try:
-            scheduled = date.fromisoformat(review.scheduled_for)
-        except ValueError:
-            continue
-        if scheduled < today:
-            count += 1
-    return count
+    """Overdue is derived, never stored: scheduled and past its date.
+
+    Delegates to ``execution.overdue.overdue_reviews`` so every surface
+    (today, report, listings, suggest, analytics, web) shares one
+    definition of overdue.
+    """
+    return len(overdue_reviews(reviews, today=today))
 
 
 def start_warnings(

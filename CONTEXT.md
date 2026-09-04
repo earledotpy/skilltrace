@@ -279,6 +279,8 @@ record, is recomputed from review history and the current date at read time,
 and becomes real only when the learner schedules a review by hand. Retention
 suggestions may warn and reorder recommendations; they never block anything.
 
+## Resource verification (v1.7)
+
 **LearningResource** — a pointer to study material (URL or local path) with
 provider, cost, license, and verification metadata. Resources are pure
 advice: their status never affects a node's readiness, eligibility, or
@@ -305,8 +307,27 @@ human act forever: no automation ever sets `last_verified`, because claims
 like a live free tier or an unchanged license need human judgment, and
 half-verification is not verification. Automation may at most *flag* — an
 automated check that fails is an objective observation and may set the
-broken marker, but a bot can never assert that a resource is good. A replacement candidate is just an alternative resource linked to
-the same node, promoted only by a human curriculum edit.
+broken marker, but a bot can never assert that a resource is good.
+
+**Web check** — an automated test of a resource URL's reachability. A failed
+web check may record a dated broken marker, but a successful web check never
+sets `last_verified`, clears `broken`, or asserts that the resource's claims
+remain valid.
+
+**Retired resource** — a resource no longer used in active resource flows but
+preserved as curriculum history. Its replacement relationship and retirement
+date remain visible for audit, and retirement never changes learner progress
+or node state.
+
+**Replacement candidate** — an alternative LearningResource linked to one or
+more of the same nodes as a resource being retired. It becomes the replacement
+only through a human curriculum edit and must itself satisfy the registry's
+resource-verification requirements.
+
+**Replacement** — a human-confirmed operation that retires one resource and
+transfers its supported-node coverage to a replacement candidate. Replacement
+preserves the retired resource and its broken-marker history; it never changes
+learner progress, graph relationships, or evidence.
 
 **Export** — a derived artifact (SQLite database, Markdown report, static
 HTML report, backup archive) regenerated whole from the files on demand.
@@ -371,3 +392,28 @@ window (`min_sessions_for_full_data` in `policy/analytics.yaml`) below
 which an analytics command prefixes its output with a limited-data
 advisory. The threshold is a data-quality warning only; it never blocks
 output or changes exit codes.
+
+## Mentor voice (v1.x)
+
+**Mentor section** — one rendered block of the Mentor-voice output: a
+heading plus its lines, the typed shape that every read-only command and
+view renders. The canonical section headings are `Brief`, `Where to
+learn`, `How to proceed`, `Do this next`, and `Context`. The dispatch
+(`mentor.prose.brief_for(state, facts, perspective)`) is state-keyed
+(one branch per NodeState), not a string-template engine — future voice
+tuning is a per-state edit, not a template rewrite.
+
+**Node facts** — the uniform tuple every Mentor section consumes
+(`mentor.prose.NodeFacts`): node, state, specs, records, gate presence,
+resource lines, unsatisfied prereqs, unlocked-by, blockers, open-session
+flag, and titles map. Constructing one is the caller's job; the prose
+module reads only these fields, never the joined view directly, so it
+stays pure of I/O and easy to test.
+
+**Overdue review** — a scheduled Review past its `scheduled_for` date.
+Derived, never stored (per the existing definition), with one canonical
+predicate (`execution.overdue.overdue_reviews`) shared by every surface
+(today, report, listings, suggest, analytics, web, advisory). The wall
+clock is read through one funnel (`execution.overdue.utc_today`) that
+honors the dispatcher's `Context.clock` override so midnight-UTC
+transitions cannot turn a passing test red.

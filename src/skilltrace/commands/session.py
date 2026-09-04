@@ -11,12 +11,11 @@ load facts and bind the writes.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ._common import now_iso as _now_iso, report_plan as _report
 from ..execution._store import ExecutionLoadError
 from ..execution.base_plan import BasePlan
+from ..execution.overdue import utc_today
 from ..execution.session_planning import SessionPlan, plan_close, plan_start, plan_work
 from ..execution.remediation import load_remediation_actions
 from ..execution.reviews import load_reviews
@@ -115,9 +114,7 @@ def _warn_start_advisories(root, store, node_id: str) -> None:
     warnings = start_warnings(
         prospective_active_count=active,
         limits=load_workload_limits(root),
-        overdue_reviews=overdue_review_count(
-            reviews, today=datetime.now(timezone.utc).date()
-        ),
+        overdue_reviews=overdue_review_count(reviews, today=utc_today()),
         open_remediations=sum(1 for action in actions if action.status == "open"),
         max_open_remediations=load_max_open_remediations(root),
     )
