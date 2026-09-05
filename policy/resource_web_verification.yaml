@@ -1,0 +1,15 @@
+resource_web_verification_policy:
+  id: policy.resource_web_verification.default_v1_7
+  status: active
+  title: Resource web verification
+  description: >
+    Advisory-only automated URL reachability checks. A failed check may set
+    a dated broken marker; a successful check never sets last_verified or
+    clears broken.
+  enabled: true
+  timeout_seconds: 10
+  follow_redirects: true
+  check_method: HEAD
+  user_agent: SkillTrace/1.7
+  created_at: 2026-09-03
+  updated_at: 2026-09-03
