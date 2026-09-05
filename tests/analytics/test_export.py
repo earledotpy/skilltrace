@@ -177,6 +177,14 @@ class TestMarkdownExport:
         assert rc == 0
         assert dest.exists()
 
+    def test_md_limited_data_advisory_is_spec_verbatim(self, tmp_path):
+        """The bare seed repo holds 0 sessions (< 3), so the §4.3 lines render verbatim."""
+        root = _seed_repo(tmp_path)
+        cli.run(["analytics", "export", "--format", "md"], root=root)
+        lines = (root / "data" / "analytics-report.md").read_text(encoding="utf-8").splitlines()
+        assert "[advisory] Limited data — fewer than 3 sessions in the last 30 days." in lines
+        assert "           Results may not reflect your full activity." in lines
+
 
 # ---------------------------------------------------------------------------
 # HTML: self-contained + sparkline + zero-JS assertions
@@ -432,6 +440,31 @@ class TestJSONExport:
         )
         payload = _load_json(root)
         assert payload["group_by"] == "track"
+
+    def test_json_limited_data_rides_in_advisory_warnings(self, tmp_path):
+        """The bare seed repo holds 0 sessions (< 3): §4.3 surfaces in JSON."""
+        root = _seed_repo(tmp_path)
+        cli.run(["analytics", "export", "--format", "json"], root=root)
+        payload = _load_json(root)
+        assert any(
+            "Limited data — fewer than 3 sessions in the last 30 days." in w
+            for w in payload["advisory_warnings"]
+        )
+
+    def test_json_period_end_follows_injected_clock(self, tmp_path):
+        """§8.1: the export window end is the injected today, not the wall clock."""
+        from datetime import datetime, timezone
+
+        root = _seed_repo(tmp_path)
+        cli.run(
+            ["analytics", "export", "--format", "json"],
+            root=root,
+            clock=lambda: datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc),
+        )
+        payload = _load_json(root)
+        assert payload["period"]["end"] == "2026-08-28"
+        assert payload["period"]["days"] == 30
+        assert payload["period"]["start"] == "2026-07-29"
 
 
 # ---------------------------------------------------------------------------

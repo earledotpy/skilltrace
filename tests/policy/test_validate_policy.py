@@ -53,6 +53,65 @@ def test_retired_confirmation_tier_fails_validation(policy_repo, capsys):
     assert "allowed_with_confirmation" in capsys.readouterr().out
 
 
+# --- v1.6 analytics value-range checks (spec §3.2) -------------------------
+
+
+def _analytics_path(root) -> Path:
+    return root / "policy" / "analytics.yaml"
+
+
+def _set_analytics_field(root, key: str, value) -> None:
+    path = _analytics_path(root)
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    doc["analytics_policy"][key] = value
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+
+def _set_analytics_threshold(root, key: str, value) -> None:
+    path = _analytics_path(root)
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    doc["analytics_policy"]["advisory_thresholds"][key] = value
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "key,bad_value",
+    [
+        ("default_window_days", 0),
+        ("default_window_days", 366),
+        ("default_window_days", "30"),
+        ("min_sessions_for_full_data", 0),
+        ("min_sessions_for_full_data", -1),
+    ],
+)
+def test_analytics_seed_value_range_violation_fails_validation(policy_repo, capsys, key, bad_value):
+    _set_analytics_field(policy_repo, key, bad_value)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert key in out
+
+
+@pytest.mark.parametrize(
+    "key,bad_value",
+    [
+        ("review_completion_below_target", 0),
+        ("review_completion_below_target", 1),
+        ("evidence_coverage_below_target", 1.5),
+        ("velocity_below_target_per_week", -1),
+        ("blockers_active_threshold", -2),
+    ],
+)
+def test_analytics_threshold_range_violation_fails_validation(policy_repo, capsys, key, bad_value):
+    _set_analytics_threshold(policy_repo, key, bad_value)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert key in out
+
+
 def _rewrite_boundary_rule(root, action: str, permission: str) -> None:
     """Set one rule's permission in the copied automation_boundary.yaml."""
     path = root / "policy" / "automation_boundary.yaml"

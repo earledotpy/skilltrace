@@ -38,6 +38,7 @@ from typing import Callable
 
 import yaml
 
+from .analytics.policy import resolve_analytics_defaults
 from .evidence._schema import EvidenceLoadError
 from .evidence.attempts import AssessmentAttempt, load_assessment_attempts
 from .evidence.gates import ValidationGate, load_validation_gates
@@ -279,21 +280,12 @@ class PolicyAccess:
     def analytics_policy(self) -> "AnalyticsPolicy":
         """Typed access to the analytics policy values used by the four themes.
 
-        Defensive coercion: malformed values (bool, non-int, zero,
-        negative, missing) collapse to the module-level defaults so
-        callers never need their own try/except. The four themes
-        consume this property instead of re-reading the raw dict.
+        Defensive coercion lives in ``analytics.policy`` (the single seam);
+        callers receive this frozen dataclass and read its three fields
+        without re-reading the raw document.
         """
         document = self._document("analytics.yaml")
-        window = document.get("default_window_days")
-        if not isinstance(window, int) or isinstance(window, bool) or window <= 0:
-            window = _AnalyticsPolicyDefaults.window_days
-        group_by = document.get("default_group_by")
-        if group_by not in {"prefix", "track"}:
-            group_by = _AnalyticsPolicyDefaults.group_by
-        min_sessions = document.get("min_sessions_for_full_data")
-        if not isinstance(min_sessions, int) or isinstance(min_sessions, bool) or min_sessions <= 0:
-            min_sessions = _AnalyticsPolicyDefaults.min_sessions_for_full_data
+        window, group_by, min_sessions = resolve_analytics_defaults(document)
         return AnalyticsPolicy(
             default_window_days=window,
             default_group_by=group_by,
@@ -311,18 +303,6 @@ class PolicyAccess:
         if isinstance(min_days, int) and not isinstance(min_days, bool):
             values.min_days_pass_to_review = min_days
         return values
-
-
-@dataclass(frozen=True)
-class _AnalyticsPolicyDefaults:
-    """Module-level defaults for the typed analytics policy view."""
-
-    window_days: int = 30
-    group_by: str = "prefix"
-    min_sessions_for_full_data: int = 3
-
-
-_AnalyticsPolicyDefaults = _AnalyticsPolicyDefaults()
 
 
 @dataclass(frozen=True)

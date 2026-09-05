@@ -40,6 +40,8 @@ def load_and_validate_policy(root: Path | str) -> PolicyValidationResult:
             result.errors.extend(_boundary_disagreements(doc))
         if filename == "retention_model.yaml":
             result.errors.extend(_retention_value_ranges(doc, root, filename))
+        if filename == "analytics.yaml":
+            result.errors.extend(_analytics_value_ranges(doc, root, filename))
     return result
 
 
@@ -76,6 +78,21 @@ def _retention_value_ranges(doc: dict, root: Path | str, filename: str) -> list[
             f"got {threshold!r}."
         )
     return errors
+
+
+def _analytics_value_ranges(doc: dict, root: Path | str, filename: str) -> list[str]:
+    """v1.6 value-range checks for the analytics policy seed (spec §3.2).
+
+    Each numeric seed is a policy *value*, but a bad one silently skews
+    every derivation window and advisory threshold, so the umbrella
+    ``validate policy`` command surfaces violations as hard errors.
+    The ranges live in ``analytics.policy`` (the single seam); this
+    function only threads the repo-relative path through.
+    """
+    from ..analytics.policy import validate_analytics_policy
+
+    policy_path = Path(root) / "policy" / filename
+    return validate_analytics_policy(doc, policy_path)
 
 
 def _boundary_disagreements(doc: dict) -> list[str]:

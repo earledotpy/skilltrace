@@ -1,0 +1,14 @@
+# Snapshot of the v1.5 event-log schema (SA1, spec §9.2).
+#
+# The event log is audit-only: every mutating command appends one event and
+# events are never read to compute state (CONTEXT.md, AGENTS.md). Analytics
+# derives from the primary execution YAML files directly (R1), so this
+# schema must stay frozen — any added, renamed, or removed key fails SA1
+# with the diff as the message.
+top_level_keys:
+- events
+record_keys:
+- args
+- command
+- records_touched
+- timestamp

@@ -54,6 +54,7 @@ from ..commands.today import derive_today
 from ..context import JoinedView, load_context_lenient
 from ..dispatch import Context, dispatch
 from ..analytics.derive import derive_analytics
+from ..analytics.policy import limited_data_sentence
 from ..analytics.sparkline import sparkline_svg
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
 from ..execution.overdue import utc_today
@@ -1268,6 +1269,12 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         if model.reviews.overdue_count
         else ""
     )
+    limited = ""
+    if model.is_limited:
+        sentence = limited_data_sentence(
+            model.min_sessions_for_full_data, model.window_days
+        )
+        limited = f'<p class="banner advisory">[advisory] {_esc(sentence)}</p>'
     days = model.window_days
     group_by = model.group_by
     options = "".join(
@@ -1340,7 +1347,7 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         '<div class="health-strip" aria-label="health"></div>',
     )
     body = (
-        header_html + _flash_html(query) + overdue + controls
+        header_html + _flash_html(query) + overdue + limited + controls
         + f'<div id="analytics-advisory">{advisory}</div>'
         + f'<div class="analytics-grid">{cards}</div>'
     )

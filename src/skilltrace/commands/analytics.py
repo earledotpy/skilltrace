@@ -36,6 +36,7 @@ from ..analytics.models import (
     ReviewsResult,
     VelocityResult,
 )
+from ..analytics.policy import LIMITED_DATA_FOLLOWUP, limited_data_head
 from ..context import load_context_lenient
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution.overdue import utc_today
@@ -79,12 +80,15 @@ _COL_W = 28   # group column width
 _NUM_W = 7    # numeric column width
 
 
-def _limited_advisory(view: AnalyticsView) -> str:
-    return (
-        f"Limited data — fewer than {view.min_sessions_for_full_data} sessions "
-        f"in the last {view.window_days} days "
-        f"({view.sessions_in_window} found). Results may be sparse."
-    )
+def _limited_advisory_lines(view: AnalyticsView) -> list[str]:
+    """Verbatim §4.3 soft-data prefix (two lines, exit 0).
+
+    The follow-up aligns under the message by indenting exactly
+    ``len("[advisory] ")`` spaces — one vocabulary shared with exports
+    and Serve via ``analytics.policy``.
+    """
+    head = limited_data_head(view.min_sessions_for_full_data, view.window_days)
+    return [render.advisory(head), " " * len("[advisory] ") + LIMITED_DATA_FOLLOWUP]
 
 
 def _header_line(label: str) -> list[str]:
@@ -235,7 +239,7 @@ def analytics_umbrella(ctx: Context) -> CommandResult:
     )
 
     if view.is_limited:
-        lines.append(render.advisory(_limited_advisory(view)))
+        lines.extend(_limited_advisory_lines(view))
 
     for warning in analytics_warnings(ctx.root, view):
         lines.append(render.advisory(warning))
@@ -258,7 +262,9 @@ def analytics_velocity(ctx: Context) -> CommandResult:
 
     lines: list[str] = []
     if view.is_limited:
-        lines.append(render.advisory(_limited_advisory(view)))
+        lines.extend(_limited_advisory_lines(view))
+    for warning in analytics_warnings(ctx.root, view):
+        lines.append(render.advisory(warning))
     lines += _render_velocity(view.velocity, view.group_by)
     lines.append("")
     lines.extend(
@@ -281,7 +287,9 @@ def analytics_blockers(ctx: Context) -> CommandResult:
 
     lines: list[str] = []
     if view.is_limited:
-        lines.append(render.advisory(_limited_advisory(view)))
+        lines.extend(_limited_advisory_lines(view))
+    for warning in analytics_warnings(ctx.root, view):
+        lines.append(render.advisory(warning))
     lines += _render_blockers(view.blockers, view.group_by)
     lines.append("")
     if view.blockers.open_count > 0:
@@ -307,7 +315,9 @@ def analytics_reviews(ctx: Context) -> CommandResult:
 
     lines: list[str] = []
     if view.is_limited:
-        lines.append(render.advisory(_limited_advisory(view)))
+        lines.extend(_limited_advisory_lines(view))
+    for warning in analytics_warnings(ctx.root, view):
+        lines.append(render.advisory(warning))
     lines += _render_reviews(view.reviews)
     lines.append("")
     if view.reviews.overdue_count > 0:
@@ -338,7 +348,9 @@ def analytics_evidence(ctx: Context) -> CommandResult:
 
     lines: list[str] = []
     if view.is_limited:
-        lines.append(render.advisory(_limited_advisory(view)))
+        lines.extend(_limited_advisory_lines(view))
+    for warning in analytics_warnings(ctx.root, view):
+        lines.append(render.advisory(warning))
     lines += _render_evidence(view.evidence, view.group_by)
     lines.append("")
     if view.evidence.nodes_with_gaps > 0:
@@ -389,6 +401,7 @@ def analytics_export(ctx: Context) -> CommandResult:
             group_by=group_by,
             state=state,
             output=output,
+            today=utc_today(clock=ctx.clock),
         )
     except ExportError as exc:
         print(f"analytics export: FAILED — {exc}")

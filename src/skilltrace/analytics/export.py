@@ -7,7 +7,7 @@ vocabulary (G7 resolution).
 Signature::
 
     export_analytics(
-        root, *, theme, fmt, days, group_by, state, output
+        root, *, theme, fmt, days, group_by, state, output, today
     ) -> Path
 
 ``output=None``  → default path ``data/analytics-report-<theme>.<ext>``
@@ -40,6 +40,14 @@ from .models import (
     EvidenceResult,
     ReviewsResult,
     VelocityResult,
+)
+from .policy import (
+    LIMITED_DATA_FOLLOWUP,
+    PolicyLoadError,
+    limited_data_head,
+    limited_data_sentence,
+    load_analytics_doc,
+    resolve_analytics_defaults,
 )
 from .sparkline import sparkline_svg
 
@@ -81,10 +89,13 @@ def _load_view(
     group_by: str,
     state: list[str],
     min_sessions: int,
+    today: datetime.date,
 ) -> AnalyticsView:
     """Load the strict joined view and derive the analytics model.
 
     Raises ``ExportError`` on any load failure — never writes partial output.
+    ``today`` arrives injected from the CLI/Serve layer (§8.1); this module
+    never reads the wall clock for derivation input.
     """
     joined: JoinedView = load_context_strict(root)
     if not joined.ok:
@@ -93,7 +104,6 @@ def _load_view(
             + "\n".join(f"  {e}" for e in joined.errors)
         )
 
-    today = datetime.date.today()
     return derive_analytics(
         joined,
         today=today,
@@ -105,23 +115,17 @@ def _load_view(
 
 
 def _resolve_policy(root: Path) -> tuple[int, str, int]:
-    """Read analytics policy defaults; fall back to module constants."""
-    from ..policy.loading import PolicyLoadError, load_policy_doc
+    """Read analytics policy defaults; fall back to module constants.
 
+    Single seam: ``analytics.policy`` owns loading and coercion; a missing
+    or unreadable file fails open to the defaults (advisory never crashes
+    a read path — the same pattern as ``advisory.load_workload_limits``).
+    """
     try:
-        doc = load_policy_doc(root, "analytics.yaml")
+        doc = load_analytics_doc(root)
     except PolicyLoadError:
         doc = {}
-    window_days = doc.get("default_window_days", 30)
-    group_by = doc.get("default_group_by", "prefix")
-    min_sessions = doc.get("min_sessions_for_full_data", 3)
-    if not isinstance(window_days, int) or window_days <= 0:
-        window_days = 30
-    if group_by not in ("prefix", "track"):
-        group_by = "prefix"
-    if not isinstance(min_sessions, int) or min_sessions <= 0:
-        min_sessions = 3
-    return window_days, group_by, min_sessions
+    return resolve_analytics_defaults(doc)
 
 
 # ---------------------------------------------------------------------------
@@ -158,10 +162,9 @@ def _render_md(
     if view.state_filter:
         lines.append(f"State filter: {', '.join(view.state_filter)}")
     if view.is_limited:
-        lines.append(
-            f"\n[advisory] Limited data — {view.sessions_in_window} session(s) in window; "
-            f"some metrics may be unreliable."
-        )
+        head = limited_data_head(view.min_sessions_for_full_data, view.window_days)
+        lines.append(f"\n[advisory] {head}")
+        lines.append(" " * len("[advisory] ") + LIMITED_DATA_FOLLOWUP)
     for w in warnings:
         lines.append(f"\n[advisory] {w}")
 
@@ -379,7 +382,7 @@ def _render_html(
     advisory_blocks = ""
     if view.is_limited:
         advisory_blocks += advisory_block(
-            f"Limited data — {view.sessions_in_window} session(s) in window; some metrics may be unreliable."
+            limited_data_sentence(view.min_sessions_for_full_data, view.window_days)
         )
     for w in warnings:
         advisory_blocks += advisory_block(w)
@@ -411,7 +414,11 @@ def _render_html(
 
 
 def _render_json(
-    view: AnalyticsView, warnings: list[str], generated_at: str, theme: str
+    view: AnalyticsView,
+    warnings: list[str],
+    generated_at: str,
+    theme: str,
+    today: datetime.date,
 ) -> str:
     """Produce the curated published JSON subset (G7 resolution).
 
@@ -421,8 +428,7 @@ def _render_json(
     """
     v, b, r, e = view.velocity, view.blockers, view.reviews, view.evidence
 
-    # Derive period start/end from today and window_days
-    today = datetime.date.today()
+    # Period bounds derive from the injected `today` (§8.1), not the clock.
     start = today - datetime.timedelta(days=view.window_days)
     payload: dict[str, Any] = {
         "generated_at": generated_at,
@@ -494,6 +500,7 @@ def export_analytics(
     group_by: str | None = None,
     state: list[str] | None = None,
     output: Path | None = None,
+    today: datetime.date | None = None,
 ) -> Path:
     """Derive and render analytics in the requested format.
 
@@ -515,6 +522,10 @@ def export_analytics(
     output:
         Destination path.  ``None`` → default ``data/analytics-report-<theme>.<ext>``.
         ``Path("-")`` → stdout (caller must handle the return value).
+    today:
+        Window end date (``None`` → wall clock). The CLI and Serve layers
+        inject it (§8.1 clock injection); always pass an explicit date
+        from tests for determinism.
 
     Returns
     -------
@@ -541,12 +552,27 @@ def export_analytics(
     if group_by is None:
         group_by = policy_group_by
 
-    # Load and derive
-    view = _load_view(root, days=days, group_by=group_by, state=state, min_sessions=min_sessions)
+    # Load and derive (today injected by the caller; wall clock only as fallback)
+    resolved_today = today if today is not None else datetime.date.today()
+    view = _load_view(
+        root,
+        days=days,
+        group_by=group_by,
+        state=state,
+        min_sessions=min_sessions,
+        today=resolved_today,
+    )
 
     # Advisory warnings are part of the published export, so failures must
     # remain visible rather than silently producing an incomplete report.
+    # The §4.3 soft-data advisory rides in the same field when the window
+    # holds fewer sessions than the policy minimum.
     warnings = analytics_warnings(root, view)
+    if view.is_limited:
+        warnings = [
+            limited_data_sentence(view.min_sessions_for_full_data, view.window_days),
+            *warnings,
+        ]
 
     # Timestamp
     generated_at = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -557,7 +583,7 @@ def export_analytics(
     elif fmt == "html":
         content = _render_html(view, warnings, generated_at, theme)
     else:
-        content = _render_json(view, warnings, generated_at, theme)
+        content = _render_json(view, warnings, generated_at, theme, resolved_today)
 
     # Resolve output path
     if output is None:

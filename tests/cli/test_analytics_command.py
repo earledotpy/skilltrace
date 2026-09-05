@@ -157,6 +157,25 @@ def test_analytics_umbrella_below_threshold_shows_advisory(tmp_path, capsys):
     assert "Limited data" in out
 
 
+def test_analytics_limited_data_advisory_is_spec_verbatim(tmp_path, capsys):
+    """§4.3 pins the two soft-data lines verbatim (threshold defaults: 3 sessions, 30 days)."""
+    root = _seed_repo(tmp_path)
+    sessions_doc = {
+        "sessions": [
+            {"id": "ses.2026-08-20.001", "status": "completed",
+             "started_at": "2026-08-20T10:00:00Z", "ended_at": "2026-08-20T11:00:00Z"},
+            {"id": "ses.2026-08-25.001", "status": "completed",
+             "started_at": "2026-08-25T10:00:00Z", "ended_at": "2026-08-25T11:00:00Z"},
+        ]
+    }
+    _write_yaml(root, "execution/sessions.yaml", sessions_doc)
+    rc = cli.run(["analytics", "velocity"], root=root)
+    assert rc == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert "[advisory] Limited data — fewer than 3 sessions in the last 30 days." in lines
+    assert "           Results may not reflect your full activity." in lines
+
+
 # ---------------------------------------------------------------------------
 # Per-theme subcommands: section header present, exit 0
 # ---------------------------------------------------------------------------
@@ -357,3 +376,87 @@ def test_analytics_umbrella_no_warning_block_when_all_healthy(tmp_path, capsys):
     assert "BLOCKERS" in out
     assert "REVIEWS" in out
     assert "EVIDENCE" in out
+
+
+# ---------------------------------------------------------------------------
+# today pressure paragraph: analytics advisory capped at 2 bits (T-TestArch D5)
+# ---------------------------------------------------------------------------
+
+
+_ANALYTICS_MARKERS = (
+    "sessions/week average",
+    "Review completion is below target",
+    "Evidence coverage is below target",
+    "Active blocker spike",
+)
+
+
+def test_today_pressure_paragraph_caps_analytics_bits_at_two(tmp_path, capsys):
+    """All four analytics thresholds tripped, yet today shows at most 2 bits."""
+    root = _seed_with_sessions(tmp_path)
+    # Trip every analytics_warnings() threshold: 3 open blockers spike, an
+    # overdue scheduled review sinks completion, empty evidence sinks coverage,
+    # and 3 sessions across ~5 weekly buckets sink per-week velocity.
+    blockers_doc = {
+        "blockers": [
+            {
+                "id": f"blk.math.arithmetic.order_operations_01.{n:03d}",
+                "node_id": "math.arithmetic.order_operations_01",
+                "status": "open",
+                "description": f"stuck on step {n}",
+                "created_at": "2026-08-01T10:00:00Z",
+            }
+            for n in range(1, 4)
+        ]
+    }
+    _write_yaml(root, "execution/blockers.yaml", blockers_doc)
+    reviews_doc = {
+        "reviews": [
+            {
+                "id": "rev.math.arithmetic.order_operations_01.001",
+                "node_id": "math.arithmetic.order_operations_01",
+                "status": "scheduled",
+                "scheduled_for": "2026-08-01",
+                "created_at": "2026-07-15T10:00:00Z",
+            }
+        ]
+    }
+    _write_yaml(root, "execution/reviews.yaml", reviews_doc)
+    rc = cli.run(["today"], root=root)
+    assert rc == 0
+    out = capsys.readouterr().out
+    present = [marker for marker in _ANALYTICS_MARKERS if marker in out]
+    assert len(present) <= 2, f"today shows uncapped analytics bits: {present}"
+
+
+# ---------------------------------------------------------------------------
+# Per-theme subcommands carry the §6.2 prominent warning block too
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("argv", [["analytics", "velocity"], ["analytics", "blockers"]])
+def test_analytics_per_theme_warning_block_renders_when_blockers_spike(
+    tmp_path, capsys, argv
+):
+    """§6.2: `skilltrace analytics` (any) shows the warning block, not just the umbrella."""
+    root = _seed_with_sessions(tmp_path)
+    blockers_doc = {
+        "blockers": [
+            {
+                "id": f"blk.math.arithmetic.order_operations_01.{n:03d}",
+                "node_id": "math.arithmetic.order_operations_01",
+                "status": "open",
+                "description": f"stuck on step {n}",
+                "created_at": "2026-08-01T10:00:00Z",
+            }
+            for n in range(1, 4)  # 3 open blockers >= threshold
+        ]
+    }
+    _write_yaml(root, "execution/blockers.yaml", blockers_doc)
+    rc = cli.run(argv, root=root)
+    assert rc == 0
+    out = capsys.readouterr().out
+    advisory_lines = [ln for ln in out.splitlines() if ln.startswith("[advisory]")]
+    assert any("blocker" in ln.lower() for ln in advisory_lines), (
+        f"Expected a blocker advisory line from {argv}; got: {advisory_lines}"
+    )
