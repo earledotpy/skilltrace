@@ -170,6 +170,12 @@ progress:
   math.statistics.sampling_01:
     state: available
     changed_at: '2026-07-06T17:03:45+00:00'
+  ml.framing.ml_workflow_01:
+    state: available
+    changed_at: '2026-09-05T16:43:03+00:00'
+  ml.practice.titanic_baseline_01:
+    state: available
+    changed_at: '2026-09-05T16:43:03+00:00'
   portfolio.project.data_cleaning_tool_01:
     state: locked
     changed_at: '2026-07-07'

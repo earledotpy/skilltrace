@@ -313,3 +313,50 @@ resources:
   supports:
   - communication.readme.basic_readme_01
   last_verified: '2026-07-10'
+- id: mlcc-crash-course
+  url: https://developers.google.com/machine-learning/crash-course
+  cost: free
+  license: 'Source: Google ML Crash Course (2024 refresh); version 2024-11-12 refresh, verified 2026-08-08 per docs/roadmap/phase-2-classical-ml.md; sections: Framing, Data Prep, Linear Regression, Logistic Regression, Evaluation, Validation, Trees, Ensembles; regeneration key mlcc-2024-11-12; roadmap anchor reference_only.'
+  supports:
+  - ml.framing.ml_workflow_01
+  - ml.regression.linear_regression_01
+  - ml.classification.logistic_regression_01
+  - ml.evaluation.validation_metrics_01
+  - ml.trees.ensembles_01
+  - ml.practice.titanic_baseline_01
+  - ml.capstone.house_prices_integration_01
+- id: ng-ml-specialization-python
+  url: https://www.coursera.org/specializations/machine-learning-introduction
+  cost: paid
+  free_tier: true
+  certificate: true
+  license: 'Source: Andrew Ng Machine Learning Specialization, Python edition (not legacy Octave); sections: Course 1 (supervised learning, linear/logistic regression, gradient descent), Course 2 (bias/variance, regularization, trees, ensembles); regeneration key ng-mls-python-2026; roadmap anchor reference_only.'
+  supports:
+  - ml.framing.ml_workflow_01
+  - ml.regression.linear_regression_01
+  - ml.classification.logistic_regression_01
+  - ml.evaluation.validation_metrics_01
+  - ml.trees.ensembles_01
+  - ml.capstone.house_prices_integration_01
+- id: islp-python-edition
+  url: https://www.statlearning.com/
+  cost: free
+  license: 'Source: ISLP Python edition (James et al., Python translation of ISL 2nd ed.); sections: Ch1 intro, Ch3 linear regression, Ch4 classification, Ch5 resampling, Ch8 tree-based methods, Python labs; regeneration key islp-2023-python; roadmap anchor reference_only.'
+  supports:
+  - ml.regression.linear_regression_01
+  - ml.classification.logistic_regression_01
+  - ml.evaluation.validation_metrics_01
+  - ml.trees.ensembles_01
+  - ml.practice.titanic_baseline_01
+  - ml.capstone.house_prices_integration_01
+- id: kaggle-learn-ml
+  url: https://www.kaggle.com/learn
+  cost: free
+  certificate: true
+  license: 'Source: Kaggle Learn (Intro + Intermediate Machine Learning tracks, free certificates, free GPU); sections: Intro lesson 1, Intermediate (pipelines, cross-validation, XGBoost), Titanic + House Prices competitions; regeneration key kaggle-2026-08; roadmap anchor reference_only.'
+  supports:
+  - ml.framing.ml_workflow_01
+  - ml.evaluation.validation_metrics_01
+  - ml.trees.ensembles_01
+  - ml.practice.titanic_baseline_01
+  - ml.capstone.house_prices_integration_01
