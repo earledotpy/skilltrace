@@ -442,10 +442,11 @@ def _render_json(
         "advisory_warnings": list(warnings),
         "velocity": {
             "work_items_count": v.nodes_touched,
+            "work_items_per_week": sum(w.work_item_count for w in v.weeks) / len(v.weeks) if v.weeks else 0.0,
             "minutes_logged": v.total_minutes,
             "node_progress": v.nodes_touched,
             "by_week": [
-                {"week_start": w.label, "items": w.session_count}
+                {"week_start": w.label, "items": w.work_item_count}
                 for w in v.weeks
             ],
             "by_group": [
@@ -471,9 +472,9 @@ def _render_json(
             "completion_rate": round(r.completion_rate, 4),
         },
         "evidence": {
-            "total_records": sum(row.accepted_count for row in e.rows),
-            "accepted": sum(row.accepted_count for row in e.rows),
-            "rejected": 0,
+            "total_records": e.accepted_count + e.rejected_count,
+            "accepted": e.accepted_count,
+            "rejected": e.rejected_count,
             "nodes_with_gaps": e.nodes_with_gaps,
             "submission_rate": round(e.coverage_rate, 4),
         },

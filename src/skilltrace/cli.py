@@ -377,7 +377,86 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Why the resource is broken (required with --broken).",
     )
+    verify_resource_parser.add_argument(
+        "--check-url",
+        action="store_true",
+        help="Run automated URL preflight check before recording (records broken on failure; never sets last_verified).",
+    )
+    verify_resource_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help="Timeout in seconds for --check-url (default: from policy).",
+    )
+    verify_resource_parser.add_argument(
+        "--method",
+        choices=["HEAD", "GET"],
+        default=None,
+        help="HTTP method for --check-url (default: from policy).",
+    )
+    verify_resource_parser.add_argument(
+        "--follow-redirects",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Follow HTTP redirects for --check-url (default: from policy).",
+    )
+    verify_resource_parser.add_argument(
+        "--user-agent",
+        default=None,
+        help="Custom User-Agent string for --check-url.",
+    )
     verify_resource_parser.set_defaults(_command_name="verify-resource")
+
+    # check-resource <resource_id> [--timeout N] [--method HEAD|GET] [--follow-redirects] [--user-agent UA]
+    check_resource_parser = subcommands.add_parser(
+        "check-resource",
+        help="Check reachability of a single resource's URL (read-only, exits 0 on answered check).",
+    )
+    check_resource_parser.add_argument(
+        "resource_id", help="Resource whose URL to check."
+    )
+    check_resource_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help="Timeout in seconds (default: from policy).",
+    )
+    check_resource_parser.add_argument(
+        "--method",
+        choices=["HEAD", "GET"],
+        default=None,
+        help="HTTP method to use (default: from policy).",
+    )
+    check_resource_parser.add_argument(
+        "--follow-redirects",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Follow HTTP redirects (default: from policy).",
+    )
+    check_resource_parser.add_argument(
+        "--user-agent",
+        default=None,
+        help="Custom User-Agent string.",
+    )
+    check_resource_parser.set_defaults(_command_name="check-resource")
+
+    # replace-resource <broken_id> <candidate_id> [--dry-run]
+    replace_resource_parser = subcommands.add_parser(
+        "replace-resource",
+        help="Retire an ailing resource and transfer its coverage to an active verified candidate.",
+    )
+    replace_resource_parser.add_argument(
+        "broken_id", help="Resource ID of the broken or stale resource to retire."
+    )
+    replace_resource_parser.add_argument(
+        "candidate_id", help="Resource ID of the verified replacement candidate."
+    )
+    replace_resource_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate and output planned changes as JSON without writing.",
+    )
+    replace_resource_parser.set_defaults(_command_name="replace-resource")
 
     # resource-report (whole-registry verification status snapshot)
     resource_report_parser = subcommands.add_parser(

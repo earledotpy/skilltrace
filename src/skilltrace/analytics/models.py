@@ -26,6 +26,7 @@ class WeekBucket:
     label: str          # ISO week label, e.g. "2026-W35"
     session_count: int
     node_count: int     # distinct nodes touched
+    work_item_count: int  # total work items (SessionWork entries)
     minutes: int        # sum of logged minutes
 
 
@@ -127,6 +128,8 @@ class EvidenceResult:
     coverage_rate: float    # nodes_without_gaps / nodes_with_specs, or 0.0
     rows: list[EvidenceRow]
     is_limited: bool
+    accepted_count: int = 0  # total accepted (non-superseded) records
+    rejected_count: int = 0  # total rejected (non-superseded) records
 
 
 # ---------------------------------------------------------------------------

@@ -19,3 +19,14 @@ from pathlib import Path
 _TESTS_DIR = Path(__file__).resolve().parent
 if str(_TESTS_DIR) not in sys.path:
     sys.path.insert(0, str(_TESTS_DIR))
+
+import os
+import tempfile
+if os.name == "nt":
+    local_temp = os.environ.get("LOCALAPPDATA")
+    if local_temp:
+        appdata_temp = Path(local_temp) / "Temp"
+        if appdata_temp.exists():
+            os.environ["TMPDIR"] = str(appdata_temp)
+            tempfile.tempdir = str(appdata_temp)
+

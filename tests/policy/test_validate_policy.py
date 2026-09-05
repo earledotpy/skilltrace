@@ -165,3 +165,67 @@ def test_retention_seed_value_range_violation_fails_validation(policy_repo, caps
     out = capsys.readouterr().out
     assert "validate policy: FAILED" in out
     assert key in out
+
+
+# --- v1.7 resource web verification value-range checks (spec §3) -------------
+
+
+def _web_check_policy_path(root) -> Path:
+    return root / "policy" / "resource_web_verification.yaml"
+
+
+def _set_web_check_field(root, key: str, value) -> None:
+    path = _web_check_policy_path(root)
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    doc["resource_web_verification_policy"][key] = value
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "key,bad_value",
+    [
+        ("enabled", "yes"),
+        ("enabled", 1),
+        ("follow_redirects", "true"),
+        ("timeout_seconds", 0),
+        ("timeout_seconds", 121),
+        ("timeout_seconds", True),
+        ("timeout_seconds", "10"),
+        ("check_method", "POST"),
+        ("check_method", "head"),
+        ("user_agent", ""),
+        ("user_agent", "   "),
+    ],
+)
+def test_resource_web_verification_value_range_violation_fails_validation(
+    policy_repo, capsys, key, bad_value
+):
+    _set_web_check_field(policy_repo, key, bad_value)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert key in out
+
+
+def test_resource_web_verification_unknown_field_fails_validation(policy_repo, capsys):
+    _set_web_check_field(policy_repo, "extra_unexpected_field", 123)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert "unknown field" in out
+
+
+def test_resource_web_verification_missing_field_fails_validation(policy_repo, capsys):
+    path = _web_check_policy_path(policy_repo)
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    del doc["resource_web_verification_policy"]["timeout_seconds"]
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert "missing required field 'timeout_seconds'" in out
+

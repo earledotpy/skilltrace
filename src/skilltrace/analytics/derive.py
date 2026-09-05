@@ -102,7 +102,9 @@ def _build_week_buckets(start: date, today: date) -> dict[str, WeekBucket]:
     while d <= today:
         label = _iso_week_label(d)
         if label not in buckets:
-            buckets[label] = WeekBucket(label=label, session_count=0, node_count=0, minutes=0)
+            buckets[label] = WeekBucket(
+                label=label, session_count=0, node_count=0, work_item_count=0, minutes=0
+            )
         d += timedelta(days=1)
     return buckets
 
@@ -146,6 +148,7 @@ def derive_velocity(
     total_minutes = 0
     weekly_sessions: dict[str, set[str]] = defaultdict(set)  # week -> session ids
     weekly_nodes: dict[str, set[str]] = defaultdict(set)
+    weekly_work_items: dict[str, int] = defaultdict(int)
     weekly_minutes: dict[str, int] = defaultdict(int)
 
     for item in work:
@@ -163,6 +166,7 @@ def derive_velocity(
             wk = _iso_week_label(item_date)
             weekly_sessions[wk].add(item.session_id)
             weekly_nodes[wk].add(item.node_id)
+            weekly_work_items[wk] += 1
             weekly_minutes[wk] += minutes
 
     nodes_touched = len(nodes_touched_set)
@@ -172,6 +176,7 @@ def derive_velocity(
     for wk, bucket in raw_buckets.items():
         bucket.session_count = len(weekly_sessions.get(wk, set()))
         bucket.node_count = len(weekly_nodes.get(wk, set()))
+        bucket.work_item_count = weekly_work_items.get(wk, 0)
         bucket.minutes = weekly_minutes.get(wk, 0)
     weeks = sorted(raw_buckets.values(), key=lambda b: b.label)
 
@@ -366,12 +371,20 @@ def derive_evidence(
     """
     is_limited = sessions_in_window < min_sessions_for_full_data
 
-    # Index: spec_id -> list of records (non-superseded accepted).
+    # Index: spec_id -> list of records (non-superseded accepted/rejected).
     superseded_ids: set[str] = {r.supersedes for r in records if r.supersedes is not None}
     accepted_by_spec: dict[str, int] = defaultdict(int)
+    rejected_by_spec: dict[str, int] = defaultdict(int)
     for r in records:
-        if r.accepted and r.id not in superseded_ids:
+        if r.id in superseded_ids:
+            continue
+        if r.accepted:
             accepted_by_spec[r.artifact_spec_id] += 1
+        else:
+            rejected_by_spec[r.artifact_spec_id] += 1
+
+    total_accepted = sum(accepted_by_spec.values())
+    total_rejected = sum(rejected_by_spec.values())
 
     # Index: node_id -> specs.
     specs_by_node: dict[str, list] = defaultdict(list)
@@ -425,6 +438,8 @@ def derive_evidence(
         coverage_rate=coverage_rate,
         rows=rows,
         is_limited=is_limited,
+        accepted_count=total_accepted,
+        rejected_count=total_rejected,
     )
 
 

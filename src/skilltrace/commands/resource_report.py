@@ -67,9 +67,11 @@ def resource_report(ctx: Context) -> CommandResult:
 
     resources, node_ids, load_notes = _load(root, ctx.joined)
 
+    active_count = sum(1 for r in resources if not r.retired)
+    retired_count = sum(1 for r in resources if r.retired)
     print(
         f"resource-report: {len(resources)} resource(s), {len(node_ids)} node(s); "
-        f"stale after {window}d."
+        f"stale after {window}d; summary: active={active_count}, retired={retired_count}."
     )
     for note in load_notes:
         print(f"[error] {note}")
@@ -115,28 +117,44 @@ def _print_statuses(
     `sorted` is stable, so within each status group resources keep registry
     (file) order — the codebase's determinism discipline. Each broken resource
     carries its reason and date and its live replacement candidates.
+
+    Retired resources are printed last, in registry order, with a special
+    format that does not include derived status or replacement candidates.
     """
     if not resources:
         print("no resources in the registry.")
         return
 
-    statuses = {
-        resource.id: derive_status(resource, today=today, stale_after_days=window)
-        for resource in resources
-    }
-    ordered = sorted(resources, key=lambda r: group_rank(statuses[r.id]))
+    # Separate active and retired resources
+    active_resources = [r for r in resources if not r.retired]
+    retired_resources = [r for r in resources if r.retired]
 
-    print("resources:")
-    for resource in ordered:
-        status = statuses[resource.id]
-        print(f"  [{status.value}] {resource.id} — {_status_detail(resource, status)}")
-        if status is VerificationStatus.BROKEN:
-            candidates = replacement_candidates(resource, resources)
-            if candidates:
-                names = ", ".join(candidate.id for candidate in candidates)
-                print(f"      replacement candidates: {names}")
-            else:
-                print("      replacement candidates: none on its node(s)")
+    # Print active resources with derived status
+    if active_resources:
+        statuses = {
+            resource.id: derive_status(resource, today=today, stale_after_days=window)
+            for resource in active_resources
+        }
+        ordered = sorted(active_resources, key=lambda r: group_rank(statuses[r.id]))
+
+        for resource in ordered:
+            status = statuses[resource.id]
+            print(f"  [{status.value}] {resource.id} — {_status_detail(resource, status)}")
+            if status is VerificationStatus.BROKEN:
+                candidates = replacement_candidates(resource, active_resources)
+                if candidates:
+                    names = ", ".join(candidate.id for candidate in candidates)
+                    print(f"      replacement candidates: {names}")
+                else:
+                    print("      replacement candidates: none on its node(s)")
+
+    # Print retired resources last, in registry order
+    if retired_resources:
+        for resource in retired_resources:
+            print(
+                f"  [retired] {resource.id} — retired {resource.retired_at}; "
+                f"replaced by {resource.replaced_by}"
+            )
 
 
 def _status_detail(resource: LearningResource, status: VerificationStatus) -> str:

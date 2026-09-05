@@ -30,6 +30,7 @@ from __future__ import annotations
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..resources.registry import ResourceLoadError, load_resources
 from ..resources.verification import record_verification, today_iso
+from ..resources.web_check import check_url, resolve_web_verification_policy
 
 
 def verify_resource(ctx: Context) -> CommandResult:
@@ -39,11 +40,23 @@ def verify_resource(ctx: Context) -> CommandResult:
     event); `--broken` without `--reason` is a usage failure (exit 1, no event).
     A recorded verdict — success or broken — exits 0 so the dispatcher logs its
     one event.
+
+    With `--check-url`, runs an automated URL preflight check. A failed preflight
+    records a dated broken marker (exit 0, one event). A successful preflight
+    never sets `last_verified` or clears `broken` (positive-verification safety;
+    writes nothing positive, exit 0, one event).
     """
     root = ctx.root
     resource_id = ctx.args.resource_id
     broken = ctx.args.broken
     reason = ctx.args.reason
+    check_url_flag = getattr(ctx.args, "check_url", False)
+
+    if check_url_flag and (broken or reason):
+        print(
+            "verify-resource: FAILED — cannot combine --check-url with --broken or --reason."
+        )
+        return CommandResult(exit_code=1)
 
     try:
         resources = load_resources(root)
@@ -51,9 +64,74 @@ def verify_resource(ctx: Context) -> CommandResult:
         print(f"verify-resource: FAILED — {exc}")
         return CommandResult(exit_code=1)
 
-    if not any(resource.id == resource_id for resource in resources):
+    target = next((r for r in resources if r.id == resource_id), None)
+    if target is None:
         print(f"verify-resource: FAILED — unknown resource {resource_id}.")
         return CommandResult(exit_code=1)
+
+    if check_url_flag:
+        if not target.url:
+            print(f"verify-resource: FAILED — resource {resource_id} has no url.")
+            return CommandResult(exit_code=1)
+
+        policy = resolve_web_verification_policy(root)
+        if not policy.enabled:
+            print(
+                f"verify-resource: FAILED — web check is disabled by policy."
+            )
+            return CommandResult(exit_code=1)
+
+        timeout = (
+            ctx.args.timeout
+            if ctx.args.timeout is not None
+            else policy.timeout_seconds
+        )
+        method = (
+            ctx.args.method
+            if ctx.args.method is not None
+            else policy.check_method
+        )
+        follow_redirects = (
+            ctx.args.follow_redirects
+            if ctx.args.follow_redirects is not None
+            else policy.follow_redirects
+        )
+        user_agent = (
+            ctx.args.user_agent
+            if ctx.args.user_agent is not None
+            else "skilltrace/1.7 verify-resource"
+        )
+
+        try:
+            result = check_url(
+                target.url,
+                timeout_seconds=timeout,
+                follow_redirects=follow_redirects,
+                method=method,
+                user_agent=user_agent,
+            )
+        except ValueError as exc:
+            print(f"verify-resource: FAILED — {exc}")
+            return CommandResult(exit_code=1)
+
+        date = today_iso()
+        if not result.ok:
+            if result.status_code is not None:
+                broken_reason = f"status {result.status_code}: {result.reason}"
+            else:
+                broken_reason = str(result.reason)
+            record_verification(
+                root, resource_id, date=date, broken_reason=broken_reason
+            )
+            print(
+                f"verify-resource: {resource_id} marked broken ({date}) — {broken_reason}."
+            )
+        else:
+            # Positive-verification safety: check-url success never sets last_verified or clears broken
+            print(
+                f"verify-resource: OK {resource_id} — status {result.status_code}, final_url {result.final_url}; positive verification not recorded."
+            )
+        return CommandResult(records_touched=[resource_id])
 
     if broken and not reason:
         print(

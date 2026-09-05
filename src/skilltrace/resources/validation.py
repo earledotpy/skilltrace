@@ -107,6 +107,11 @@ def check_resources(
                 f"resource {resource.id} claims a free tier but is already free — "
                 "a free tier is meaningful only on a paid resource."
             )
+        if resource.retired:
+            if resource.replaced_by not in {r.id for r in resources}:
+                result.errors.append(
+                    f"resource {resource.id}: replaced_by names unknown resource {resource.replaced_by}."
+                )
 
     return result
 

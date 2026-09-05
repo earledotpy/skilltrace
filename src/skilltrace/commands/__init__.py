@@ -16,6 +16,7 @@ from . import (
     backup,
     blocker,
     check_automation,
+    check_resource,
     eligibility,
     export,
     health,
@@ -25,6 +26,7 @@ from . import (
     pass_,
     recommend,
     remediation,
+    replace_resource,
     report,
     resource_listing,
     resource_report,
@@ -66,6 +68,8 @@ def register_all(registry: Registry) -> Registry:
     resource_listing.register(registry)
     resource_report.register(registry)
     verify_resource.register(registry)
+    replace_resource.register(registry)
+    check_resource.register(registry)
     check_automation.register(registry)
     suggest.register(registry)
     today.register(registry)

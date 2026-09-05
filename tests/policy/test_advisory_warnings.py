@@ -127,11 +127,11 @@ from skilltrace.policy.advisory import analytics_warnings
 
 # --- Helpers -----------------------------------------------------------------
 
-_ONE_WEEK = [WeekBucket(label="2026-W35", session_count=0, node_count=0, minutes=0)]
+_ONE_WEEK = [WeekBucket(label="2026-W35", session_count=0, node_count=0, work_item_count=0, minutes=0)]
 _THREE_WEEKS_ACTIVE = [
-    WeekBucket(label="2026-W33", session_count=3, node_count=2, minutes=90),
-    WeekBucket(label="2026-W34", session_count=3, node_count=2, minutes=90),
-    WeekBucket(label="2026-W35", session_count=3, node_count=2, minutes=90),
+    WeekBucket(label="2026-W33", session_count=3, node_count=2, work_item_count=3, minutes=90),
+    WeekBucket(label="2026-W34", session_count=3, node_count=2, work_item_count=3, minutes=90),
+    WeekBucket(label="2026-W35", session_count=3, node_count=2, work_item_count=3, minutes=90),
 ]
 
 
@@ -206,9 +206,9 @@ def test_analytics_warnings_no_warnings_when_all_healthy(policy_repo):
 def test_analytics_warnings_velocity_below_target(policy_repo):
     # avg sessions/week = 1.0 < target 2
     low_weeks = [
-        WeekBucket(label="2026-W33", session_count=1, node_count=1, minutes=30),
-        WeekBucket(label="2026-W34", session_count=1, node_count=1, minutes=30),
-        WeekBucket(label="2026-W35", session_count=1, node_count=1, minutes=30),
+        WeekBucket(label="2026-W33", session_count=1, node_count=1, work_item_count=1, minutes=30),
+        WeekBucket(label="2026-W34", session_count=1, node_count=1, work_item_count=1, minutes=30),
+        WeekBucket(label="2026-W35", session_count=1, node_count=1, work_item_count=1, minutes=30),
     ]
     view = _make_view(weeks=low_weeks, completion_rate=1.0, coverage_rate=1.0)
     warnings = analytics_warnings(policy_repo, view)
@@ -219,8 +219,8 @@ def test_analytics_warnings_velocity_below_target(policy_repo):
 def test_analytics_warnings_velocity_exactly_at_target_no_warning(policy_repo):
     # avg = 2.0 — exactly at target, should NOT warn
     at_target_weeks = [
-        WeekBucket(label="2026-W33", session_count=2, node_count=1, minutes=60),
-        WeekBucket(label="2026-W34", session_count=2, node_count=1, minutes=60),
+        WeekBucket(label="2026-W33", session_count=2, node_count=1, work_item_count=2, minutes=60),
+        WeekBucket(label="2026-W34", session_count=2, node_count=1, work_item_count=2, minutes=60),
     ]
     view = _make_view(weeks=at_target_weeks, completion_rate=1.0, coverage_rate=1.0)
     warnings = analytics_warnings(policy_repo, view)
@@ -297,7 +297,7 @@ def test_analytics_warnings_blockers_below_threshold_no_warning(policy_repo):
 
 
 def test_analytics_warnings_multiple_thresholds_all_fire(policy_repo):
-    low_weeks = [WeekBucket(label="2026-W35", session_count=0, node_count=0, minutes=0)]
+    low_weeks = [WeekBucket(label="2026-W35", session_count=0, node_count=0, work_item_count=0, minutes=0)]
     view = _make_view(
         weeks=low_weeks,
         open_blockers=4,
@@ -315,7 +315,7 @@ def test_analytics_warnings_missing_policy_file_returns_empty(tmp_path):
     # No analytics.yaml in policy/ → PolicyLoadError → []
     (tmp_path / "policy").mkdir()
     view = _make_view(
-        weeks=[WeekBucket(label="2026-W35", session_count=0, node_count=0, minutes=0)],
+        weeks=[WeekBucket(label="2026-W35", session_count=0, node_count=0, work_item_count=0, minutes=0)],
         open_blockers=5,
         completion_rate=0.0,
         coverage_rate=0.0,

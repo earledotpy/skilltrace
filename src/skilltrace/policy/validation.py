@@ -42,6 +42,8 @@ def load_and_validate_policy(root: Path | str) -> PolicyValidationResult:
             result.errors.extend(_retention_value_ranges(doc, root, filename))
         if filename == "analytics.yaml":
             result.errors.extend(_analytics_value_ranges(doc, root, filename))
+        if filename == "resource_web_verification.yaml":
+            result.errors.extend(_resource_web_verification_value_ranges(doc, root, filename))
     return result
 
 
@@ -128,3 +130,80 @@ def _boundary_disagreements(doc: dict) -> list[str]:
                 "file disagrees with the constants (ADR 0004)."
             )
     return errors
+
+
+def _resource_web_verification_value_ranges(
+    doc: dict, root: Path | str, filename: str
+) -> list[str]:
+    """v1.7 value-range checks for the resource web verification policy seed.
+
+    Enforces booleans for enabled/follow_redirects, integer in [1, 120] for timeout,
+    'HEAD' or 'GET' for check_method, non-empty user_agent, and rejects unknown fields.
+    """
+    errors: list[str] = []
+    policy_path = Path(root) / "policy" / filename
+
+    allowed_fields = {
+        "id",
+        "status",
+        "title",
+        "description",
+        "enabled",
+        "timeout_seconds",
+        "follow_redirects",
+        "check_method",
+        "user_agent",
+        "created_at",
+        "updated_at",
+    }
+    unknown = sorted(set(doc) - allowed_fields)
+    if unknown:
+        errors.append(
+            f"{policy_path}: unknown field(s): {', '.join(unknown)}."
+        )
+
+    required_fields = (
+        "id",
+        "status",
+        "title",
+        "description",
+        "enabled",
+        "timeout_seconds",
+        "follow_redirects",
+        "check_method",
+        "user_agent",
+    )
+    for req in required_fields:
+        if req not in doc:
+            errors.append(f"{policy_path}: missing required field {req!r}.")
+
+    enabled = doc.get("enabled")
+    if enabled is not None and not isinstance(enabled, bool):
+        errors.append(f"{policy_path}: enabled must be a boolean; got {enabled!r}.")
+
+    timeout = doc.get("timeout_seconds")
+    if timeout is not None and (
+        isinstance(timeout, bool) or not isinstance(timeout, int) or not (1 <= timeout <= 120)
+    ):
+        errors.append(
+            f"{policy_path}: timeout_seconds must be an integer in [1, 120]; got {timeout!r}."
+        )
+
+    follow = doc.get("follow_redirects")
+    if follow is not None and not isinstance(follow, bool):
+        errors.append(f"{policy_path}: follow_redirects must be a boolean; got {follow!r}.")
+
+    method = doc.get("check_method")
+    if method is not None and method not in ("HEAD", "GET"):
+        errors.append(
+            f"{policy_path}: check_method must be 'HEAD' or 'GET'; got {method!r}."
+        )
+
+    ua = doc.get("user_agent")
+    if ua is not None and (not isinstance(ua, str) or not ua.strip()):
+        errors.append(
+            f"{policy_path}: user_agent must be a non-empty string; got {ua!r}."
+        )
+
+    return errors
+

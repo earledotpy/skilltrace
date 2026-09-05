@@ -31,6 +31,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +47,7 @@ _KIND = "learning resource"
 # marker recording a failed check. Every other verification status (unverified,
 # verified, stale) is *derived* from `last_verified` against a policy window and
 # is never stored.
+# v1.7 adds retirement metadata (retired, retired_at, replaced_by).
 _ALLOWED_FIELDS: frozenset[str] = frozenset(
     {
         "id",
@@ -58,6 +60,9 @@ _ALLOWED_FIELDS: frozenset[str] = frozenset(
         "supports",
         "last_verified",
         "broken",
+        "retired",
+        "retired_at",
+        "replaced_by",
     }
 )
 
@@ -121,6 +126,9 @@ class LearningResource:
     `broken` is the dated broken marker from a failed check; the two coexist (a
     once-verified resource later found broken carries both), and no automation
     ever sets `last_verified` — positive verification is a human act forever.
+
+    `retired` marks a resource that has been superseded by a replacement candidate;
+    it carries an ISO date `retired_at` and `replaced_by` pointing to the replacement.
     """
 
     id: str
@@ -134,6 +142,10 @@ class LearningResource:
     last_verified: str | None = None
     broken: BrokenMarker | None = None
     source_path: Path | None = None
+    retired: bool = False
+    retired_at: str | None = None
+    replaced_by: str | None = None
+
 
 
 def _ident(data: Any, index: int | None) -> str:
@@ -225,6 +237,50 @@ def load_resource(
 
     broken = _load_broken(data.get("broken"), where, ident)
 
+    retired_raw = data.get("retired")
+    if retired_raw is not None:
+        if not isinstance(retired_raw, bool):
+            raise ResourceLoadError(
+                f"{where}{ident} has non-boolean retired {retired_raw!r} — expected true or false."
+            )
+        if not retired_raw:
+            raise ResourceLoadError(
+                f"{where}{ident} has retired: false — active entries must omit retirement metadata."
+            )
+    is_retired = bool(retired_raw)
+
+    retired_at = data.get("retired_at")
+    replaced_by = data.get("replaced_by")
+
+    if not is_retired:
+        if retired_at is not None or replaced_by is not None:
+            raise ResourceLoadError(
+                f"{where}{ident} has retirement metadata without retired: true — "
+                "active entries must omit retirement metadata."
+            )
+    else:
+        if not isinstance(retired_at, str) or not retired_at:
+            raise ResourceLoadError(
+                f"{where}{ident} retired entry has invalid retired_at {retired_at!r} — "
+                "expected an ISO date string."
+            )
+        try:
+            date.fromisoformat(retired_at)
+        except ValueError:
+            raise ResourceLoadError(
+                f"{where}{ident} retired entry has invalid retired_at {retired_at!r} — "
+                "expected an ISO date string (YYYY-MM-DD)."
+            )
+        if not isinstance(replaced_by, str) or not _SLUG_RE.fullmatch(replaced_by):
+            raise ResourceLoadError(
+                f"{where}{ident} retired entry has invalid replaced_by {replaced_by!r} — "
+                "expected a valid resource ID slug."
+            )
+        if replaced_by == resource_id:
+            raise ResourceLoadError(
+                f"{where}{ident} cannot be replaced by itself."
+            )
+
     return LearningResource(
         id=resource_id,
         cost=cost,
@@ -237,6 +293,9 @@ def load_resource(
         last_verified=last_verified,
         broken=broken,
         source_path=source_path,
+        retired=is_retired,
+        retired_at=retired_at,
+        replaced_by=replaced_by,
     )
 
 

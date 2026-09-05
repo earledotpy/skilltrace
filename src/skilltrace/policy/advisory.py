@@ -128,15 +128,15 @@ def analytics_warnings(root: "Path | str", view: "AnalyticsView") -> list[str]:
     thresholds = doc.get("advisory_thresholds") or {}
     warnings: list[str] = []
 
-    # --- Velocity: average sessions per week across all weekly buckets -------
+    # --- Velocity: average work items per week across all weekly buckets -------
     velocity_target = thresholds.get("velocity_below_target_per_week", 2)
     weeks = view.velocity.weeks
     if weeks:
-        avg_sessions = sum(w.session_count for w in weeks) / len(weeks)
-        if avg_sessions < velocity_target:
+        avg_work_items = sum(w.work_item_count for w in weeks) / len(weeks)
+        if avg_work_items < velocity_target:
             warnings.append(
                 f"Study velocity is below target: "
-                f"{avg_sessions:.1f} sessions/week average "
+                f"{avg_work_items:.1f} work items/week average "
                 f"(target: {velocity_target})."
             )
 

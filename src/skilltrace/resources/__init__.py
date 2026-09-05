@@ -7,3 +7,6 @@ curriculum-integrity check), and the claim fields; `resources_for_node` derives
 the per-node reverse index that `resources --node-id` lists. Verification
 metadata and the resource report land in later v0.7 slices.
 """
+from .web_check import WebCheckResult, check_url
+
+__all__ = ["WebCheckResult", "check_url"]

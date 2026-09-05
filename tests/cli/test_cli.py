@@ -76,6 +76,8 @@ def test_registry_has_the_expected_commands():
         "export html",
         "backup",
         "serve",
+        "check-resource",
+        "replace-resource",
     }
 
 

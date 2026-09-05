@@ -218,3 +218,120 @@ def test_validate_resources_logs_nothing_even_on_failure(resources_repo):
     rc = cli.run(["validate", "resources"], root=resources_repo)
     assert rc == 1
     assert load_events(resources_repo) == []
+
+
+# --- v1.7: Retired resources and web_check schema --------------------------
+
+
+def test_retired_resource_pointing_to_valid_candidate_validates_clean(resources_repo, capsys):
+    write_node(resources_repo, "testing.res.subject_01")
+    write_registry(
+        resources_repo,
+        [
+            {
+                "id": "replacement-candidate",
+                "url": "https://example.com/new",
+                "cost": "free",
+                "supports": ["testing.res.subject_01"],
+            },
+            {
+                "id": "retired-book",
+                "url": "https://example.com/old",
+                "cost": "free",
+                "supports": ["testing.res.subject_01"],
+                "retired": True,
+                "retired_at": "2026-09-03",
+                "replaced_by": "replacement-candidate",
+            },
+        ],
+    )
+    rc = cli.run(["validate", "resources"], root=resources_repo)
+    assert rc == 0
+    assert "validate resources: OK" in capsys.readouterr().out
+
+
+def test_retired_resource_pointing_to_unknown_candidate_fails(resources_repo, capsys):
+    write_node(resources_repo, "testing.res.subject_01")
+    write_registry(
+        resources_repo,
+        [
+            {
+                "id": "retired-book",
+                "url": "https://example.com/old",
+                "cost": "free",
+                "supports": ["testing.res.subject_01"],
+                "retired": True,
+                "retired_at": "2026-09-03",
+                "replaced_by": "unknown-replacement",
+            }
+        ],
+    )
+    rc = cli.run(["validate", "resources"], root=resources_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate resources: FAILED" in out
+    assert "replaced_by names unknown resource unknown-replacement" in out
+
+
+def test_active_entry_with_retirement_metadata_fails(resources_repo, capsys):
+    write_node(resources_repo, "testing.res.subject_01")
+    write_registry(
+        resources_repo,
+        [
+            {
+                "id": "active-book",
+                "url": "https://example.com/active",
+                "cost": "free",
+                "supports": ["testing.res.subject_01"],
+                "retired_at": "2026-09-03",
+            }
+        ],
+    )
+    rc = cli.run(["validate", "resources"], root=resources_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate resources: FAILED" in out
+    assert "active entries must omit retirement metadata" in out
+
+
+def test_active_entry_with_retired_false_fails(resources_repo, capsys):
+    write_node(resources_repo, "testing.res.subject_01")
+    write_registry(
+        resources_repo,
+        [
+            {
+                "id": "active-book",
+                "url": "https://example.com/active",
+                "cost": "free",
+                "supports": ["testing.res.subject_01"],
+                "retired": False,
+            }
+        ],
+    )
+    rc = cli.run(["validate", "resources"], root=resources_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate resources: FAILED" in out
+    assert "active entries must omit retirement metadata" in out
+
+
+def test_invalid_web_check_fails(resources_repo, capsys):
+    write_node(resources_repo, "testing.res.subject_01")
+    write_registry(
+        resources_repo,
+        [
+            {
+                "id": "bad-wc-resource",
+                "url": "https://example.com/doc",
+                "cost": "free",
+                "supports": ["testing.res.subject_01"],
+                "web_check": {"enabled": "no"},
+            }
+        ],
+    )
+    rc = cli.run(["validate", "resources"], root=resources_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate resources: FAILED" in out
+    assert "unknown field" in out
+

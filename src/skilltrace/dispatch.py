@@ -140,7 +140,7 @@ def dispatch(command: Command, ctx: Context) -> int:
     result = command.handler(ctx)
 
     # 3. Audit — exactly one event for a mutating command that succeeded.
-    if command.kind is Kind.MUTATING and result.exit_code == 0:
+    if command.kind is Kind.MUTATING and result.exit_code == 0 and not getattr(ctx.args, "dry_run", False):
         event_args = _event_args(ctx.args)
         if ctx.source is not None:
             event_args["source"] = ctx.source

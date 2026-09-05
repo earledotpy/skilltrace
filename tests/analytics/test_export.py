@@ -277,6 +277,7 @@ _REQUIRED_PERIOD_KEYS = {"start", "end", "days"}
 
 _REQUIRED_VELOCITY_KEYS = {
     "work_items_count",
+    "work_items_per_week",
     "minutes_logged",
     "node_progress",
     "by_week",
