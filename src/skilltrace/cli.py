@@ -440,6 +440,47 @@ def build_parser() -> argparse.ArgumentParser:
     )
     check_resource_parser.set_defaults(_command_name="check-resource")
 
+    # check-resources [--all | --stale-only] [--timeout N] [--method HEAD|GET] [--follow-redirects] [--user-agent UA]
+    check_resources_parser = subcommands.add_parser(
+        "check-resources",
+        help="Check reachability of all (or stale-only) resource URLs (read-only, exits 0 on answered sweep).",
+    )
+    selector = check_resources_parser.add_mutually_exclusive_group()
+    selector.add_argument(
+        "--all",
+        action="store_true",
+        help="Check every resource (the default when no selector is given).",
+    )
+    selector.add_argument(
+        "--stale-only",
+        action="store_true",
+        help="Check only resources whose derived status is stale under the policy window.",
+    )
+    check_resources_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help="Timeout in seconds (default: from policy).",
+    )
+    check_resources_parser.add_argument(
+        "--method",
+        choices=["HEAD", "GET"],
+        default=None,
+        help="HTTP method to use (default: from policy).",
+    )
+    check_resources_parser.add_argument(
+        "--follow-redirects",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Follow HTTP redirects (default: from policy).",
+    )
+    check_resources_parser.add_argument(
+        "--user-agent",
+        default=None,
+        help="Custom User-Agent string.",
+    )
+    check_resources_parser.set_defaults(_command_name="check-resources")
+
     # replace-resource <broken_id> <candidate_id> [--dry-run]
     replace_resource_parser = subcommands.add_parser(
         "replace-resource",

@@ -300,7 +300,11 @@ derived from the assertion date, never stored: staleness is derived by
 comparing `last_verified` to a policy-configured window. A failed check is
 not a verification: it records a dated **broken** marker with the reason —
 the one stored verification fact, because it is an observation, not a
-derivation. Broken dominates the derived statuses in reports and is cleared
+derivation. **Broken marker** — the dated observation of a failed check,
+carrying the required date and reason plus two optional observed fields
+(the HTTP `status_code`, the observed redirect-target `final_url`, each
+possibly absent) — still descriptive, still advisory. Broken dominates the
+derived statuses in reports and is cleared
 only by a later successful verification or a human curriculum edit; like
 all resource problems it warns and never blocks. Positive verification is a
 human act forever: no automation ever sets `last_verified`, because claims

@@ -87,7 +87,7 @@ def test_report_progress_seed_data(tmp_path, capsys):
     out = capsys.readouterr().out
 
     assert "Your Learning Journey" in out
-    assert "You have completed 0 of 81 skills (0 mastered, 0 passed) across 0 study sessions (0.0 hours)." in out
+    assert "You have completed 0 of 88 skills (0 mastered, 0 passed) across 0 study sessions (0.0 hours)." in out
     assert "Track Breakdown" in out
     assert "Math Foundations" in out
     assert "Programming & Tooling" in out
@@ -142,7 +142,7 @@ def test_report_progress_with_completed_nodes_and_sessions(tmp_path, capsys):
     assert rc == 0
     out = capsys.readouterr().out
 
-    assert "You have completed 2 of 81 skills (1 mastered, 1 passed) across 2 study sessions (2.0 hours)." in out
+    assert "You have completed 2 of 88 skills (1 mastered, 1 passed) across 2 study sessions (2.0 hours)." in out
     assert "Currently working on Run Python locally. Next up: finish active evidence submissions." in out
 
 
@@ -375,6 +375,6 @@ def test_report_resources_seed_data(tmp_path, capsys):
     assert rc == 0
     out = capsys.readouterr().out
 
-    assert "resource-report: 29 resource(s), 81 node(s)" in out
+    assert "resource-report: 33 resource(s), 88 node(s)" in out
     assert "khan-arithmetic" in out
-    assert "coverage: 81/81 node(s) have a linked resource." in out
+    assert "coverage: 88/88 node(s) have a linked resource." in out

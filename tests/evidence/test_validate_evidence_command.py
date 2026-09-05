@@ -39,12 +39,32 @@ def test_seed_validates_clean_and_logs_no_event(tmp_path, capsys):
 
 
 def test_load_and_validate_seed_has_no_warnings():
-    # The seed covers all 47 nodes with a gate + required spec and ships no
-    # records, so a correct run emits zero warnings — asserting that (not merely
-    # `ok`) catches a coverage check that spuriously warns on covered nodes.
+    # The seed covers 81 nodes with a gate + required spec and ships no
+    # records; the 7 v1.8 ML seed nodes are gateless by design (gates land
+    # with their evidence specs in a later slice), so a correct run emits
+    # exactly those seven curriculum-quality warnings — asserting that (not
+    # merely `ok`) catches a coverage check that spuriously warns on covered
+    # nodes while pinning the known gateless set.
     result = load_and_validate_evidence(REPO_ROOT)
     assert result.ok
-    assert result.warnings == []
+    gateless = (
+        "ml.capstone.house_prices_integration_01",
+        "ml.classification.logistic_regression_01",
+        "ml.evaluation.validation_metrics_01",
+        "ml.framing.ml_workflow_01",
+        "ml.practice.titanic_baseline_01",
+        "ml.regression.linear_regression_01",
+        "ml.trees.ensembles_01",
+    )
+    expected = [
+        f"node {node_id} has no gate — it cannot accept evidence "
+        "and is never pass-eligible."
+        for node_id in gateless
+    ] + [
+        f"node {node_id} has no required artifact spec — it is never pass-eligible."
+        for node_id in gateless
+    ]
+    assert sorted(result.warnings) == sorted(expected)
     assert result.spec_count == 81
     assert result.gate_count == 81
 
@@ -107,9 +127,10 @@ def test_real_artifact_drift_surfaces_as_warning(tmp_path, capsys):
     frozen = hash_artifact(artifact)
     _write_record(root, location="evidence/math/set_001.md", artifact_hash=frozen)
 
-    # Matching file → clean.
+    # Matching file → clean (aside from the 14 known v1.8 gateless-seed
+    # warnings, which are curriculum-quality, not drift).
     assert cli.run(["validate", "evidence"], root=root) == 0
-    assert "warning" not in capsys.readouterr().out
+    assert "artifact drift" not in capsys.readouterr().out
 
     # Drift the file → warning, still exit 0 (advisory).
     artifact.write_text("edited after submission", encoding="utf-8")

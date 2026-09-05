@@ -203,6 +203,41 @@ def test_verify_resource_check_url_success_never_writes_positive(resources_repo,
     assert events[0]["records_touched"] == ["fresh-res"]
 
 
+def test_verify_resource_check_url_failure_writes_enriched_marker(resources_repo, capsys):
+    """v1.8 G-Marker: the --check-url failure path persists status_code/final_url."""
+    _write_res(
+        resources_repo,
+        [
+            {
+                "id": "moved-res",
+                "url": "https://example.com/moved",
+                "cost": "free",
+                "last_verified": "2026-01-01",
+            }
+        ],
+    )
+    http_err = urllib.error.HTTPError(
+        url="https://example.com/renamed",
+        code=404,
+        msg="Not Found",
+        hdrs={},
+        fp=io.BytesIO(),
+    )
+    with patch("urllib.request.OpenerDirector.open", side_effect=http_err):
+        rc = cli.run(["verify-resource", "moved-res", "--check-url"], root=resources_repo)
+
+    assert rc == 0
+    res = load_resources(resources_repo)[0]
+    assert res.broken is not None
+    assert res.broken.status_code == 404
+    assert res.broken.final_url == "https://example.com/renamed"
+    assert res.last_verified == "2026-01-01"  # preserved, not touched
+
+    events = load_events(resources_repo)
+    assert len(events) == 1
+    assert events[0]["command"] == "verify-resource"
+
+
 def test_verify_resource_check_url_cannot_combine_with_broken(resources_repo, capsys):
     _write_res(
         resources_repo,

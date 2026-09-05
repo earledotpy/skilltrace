@@ -50,12 +50,17 @@ def record_verification(
     *,
     date: str,
     broken_reason: str | None = None,
+    status_code: int | None = None,
+    final_url: str | None = None,
 ) -> None:
     """Write the verification verdict for `resource_id` into `graph/resources.yaml`.
 
     A successful verification (`broken_reason` is None) sets `last_verified` to
     `date` and clears any broken marker. A failed one (`broken_reason` given)
-    writes the dated broken marker and leaves `last_verified` alone.
+    writes the dated broken marker and leaves `last_verified` alone. The
+    failure path also stores the observed `status_code`/`final_url` detail
+    (v1.8 G-Marker); `None` fields are omitted from the YAML (no explicit
+    nulls) so legacy `{date, reason}` markers stay valid with no backfill.
 
     Raises `ResourceLoadError` if the registry cannot be read/parsed or names no
     resource with this id — but the command validates existence up front, so that
@@ -81,7 +86,12 @@ def record_verification(
         entry["last_verified"] = date
         entry.pop("broken", None)
     else:
-        entry["broken"] = {"date": date, "reason": broken_reason}
+        marker: dict[str, object] = {"date": date, "reason": broken_reason}
+        if status_code is not None:
+            marker["status_code"] = status_code
+        if final_url is not None:
+            marker["final_url"] = final_url
+        entry["broken"] = marker
 
     path.write_text(
         yaml.safe_dump(doc, sort_keys=False, default_flow_style=False),

@@ -66,10 +66,16 @@ _ALLOWED_FIELDS: frozenset[str] = frozenset(
     }
 )
 
-# The broken marker's closed sub-schema: exactly a date and a reason, both
-# required non-empty strings. Nested so it reads as one marker and clears with a
-# single key removal on a later successful verification.
-_BROKEN_FIELDS: frozenset[str] = frozenset({"date", "reason"})
+# The broken marker's closed sub-schema: a required non-empty `date` and
+# `reason` plus two optional observed details (v1.8 G-Marker): `status_code`
+# (the observed HTTP status, None for transport/timeout failures) and
+# `final_url` (the observed redirect target frozen at failure time, None when
+# no response/redirect was observed). Nested so it reads as one marker and
+# clears with a single key removal on a later successful verification.
+# Anything beyond these four fields still fails.
+_BROKEN_FIELDS: frozenset[str] = frozenset(
+    {"date", "reason", "status_code", "final_url"}
+)
 
 # Cost is a single claim with exactly two values — the only place cost lives, so
 # "free and paid at once" is unrepresentable, not merely rejected downstream.
@@ -104,6 +110,8 @@ class BrokenMarker:
 
     date: str
     reason: str
+    status_code: int | None = None
+    final_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -320,10 +328,12 @@ def _load_flag(raw: Any, field_name: str, where: str, ident: str) -> bool:
 def _load_broken(raw: Any, where: str, ident: str) -> BrokenMarker | None:
     """Validate the optional `broken` marker into a `BrokenMarker`, or `None`.
 
-    Absent means not-broken. When present it is a closed mapping of exactly a
-    non-empty `date` and a non-empty `reason` — the shape `verify-resource --broken`
-    writes. A malformed marker (non-mapping, missing key, extra key, empty value)
-    is a clean `ResourceLoadError`, never a traceback.
+    Absent means not-broken. When present it is a closed mapping of a required
+    non-empty `date` and `reason` plus the optional observed `status_code` and
+    `final_url` (absent reads as `None`) — the shape `verify-resource --broken`
+    and the `--check-url` preflight write. A malformed marker (non-mapping,
+    missing key, extra key, empty value, wrong optional type) is a clean
+    `ResourceLoadError`, never a traceback.
     """
     if raw is None:
         return None
@@ -348,7 +358,35 @@ def _load_broken(raw: Any, where: str, ident: str) -> BrokenMarker | None:
             f"{where}{ident} broken marker has invalid reason {reason!r} — "
             "expected a non-empty reason."
         )
-    return BrokenMarker(date=date, reason=reason)
+    status_code = _load_optional_int(raw.get("status_code"), "status_code", where, ident)
+    final_url = _load_optional_str(raw.get("final_url"), "final_url", where, ident)
+    return BrokenMarker(
+        date=date, reason=reason, status_code=status_code, final_url=final_url
+    )
+
+
+def _load_optional_int(raw: Any, field_name: str, where: str, ident: str) -> int | None:
+    """Validate an optional observed int (absent reads as `None`, never coerced)."""
+    if raw is None:
+        return None
+    if isinstance(raw, bool) or not isinstance(raw, int):
+        raise ResourceLoadError(
+            f"{where}{ident} broken marker has invalid {field_name} "
+            f"{raw!r} — expected an int or null."
+        )
+    return raw
+
+
+def _load_optional_str(raw: Any, field_name: str, where: str, ident: str) -> str | None:
+    """Validate an optional observed non-empty string (absent reads as `None`)."""
+    if raw is None:
+        return None
+    if not isinstance(raw, str) or not raw:
+        raise ResourceLoadError(
+            f"{where}{ident} broken marker has invalid {field_name} "
+            f"{raw!r} — expected a non-empty string or null."
+        )
+    return raw
 
 
 def _load_supports(raw: Any, where: str, ident: str) -> tuple[str, ...]:

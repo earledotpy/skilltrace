@@ -161,7 +161,16 @@ def _status_detail(resource: LearningResource, status: VerificationStatus) -> st
     """The trailing clause for a status line: reason/date for the status word."""
     if status is VerificationStatus.BROKEN:
         assert resource.broken is not None  # broken status implies the marker
-        return f"broken {resource.broken.date}: {resource.broken.reason}"
+        detail = f"broken {resource.broken.date}: {resource.broken.reason}"
+        # G-Marker enrichment renders as advisory detail only (never a verdict).
+        observed = []
+        if resource.broken.status_code is not None:
+            observed.append(f"status {resource.broken.status_code}")
+        if resource.broken.final_url is not None:
+            observed.append(f"final_url {resource.broken.final_url}")
+        if observed:
+            detail += f" ({', '.join(observed)})"
+        return detail
     if status is VerificationStatus.STALE:
         return f"last verified {resource.last_verified} (older than the window)"
     if status is VerificationStatus.VERIFIED:

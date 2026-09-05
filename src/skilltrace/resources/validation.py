@@ -20,10 +20,16 @@ loader) from cross-record integrity (here):
 
 **Warnings** (advisory, exit 0):
 
-- an orphan resource — one supporting no node, like a gateless node;
+- an orphan resource — one supporting no node, like a gateless node
+  (suppressed for retired entries: an empty `supports` on history is not a
+  quality signal);
 - a redundant free tier — `free_tier: true` on a `cost: free` resource, where
   the free-tier claim (try before upgrading) says nothing. Representable, not
   rejected: the loader keeps it loadable and this flags it for cleanup.
+  Applies retired or not;
+- a dangling `supports` reference on a *retired* entry — preserved history
+  drifting from the graph warns with the locked `WARN retired-resource …`
+  line instead of failing (v1.8 G-Retired).
 
 Two design rules match the other layers: **state-independent** (never reads
 `graph/state.yaml`) and **deterministic order** (sets for membership only; every
@@ -94,10 +100,21 @@ def check_resources(
     for resource in resources:
         for node_id in resource.supports:
             if node_id not in known_nodes:
-                result.errors.append(
-                    f"resource {resource.id}: supports names unknown node {node_id}."
-                )
-        if not resource.supports:
+                if resource.retired:
+                    # v1.8 G-Retired: retire preserves supports as history, so
+                    # drift in preserved history warns (advisory, exit 0) —
+                    # never a curriculum break.
+                    result.warnings.append(
+                        f"WARN retired-resource {resource.id} — retired "
+                        f"{resource.retired_at}; replaced by "
+                        f"{resource.replaced_by} (supports unknown node "
+                        f"{node_id} preserved as history)"
+                    )
+                else:
+                    result.errors.append(
+                        f"resource {resource.id}: supports names unknown node {node_id}."
+                    )
+        if not resource.supports and not resource.retired:
             result.warnings.append(
                 f"resource {resource.id} supports no node — it is linked to nothing "
                 "and serves no node's study."

@@ -17,6 +17,7 @@ from . import (
     blocker,
     check_automation,
     check_resource,
+    check_resources,
     eligibility,
     export,
     health,
@@ -70,6 +71,7 @@ def register_all(registry: Registry) -> Registry:
     verify_resource.register(registry)
     replace_resource.register(registry)
     check_resource.register(registry)
+    check_resources.register(registry)
     check_automation.register(registry)
     suggest.register(registry)
     today.register(registry)

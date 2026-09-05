@@ -121,7 +121,12 @@ def verify_resource(ctx: Context) -> CommandResult:
             else:
                 broken_reason = str(result.reason)
             record_verification(
-                root, resource_id, date=date, broken_reason=broken_reason
+                root,
+                resource_id,
+                date=date,
+                broken_reason=broken_reason,
+                status_code=result.status_code,
+                final_url=result.final_url,
             )
             print(
                 f"verify-resource: {resource_id} marked broken ({date}) — {broken_reason}."

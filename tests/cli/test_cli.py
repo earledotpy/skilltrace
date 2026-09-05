@@ -77,6 +77,7 @@ def test_registry_has_the_expected_commands():
         "backup",
         "serve",
         "check-resource",
+        "check-resources",
         "replace-resource",
     }
 

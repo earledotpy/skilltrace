@@ -12,6 +12,7 @@ import socket
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Literal
 
@@ -182,3 +183,35 @@ def check_url(
             final_url=None,
             reason=str(exc),
         )
+
+
+def batch(
+    entries: Iterable[str],
+    *,
+    timeout_seconds: int,
+    follow_redirects: bool,
+    method: Literal["HEAD", "GET"],
+    user_agent: str,
+) -> list[tuple[str, WebCheckResult]]:
+    """Check a list of URLs sequentially, preserving input order (v1.8 G-Batch).
+
+    A thin loop over `check_url`: no token bucket, no `robots.txt`, no retry
+    loop — a 429 (or any HTTP/transport/timeout failure) is reported as
+    `ok=False` via the result's `reason`, never retried. Pure network reads:
+    performs zero writes (never calls `record_verification`, never sets
+    `last_verified`, never clears `broken`) and emits no event. An empty
+    input yields an empty list.
+    """
+    return [
+        (
+            entry,
+            check_url(
+                entry,
+                timeout_seconds=timeout_seconds,
+                follow_redirects=follow_redirects,
+                method=method,
+                user_agent=user_agent,
+            ),
+        )
+        for entry in entries
+    ]

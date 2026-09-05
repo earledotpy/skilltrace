@@ -1115,3 +1115,111 @@ edges:
     active: true
     created_at: 2026-07-07
     updated_at: 2026-07-07
+  -
+    id: edge.data.pandas.dataframe_basics_01__ml.framing.ml_workflow_01
+    source: data.pandas.dataframe_basics_01
+    target: ml.framing.ml_workflow_01
+    edge_type: soft_prerequisite
+    reason: ML framing exercises load and inspect tabular data, so DataFrame fluency smooths the start, but the framing judgments stand without Pandas — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.math.statistics.probability_basics_01__ml.framing.ml_workflow_01
+    source: math.statistics.probability_basics_01
+    target: ml.framing.ml_workflow_01
+    edge_type: soft_prerequisite
+    reason: Framing classification sharpens with probability language, but supervised-vs-unsupervised and split discipline are startable cold — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.ml.framing.ml_workflow_01__ml.regression.linear_regression_01
+    source: ml.framing.ml_workflow_01
+    target: ml.regression.linear_regression_01
+    edge_type: hard_prerequisite
+    reason: Linear regression trains inside a leakage-audited split; with no framing and split discipline there is no sacred test set for the loss to be measured on, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.ml.regression.linear_regression_01__ml.classification.logistic_regression_01
+    source: ml.regression.linear_regression_01
+    target: ml.classification.logistic_regression_01
+    edge_type: hard_prerequisite
+    reason: Logistic regression reuses the linear-regression machinery (linear score, gradient descent on a loss); strip the regression loss-and-descent concept and the classifier has nothing to generalize, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.ml.classification.logistic_regression_01__ml.evaluation.validation_metrics_01
+    source: ml.classification.logistic_regression_01
+    target: ml.evaluation.validation_metrics_01
+    edge_type: hard_prerequisite
+    reason: Validation diagnoses bias and variance by comparing train and validation metrics across model families; with no classifier trained there is nothing to diagnose, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.ml.evaluation.validation_metrics_01__ml.trees.ensembles_01
+    source: ml.evaluation.validation_metrics_01
+    target: ml.trees.ensembles_01
+    edge_type: hard_prerequisite
+    reason: Ensemble controls (depth, learning rate, subsample) are chosen by reading validation curves; with no validation discipline the depth-vs-boosting comparison has no honest readout, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.ml.trees.ensembles_01__ml.practice.titanic_baseline_01
+    source: ml.trees.ensembles_01
+    target: ml.practice.titanic_baseline_01
+    edge_type: soft_prerequisite
+    reason: Titanic improves fastest with ensembles, so meeting trees first smooths the climb, but a logistic baseline submits and scores without them — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.ml.evaluation.validation_metrics_01__ml.practice.titanic_baseline_01
+    source: ml.evaluation.validation_metrics_01
+    target: ml.practice.titanic_baseline_01
+    edge_type: soft_prerequisite
+    reason: Honest Titanic write-ups lean on validation discipline, but a first baseline can submit before the full diagnosis is fluent — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.ml.practice.titanic_baseline_01__ml.capstone.house_prices_integration_01
+    source: ml.practice.titanic_baseline_01
+    target: ml.capstone.house_prices_integration_01
+    edge_type: hard_prerequisite
+    reason: The capstone reuses the Titanic submission discipline (feature engineering, commit-per-submission, score comparison) on a regression task; with no competition baseline shipped there is no pipeline to integrate, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.ml.trees.ensembles_01__ml.capstone.house_prices_integration_01
+    source: ml.trees.ensembles_01
+    target: ml.capstone.house_prices_integration_01
+    edge_type: hard_prerequisite
+    reason: The capstone's scored comparison is a regularized-regression baseline versus a tree/gradient-boosting model; strip the ensemble skill and the comparison has only one side, so the target is incoherent. Together with the Titanic hard edge this gives the capstone two source lineages (Kaggle practice + MLCC/Ng/ISLP ensembles).
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.math.calculus.gradient_intuition_01__ml.regression.linear_regression_01
+    source: math.calculus.gradient_intuition_01
+    target: ml.regression.linear_regression_01
+    edge_type: soft_prerequisite
+    reason: Gradient-descent loss reading lands faster with gradient intuition, but the regression update rule is teachable by the downhill-step picture alone — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.programming.python.functions_01__ml.practice.titanic_baseline_01
+    source: programming.python.functions_01
+    target: ml.practice.titanic_baseline_01
+    edge_type: soft_prerequisite
+    reason: Factoring the Titanic pipeline into functions tidies the notebook, but a linear top-to-bottom script submits and scores — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
