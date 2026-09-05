@@ -1223,3 +1223,192 @@ edges:
     active: true
     created_at: 2026-09-05
     updated_at: 2026-09-05
+  -
+    id: edge.agents.concepts.agent_fundamentals_01__agents.frameworks.smolagents_01
+    source: agents.concepts.agent_fundamentals_01
+    target: agents.frameworks.smolagents_01
+    edge_type: hard_prerequisite
+    reason: The CodeAgent versus ToolCallingAgent comparison presupposes the agent, tool, and action-loop vocabulary; without it the style distinction is incoherent, not merely harder.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.concepts.agent_fundamentals_01__agents.frameworks.langgraph_01
+    source: agents.concepts.agent_fundamentals_01
+    target: agents.frameworks.langgraph_01
+    edge_type: hard_prerequisite
+    reason: Graphs, state, and reducers orchestrate agent behavior; with no agent/tool concept the graph has nothing to orchestrate, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.concepts.agent_fundamentals_01__agents.data.llamaindex_rag_01
+    source: agents.concepts.agent_fundamentals_01
+    target: agents.data.llamaindex_rag_01
+    edge_type: hard_prerequisite
+    reason: Agentic RAG is an agent deciding when to retrieve; with no agent/action-loop concept the agentic turn has no subject, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.concepts.agent_fundamentals_01__agents.optimization.dspy_01
+    source: agents.concepts.agent_fundamentals_01
+    target: agents.optimization.dspy_01
+    edge_type: hard_prerequisite
+    reason: Program-don't-prompt optimizes agent programs; with no agent concept there is no program under optimization, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.concepts.agent_fundamentals_01__agents.protocol.mcp_01
+    source: agents.concepts.agent_fundamentals_01
+    target: agents.protocol.mcp_01
+    edge_type: hard_prerequisite
+    reason: MCP standardizes how tools reach agents; with no tool concept the server/client contract describes nothing, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.concepts.agent_fundamentals_01__agents.frameworks.ms_agent_framework_01
+    source: agents.concepts.agent_fundamentals_01
+    target: agents.frameworks.ms_agent_framework_01
+    edge_type: hard_prerequisite
+    reason: Multi-agent workflows coordinate agents; with no agent/tool vocabulary the workflow pattern coordinates nothing, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.concepts.agent_fundamentals_01__agents.frameworks.openai_agents_sdk_01
+    source: agents.concepts.agent_fundamentals_01
+    target: agents.frameworks.openai_agents_sdk_01
+    edge_type: hard_prerequisite
+    reason: Handoffs delegate between agents; with no agent concept there is nothing to delegate to, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.concepts.agent_fundamentals_01__agents.frameworks.pydanticai_01
+    source: agents.concepts.agent_fundamentals_01
+    target: agents.frameworks.pydanticai_01
+    edge_type: hard_prerequisite
+    reason: Typed agents type agent behavior; with no agent/tool concept the types constrain nothing, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.deploy.fastapi_minimal_01__agents.deploy.docker_engine_build_run_01
+    source: agents.deploy.fastapi_minimal_01
+    target: agents.deploy.docker_engine_build_run_01
+    edge_type: hard_prerequisite
+    reason: The Dockerfile containers the minimal app; with no app built there is nothing to containerize and the 4-command smoke has no image, so the target is incoherent.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.frameworks.langgraph_01__agents.capstone.deployed_agent_integration_01
+    source: agents.frameworks.langgraph_01
+    target: agents.capstone.deployed_agent_integration_01
+    edge_type: hard_prerequisite
+    reason: The capstone's orchestrated core is a stateful LangGraph agent with persistence; strip the graph skill and the deployed service has no agent inside, so the target is incoherent. Together with the primer hard edge this gives the capstone two source lineages (LangGraph framework + Docker-primer deploy).
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.deploy.docker_engine_build_run_01__agents.capstone.deployed_agent_integration_01
+    source: agents.deploy.docker_engine_build_run_01
+    target: agents.capstone.deployed_agent_integration_01
+    edge_type: hard_prerequisite
+    reason: The capstone is checked Engine-local via the 4-command acceptance; with no containerized service there is nothing to build, run, or curl, so the target is incoherent. The single hard edge out of the primer.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.concepts.agent_fundamentals_01__agents.deploy.fastapi_minimal_01
+    source: agents.concepts.agent_fundamentals_01
+    target: agents.deploy.fastapi_minimal_01
+    edge_type: soft_prerequisite
+    reason: Knowing what the served agent will be sharpens the primer's purpose, but the Hello World service builds and serves with no agent vocabulary — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.concepts.agent_fundamentals_01__agents.deploy.docker_engine_build_run_01
+    source: agents.concepts.agent_fundamentals_01
+    target: agents.deploy.docker_engine_build_run_01
+    edge_type: soft_prerequisite
+    reason: The Unit 4 final-project deploy motivation frames why containers matter for agents, but the Dockerfile and smoke check run on the primer app alone — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.protocol.mcp_01__agents.frameworks.smolagents_01
+    source: agents.protocol.mcp_01
+    target: agents.frameworks.smolagents_01
+    edge_type: soft_prerequisite
+    reason: smolagents consumes MCP servers via from_mcp, so protocol-first smooths that interop, but the first CodeAgent runs on plain custom tools — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.protocol.mcp_01__agents.data.llamaindex_rag_01
+    source: agents.protocol.mcp_01
+    target: agents.data.llamaindex_rag_01
+    edge_type: soft_prerequisite
+    reason: The llama-index-tools-mcp package reads naturally with the protocol first, but the RAG pipeline retrieves and answers without it — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.protocol.mcp_01__agents.frameworks.ms_agent_framework_01
+    source: agents.protocol.mcp_01
+    target: agents.frameworks.ms_agent_framework_01
+    edge_type: soft_prerequisite
+    reason: MCP servers as tools land faster with the protocol first, but the sequential workflow runs on plain function tools — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.protocol.mcp_01__agents.frameworks.openai_agents_sdk_01
+    source: agents.protocol.mcp_01
+    target: agents.frameworks.openai_agents_sdk_01
+    edge_type: soft_prerequisite
+    reason: The MCP-backed tool in the trace reads cleaner with the protocol first, but handoffs and guardrails delegate and block without it — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.optimization.dspy_01__agents.frameworks.langgraph_01
+    source: agents.optimization.dspy_01
+    target: agents.frameworks.langgraph_01
+    edge_type: soft_prerequisite
+    reason: DSPy-optimized prompts improve graph node behavior, so optimization-first smooths orchestration, but stateful graphs run on plain prompts — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.frameworks.smolagents_01__agents.frameworks.langgraph_01
+    source: agents.frameworks.smolagents_01
+    target: agents.frameworks.langgraph_01
+    edge_type: soft_prerequisite
+    reason: Meeting the code-agent style first gives the graph model something to contrast against (actions-as-code versus stateful orchestration), but graphs are teachable standalone — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.frameworks.pydanticai_01__agents.frameworks.openai_agents_sdk_01
+    source: agents.frameworks.pydanticai_01
+    target: agents.frameworks.openai_agents_sdk_01
+    edge_type: soft_prerequisite
+    reason: The typed-harness discipline gives the delegation-first SDK something to contrast against on safety, but handoffs and guardrails stand without it — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05
+  -
+    id: edge.agents.protocol.mcp_01__agents.capstone.deployed_agent_integration_01
+    source: agents.protocol.mcp_01
+    target: agents.capstone.deployed_agent_integration_01
+    edge_type: soft_prerequisite
+    reason: The capstone's tools-arrive-over-MCP surface is richer with the protocol fluent, but the two hard parents already supply an integration path — ordering, not dependency.
+    active: true
+    created_at: 2026-09-05
+    updated_at: 2026-09-05

@@ -1,4 +1,10 @@
 progress:
+  agents.concepts.agent_fundamentals_01:
+    state: available
+    changed_at: '2026-09-05T22:50:46+00:00'
+  agents.deploy.fastapi_minimal_01:
+    state: available
+    changed_at: '2026-09-05T22:50:46+00:00'
   communication.notes.technical_summary_01:
     state: available
     changed_at: '2026-07-02'

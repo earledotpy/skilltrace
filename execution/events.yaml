@@ -241,3 +241,9 @@ events:
   command: sync
   args: {}
   records_touched: []
+- timestamp: '2026-09-05T22:50:46+00:00'
+  command: sync
+  args: {}
+  records_touched:
+  - agents.concepts.agent_fundamentals_01
+  - agents.deploy.fastapi_minimal_01
