@@ -25,9 +25,24 @@ from skilltrace.analytics.derive import (
     derive_blockers,
     derive_evidence,
     derive_reviews,
+    derive_theme,
     derive_velocity,
+    _blockers_aggregate,
+    _blockers_build_row,
+    _blockers_filter,
+    _evidence_aggregate,
+    _evidence_build_row,
+    _evidence_filter,
     _iso_week_label,
     _node_prefix,
+    _reviews_aggregate,
+    _reviews_build_row,
+    _reviews_filter,
+    _ThemeContext,
+    _velocity_aggregate,
+    _velocity_build_row,
+    _velocity_filter,
+    _window_start,
 )
 
 
@@ -680,3 +695,251 @@ def test_evidence_gaps_first_in_rows():
     )
     assert result.rows[0].gap is True
     assert result.rows[1].gap is False
+
+
+# ---------------------------------------------------------------------------
+# derive_theme framework (issue #173)
+# ---------------------------------------------------------------------------
+
+
+def _ctx(**overrides):
+    """Build a minimal _ThemeContext for callback unit tests."""
+    base = dict(
+        today=_TODAY,
+        cutoff=_window_start(_TODAY, _WINDOW_DAYS),
+        window_days=_WINDOW_DAYS,
+        group_by="prefix",
+        state_filter=[],
+        nodes=[],
+        store=_FakeStore(),
+        sessions_in_window=3,
+        min_sessions_for_full_data=_MIN_SESSIONS,
+        extra={},
+    )
+    base.update(overrides)
+    return _ThemeContext(**base)
+
+
+def test_derive_theme_trivial_callbacks_apply_filter_and_aggregate():
+    """Framework: filter selects items, rows flow to the aggregator."""
+    items = [
+        SimpleNamespace(node_id="math.arithmetic.a_01", value=1),
+        SimpleNamespace(node_id="math.algebra.b_01", value=2),
+        SimpleNamespace(node_id="math.arithmetic.c_01", value=3),
+    ]
+
+    def only_arithmetic(item, ctx):
+        return item.node_id.startswith("math.arithmetic")
+
+    def build(item, ctx):
+        return (ctx.group_value(item.node_id), item.value)
+
+    def aggregate(rows, ctx):
+        return {"rows": sorted(rows), "is_limited": ctx.is_limited}
+
+    result = derive_theme(
+        items,
+        today=_TODAY,
+        window_days=_WINDOW_DAYS,
+        group_by="prefix",
+        state_filter=[],
+        min_sessions_for_full_data=_MIN_SESSIONS,
+        nodes=[],
+        store=_FakeStore(),
+        sessions_in_window=3,
+        filter_item=only_arithmetic,
+        build_row=build,
+        aggregate=aggregate,
+    )
+    assert result["rows"] == [("math.arithmetic", 1), ("math.arithmetic", 3)]
+    assert result["is_limited"] is False
+
+
+def test_derive_theme_windowing_via_cutoff():
+    """Framework: a filter using ctx.cutoff excludes out-of-window items."""
+    from skilltrace.execution.overdue import parse_date
+
+    items = [
+        SimpleNamespace(node_id="n.a.01", created_at="2026-08-20"),
+        SimpleNamespace(node_id="n.b.01", created_at="2026-07-01"),  # outside window
+    ]
+
+    def in_window(item, ctx):
+        d = parse_date(item.created_at)
+        return d is not None and d >= ctx.cutoff
+
+    def build(item, ctx):
+        return item.node_id
+
+    def aggregate(rows, ctx):
+        return list(rows)
+
+    result = derive_theme(
+        items,
+        today=_TODAY,
+        window_days=_WINDOW_DAYS,
+        group_by="prefix",
+        state_filter=[],
+        min_sessions_for_full_data=_MIN_SESSIONS,
+        nodes=[],
+        store=_FakeStore(),
+        sessions_in_window=3,
+        filter_item=in_window,
+        build_row=build,
+        aggregate=aggregate,
+    )
+    assert result == ["n.a.01"]
+
+
+def test_derive_theme_limited_flag_from_sessions():
+    """Framework: is_limited follows sessions_in_window vs the threshold."""
+
+    def accept(item, ctx):
+        return True
+
+    def build(item, ctx):
+        return item
+
+    def aggregate(rows, ctx):
+        return ctx.is_limited
+
+    kwargs = dict(
+        today=_TODAY,
+        window_days=_WINDOW_DAYS,
+        group_by="prefix",
+        state_filter=[],
+        min_sessions_for_full_data=_MIN_SESSIONS,
+        nodes=[],
+        store=_FakeStore(),
+        filter_item=accept,
+        build_row=build,
+        aggregate=aggregate,
+    )
+    assert derive_theme([], sessions_in_window=0, **kwargs) is True
+    assert derive_theme([], sessions_in_window=2, **kwargs) is True
+    assert derive_theme([], sessions_in_window=3, **kwargs) is False
+
+
+def test_derive_theme_build_row_none_skipped():
+    """Framework: a None row is skipped but other rows still aggregate."""
+
+    def accept(item, ctx):
+        return True
+
+    def build(item, ctx):
+        return None if item == "skip" else item
+
+    def aggregate(rows, ctx):
+        return list(rows)
+
+    result = derive_theme(
+        ["skip", "keep"],
+        today=_TODAY,
+        window_days=_WINDOW_DAYS,
+        group_by="prefix",
+        state_filter=[],
+        min_sessions_for_full_data=_MIN_SESSIONS,
+        nodes=[],
+        store=_FakeStore(),
+        sessions_in_window=3,
+        filter_item=accept,
+        build_row=build,
+        aggregate=aggregate,
+    )
+    assert result == ["keep"]
+
+
+def test_velocity_callbacks_filter_and_row():
+    """Velocity filter: window-session membership + state; row carries week/group."""
+    ctx = _ctx(extra={"window_sessions": {"s1"}})
+    in_item = _work("w1", "s1", "math.arithmetic.ops_01", "2026-08-20", minutes=30)
+    assert _velocity_filter(in_item, ctx) is True
+    assert _velocity_filter(_work("w2", "s_old", "math.arithmetic.ops_01", "2026-08-20"), ctx) is False
+
+    locked_ctx = _ctx(
+        store=_FakeStore({"math.arithmetic.ops_01": "locked"}),
+        state_filter=["active"],
+        extra={"window_sessions": {"s1"}},
+    )
+    assert _velocity_filter(in_item, locked_ctx) is False
+
+    row = _velocity_build_row(in_item, ctx)
+    assert row.session_id == "s1"
+    assert row.minutes == 30
+    assert row.week_label == _iso_week_label(date(2026, 8, 20))
+    assert row.group == "math.arithmetic"
+
+
+def test_velocity_aggregate_matches_wrapper_shape():
+    """Velocity aggregator produces the same shape as derive_velocity."""
+    ctx = _ctx()
+    item = _work("w1", "s1", "math.arithmetic.ops_01", "2026-08-20", minutes=30)
+    row_ctx = _ctx(extra={"window_sessions": {"s1"}})
+    rows = [_velocity_build_row(item, row_ctx)]
+    result = _velocity_aggregate(rows, ctx)
+    assert result.nodes_touched == 1
+    assert result.total_minutes == 30
+    assert result.is_limited is False
+    assert result.group_rows == [("math.arithmetic", 1, 1)]
+
+
+def test_blockers_callbacks_filter_and_row():
+    """Blockers filter: open always, resolved only in window; row sorts by age."""
+    ctx = _ctx()
+    open_b = _blocker("b1", "math.arithmetic.ops_01", "open", "2026-08-10")
+    assert _blockers_filter(open_b, ctx) is True
+    row = _blockers_build_row(open_b, ctx)
+    assert row.days_open == 22  # 2026-09-01 - 2026-08-10
+    assert row.group == "math.arithmetic"
+
+    resolved_in = _blocker("b2", "n.a.01", "resolved", "2026-08-01", resolved_at="2026-08-25")
+    resolved_out = _blocker("b3", "n.a.01", "resolved", "2026-07-01", resolved_at="2026-07-15")
+    assert _blockers_filter(resolved_in, ctx) is True
+    assert _blockers_filter(resolved_out, ctx) is False
+
+    agg = _blockers_aggregate([row, _blockers_build_row(resolved_in, ctx)], ctx)
+    assert agg.open_count == 1
+    assert agg.resolved_in_window == 1
+    assert agg.is_limited is False
+
+
+def test_reviews_callbacks_filter_and_row():
+    """Reviews filter: scheduled always, completed only in window."""
+    ctx = _ctx()
+    scheduled = _review("r1", "n.a.01", "scheduled", "2026-08-01")
+    completed_in = _review("r2", "n.b.01", "completed", "2026-08-01", completed_at="2026-08-20")
+    completed_out = _review("r3", "n.c.01", "completed", "2026-07-01", completed_at="2026-07-10")
+    assert _reviews_filter(scheduled, ctx) is True
+    assert _reviews_filter(completed_in, ctx) is True
+    assert _reviews_filter(completed_out, ctx) is False
+
+    rows = [_reviews_build_row(scheduled, ctx), _reviews_build_row(completed_in, ctx)]
+    agg = _reviews_aggregate(rows, ctx)
+    assert agg.scheduled_count == 1
+    assert agg.overdue_count == 1
+    assert agg.completed_in_window == 1
+
+
+def test_evidence_callbacks_filter_and_row():
+    """Evidence filter: nodes with specs and matching state only."""
+    specs_by_node = {
+        "math.arithmetic.ops_01": [_spec("spec.ops", "math.arithmetic.ops_01", required=True)],
+    }
+    ctx = _ctx(extra={
+        "specs_by_node": specs_by_node,
+        "accepted_by_spec": {},
+        "total_accepted": 0,
+        "total_rejected": 0,
+    })
+    assert _evidence_filter(_node("math.arithmetic.ops_01"), ctx) is True
+    assert _evidence_filter(_node("math.algebra.other_01"), ctx) is False
+
+    row = _evidence_build_row(_node("math.arithmetic.ops_01"), ctx)
+    assert row.gap is True
+    assert row.group == "math.arithmetic"
+
+    agg = _evidence_aggregate([row], ctx)
+    assert agg.nodes_with_specs == 1
+    assert agg.nodes_with_gaps == 1
+    assert agg.coverage_rate == 0.0
+    assert agg.is_limited is False
