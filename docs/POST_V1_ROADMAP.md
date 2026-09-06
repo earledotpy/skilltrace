@@ -101,6 +101,33 @@ future effort, not a slot-table edit.
   the PKM-ecosystem rewrite settling or fresh user-demand
   evidence; PKM-3 is provisional pending the
   S-Tier3-PKMPluginAuthor ([#106](https://github.com/earledotpy/skilltrace/issues/106)) maintainer reply.
+- **v1.7 resource-verification: batch check command** — absorbed by v1.8:
+  minimal sequential sweep (`batch()` + `check-resources --all` /
+  `--stale-only`, zero writes) per
+  [G-Batch](https://github.com/earledotpy/skilltrace/issues/158); spec:
+  [`docs/spec-v1.8-phase2-ml-seed-graph.md`](./spec-v1.8-phase2-ml-seed-graph.md).
+  *Rate limiting, `robots.txt` respect, and 429 backoff do **not** ride
+  along — re-deferred past the slot table with no version commitment;
+  a 429 reports as `BROKEN … status 429` via the existing `reason` field.*
+- **v1.7 resource-verification: scheduling automation** — automated web
+  checks via cron, `skilltrace serve` background task, or `skilltrace
+  today` hook. v1.7 is 100% manual. Deferred to v1.8+.
+- **v1.7 resource-verification: broken-marker enrichment** — absorbed by
+  v1.8: minimal enrichment (`status_code` + `final_url`, both optional;
+  legacy `{date, reason}` markers stay valid, no backfill) per
+  [G-Marker](https://github.com/earledotpy/skilltrace/issues/160); spec:
+  [`docs/spec-v1.8-phase2-ml-seed-graph.md`](./spec-v1.8-phase2-ml-seed-graph.md).
+- **v1.7 resource-verification: retired-resource handling in
+  `validate resources`** — absorbed by v1.8: warning-only (dangling
+  `supports` on a retired entry → `WARN`, exit 0; duplicates and malformed
+  retired shape stay `ERROR`) per
+  [G-Retired](https://github.com/earledotpy/skilltrace/issues/161); spec:
+  [`docs/spec-v1.8-phase2-ml-seed-graph.md`](./spec-v1.8-phase2-ml-seed-graph.md).
+- **Resource deep-verification (SSL / cert / content hash)** — TLS
+  certificate validation, content-hash drift detection, and other
+  beyond-reachability checks. v1.7's `check-resource` does HEAD with
+  redirect-follow + timeout only. Deferred to a future
+  deep-verification effort; not tied to any current slot.
 
 **Not in this list (already ruled elsewhere).** Multi-learner /
 multi-user is already a glossary ruling (`CONTEXT.md:1-8` —

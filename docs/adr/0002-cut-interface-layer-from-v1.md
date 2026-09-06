@@ -1,7 +1,7 @@
 # ADR 0002 — Cut the interface layer from v1
 
 Date: 2026-07-02
-Status: accepted
+Status: superseded by 0007 (2026-09-05)
 
 ## Context
 
@@ -30,3 +30,22 @@ appending one audit event.
 - When the v1.4 dashboard arrives, its view model is designed fresh from
   real usage, with the framework document as reference — not from
   present-day guesses in cards.yaml.
+
+## Superseded note (2026-09-05)
+
+ADR 0007 reintroduces the interface layer as a **web-only sublayer** inside
+`src/skilltrace/web/interface/`. The five-layer engine invariant from this
+ADR is preserved; v1 still has five engine layers (graph, evidence,
+execution, policy, release). ADR 0007's reintroduced sublayer is not an
+engine layer and does not appear in release criteria.
+
+The two anti-drift protections from this ADR's reasoning are preserved in
+0007 in a tighter form: the sublayer's source of truth is the live CLI
+dispatcher (`src/skilltrace/dispatch.py`'s `Registry`), not a hand-declared
+YAML, and the sublayer module raises on import if any card binding cannot
+resolve. The original concern about parallel hand-declared web vocabulary
+drifting from real CLI commands is addressed by deriving the vocabulary
+from the engine, not by removing the vocabulary.
+
+The original Context, Decision, and Consequences sections above are kept
+verbatim for historical record.

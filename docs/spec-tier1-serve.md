@@ -102,9 +102,26 @@ Cross-cutting: every write below dispatches in-process per §B, same `source: "w
 
 Tickets `T1`–`T5` are `wayfinder:task` children of #62, wired `T1 → T2 → T3 → T4 → T5` so frontier is `T1` only. Each is stdlib-only unless a new dep is explicitly decided (none in Tier 1). See child issues for per-slice acceptance.
 
+### L-bis. Interface sublayer (ADR 0007)
+
+`src/skilltrace/web/interface/` is the **web-only interface sublayer** introduced by `docs/adr/0007-reintroduce-interface-layer.md:1`. It is internal to the web package; not an engine layer; not a release criterion; not part of the 5-layer engine invariant above.
+
+The sublayer contains four objects:
+
+- **View** — a screen, addressed by URL. `/today`, `/next`, `/node/<id>`, `/health` are views.
+- **Card** — a unit the user can see and act on within a view. A card carries title, view-binding, command-binding, gating conditions, confirmation copy, icon class, color class, order within the view, and empty-state copy.
+- **Command** — the CLI command a card invokes. The sublayer reflects `src/skilltrace/dispatch.py:91` `Registry`; it does not own command semantics.
+- **Active-view state** — the URL. Stateless; no server-side view-state file.
+
+**Source of truth.** Python-derived. Card metadata is attached to command definitions at the command definition site; the sublayer walks the dispatcher registry at request time. No parallel hand-declared YAML. ADR 0006's "never parallel hand-declared vocabulary" rule survives.
+
+**Mutation rule.** Every UI action is a CLI command invocation that appends one audit event. Click-to-pass and click-to-master are still gated by the same preconditions the CLI enforces; the sublayer adds confirmation copy and gating visibility, not bypass.
+
+**Validation.** At import time *and* at request time. The sublayer module raises on import if any card's command-binding, view-binding, or required state cannot resolve. The web serve shell refuses to start against an inconsistent sublayer.
+
 ### L. Invariants & constraints preserved
 
-- [ ] Hard boundaries per `docs/SAFETY_BOUNDARIES.md:1` + `CONTEXT.md:90`/`CONTEXT.md:98`: no automated `pass`/`master`/`delete`, asserted progress never demotes, hard-prereq never overridden, AI review never authority; `docs/SCHEMA_REFERENCE.md:1` frozen; `ARCHIVE/scaffold-v0.1/` history preserved (`docs/adr/0005-scaffold-retirement.md:1`); `data/` disposable never read back; `v1` is five layers (`docs/adr/0002-cut-interface-layer-from-v1.md:1`), never `interface/`.
+- [ ] Hard boundaries per `docs/SAFETY_BOUNDARIES.md:1` + `CONTEXT.md:90`/`CONTEXT.md:98`: no automated `pass`/`master`/`delete`, asserted progress never demotes, hard-prereq never overridden, AI review never authority; `docs/SCHEMA_REFERENCE.md:1` frozen; `ARCHIVE/scaffold-v0.1/` history preserved (`docs/adr/0005-scaffold-retirement.md:1`); `data/` disposable never read back; `v1` is five *engine* layers — graph, evidence, execution, policy, release — per `docs/adr/0007-reintroduce-interface-layer.md:1`, which reintroduces a sixth, **web-only** interface sublayer at `src/skilltrace/web/interface/`; the engine never contains a top-level `interface/` directory.
 
 ---
 
@@ -117,4 +134,4 @@ Tickets `T1`–`T5` are `wayfinder:task` children of #62, wired `T1 → T2 → T
 
 ## References
 
-`CONTEXT.md`, `docs/skilltrace-application-roadmap.md`, `docs/adr/0001-0005` + `docs/adr/0006-stdlib-only-serve-shell.md`, `docs/curriculum-authoring.md`, `docs/SCHEMA_REFERENCE.md`, `docs/POST_V1_ROADMAP.md`, `archive/scaffold-v0.1/interface/` + `archive/scaffold-v0.1/web-app-vision/reference-research-document.md` (ref-only), `src/skilltrace/context.py:146` `JoinedView`, `src/skilltrace/context.py:200` strict / `src/skilltrace/context.py:260` lenient, `src/skilltrace/render.py:42`, `src/skilltrace/cli.py:68` `REGISTRY` + `src/skilltrace/dispatch.py:116`, `src/skilltrace/export_data.py:88`, `src/skilltrace/graph/state.py:118`.
+`CONTEXT.md`, `docs/skilltrace-application-roadmap.md`, `docs/adr/0001-0005` + `docs/adr/0006-stdlib-only-serve-shell.md` + `docs/adr/0007-reintroduce-interface-layer.md`, `docs/curriculum-authoring.md`, `docs/SCHEMA_REFERENCE.md`, `docs/POST_V1_ROADMAP.md`, `archive/scaffold-v0.1/interface/` + `archive/scaffold-v0.1/web-app-vision/reference-research-document.md` (ref-only), `src/skilltrace/context.py:146` `JoinedView`, `src/skilltrace/context.py:200` strict / `src/skilltrace/context.py:260` lenient, `src/skilltrace/render.py:42`, `src/skilltrace/cli.py:68` `REGISTRY` + `src/skilltrace/dispatch.py:116`, `src/skilltrace/export_data.py:88`, `src/skilltrace/graph/state.py:118`.
