@@ -277,6 +277,29 @@ class PolicyAccess:
             values.min_days_pass_to_review = min_days
         return values
 
+    @property
+    def portfolio(self) -> "PortfolioPolicy":
+        """Typed view over ``policy/portfolio.yaml`` (v2.0 spec §7).
+
+        Defensive coercion lives here (the single seam); callers read the
+        three fields without re-reading the raw document. Bad values fall
+        back to the spec's locked defaults — ``validate policy`` is what
+        surfaces them as hard errors.
+        """
+        document = self._document("portfolio.yaml")
+        track = document.get("default_track")
+        fmt = document.get("default_format")
+        window = document.get("resource_staleness_days")
+        return PortfolioPolicy(
+            default_track=track if isinstance(track, str) and track.strip() else "portfolio",
+            default_format=fmt if fmt in ("md", "html", "json") else "md",
+            resource_staleness_days=(
+                window
+                if isinstance(window, int) and not isinstance(window, bool) and window >= 1
+                else 90
+            ),
+        )
+
 
 @dataclass(frozen=True)
 class AnalyticsPolicy:
@@ -290,6 +313,15 @@ class AnalyticsPolicy:
     default_window_days: int
     default_group_by: str  # "prefix" | "track"
     min_sessions_for_full_data: int
+
+
+@dataclass(frozen=True)
+class PortfolioPolicy:
+    """Typed view over ``policy/portfolio.yaml`` (v2.0 spec §7)."""
+
+    default_track: str
+    default_format: str  # "md" | "html" | "json"
+    resource_staleness_days: int
 
 
 @dataclass

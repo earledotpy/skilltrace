@@ -1,0 +1,14 @@
+portfolio_policy:
+  id: policy.portfolio.default_v2_0
+  status: active
+  title: Portfolio builder
+  description: >
+    Controls portfolio export defaults: selection track, honesty-banner
+    staleness window, and redaction override defaults. All values are
+    policy values, not engine constants — readable and editable by the
+    learner; changes take effect at the next invocation.
+  default_track: portfolio
+  default_format: md
+  resource_staleness_days: 90
+  created_at: 2026-09-06
+  updated_at: 2026-09-06

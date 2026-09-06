@@ -42,6 +42,8 @@ def load_and_validate_policy(root: Path | str) -> PolicyValidationResult:
             result.errors.extend(_retention_value_ranges(doc, root, filename))
         if filename == "analytics.yaml":
             result.errors.extend(_analytics_value_ranges(doc, root, filename))
+        if filename == "portfolio.yaml":
+            result.errors.extend(_portfolio_value_ranges(doc, root, filename))
         if filename == "resource_web_verification.yaml":
             result.errors.extend(_resource_web_verification_value_ranges(doc, root, filename))
     return result
@@ -95,6 +97,37 @@ def _analytics_value_ranges(doc: dict, root: Path | str, filename: str) -> list[
 
     policy_path = Path(root) / "policy" / filename
     return validate_analytics_policy(doc, policy_path)
+
+
+def _portfolio_value_ranges(doc: dict, root: Path | str, filename: str) -> list[str]:
+    """v2.0 value-range checks for the portfolio policy seed (spec §7.2).
+
+    Each value is policy seed data, but a bad one silently skews every
+    portfolio selection default and honesty-banner window, so the umbrella
+    ``validate policy`` command surfaces violations as hard errors.
+    """
+    errors: list[str] = []
+    policy_path = Path(root) / "policy" / filename
+
+    track = doc.get("default_track")
+    if not isinstance(track, str) or not track.strip():
+        errors.append(
+            f"{policy_path}: default_track must be a non-empty string; got {track!r}."
+        )
+
+    fmt = doc.get("default_format")
+    if fmt not in ("md", "html", "json"):
+        errors.append(
+            f"{policy_path}: default_format must be one of md, html, json; got {fmt!r}."
+        )
+
+    window = doc.get("resource_staleness_days")
+    if isinstance(window, bool) or not isinstance(window, int) or window < 1:
+        errors.append(
+            f"{policy_path}: resource_staleness_days must be >= 1; got {window!r}."
+        )
+
+    return errors
 
 
 def _boundary_disagreements(doc: dict) -> list[str]:

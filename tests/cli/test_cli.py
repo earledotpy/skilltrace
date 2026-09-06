@@ -71,6 +71,8 @@ def test_registry_has_the_expected_commands():
         "analytics reviews",
         "analytics evidence",
         "analytics export",
+        "portfolio preview",
+        "portfolio export",
         "export markdown",
         "export sqlite",
         "export html",

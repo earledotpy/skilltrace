@@ -745,6 +745,64 @@ def build_parser() -> argparse.ArgumentParser:
     )
     retention_status_parser.set_defaults(_command_name="retention status")
 
+    # portfolio <preview|export> — v2.0 portfolio builder (map #174).
+    # `preview` renders to stdout (READ_ONLY); `export` writes the
+    # disposable bundle to data/portfolio-<date>/ (MUTATING, one audit event).
+    def _add_portfolio_shared_arguments(p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--node",
+            action="append",
+            default=None,
+            metavar="ID",
+            help="Restrict to named node(s) (repeatable).",
+        )
+        p.add_argument(
+            "--track",
+            default=None,
+            metavar="NAME",
+            help="Restrict to track (default from policy/portfolio.yaml; "
+            "omitted when --node is given without --track).",
+        )
+        p.add_argument("--include-active", action="store_true")
+        p.add_argument("--include-rejected", action="store_true")
+        p.add_argument("--include-superseded", action="store_true")
+        p.add_argument("--include-paths", action="store_true")
+        p.add_argument("--include-notes", action="store_true")
+        p.add_argument("--include-blockers", action="store_true")
+        p.add_argument("--include-reviews", action="store_true")
+        p.add_argument("--include-free-text", action="store_true")
+        p.add_argument("--include-urls", action="store_true")
+        p.add_argument(
+            "--format",
+            default=None,
+            metavar="<md|html|json>",
+            help="Output format (default from policy/portfolio.yaml).",
+        )
+        p.add_argument(
+            "--output",
+            default=None,
+            metavar="PATH",
+            help="Destination (use - for stdout).",
+        )
+
+    portfolio_parser = subcommands.add_parser(
+        "portfolio", help="Portfolio builder (preview, export)."
+    )
+    portfolio_commands = portfolio_parser.add_subparsers(
+        dest="_portfolio_cmd", metavar="<command>"
+    )
+    portfolio_commands.required = True
+    portfolio_preview_parser = portfolio_commands.add_parser(
+        "preview", help="Render the portfolio to stdout (read-only)."
+    )
+    _add_portfolio_shared_arguments(portfolio_preview_parser)
+    portfolio_preview_parser.set_defaults(_command_name="portfolio preview")
+    portfolio_export_parser = portfolio_commands.add_parser(
+        "export", help="Write the disposable portfolio bundle (mutating)."
+    )
+    _add_portfolio_shared_arguments(portfolio_export_parser)
+    portfolio_export_parser.set_defaults(_command_name="portfolio export")
+
     # top-level aliases (resolution of #32: cheap keystroke wins for the
     # most-typed multi-word commands, wired to the same handler and
     # `_command_name` as their canonical form so the audit log records

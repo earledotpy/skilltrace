@@ -25,6 +25,7 @@ from . import (
     master,
     node_detail,
     pass_,
+    portfolio,
     recommend,
     remediation,
     replace_resource,
@@ -79,6 +80,7 @@ def register_all(registry: Registry) -> Registry:
     backup.register(registry)
     retention.register(registry)
     analytics.register(registry)
+    portfolio.register(registry)
     # Tier 1 local web UI (ADR 0006): READ_ONLY — serve appends no event; the
     # `ui` alias shares this registration via its `_command_name`.
     web_server.register(registry)
