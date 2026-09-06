@@ -20,7 +20,7 @@ from typing import Literal
 
 from ..evidence.specs import ArtifactSpec
 from ..evidence.records import EvidenceRecord
-from ..execution.blockers import Blocker
+from ..execution.records import Blocker
 from ..graph.nodes import SkillNode
 
 

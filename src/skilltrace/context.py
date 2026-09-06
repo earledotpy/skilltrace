@@ -46,11 +46,15 @@ from .evidence.records import EvidenceRecord, load_evidence_records
 from .evidence.specs import ArtifactSpec, load_artifact_specs
 from .events import load_events
 from .execution._store import ExecutionLoadError
-from .execution.blockers import Blocker, load_blockers
-from .execution.remediation import RemediationAction, load_remediation_actions
-from .execution.reviews import Review, load_reviews
-from .execution.sessions import Session, load_sessions
-from .execution.work import SessionWork, load_session_work
+from .execution.records import (
+    Blocker,
+    ExecutionRecords,
+    RemediationAction,
+    Review,
+    Session,
+    SessionWork,
+    load_execution,
+)
 from .graph.edges import EdgeLoadError, GraphEdge, load_edges
 from .graph.nodes import NodeLoadError, SkillNode, load_nodes
 from .graph.state import ProgressStore, ProgressStoreError, load_state
@@ -96,24 +100,8 @@ def _default_load_attempts(root: Path) -> list[AssessmentAttempt]:
     return load_assessment_attempts(root)
 
 
-def _default_load_sessions(root: Path) -> list[Session]:
-    return load_sessions(root)
-
-
-def _default_load_work(root: Path) -> list[SessionWork]:
-    return load_session_work(root)
-
-
-def _default_load_blockers(root: Path) -> list[Blocker]:
-    return load_blockers(root)
-
-
-def _default_load_remediations(root: Path) -> list[RemediationAction]:
-    return load_remediation_actions(root)
-
-
-def _default_load_reviews(root: Path) -> list[Review]:
-    return load_reviews(root)
+def _default_load_execution(root: Path) -> ExecutionRecords:
+    return load_execution(root)
 
 
 def _default_load_resources(root: Path) -> list[LearningResource]:
@@ -142,11 +130,7 @@ class Loaders:
     load_gates: Callable[[Path], list[ValidationGate]] = _default_load_gates
     load_records: Callable[[Path], list[EvidenceRecord]] = _default_load_records
     load_attempts: Callable[[Path], list[AssessmentAttempt]] = _default_load_attempts
-    load_sessions: Callable[[Path], list[Session]] = _default_load_sessions
-    load_work: Callable[[Path], list[SessionWork]] = _default_load_work
-    load_blockers: Callable[[Path], list[Blocker]] = _default_load_blockers
-    load_remediations: Callable[[Path], list[RemediationAction]] = _default_load_remediations
-    load_reviews: Callable[[Path], list[Review]] = _default_load_reviews
+    load_execution: Callable[[Path], ExecutionRecords] = _default_load_execution
     load_resources: Callable[[Path], list[LearningResource]] = _default_load_resources
     load_events: Callable[[Path], list[dict]] = _default_load_events
     load_policies: Callable[[Path], dict[str, dict]] = _default_load_policies
@@ -422,18 +406,32 @@ def load_context_strict(root: Path | str, loaders: Loaders | None = None) -> Joi
         ("gates", ld.load_gates),
         ("records", ld.load_records),
         ("attempts", ld.load_attempts),
-        ("sessions", ld.load_sessions),
-        ("work", ld.load_work),
-        ("blockers", ld.load_blockers),
-        ("remediations", ld.load_remediations),
-        ("reviews", ld.load_reviews),
         ("resources", ld.load_resources),
     ):
         try:
             setattr(view, attr, loader(root_path))
-        except (EvidenceLoadError, ExecutionLoadError, ResourceLoadError) as exc:
+        except (EvidenceLoadError, ResourceLoadError) as exc:
             errors.append(str(exc))
             setattr(view, attr, [])
+
+    # execution — one seam, many records; per-type errors via ExecutionRecords.errors
+    try:
+        exec_records = ld.load_execution(root_path)
+        view.sessions = exec_records.sessions
+        view.work = exec_records.work
+        view.blockers = exec_records.blockers
+        view.remediations = exec_records.remediations
+        view.reviews = exec_records.reviews
+        for msg in exec_records.errors.values():
+            errors.append(msg)
+    except (ExecutionLoadError, EvidenceLoadError, ResourceLoadError) as exc:
+        # Test double that raises directly — degrade all execution to empty for strict
+        errors.append(str(exc))
+        view.sessions = []
+        view.work = []
+        view.blockers = []
+        view.remediations = []
+        view.reviews = []
 
     # events is audit-only and never raises (load_events returns [] on miss)
     try:
@@ -476,17 +474,31 @@ def load_context_lenient(root: Path | str, loaders: Loaders | None = None) -> Jo
         ("gates", ld.load_gates),
         ("records", ld.load_records),
         ("attempts", ld.load_attempts),
-        ("sessions", ld.load_sessions),
-        ("work", ld.load_work),
-        ("blockers", ld.load_blockers),
-        ("remediations", ld.load_remediations),
-        ("reviews", ld.load_reviews),
         ("resources", ld.load_resources),
     ):
         try:
             setattr(view, attr, loader(root_path))
-        except (EvidenceLoadError, ExecutionLoadError, ResourceLoadError):
+        except (EvidenceLoadError, ResourceLoadError):
             setattr(view, attr, [])
+            view.degraded.append(attr)
+
+    # execution — one seam, many records; per-type degraded via ExecutionRecords.errors
+    try:
+        exec_records = ld.load_execution(root_path)
+        view.sessions = exec_records.sessions
+        view.work = exec_records.work
+        view.blockers = exec_records.blockers
+        view.remediations = exec_records.remediations
+        view.reviews = exec_records.reviews
+        for attr in exec_records.errors:
+            view.degraded.append(attr)
+    except (ExecutionLoadError, EvidenceLoadError, ResourceLoadError):
+        view.sessions = []
+        view.work = []
+        view.blockers = []
+        view.remediations = []
+        view.reviews = []
+        for attr in ("sessions", "work", "blockers", "remediations", "reviews"):
             view.degraded.append(attr)
 
     # events and policies are lenient too (today/next never fail on them)

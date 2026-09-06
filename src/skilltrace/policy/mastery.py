@@ -20,7 +20,7 @@ from pathlib import Path
 from ..evidence.eligibility import live_accepted_count
 from ..evidence.records import EvidenceRecord
 from ..evidence.specs import ArtifactSpec
-from ..execution.reviews import Review
+from ..execution.records import Review
 from .loading import PolicyLoadError, load_policy_doc
 
 # Engine fallbacks when the seed file cannot supply a value; the seed

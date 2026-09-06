@@ -11,11 +11,11 @@ import pytest
 import yaml
 
 from skilltrace.execution._store import ExecutionLoadError
-from skilltrace.execution.sessions import load_sessions
-from skilltrace.execution.work import load_session_work
-from skilltrace.execution.blockers import load_blockers
-from skilltrace.execution.reviews import load_reviews
-from skilltrace.execution.remediation import load_remediation_actions
+from skilltrace.execution.records import load_sessions
+from skilltrace.execution.records import load_session_work
+from skilltrace.execution.records import load_blockers
+from skilltrace.execution.records import load_reviews
+from skilltrace.execution.records import load_remediation_actions
 
 
 def _write_yaml(root, relpath: str, doc: dict) -> None:

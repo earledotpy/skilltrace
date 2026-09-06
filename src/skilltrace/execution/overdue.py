@@ -35,7 +35,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from typing import Callable
 
-from .reviews import Review
+from .records import Review
 
 
 def parse_date(val: object) -> date | None:

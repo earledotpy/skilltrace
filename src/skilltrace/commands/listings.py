@@ -11,9 +11,8 @@ from __future__ import annotations
 
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution._store import ExecutionLoadError
-from ..execution.blockers import load_blockers
 from ..execution.overdue import is_overdue, utc_today
-from ..execution.reviews import load_reviews
+from ..execution.records import load_blockers, load_reviews
 
 
 def blockers(ctx: Context) -> CommandResult:

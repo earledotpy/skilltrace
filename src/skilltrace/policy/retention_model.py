@@ -34,7 +34,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Iterable
 
-from ..execution.reviews import Review
+from ..execution.records import Review
 from ..graph.state import ProgressEntry
 
 # States the retention model derives memory state for (per spec §5.2).

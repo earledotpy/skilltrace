@@ -22,7 +22,7 @@ from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence.validation import EvidenceValidationResult, load_and_validate_evidence
 from ..execution._store import ExecutionLoadError
 from ..execution.overdue import utc_today
-from ..execution.sessions import load_sessions, open_session
+from ..execution.records import load_sessions, open_session
 from ..execution.staleness import stale_session_hours, stale_warning
 from ..execution.validation import ExecutionValidationResult, load_and_validate_execution
 from ..graph.nodes import NodeLoadError, load_nodes

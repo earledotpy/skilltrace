@@ -33,8 +33,7 @@ from .. import render
 from ..context import JoinedView, load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
-from ..execution.blockers import Blocker
-from ..execution.sessions import open_session
+from ..execution.records import Blocker, open_session
 from ..graph.edges import EdgeLoadError, GraphEdge
 from ..graph.nodes import NodeLoadError, SkillNode
 from ..graph.state import ProgressStoreError

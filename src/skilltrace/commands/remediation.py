@@ -10,15 +10,15 @@ from __future__ import annotations
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ._common import now_iso as _now_iso, report_plan as _report
 from ..execution._store import ExecutionLoadError
-from ..execution.blockers import load_blockers
+from ..execution.records import (
+    append_remediation_action,
+    complete_remediation_action,
+    load_blockers,
+    load_remediation_actions,
+)
 from ..execution.remediation_planning import (
     plan_remediation_complete,
     plan_remediation_create,
-)
-from ..execution.remediation import (
-    append_remediation_action,
-    complete_remediation_action,
-    load_remediation_actions,
 )
 
 

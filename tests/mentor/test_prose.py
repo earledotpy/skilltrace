@@ -14,7 +14,7 @@ from dataclasses import dataclass
 import pytest
 
 from skilltrace.evidence.specs import ArtifactSpec
-from skilltrace.execution.blockers import Blocker
+from skilltrace.execution.records import Blocker
 from skilltrace.graph.nodes import SkillNode
 from skilltrace.mentor.prose import (
     MentorSection,

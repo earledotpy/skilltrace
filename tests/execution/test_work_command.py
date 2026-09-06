@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from skilltrace import cli
 from skilltrace.events import load_events
-from skilltrace.execution.blockers import load_blockers
-from skilltrace.execution.sessions import load_sessions
-from skilltrace.execution.work import load_session_work
+from skilltrace.execution.records import load_blockers
+from skilltrace.execution.records import load_sessions
+from skilltrace.execution.records import load_session_work
 from skilltrace.graph.state import load_state
 
 NODE = "testing.execution.first_node_01"

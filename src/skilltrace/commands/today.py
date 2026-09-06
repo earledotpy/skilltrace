@@ -32,9 +32,8 @@ from ..context import load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
 from ..evidence.specs import ArtifactSpec
-from ..execution.blockers import Blocker
 from ..execution.overdue import overdue_reviews, utc_today
-from ..execution.sessions import open_session
+from ..execution.records import Blocker, open_session
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError, SkillNode
 from ..graph.recommendation import recommend

@@ -11,7 +11,7 @@ from __future__ import annotations
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ._common import now_iso as _now_iso, report_plan as _report
 from ..execution._store import ExecutionLoadError
-from ..execution.blockers import append_blocker, load_blockers, resolve_blocker
+from ..execution.records import append_blocker, load_blockers, resolve_blocker
 from ..execution.blocker_planning import (
     plan_blocker_create,
     plan_blocker_resolve,

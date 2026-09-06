@@ -13,6 +13,7 @@ from skilltrace.evidence._schema import EvidenceLoadError
 from skilltrace.evidence.gates import ValidationGate
 from skilltrace.evidence.specs import ArtifactSpec
 from skilltrace.execution._store import ExecutionLoadError
+from skilltrace.execution.records import ExecutionRecords
 from skilltrace.graph.nodes import NodeLoadError, SkillNode
 from skilltrace.graph.state import ProgressStore, ProgressStoreError
 from skilltrace.resources.registry import ResourceLoadError
@@ -83,17 +84,19 @@ def test_lenient_propagates_unexpected_optional_loader_exception(tmp_path: Path)
 
 
 def test_lenient_degrades_execution_and_resources_to_empty(tmp_path: Path):
-    def failing_sessions(_root: Path):
-        raise ExecutionLoadError("sessions boom")
+    def failing_execution(_root: Path):
+        return ExecutionRecords(errors={"sessions": "sessions boom"})
 
     def failing_resources(_root: Path):
         raise ResourceLoadError("resources boom")
 
-    loaders = Loaders(load_sessions=failing_sessions, load_resources=failing_resources)
+    loaders = Loaders(load_execution=failing_execution, load_resources=failing_resources)
     view = load_context_lenient(tmp_path, loaders=loaders)
     assert view.sessions == []
     assert view.resources == []
     assert view.errors == []
+    assert "sessions" in view.degraded
+    assert "resources" in view.degraded
 
 
 # -- strict tier: collects every failure --
@@ -114,8 +117,8 @@ def test_strict_collects_evidence_and_execution_errors(tmp_path: Path):
     def failing_specs(_root: Path):
         raise EvidenceLoadError("specs boom")
 
-    def failing_blockers(_root: Path):
-        raise ExecutionLoadError("blockers boom")
+    def failing_execution(_root: Path):
+        return ExecutionRecords(errors={"blockers": "blockers boom"})
 
     loaders = Loaders(
         load_nodes=lambda _r: [],
@@ -125,11 +128,7 @@ def test_strict_collects_evidence_and_execution_errors(tmp_path: Path):
         load_gates=lambda _r: [],
         load_records=lambda _r: [],
         load_attempts=lambda _r: [],
-        load_sessions=lambda _r: [],
-        load_work=lambda _r: [],
-        load_blockers=failing_blockers,
-        load_remediations=lambda _r: [],
-        load_reviews=lambda _r: [],
+        load_execution=failing_execution,
         load_resources=lambda _r: [],
         load_events=lambda _r: [],
         load_policies=lambda _r: {},
@@ -152,11 +151,7 @@ def test_strict_propagates_unexpected_loader_exception(tmp_path: Path):
         load_gates=boom,
         load_records=boom,
         load_attempts=boom,
-        load_sessions=boom,
-        load_work=boom,
-        load_blockers=boom,
-        load_remediations=boom,
-        load_reviews=boom,
+        load_execution=boom,
         load_resources=boom,
         load_events=boom,
         load_policies=boom,
@@ -268,11 +263,7 @@ def test_derived_titles_and_node_map_match_ground_truth(tmp_path: Path):
         load_gates=lambda _r: [],
         load_records=lambda _r: [],
         load_attempts=lambda _r: [],
-        load_sessions=lambda _r: [],
-        load_work=lambda _r: [],
-        load_blockers=lambda _r: [],
-        load_remediations=lambda _r: [],
-        load_reviews=lambda _r: [],
+        load_execution=lambda _r: ExecutionRecords(),
         load_resources=lambda _r: [],
         load_events=lambda _r: [],
         load_policies=lambda _r: {},
@@ -299,11 +290,7 @@ def test_resources_by_node_uses_reverse_index(tmp_path: Path):
         load_gates=lambda _r: [],
         load_records=lambda _r: [],
         load_attempts=lambda _r: [],
-        load_sessions=lambda _r: [],
-        load_work=lambda _r: [],
-        load_blockers=lambda _r: [],
-        load_remediations=lambda _r: [],
-        load_reviews=lambda _r: [],
+        load_execution=lambda _r: ExecutionRecords(),
         load_resources=lambda _r: [r1, r2],
         load_events=lambda _r: [],
         load_policies=lambda _r: {},
@@ -397,11 +384,7 @@ def test_filesystem_loaders_and_in_memory_doubles_agree(tmp_path: Path):
         load_gates=lambda _r: [gate],
         load_records=lambda _r: [],
         load_attempts=lambda _r: [],
-        load_sessions=lambda _r: [],
-        load_work=lambda _r: [],
-        load_blockers=lambda _r: [],
-        load_remediations=lambda _r: [],
-        load_reviews=lambda _r: [],
+        load_execution=lambda _r: ExecutionRecords(),
         load_resources=lambda _r: [resource],
         load_events=lambda _r: [],
         load_policies=lambda _r: {},

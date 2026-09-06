@@ -35,7 +35,7 @@ from ..evidence.records import load_evidence_records
 from ..evidence.specs import load_artifact_specs
 from ..execution._store import ExecutionLoadError
 from ..execution.ids import allocate_review_id
-from ..execution.reviews import append_review, load_reviews
+from ..execution.records import append_review, load_reviews
 from ..graph.nodes import NodeLoadError, load_nodes
 from ..graph.state import ProgressStoreError, load_state, save_state
 from ..policy.cadence import load_cadence, review_dates

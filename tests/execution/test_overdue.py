@@ -19,7 +19,7 @@ from skilltrace.execution.overdue import (
     parse_date,
     utc_today,
 )
-from skilltrace.execution.reviews import Review
+from skilltrace.execution.records import Review
 
 
 def _review(*, status: str, scheduled_for: str, id: str = "rv.001") -> Review:

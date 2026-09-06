@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from skilltrace import cli
 from skilltrace.events import load_events
-from skilltrace.execution.blockers import load_blockers
+from skilltrace.execution.records import load_blockers
 
 NODE = "testing.execution.stuck_node_01"
 

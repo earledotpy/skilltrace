@@ -16,7 +16,8 @@ from ..execution.review_planning import (
     plan_review_complete,
     plan_review_schedule,
 )
-from ..execution.reviews import (
+from ..execution.records import (
+    Review,
     append_review,
     cancel_review,
     complete_review,

@@ -15,7 +15,7 @@ import yaml
 
 from skilltrace import cli
 from skilltrace.events import load_events
-from skilltrace.execution.sessions import load_sessions
+from skilltrace.execution.records import load_sessions
 
 NODE = "testing.execution.close_target_01"
 

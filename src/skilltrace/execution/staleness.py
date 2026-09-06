@@ -14,7 +14,7 @@ from pathlib import Path
 
 import yaml
 
-from .sessions import Session
+from .records import Session
 
 DEFAULT_STALE_HOURS = 12.0
 

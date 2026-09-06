@@ -12,7 +12,7 @@ from datetime import date, timedelta
 
 import pytest
 
-from skilltrace.execution.reviews import Review
+from skilltrace.execution.records import Review
 from skilltrace.policy.retention_model import (
     RetentionPolicySeed,
     compute_memory_state,

@@ -11,7 +11,7 @@ import pytest
 
 from skilltrace import cli
 from skilltrace.events import load_events
-from skilltrace.execution.reviews import load_reviews
+from skilltrace.execution.records import load_reviews
 
 NODE = "testing.execution.retained_node_01"
 

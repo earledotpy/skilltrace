@@ -17,18 +17,19 @@ from ..execution._store import ExecutionLoadError
 from ..execution.base_plan import BasePlan
 from ..execution.overdue import utc_today
 from ..execution.session_planning import SessionPlan, plan_close, plan_start, plan_work
-from ..execution.remediation import load_remediation_actions
-from ..execution.reviews import load_reviews
-from ..execution.sessions import (
+from ..execution.records import (
     Session,
     append_session,
+    append_work,
     complete_session,
+    load_remediation_actions,
+    load_reviews,
+    load_session_work,
     load_sessions,
     open_session,
 )
 from ..execution.staleness import stale_session_hours, stale_warning
 from ..execution.templates import known_templates
-from ..execution.work import append_work, load_session_work
 from ..graph.state import ProgressStoreError, load_state, save_state
 from ..policy.advisory import (
     load_max_open_remediations,

@@ -58,7 +58,7 @@ from ..analytics.policy import limited_data_sentence
 from ..analytics.sparkline import sparkline_svg
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
 from ..execution.overdue import utc_today
-from ..execution.sessions import open_session
+from ..execution.records import open_session
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
