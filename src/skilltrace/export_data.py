@@ -22,10 +22,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .context import JoinedView, load_context_strict
-from .evidence.attempts import AssessmentAttempt
-from .evidence.gates import ValidationGate
-from .evidence.records import EvidenceRecord
-from .evidence.specs import ArtifactSpec
+from .evidence.evidence import (
+    AssessmentAttempt,
+    ValidationGate,
+    EvidenceRecord,
+    ArtifactSpec,
+)
 from .execution.records import Blocker, RemediationAction, Review, Session, SessionWork
 from .graph.edges import GraphEdge
 from .graph.nodes import SkillNode

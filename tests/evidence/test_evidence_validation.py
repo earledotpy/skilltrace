@@ -12,10 +12,12 @@ hash/file path is pinned in test_artifacts.py.
 
 from __future__ import annotations
 
-from skilltrace.evidence.attempts import AssessmentAttempt
-from skilltrace.evidence.gates import ValidationGate
-from skilltrace.evidence.records import EvidenceRecord
-from skilltrace.evidence.specs import ArtifactSpec
+from skilltrace.evidence.evidence import (
+    AssessmentAttempt,
+    ValidationGate,
+    EvidenceRecord,
+    ArtifactSpec,
+)
 from skilltrace.evidence.validation import EvidenceValidationResult, check_evidence
 
 NODE_A = "math.arithmetic.order_operations_01"

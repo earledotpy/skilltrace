@@ -40,10 +40,14 @@ import yaml
 
 from .analytics.policy import resolve_analytics_defaults
 from .evidence._schema import EvidenceLoadError
-from .evidence.attempts import AssessmentAttempt, load_assessment_attempts
-from .evidence.gates import ValidationGate, load_validation_gates
-from .evidence.records import EvidenceRecord, load_evidence_records
-from .evidence.specs import ArtifactSpec, load_artifact_specs
+from .evidence.evidence import (
+    ArtifactSpec,
+    AssessmentAttempt,
+    EvidenceRecords,
+    ValidationGate,
+    EvidenceRecord,
+    load_evidence,
+)
 from .events import load_events
 from .execution._store import ExecutionLoadError
 from .execution.records import (
@@ -84,20 +88,8 @@ def _default_load_state(root: Path) -> ProgressStore:
     return load_state(root)
 
 
-def _default_load_specs(root: Path) -> list[ArtifactSpec]:
-    return load_artifact_specs(root)
-
-
-def _default_load_gates(root: Path) -> list[ValidationGate]:
-    return load_validation_gates(root)
-
-
-def _default_load_records(root: Path) -> list[EvidenceRecord]:
-    return load_evidence_records(root)
-
-
-def _default_load_attempts(root: Path) -> list[AssessmentAttempt]:
-    return load_assessment_attempts(root)
+def _default_load_evidence(root: Path) -> EvidenceRecords:
+    return load_evidence(root)
 
 
 def _default_load_execution(root: Path) -> ExecutionRecords:
@@ -126,10 +118,7 @@ class Loaders:
     load_nodes: Callable[[Path], list[SkillNode]] = _default_load_nodes
     load_edges: Callable[[Path], list[GraphEdge]] = _default_load_edges
     load_state: Callable[[Path], ProgressStore] = _default_load_state
-    load_specs: Callable[[Path], list[ArtifactSpec]] = _default_load_specs
-    load_gates: Callable[[Path], list[ValidationGate]] = _default_load_gates
-    load_records: Callable[[Path], list[EvidenceRecord]] = _default_load_records
-    load_attempts: Callable[[Path], list[AssessmentAttempt]] = _default_load_attempts
+    load_evidence: Callable[[Path], EvidenceRecords] = _default_load_evidence
     load_execution: Callable[[Path], ExecutionRecords] = _default_load_execution
     load_resources: Callable[[Path], list[LearningResource]] = _default_load_resources
     load_events: Callable[[Path], list[dict]] = _default_load_events
@@ -401,18 +390,28 @@ def load_context_strict(root: Path | str, loaders: Loaders | None = None) -> Joi
         errors.append(str(exc))
         view.store = ProgressStore()
 
-    for attr, loader in (
-        ("specs", ld.load_specs),
-        ("gates", ld.load_gates),
-        ("records", ld.load_records),
-        ("attempts", ld.load_attempts),
-        ("resources", ld.load_resources),
-    ):
-        try:
-            setattr(view, attr, loader(root_path))
-        except (EvidenceLoadError, ResourceLoadError) as exc:
-            errors.append(str(exc))
-            setattr(view, attr, [])
+    # evidence — one seam, many records; per-type errors via EvidenceRecords.errors
+    try:
+        ev = ld.load_evidence(root_path)
+        view.specs = ev.specs
+        view.gates = ev.gates
+        view.records = ev.records
+        view.attempts = ev.attempts
+        for msg in ev.errors.values():
+            errors.append(msg)
+    except EvidenceLoadError as exc:
+        # Test double that raises directly — degrade all evidence to empty for strict
+        errors.append(str(exc))
+        view.specs = []
+        view.gates = []
+        view.records = []
+        view.attempts = []
+
+    try:
+        view.resources = ld.load_resources(root_path)
+    except ResourceLoadError as exc:
+        errors.append(str(exc))
+        view.resources = []
 
     # execution — one seam, many records; per-type errors via ExecutionRecords.errors
     try:
@@ -469,18 +468,28 @@ def load_context_lenient(root: Path | str, loaders: Loaders | None = None) -> Jo
     # Lenient — degrade to empty on failure, never raise; record what degraded
     # so serving surfaces can warn ("forms stay enabled, domain refusal is truth").
     view.degraded = []
-    for attr, loader in (
-        ("specs", ld.load_specs),
-        ("gates", ld.load_gates),
-        ("records", ld.load_records),
-        ("attempts", ld.load_attempts),
-        ("resources", ld.load_resources),
-    ):
-        try:
-            setattr(view, attr, loader(root_path))
-        except (EvidenceLoadError, ResourceLoadError):
-            setattr(view, attr, [])
+    # evidence — one seam, many records; per-type degraded via EvidenceRecords.errors
+    try:
+        ev = ld.load_evidence(root_path)
+        view.specs = ev.specs
+        view.gates = ev.gates
+        view.records = ev.records
+        view.attempts = ev.attempts
+        for attr in ev.errors:
             view.degraded.append(attr)
+    except EvidenceLoadError:
+        view.specs = []
+        view.gates = []
+        view.records = []
+        view.attempts = []
+        for attr in ("specs", "gates", "records", "attempts"):
+            view.degraded.append(attr)
+
+    try:
+        view.resources = ld.load_resources(root_path)
+    except ResourceLoadError:
+        view.resources = []
+        view.degraded.append("resources")
 
     # execution — one seam, many records; per-type degraded via ExecutionRecords.errors
     try:

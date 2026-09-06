@@ -16,8 +16,7 @@ parameter — not by filtering them out.
 from __future__ import annotations
 
 from skilltrace.evidence.eligibility import compute_eligibility, live_accepted_count
-from skilltrace.evidence.records import EvidenceRecord
-from skilltrace.evidence.specs import ArtifactSpec
+from skilltrace.evidence.evidence import EvidenceRecord, ArtifactSpec
 
 NODE = "math.arithmetic.order_operations_01"
 SPEC_ID = "spec.math.arithmetic.order_operations"

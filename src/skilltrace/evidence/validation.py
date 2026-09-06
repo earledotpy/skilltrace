@@ -51,10 +51,16 @@ from pathlib import Path
 from ..graph.nodes import NodeLoadError, load_nodes
 from ._schema import EvidenceLoadError
 from .artifacts import probe_hash
-from .attempts import AssessmentAttempt, load_assessment_attempts
-from .gates import ValidationGate, load_validation_gates
-from .records import EvidenceRecord, load_evidence_records
-from .specs import ArtifactSpec, load_artifact_specs
+from .evidence import (
+    AssessmentAttempt,
+    ValidationGate,
+    EvidenceRecord,
+    ArtifactSpec,
+    load_assessment_attempts,
+    load_validation_gates,
+    load_evidence_records,
+    load_artifact_specs,
+)
 
 # A probe maps a record's repo-relative `location` to the artifact's current
 # `sha256:<hex>`, or None when nothing readable is there. Kept as a seam so the

@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from skilltrace.evidence import EvidenceLoadError
-from skilltrace.evidence.specs import ArtifactSpec, load_artifact_spec, load_artifact_specs
+from skilltrace.evidence.evidence import ArtifactSpec, load_artifact_spec, load_artifact_specs
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

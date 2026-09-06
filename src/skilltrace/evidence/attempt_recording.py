@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .attempts import OUTCOMES
+from .evidence import OUTCOMES
 from .ids import allocate_attempt_id
 
 # Exit codes the outcome may carry. Zero is a *written* attempt (passed *or*

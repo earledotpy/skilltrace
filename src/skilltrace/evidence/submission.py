@@ -32,9 +32,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from .eligibility import live_accepted_count as _live_accepted_count
+from .evidence import EvidenceRecord, ArtifactSpec
 from .ids import allocate_evidence_id
-from .records import EvidenceRecord
-from .specs import ArtifactSpec
 
 # The gate runner returns the objective command's exit code, or raises
 # `GateUnrunnable` when the command could not be spawned at all. Kept as a seam

@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from skilltrace.evidence import OUTCOMES, EvidenceLoadError
-from skilltrace.evidence.attempts import (
+from skilltrace.evidence.evidence import (
     AssessmentAttempt,
     load_assessment_attempt,
     load_assessment_attempts,

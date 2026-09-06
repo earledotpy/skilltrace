@@ -18,8 +18,7 @@ from datetime import date
 from pathlib import Path
 
 from ..evidence.eligibility import live_accepted_count
-from ..evidence.records import EvidenceRecord
-from ..evidence.specs import ArtifactSpec
+from ..evidence.evidence import EvidenceRecord, ArtifactSpec
 from ..execution.records import Review
 from .loading import PolicyLoadError, load_policy_doc
 

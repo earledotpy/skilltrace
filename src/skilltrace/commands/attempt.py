@@ -26,8 +26,7 @@ import yaml
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence._schema import EvidenceLoadError, read_yaml_list
 from ..evidence.attempt_recording import AttemptOutcome, plan_attempt
-from ..evidence.attempts import load_assessment_attempts
-from ..evidence.gates import load_validation_gates
+from ..evidence.evidence import load_assessment_attempts, load_validation_gates
 from ..graph.state import ProgressStoreError, load_state
 
 _ATTEMPTS_RELPATH = Path("evidence") / "attempts.yaml"

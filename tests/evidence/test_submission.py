@@ -12,8 +12,7 @@ from __future__ import annotations
 
 import pytest
 
-from skilltrace.evidence.records import EvidenceRecord
-from skilltrace.evidence.specs import ArtifactSpec
+from skilltrace.evidence.evidence import EvidenceRecord, ArtifactSpec
 from skilltrace.evidence.submission import (
     GateInfo,
     GateUnrunnable,

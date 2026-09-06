@@ -393,7 +393,7 @@ def test_evidence_submit_supersede_drops_old_from_live_count(repo):
         ),
     )
     assert isinstance(result, Redirect)
-    from skilltrace.evidence.records import load_evidence_records
+    from skilltrace.evidence.evidence import load_evidence_records
 
     records = load_evidence_records(repo)
     from skilltrace.evidence.eligibility import live_accepted_count

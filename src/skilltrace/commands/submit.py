@@ -28,9 +28,11 @@ import yaml
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence._schema import EvidenceLoadError, read_yaml_list
 from ..evidence.artifacts import hash_artifact
-from ..evidence.gates import load_validation_gates
-from ..evidence.records import load_evidence_records
-from ..evidence.specs import load_artifact_specs
+from ..evidence.evidence import (
+    load_validation_gates,
+    load_evidence_records,
+    load_artifact_specs,
+)
 from ..evidence.submission import GateInfo, GateUnrunnable, SubmitOutcome, plan_submit
 from ..graph.state import ProgressStoreError, load_state
 

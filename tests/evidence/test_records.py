@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from skilltrace.evidence import ACCEPTED_BY_VALUES, EvidenceLoadError
-from skilltrace.evidence.records import (
+from skilltrace.evidence.evidence import (
     EvidenceRecord,
     load_evidence_record,
     load_evidence_records,

@@ -18,8 +18,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal
 
-from ..evidence.specs import ArtifactSpec
-from ..evidence.records import EvidenceRecord
+from ..evidence.evidence import ArtifactSpec, EvidenceRecord
 from ..execution.records import Blocker
 from ..graph.nodes import SkillNode
 

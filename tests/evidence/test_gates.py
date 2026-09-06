@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from skilltrace.evidence import AUTHORITIES, EvidenceLoadError
-from skilltrace.evidence.gates import (
+from skilltrace.evidence.evidence import (
     ValidationGate,
     load_validation_gate,
     load_validation_gates,

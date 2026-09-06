@@ -10,8 +10,7 @@ from _builders import write_node as _shared_write_node
 
 from skilltrace.context import JoinedView, Loaders, load_context_lenient, load_context_strict
 from skilltrace.evidence._schema import EvidenceLoadError
-from skilltrace.evidence.gates import ValidationGate
-from skilltrace.evidence.specs import ArtifactSpec
+from skilltrace.evidence.evidence import EvidenceRecords, ValidationGate, ArtifactSpec
 from skilltrace.execution._store import ExecutionLoadError
 from skilltrace.execution.records import ExecutionRecords
 from skilltrace.graph.nodes import NodeLoadError, SkillNode
@@ -65,20 +64,34 @@ def test_lenient_raises_on_state_load_error(tmp_path: Path):
 
 
 def test_lenient_degrades_evidence_to_empty_on_error(tmp_path: Path):
-    def failing_specs(_root: Path):
-        raise EvidenceLoadError("specs boom")
+    def failing_evidence(_root: Path):
+        return EvidenceRecords(errors={"specs": "specs boom"})
 
-    loaders = Loaders(load_specs=failing_specs)
+    loaders = Loaders(load_evidence=failing_evidence)
     view = load_context_lenient(tmp_path, loaders=loaders)
     assert view.specs == []
     assert view.errors == []  # lenient never collects
+    assert "specs" in view.degraded
+
+
+def test_lenient_degrades_all_evidence_when_loader_raises(tmp_path: Path):
+    def failing_evidence(_root: Path):
+        raise EvidenceLoadError("evidence boom")
+
+    loaders = Loaders(load_evidence=failing_evidence)
+    view = load_context_lenient(tmp_path, loaders=loaders)
+    assert view.specs == []
+    assert view.gates == []
+    assert view.records == []
+    assert view.attempts == []
+    assert set(("specs", "gates", "records", "attempts")) <= set(view.degraded)
 
 
 def test_lenient_propagates_unexpected_optional_loader_exception(tmp_path: Path):
     def boom(_root: Path):
         raise RuntimeError("optional boom")
 
-    loaders = Loaders(load_specs=boom)
+    loaders = Loaders(load_evidence=boom)
     with pytest.raises(RuntimeError, match="optional boom"):
         load_context_lenient(tmp_path, loaders=loaders)
 
@@ -114,8 +127,8 @@ def test_strict_collects_graph_error_into_view_errors(tmp_path: Path):
 
 
 def test_strict_collects_evidence_and_execution_errors(tmp_path: Path):
-    def failing_specs(_root: Path):
-        raise EvidenceLoadError("specs boom")
+    def failing_evidence(_root: Path):
+        return EvidenceRecords(errors={"specs": "specs boom"})
 
     def failing_execution(_root: Path):
         return ExecutionRecords(errors={"blockers": "blockers boom"})
@@ -124,10 +137,7 @@ def test_strict_collects_evidence_and_execution_errors(tmp_path: Path):
         load_nodes=lambda _r: [],
         load_edges=lambda _r: [],
         load_state=lambda _r: ProgressStore(),
-        load_specs=failing_specs,
-        load_gates=lambda _r: [],
-        load_records=lambda _r: [],
-        load_attempts=lambda _r: [],
+        load_evidence=failing_evidence,
         load_execution=failing_execution,
         load_resources=lambda _r: [],
         load_events=lambda _r: [],
@@ -147,10 +157,7 @@ def test_strict_propagates_unexpected_loader_exception(tmp_path: Path):
         load_nodes=boom,
         load_edges=boom,
         load_state=boom,
-        load_specs=boom,
-        load_gates=boom,
-        load_records=boom,
-        load_attempts=boom,
+        load_evidence=boom,
         load_execution=boom,
         load_resources=boom,
         load_events=boom,
@@ -259,10 +266,7 @@ def test_derived_titles_and_node_map_match_ground_truth(tmp_path: Path):
         load_nodes=lambda _r: [n1, n2],
         load_edges=lambda _r: [],
         load_state=lambda _r: ProgressStore(),
-        load_specs=lambda _r: [],
-        load_gates=lambda _r: [],
-        load_records=lambda _r: [],
-        load_attempts=lambda _r: [],
+        load_evidence=lambda _r: EvidenceRecords(),
         load_execution=lambda _r: ExecutionRecords(),
         load_resources=lambda _r: [],
         load_events=lambda _r: [],
@@ -286,10 +290,7 @@ def test_resources_by_node_uses_reverse_index(tmp_path: Path):
         load_nodes=lambda _r: [n1, n2],
         load_edges=lambda _r: [],
         load_state=lambda _r: ProgressStore(),
-        load_specs=lambda _r: [],
-        load_gates=lambda _r: [],
-        load_records=lambda _r: [],
-        load_attempts=lambda _r: [],
+        load_evidence=lambda _r: EvidenceRecords(),
         load_execution=lambda _r: ExecutionRecords(),
         load_resources=lambda _r: [r1, r2],
         load_events=lambda _r: [],
@@ -380,10 +381,7 @@ def test_filesystem_loaders_and_in_memory_doubles_agree(tmp_path: Path):
         load_nodes=lambda _r: [n1, n2],
         load_edges=lambda _r: [],
         load_state=lambda _r: ProgressStore(),
-        load_specs=lambda _r: [spec],
-        load_gates=lambda _r: [gate],
-        load_records=lambda _r: [],
-        load_attempts=lambda _r: [],
+        load_evidence=lambda _r: EvidenceRecords(specs=[spec], gates=[gate]),
         load_execution=lambda _r: ExecutionRecords(),
         load_resources=lambda _r: [resource],
         load_events=lambda _r: [],

@@ -9,21 +9,34 @@ chains) belong to `validate evidence` (issue #11), not these loaders.
 
 `ids` holds the ``ev.``/``att.`` ID validators and the per-node sequence
 allocator used by the submit / attempt-record commands (issues #12, #13).
+
+`evidence` is the single deep module that owns all record loading (issue #172):
+the four dataclasses, their schema descriptors, the per-type loaders, and the
+combined `load_evidence` returning `EvidenceRecords`. The generic `_schema.py`
+helpers remain the uniform shape plumbing.
 """
 
 from __future__ import annotations
 
 from ._schema import EvidenceLoadError
 from .artifacts import hash_artifact, probe_hash
-from .attempts import (
+from .evidence import (
+    ACCEPTED_BY_VALUES,
+    AUTHORITIES,
     OUTCOMES,
+    ArtifactSpec,
     AssessmentAttempt,
+    EvidenceRecords,
+    EvidenceSchema,
+    ValidationGate,
+    EvidenceRecord,
+    load_artifact_spec,
+    load_artifact_specs,
     load_assessment_attempt,
     load_assessment_attempts,
-)
-from .gates import (
-    AUTHORITIES,
-    ValidationGate,
+    load_evidence,
+    load_evidence_record,
+    load_evidence_records,
     load_validation_gate,
     load_validation_gates,
 )
@@ -34,17 +47,6 @@ from .ids import (
     is_valid_evidence_id,
     split_attempt_id,
     split_evidence_id,
-)
-from .records import (
-    ACCEPTED_BY_VALUES,
-    EvidenceRecord,
-    load_evidence_record,
-    load_evidence_records,
-)
-from .specs import (
-    ArtifactSpec,
-    load_artifact_spec,
-    load_artifact_specs,
 )
 from .validation import (
     EvidenceValidationResult,
@@ -60,6 +62,8 @@ __all__ = [
     "AssessmentAttempt",
     "EvidenceLoadError",
     "EvidenceRecord",
+    "EvidenceRecords",
+    "EvidenceSchema",
     "EvidenceValidationResult",
     "ValidationGate",
     "allocate_attempt_id",
@@ -73,6 +77,7 @@ __all__ = [
     "load_artifact_specs",
     "load_assessment_attempt",
     "load_assessment_attempts",
+    "load_evidence",
     "load_evidence_record",
     "load_evidence_records",
     "load_validation_gate",

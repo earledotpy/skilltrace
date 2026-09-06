@@ -40,7 +40,7 @@ from ..analytics.derive import derive_analytics
 from ..context import load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
-from ..evidence.specs import ArtifactSpec
+from ..evidence.evidence import ArtifactSpec
 from ..execution.overdue import overdue_reviews, utc_today
 from ..execution.records import Blocker, open_session
 from ..graph.edges import EdgeLoadError

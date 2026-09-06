@@ -15,8 +15,7 @@ from __future__ import annotations
 
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence._schema import EvidenceLoadError
-from ..evidence.records import load_evidence_records
-from ..evidence.specs import load_artifact_specs
+from ..evidence.evidence import load_evidence_records, load_artifact_specs
 from ..execution._store import ExecutionLoadError
 from ..execution.records import load_reviews
 from ..graph.nodes import NodeLoadError, load_nodes

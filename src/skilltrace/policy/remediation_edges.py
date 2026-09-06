@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..evidence.attempts import AssessmentAttempt
+from ..evidence.evidence import AssessmentAttempt
 from ..execution.records import Blocker
 from ..graph.edges import GraphEdge
 from ..graph.state import ProgressStore

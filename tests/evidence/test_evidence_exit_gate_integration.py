@@ -33,7 +33,7 @@ from pathlib import Path
 import yaml
 
 from skilltrace import cli
-from skilltrace.evidence.records import load_evidence_records
+from skilltrace.evidence.evidence import load_evidence_records
 from skilltrace.graph.state import load_state
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
