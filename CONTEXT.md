@@ -425,9 +425,10 @@ node state, and never change eligibility.
 
 **Portfolio bundle** — the on-disk export layout written to
 `data/portfolio-<date>/`, containing the Markdown index, self-contained
-HTML preview, JSON contract, flat `artifacts/` directory of accepted
-artifact files, and per-node `nodes/` detail pages. The bundle is
-disposable, gitignored, and never read back by the engine.
+HTML preview, JSON contract (`portfolio.json`), manifest (`manifest.json`,
+node → artifact mapping plus selection metadata), flat `artifacts/`
+directory of accepted artifact files, and per-node `nodes/` detail pages.
+The bundle is disposable, gitignored, and never read back by the engine.
 
 **Portfolio preview** — a read-only portfolio export that renders to stdout
 without writing to disk. Preview uses the same selection, redaction, and

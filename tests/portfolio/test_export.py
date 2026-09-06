@@ -227,6 +227,17 @@ def test_export_json_pins_exact_contract(tmp_path, capsys):
     assert by_id[NODE_B]["state"] == "mastered"
     # Default-deny: paths redacted in the contract.
     assert by_id[NODE_A]["artifacts"] == ["[redacted]"]
+    # Disambiguated bundle identities: the JSON contract and the manifest
+    # share no filename and carry distinct roles (list vs mapping).
+    from skilltrace.portfolio.bundle import CONTRACT_FILENAME, MANIFEST_FILENAME
+
+    assert CONTRACT_FILENAME != MANIFEST_FILENAME
+    bundle = root / "data" / "portfolio-2026-09-06"
+    assert (bundle / CONTRACT_FILENAME).is_file()
+    assert (bundle / MANIFEST_FILENAME).is_file()
+    manifest = json.loads((bundle / MANIFEST_FILENAME).read_text(encoding="utf-8"))
+    assert isinstance(payload["nodes"], list)
+    assert isinstance(manifest["nodes"], dict)
 
 
 def test_export_json_empty_nodes_only_when_no_match(tmp_path, capsys):

@@ -63,7 +63,7 @@ schema changes are needed.
 | `execution/session_work.yaml` | Work items (node touch, minutes) |
 | `execution/blockers.yaml` | Open and resolved blockers |
 | `execution/reviews.yaml` | Scheduled, completed, cancelled reviews |
-| `execution/resources.yaml` | LearningResource registry (URLs, verification status) |
+| `graph/resources.yaml` | LearningResource registry (URLs, verification status) |
 
 The portfolio builder **never reads `execution/events.yaml`**: events are
 audit-only per the engine invariant.
@@ -177,7 +177,7 @@ generation date (UTC, ISO 8601).
 data/portfolio-<date>/
     portfolio.md          # Markdown index (always present)
     portfolio.html        # Self-contained HTML preview
-    portfolio.json        # JSON contract
+    portfolio.json        # JSON contract (stable published contract, §5.3)
     artifacts/            # Flat directory of accepted artifact files
         <artifact-filename-1>
         <artifact-filename-2>
@@ -186,7 +186,7 @@ data/portfolio-<date>/
         <node-id-1>.md
         <node-id-2>.md
         ...
-    portfolio.json        # Manifest (node → artifact mapping, selection metadata)
+    manifest.json         # Manifest (node → artifact mapping, selection metadata)
 ```
 
 The bundle is **disposable**: regenerated whole on each export, gitignored,
@@ -416,8 +416,9 @@ portfolio). JSON = exact fields pinned: `generated_at`, `selection`,
 nodes match selection.
 
 **Bundle layer** (`tests/portfolio/test_bundle_layout.py`, new): asserts
-`data/portfolio-<date>/` directory structure, `portfolio.json` manifest
-presence, artifact files present with rewritten relative links, no
+`data/portfolio-<date>/` directory structure with `portfolio.json` (JSON
+contract) and `manifest.json` (manifest) as distinct stable names,
+artifact files present with rewritten relative links, no
 absolute host paths in output.
 
 ### 8.3 Fixture style
@@ -446,7 +447,7 @@ exact (directory listing, manifest keys, link rewriting).
 | Honesty banner triggers (3 types) | yes | presence + banner text | yes | presence |
 | Bundle layout (data/portfolio-<date>/) | n/a | n/a | n/a | exact |
 | Link rewriting to bundle-relative | n/a | n/a | n/a | exact |
-| portfolio.json manifest | n/a | n/a | n/a | exact |
+| manifest.json manifest (distinct from portfolio.json contract) | n/a | n/a | n/a | exact |
 | JSON contract stability | n/a | n/a | yes (exact fields) | n/a |
 | HTML self-contained (one inline `<style>`, zero JS) | n/a | n/a | HTML: yes | n/a |
 | Markdown readable as plain text | n/a | n/a | Markdown: yes (no HTML in MD) | n/a |
@@ -584,9 +585,10 @@ node state, and never change eligibility.
 
 **Portfolio bundle** — the on-disk export layout written to
 `data/portfolio-<date>/`, containing the Markdown index, self-contained
-HTML preview, JSON contract, flat `artifacts/` directory of accepted
-artifact files, and per-node `nodes/` detail pages. The bundle is
-disposable, gitignored, and never read back by the engine.
+HTML preview, JSON contract (`portfolio.json`), manifest (`manifest.json`,
+node → artifact mapping plus selection metadata), flat `artifacts/`
+directory of accepted artifact files, and per-node `nodes/` detail pages.
+The bundle is disposable, gitignored, and never read back by the engine.
 
 **Portfolio preview** — a read-only portfolio export that renders to stdout
 without writing to disk. Preview uses the same selection, redaction, and

@@ -1,10 +1,12 @@
 """Disposable portfolio bundle (v2.0 spec §4, G-Bundle #177).
 
 ``bundle_portfolio`` writes ``data/portfolio-<date>/`` whole on each export:
-the Markdown index, the self-contained HTML preview, the JSON contract (which
-doubles as the manifest — it carries the node-to-artifact mapping and the
-selection metadata), a ``manifest.json`` copy of that mapping, the flat
-``artifacts/`` directory, and per-node ``nodes/`` detail pages. The bundle is
+the Markdown index, the self-contained HTML preview, the JSON contract
+(``portfolio.json`` — the stable machine-readable contract per §5.3), the
+manifest (``manifest.json`` — the node-to-artifact mapping plus selection
+metadata), the flat ``artifacts/`` directory, and per-node ``nodes/``
+detail pages. The contract and the manifest have distinct stable names and
+roles so an export can never overwrite one with the other. The bundle is
 gitignored (``data/``) and never read back by the engine (SA7).
 
 Local artifact paths are rewritten to bundle-relative links via
@@ -26,6 +28,12 @@ from .redaction import bundle_relative
 
 #: Bundle directory stem: ``data/portfolio-<UTC ISO date>/``.
 BUNDLE_PREFIX = "portfolio-"
+
+#: Stable on-disk identities: the JSON contract payload vs the bundle
+#: manifest. Distinct names so an export can never overwrite one with the
+#: other; SA7 treats both as disposable, never-read-back outputs.
+CONTRACT_FILENAME = "portfolio.json"
+MANIFEST_FILENAME = "manifest.json"
 
 
 def bundle_dir_name(today: datetime.date) -> str:
@@ -94,8 +102,8 @@ def bundle_portfolio(
     json_text = _export.render_json(view, options, links=planned)
     (dest / "portfolio.md").write_text(md, encoding="utf-8")
     (dest / "portfolio.html").write_text(html_text, encoding="utf-8")
-    (dest / "portfolio.json").write_text(json_text, encoding="utf-8")
-    (dest / "manifest.json").write_text(
+    (dest / CONTRACT_FILENAME).write_text(json_text, encoding="utf-8")
+    (dest / MANIFEST_FILENAME).write_text(
         _manifest_json(view, options, planned), encoding="utf-8"
     )
     for node in view.nodes:
@@ -108,7 +116,14 @@ def bundle_portfolio(
 def _manifest_json(
     view, options: SelectionOptions, planned: dict[str, str]
 ) -> str:
-    """The manifest: generation stamp, selection metadata, node→artifact map."""
+    """The manifest: generation stamp, selection metadata, node→artifact map.
+
+    Roles are distinct from the JSON contract: the contract (``portfolio.json``)
+    carries per-node evidence blocks; the manifest (``manifest.json``) carries
+    the node→bundle-relative-artifact mapping. Every mapping value comes from
+    ``planned`` (``artifacts/<filename>``) or is dropped when redacted, so the
+    manifest never carries absolute host paths or raw source-tree paths.
+    """
     contract = json.loads(_export.render_json(view, options))
     mapping: dict[str, list[str]] = {}
     for entry in contract["nodes"]:

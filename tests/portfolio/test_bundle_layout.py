@@ -1,7 +1,8 @@
 """Bundle-layer tests for the portfolio builder (v2.0 spec §4, T-TestArch #180).
 
 Asserts the exact ``data/portfolio-<date>/`` directory structure, the
-``portfolio.json`` manifest presence, artifact files with rewritten relative
+distinct ``portfolio.json`` contract and ``manifest.json`` manifest with
+their stable names and roles, artifact files with rewritten relative
 links, and no absolute host paths in output.
 """
 
@@ -15,6 +16,7 @@ from pathlib import Path
 import yaml
 
 from skilltrace import cli
+from skilltrace.portfolio.bundle import CONTRACT_FILENAME, MANIFEST_FILENAME
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -80,12 +82,27 @@ def test_bundle_directory_structure_exact(tmp_path, capsys):
     capsys.readouterr()
     bundle = _bundle(root)
     assert bundle.is_dir()
+    # The contract and the manifest have distinct stable names so an export
+    # can never overwrite one with the other.
+    assert CONTRACT_FILENAME != MANIFEST_FILENAME
+    assert CONTRACT_FILENAME == "portfolio.json"
+    assert MANIFEST_FILENAME == "manifest.json"
     assert (bundle / "portfolio.md").is_file()
     assert (bundle / "portfolio.html").is_file()
-    assert (bundle / "portfolio.json").is_file()
+    assert (bundle / CONTRACT_FILENAME).is_file()
+    assert (bundle / MANIFEST_FILENAME).is_file()
     assert (bundle / "artifacts").is_dir()
     assert (bundle / "nodes").is_dir()
     assert (bundle / "nodes" / f"{NODE_A}.md").is_file()
+    top_level = {p.name for p in bundle.iterdir()}
+    assert {
+        "portfolio.md",
+        "portfolio.html",
+        CONTRACT_FILENAME,
+        MANIFEST_FILENAME,
+        "artifacts",
+        "nodes",
+    } <= top_level
 
 
 def test_bundle_manifest_and_rewritten_links(tmp_path, capsys):
@@ -99,7 +116,7 @@ def test_bundle_manifest_and_rewritten_links(tmp_path, capsys):
     assert rc == 0
     capsys.readouterr()
     bundle = _bundle(root)
-    manifest = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads((bundle / MANIFEST_FILENAME).read_text(encoding="utf-8"))
     assert set(manifest) == {
         "generated_at",
         "selection",
@@ -108,6 +125,14 @@ def test_bundle_manifest_and_rewritten_links(tmp_path, capsys):
         "summary",
     }
     assert manifest["nodes"] == {NODE_A: ["artifacts/slope.py"]}
+    # Distinct roles: the contract carries per-node evidence blocks (a list)
+    # while the manifest carries the node → artifact mapping (a dict).
+    contract = json.loads((bundle / CONTRACT_FILENAME).read_text(encoding="utf-8"))
+    assert isinstance(contract["nodes"], list)
+    assert isinstance(manifest["nodes"], dict)
+    assert (bundle / CONTRACT_FILENAME).read_text(
+        encoding="utf-8"
+    ) != (bundle / MANIFEST_FILENAME).read_text(encoding="utf-8")
     assert (bundle / "artifacts" / "slope.py").is_file()
     assert (bundle / "artifacts" / "slope.py").read_text(
         encoding="utf-8"
@@ -121,8 +146,8 @@ def test_bundle_manifest_and_rewritten_links(tmp_path, capsys):
     for path in (
         bundle / "portfolio.md",
         bundle / "portfolio.html",
-        bundle / "portfolio.json",
-        bundle / "manifest.json",
+        bundle / CONTRACT_FILENAME,
+        bundle / MANIFEST_FILENAME,
         bundle / "nodes" / f"{NODE_A}.md",
     ):
         text = path.read_text(encoding="utf-8")
