@@ -397,6 +397,42 @@ which an analytics command prefixes its output with a limited-data
 advisory. The threshold is a data-quality warning only; it never blocks
 output or changes exit codes.
 
+## Portfolio builder (v2.0)
+
+**Portfolio export** — a derived artifact (Markdown, HTML, JSON, or bundle)
+regenerated whole from the engine's truth files on demand. Portfolio
+exports are disposable, never hand-edited, and never read back by the
+engine. The Markdown/YAML files are the only source of truth. A portfolio
+export is a review snapshot, not a daily view.
+
+**Share profile** — the default-deny privacy contract for portfolio
+exports: no paths, notes, blocker text, review text, free text, or URLs
+appear in outbound surfaces unless an explicit `--include-*` override flag
+is passed. The share profile is enforced by a single redaction module; no
+format may bypass it.
+
+**Redaction override** — a per-invocation `--include-*` flag that
+supersedes the default-deny share profile for one dimension only
+(paths, notes, blockers, reviews, free text, or URLs). Redaction overrides
+are never persisted; they apply only to the single export invocation that
+carries them.
+
+**Honesty banner** — an informational banner surfaced at the top of a
+portfolio export when superseded evidence, stale resources, or unverified
+claims are detected. The banner names the trigger and warns the learner to
+review before sharing. Honesty banners never block export, never alter
+node state, and never change eligibility.
+
+**Portfolio bundle** — the on-disk export layout written to
+`data/portfolio-<date>/`, containing the Markdown index, self-contained
+HTML preview, JSON contract, flat `artifacts/` directory of accepted
+artifact files, and per-node `nodes/` detail pages. The bundle is
+disposable, gitignored, and never read back by the engine.
+
+**Portfolio preview** — a read-only portfolio export that renders to stdout
+without writing to disk. Preview uses the same selection, redaction, and
+rendering pipeline as export; it is `READ_ONLY` and emits no audit event.
+
 ## Mentor voice (v1.x)
 
 **Mentor section** — one rendered block of the Mentor-voice output: a
