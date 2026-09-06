@@ -9,7 +9,7 @@ are standard form POSTs that nest-dispatch through the registry in-process and
 answer with redirect-after-POST (303) on success, a re-rendered modal with the
 refusal verbatim on a domain refusal (exit 2), or an error flash suggesting
 ``skilltrace validate`` on operational failure (exit 1). Escaping discipline
-is owned by the view layer's transform (every interpolated value passes
+is owned by the view layer's card renderer (every interpolated value passes
 through ``_esc``). There is no static-file routing at all; styling is the one
 inline ``<style>`` block. ``data/*`` exports are never read.
 """

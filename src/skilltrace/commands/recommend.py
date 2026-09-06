@@ -25,6 +25,17 @@ from pathlib import Path
 import yaml
 
 from .. import render
+from ..mentor.cards import (
+    CardPart,
+    Kicker,
+    Label,
+    Lead,
+    MentorCard,
+    Para,
+    Pill,
+    Sub,
+    Title,
+)
 from ..context import load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..graph.edges import EdgeLoadError, GraphEdge
@@ -159,7 +170,7 @@ def _do_this_next(node: SkillNode, state: str) -> str:
 
 
 
-def _mentor_lines(
+def _mentor_cards(
     result: RecommendationResult,
     minutes: int,
     limit: int,
@@ -167,36 +178,40 @@ def _mentor_lines(
     resources_by_node: dict[str, list[LearningResource]],
     store,
     active_remediations_list: list[ActiveRemediation],
-) -> list[str]:
-    """The enriched Mentor-voice next report as canonical lines.
+) -> list[MentorCard]:
+    """The enriched Mentor-voice next report as structured cards.
 
-    One kicker block per ranked candidate: title + state, contrastive brief,
-    Where to learn, How to proceed, Do this next. Warnings and locked appendix
-    follow the same rules as before; advisory remediation lines close the
-    output. Both `next` and the serve shell's `/next` page render exactly
-    these lines.
+    One content card per ranked candidate: kicker + title + state pill,
+    contrastive brief, Where to learn, How to proceed, Do this next.
+    Track warnings and remediation advisories are standalone banner cards;
+    the locked nodes ride as one appendix card. Both `next` and the serve
+    shell's `/next` page render exactly these cards.
     """
-    out: list[str] = []
+    cards: list[MentorCard] = []
     for track in result.unmapped_tracks:
-        out.append(
-            render.warning(
+        cards.append(
+            MentorCard.banner_card(
+                "warning",
                 f"track {track!r} is not in policy/recommendation.yaml "
-                "track_weights (scored 0); add it there to prioritize its nodes."
+                "track_weights (scored 0); add it there to prioritize its nodes.",
             )
         )
 
     if not result.recommendations:
-        out.append(render.section_kicker("What's next"))
-        out.extend(
-            render.section_brief(
-                f"There's nothing available or active to recommend for a {minutes}-min session. "
-                "Run `skilltrace sync` if this looks wrong — readiness may be stale."
+        cards.append(
+            MentorCard(
+                parts=[
+                    Kicker(text=render.section_kicker("What's next")),
+                    Lead(
+                        text=f"There's nothing available or active to recommend for a {minutes}-min session. "
+                        "Run `skilltrace sync` if this looks wrong — readiness may be stale."
+                    ),
+                    Kicker(text="DO THIS NEXT"),
+                    Sub(text="Refresh readiness: `skilltrace sync`"),
+                ]
             )
         )
-        out.extend(
-            render.section_do_this_next("Refresh readiness: `skilltrace sync`")
-        )
-        return out
+        return cards
 
     total = len(result.recommendations)
     session_label = f"{minutes}-min session"
@@ -206,63 +221,66 @@ def _mentor_lines(
         if node is None:
             # Should never happen (nodes and store are loaded together), but
             # degrade gracefully rather than crash.
-            out.append(f"  {rank}. {rec.node_id}")
+            cards.append(MentorCard(parts=[Sub(text=f"{rank}. {rec.node_id}")]))
             continue
 
         state = store.state_of(rec.node_id)
         node_resources = resources_by_node.get(rec.node_id, [])
 
-        lines = []
-        lines.append(render.section_kicker(f"Option {rank} — {session_label}"))
-        lines.extend(render.section_title_state(node.title, state_phrase(NodeState(state))))
-        lines.extend(
-            render.section_brief(
-                _contrastive_brief(rec, rank, total, node, minutes)
-            )
+        parts: list[CardPart] = []
+        parts.append(
+            Kicker(text=render.section_kicker(f"Option {rank} — {session_label}"))
         )
-        lines.extend(render.section_where_to_learn(resource_lines(node_resources)))
-        lines.extend(render.section_how_to_proceed(_how_to_proceed(node, state, minutes)))
-        lines.extend(render.section_do_this_next(_do_this_next(node, state)))
+        parts.append(Title(text=node.title))
+        parts.append(Pill(label=state_phrase(NodeState(state))))
+        parts.append(
+            Para(text=_contrastive_brief(rec, rank, total, node, minutes))
+        )
+        parts.append(Label(text="Where to learn"))
+        for resource_line in resource_lines(node_resources):
+            parts.append(Sub(text=resource_line))
+        parts.append(Label(text="How to proceed"))
+        parts.append(Sub(text=_how_to_proceed(node, state, minutes)))
+        parts.append(Kicker(text="DO THIS NEXT"))
+        parts.append(Sub(text=_do_this_next(node, state)))
 
-        out.extend(lines)
+        cards.append(MentorCard(parts=parts))
 
-        # Separator between candidates (not after the last one).
-        if rank < total:
-            out.append("")
-            out.append("---")
-
-    # Closing context: advisory remediation lines.
+    # Closing context: advisory remediation cards.
     for remediation in active_remediations_list:
-        out.append("")
-        out.append(
-            render.advisory(
+        cards.append(
+            MentorCard.banner_card(
+                "advisory",
                 f"remediation edge active: {remediation.remediation_node} "
-                f"supports {remediation.target} — {remediation.trigger}."
+                f"supports {remediation.target} — {remediation.trigger}.",
             )
         )
 
     # Locked appendix.
     if result.locked:
-        out.append("")
-        out.append(f"Locked ({len(result.locked)}):")
+        appendix: list[CardPart] = [Label(text=f"Locked ({len(result.locked)}):")]
         for locked in result.locked:
-            out.append(f"  {locked.node_id} — {locked.reason}")
+            appendix.append(Sub(text=f"{locked.node_id} — {locked.reason}"))
+        cards.append(MentorCard(parts=appendix, kind="locked"))
 
-    return out
+    return cards
 
 
 @dataclass
 class NextModel:
     """The recommendation derivation shared by `next` and the serve page.
 
-    ``lines`` is the canonical Mentor output; the structured recommendations
-    ride alongside so the web view can render its "Why this?" reasoning
+    ``cards`` is the canonical Mentor output; ``lines`` is the legacy
+    terminal serialization (``render.cards_to_lines(cards)``) kept so
+    terminal output stays verbatim. The structured recommendations ride
+    alongside so the web view can render its "Why this?" reasoning
     without re-running the ranker.
     """
 
     lines: list[str]
     recommendations: list[Recommendation]
     locked: list[LockedCandidate]
+    cards: list[MentorCard]
 
 
 def derive_next(
@@ -287,18 +305,20 @@ def derive_next(
         remediation_boosted={r.remediation_node for r in active},
         open_blocked=blocked,
     )
+    cards = _mentor_cards(
+        result,
+        minutes,
+        limit,
+        joined.node_map,
+        joined.resources_by_node,
+        joined.store,
+        active,
+    )
     return NextModel(
-        lines=_mentor_lines(
-            result,
-            minutes,
-            limit,
-            joined.node_map,
-            joined.resources_by_node,
-            joined.store,
-            active,
-        ),
+        lines=render.cards_to_lines(cards),
         recommendations=list(result.recommendations),
         locked=list(result.locked),
+        cards=cards,
     )
 
 

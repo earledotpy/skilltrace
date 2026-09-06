@@ -22,6 +22,17 @@ import yaml
 from _builders import write_node as _shared_write_node
 
 from skilltrace.context import load_context_lenient, load_context_strict
+from skilltrace.mentor.cards import (
+    Banner,
+    Kicker,
+    Label,
+    Lead,
+    MentorCard,
+    Para,
+    Pill,
+    Sub,
+    Title,
+)
 from skilltrace.web import views
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -79,57 +90,94 @@ def _first_node_id(root: Path, *, state: str | None = None) -> str:
     raise AssertionError(f"no node with state {state!r}")
 
 
-# --- The mechanical transform ---------------------------------------------------
+# --- Structured cards -----------------------------------------------------------
 
 
-def test_kicker_lines_become_kicker_divs():
-    html = views._transform_block(["DO THIS NEXT"])
+def test_kicker_parts_become_kicker_divs():
+    html = views.render_cards([MentorCard(parts=[Kicker(text="DO THIS NEXT")])])
     assert '<div class="kicker">DO THIS NEXT</div>' in html
 
 
-def test_banner_prefixes_become_banner_classes_and_escape():
-    html = views._transform_block(["[warning] track <x> is unmapped"])
+def test_banner_parts_become_banner_classes_and_escape():
+    html = views.render_cards(
+        [MentorCard.banner_card("warning", "track <x> is unmapped")]
+    )
     assert '<p class="banner warning">track &lt;x&gt; is unmapped</p>' in html
 
 
-def test_pill_line_becomes_pill_span_with_slug_class():
-    html = views._transform_block(["  [Ready to start]"])
+def test_pill_parts_become_pill_spans_with_slug_class():
+    html = views.render_cards(
+        [MentorCard(parts=[Pill(label="Ready to start")])]
+    )
     assert '<span class="pill ready-to-start">Ready to start</span>' in html
 
 
-def test_indented_lines_become_sub_divs():
-    html = views._transform_block(["  Pandas Docs -- https://example.test/"])
+def test_sub_parts_become_sub_divs():
+    html = views.render_cards(
+        [MentorCard(parts=[Sub(text="Pandas Docs -- https://example.test/")])]
+    )
     assert '<div class="sub">Pandas Docs -- https://example.test/</div>' in html
 
 
-def test_lead_follows_kicker_and_label_precedes_indent():
-    lines = [
-        "THIS SKILL",
-        "Some Skill Title",
-        "",
-        "Where to learn",
-        "  A resource line",
-        "Also in range: two, three.",
-    ]
-    html = views._transform_block(lines)
+def test_title_lead_label_and_para_render_with_structure():
+    card = MentorCard(
+        parts=[
+            Kicker(text="THIS SKILL"),
+            Title(text="Some Skill Title"),
+            Label(text="Where to learn"),
+            Sub(text="A resource line"),
+            Para(text="Also in range: two, three."),
+        ]
+    )
+    html = views.render_cards([card])
     assert '<p class="lead">Some Skill Title</p>' in html
     assert '<p class="label">Where to learn</p>' in html
     assert "<p>Also in range: two, three.</p>" in html
 
 
-def test_separator_splits_blocks_and_banner_starts_its_own():
-    lines = ["OPTION 1 — X", "body one", "---", "OPTION 2 — Y", "[advisory] note"]
-    blocks = views.lines_to_blocks(lines)
-    assert len(blocks) == 3
-    assert blocks[1][0].strip().startswith("OPTION 2")
-    assert blocks[2][0].startswith("[advisory]")
+def test_lead_parts_render_as_lead_paragraphs():
+    html = views.render_cards(
+        [
+            MentorCard(
+                parts=[
+                    Kicker(text="TODAY"),
+                    Lead(text="Your best focus today is X."),
+                ]
+            )
+        ]
+    )
+    assert '<p class="lead">Your best focus today is X.</p>' in html
 
 
-def test_transform_escapes_every_interpolated_value():
-    html = views._transform_block(["<script>alert(1)</script>", "  <b>bold</b>"])
+def test_each_card_renders_its_own_card_div():
+    cards = [
+        MentorCard(parts=[Kicker(text="OPTION 1"), Para(text="body one")]),
+        MentorCard(parts=[Kicker(text="OPTION 2")]),
+        MentorCard.banner_card("advisory", "note"),
+    ]
+    html = views.render_cards(cards)
+    assert html.count('<div class="card">') == 3
+    assert '<p class="banner advisory">note</p>' in html
+
+
+def test_render_escapes_every_interpolated_value():
+    html = views.render_cards(
+        [
+            MentorCard(
+                parts=[
+                    Para(text="<script>alert(1)</script>"),
+                    Sub(text="<b>bold</b>"),
+                    Pill(label="<i>x</i>"),
+                    Banner(kind="warning", text="<u>y</u>"),
+                ]
+            )
+        ]
+    )
     assert "<script>" not in html
     assert "&lt;script&gt;" in html
     assert "&lt;b&gt;bold&lt;/b&gt;" in html
+    assert "&lt;i&gt;x&lt;/i&gt;" in html
+    assert "&lt;u&gt;y&lt;/u&gt;" in html
 
 
 # --- GET / — the today dashboard (variant A) -------------------------------------

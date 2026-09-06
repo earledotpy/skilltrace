@@ -9,6 +9,18 @@ reasons — it is not a retrofit.
 
 from __future__ import annotations
 
+from .mentor.cards import (
+    Banner,
+    Kicker,
+    Label,
+    Lead,
+    MentorCard,
+    Para,
+    Pill,
+    Sub,
+    Title,
+)
+
 
 def warning(message: str) -> str:
     return f"[warning] {message}"
@@ -75,3 +87,65 @@ def section_do_this_next(action: str) -> list[str]:
 def section_context(text: str) -> list[str]:
     """Trailing context line (what this unlocks, etc.)."""
     return ["", text]
+
+
+# --- Structured cards -> legacy lines (issue #171) ---------------------------
+# The sole owner of the legacy line shape. CLI handlers produce
+# ``list[MentorCard]``; terminals print ``cards_to_lines(cards)`` verbatim,
+# while the web layer consumes the same cards via ``views.render_cards``
+# without serializing. Blank-line and ``---`` placement mirrors the retired
+# per-handler line builders exactly so terminal output does not change.
+
+
+def _part_to_line(part) -> str:
+    """One typed part back to its legacy line (no blank separators)."""
+    if isinstance(part, Banner):
+        return f"[{part.kind}] {part.text}"
+    if isinstance(part, Pill):
+        return f"  [{part.label}]"
+    if isinstance(part, Sub):
+        return f"  {part.text}"
+    if isinstance(part, (Kicker, Title, Lead, Label, Para)):
+        return part.text
+    raise TypeError(f"unknown card part: {part!r}")
+
+
+def _needs_blank(previous, current) -> bool:
+    """Whether legacy output puts a blank line between two adjacent parts."""
+    if previous is None:
+        return False
+    if isinstance(previous, Kicker) and isinstance(current, Title):
+        return False
+    if isinstance(previous, Title) and isinstance(current, Pill):
+        return False
+    if isinstance(previous, Kicker) and isinstance(current, Sub):
+        return False
+    if isinstance(previous, Label) and isinstance(current, Sub):
+        return False
+    if isinstance(previous, Sub) and isinstance(current, Sub):
+        return False
+    return True
+
+
+def cards_to_lines(cards: list[MentorCard]) -> list[str]:
+    """Serialize structured cards back to the legacy terminal line format."""
+    lines: list[str] = []
+    seen_content = False
+    for card in cards:
+        if lines:
+            if card.kind is None:
+                if seen_content:
+                    lines.extend(["", "---"])  # separator between content cards
+                # else: first content card after leading banners stays attached
+            elif seen_content:
+                lines.append("")  # trailing banner/appendix card
+            # else: consecutive leading banners stay back-to-back
+        previous_part = None
+        for part in card.parts:
+            if _needs_blank(previous_part, part):
+                lines.append("")
+            lines.append(_part_to_line(part))
+            previous_part = part
+        if card.kind is None:
+            seen_content = True
+    return lines

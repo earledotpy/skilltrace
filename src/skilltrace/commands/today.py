@@ -27,6 +27,15 @@ from pathlib import Path
 import yaml
 
 from .. import render
+from ..mentor.cards import (
+    CardPart,
+    Kicker,
+    Label,
+    Lead,
+    MentorCard,
+    Para,
+    Sub,
+)
 from ..analytics.derive import derive_analytics
 from ..context import load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
@@ -201,9 +210,11 @@ def _focus_action(
 class TodayModel:
     """The study-day derivation shared by `today` and the serve home page.
 
-    ``lines`` is the canonical Mentor output; the pressure facts and state
-    counts ride alongside so the web view can excerpt them without
-    re-deriving (one voice, no parallel vocabulary).
+    ``cards`` is the canonical Mentor output; ``lines`` is the legacy
+    terminal serialization (``render.cards_to_lines(cards)``) kept so
+    terminal output stays verbatim. The pressure facts and state counts
+    ride alongside so the web view can excerpt them without re-deriving
+    (one voice, no parallel vocabulary).
     """
 
     lines: list[str]
@@ -211,6 +222,7 @@ class TodayModel:
     overdue: list  # list[Review] — scheduled and past due
     open_blockers: list[Blocker]
     counts: dict[str, int]  # progress-store state -> node count
+    cards: list[MentorCard]
 
 
 def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
@@ -295,12 +307,11 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
         _raw_analytics_bits = []
     analytics_bits = _raw_analytics_bits[:2]
 
-    # Build the Mentor view.
-    lines: list[str] = []
-    lines.append(render.section_kicker("Today"))
-    lines.extend(
-        render.section_brief(
-            _study_day_brief(
+    # Build the Mentor view as structured cards (one card for the study day).
+    parts: list[CardPart] = [Kicker(text="TODAY")]
+    parts.append(
+        Lead(
+            text=_study_day_brief(
                 has_open_session=current_session is not None,
                 focus_title=focus_node.title if focus_node else None,
                 minutes_open=minutes_open,
@@ -312,20 +323,25 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
         )
     )
 
+    context: str | None = None
     if focus_node is not None:
-        lines.extend(
-            render.section_where_to_learn(
-                resource_lines(focus_resources), label="Where to learn (top focus)"
+        parts.append(Label(text="Where to learn (top focus)"))
+        for resource_line in resource_lines(focus_resources):
+            parts.append(Sub(text=resource_line))
+        parts.append(Label(text="How to proceed"))
+        parts.append(
+            Sub(
+                text=_focus_how_to_proceed(
+                    focus_node, focus_state, specs, has_gate, records
+                )
             )
         )
-        lines.extend(
-            render.section_how_to_proceed(
-                _focus_how_to_proceed(focus_node, focus_state, specs, has_gate, records)
-            )
-        )
-        lines.extend(
-            render.section_do_this_next(
-                _focus_action(focus_node, focus_state, specs, has_gate, records)
+        parts.append(Kicker(text="DO THIS NEXT"))
+        parts.append(
+            Sub(
+                text=_focus_action(
+                    focus_node, focus_state, specs, has_gate, records
+                )
             )
         )
 
@@ -345,20 +361,21 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
                     + ("s" if len(open_blocker_list) != 1 else "")
                 )
             context = "When this is done, " + " and ".join(bits) + "."
-        else:
-            context = None
         if context:
-            lines.extend(render.section_context(context))
+            parts.append(Para(text=context))
     else:
-        lines.extend(
-            render.section_how_to_proceed(
-                "Run `skilltrace next` to see what to study, or `skilltrace sync` "
-                "if your readiness looks stale.",
+        parts.append(Label(text="How to proceed"))
+        parts.append(
+            Sub(
+                text="Run `skilltrace next` to see what to study, or `skilltrace sync` "
+                "if your readiness looks stale."
             )
         )
-        lines.extend(
-            render.section_do_this_next("Open your study options: `skilltrace next`")
-        )
+        parts.append(Kicker(text="DO THIS NEXT"))
+        parts.append(Sub(text="Open your study options: `skilltrace next`"))
+
+    cards = [MentorCard(parts=parts)]
+    lines = render.cards_to_lines(cards)
 
     counts: dict[str, int] = {}
     for entry in store.entries.values():
@@ -370,6 +387,7 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
         overdue=overdue,
         open_blockers=open_blocker_list,
         counts=counts,
+        cards=cards,
     )
 
 

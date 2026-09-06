@@ -4,7 +4,7 @@ Third MUTATING sibling of `export markdown` / `export sqlite` (the #33
 reasoning extended by G4#68): a single-page five-layer review roll-up rendered
 as a self-contained `data/export.html` (one inline `<style>` block, zero JS, no
 external assets). It reuses the *same* read derivations the terminal reports
-print and the *same* mechanical line->HTML transform the serve pages use
+print and the *same* structured card pipeline the serve pages use
 (`web.views.cards_html` / `page`) — no second vocabulary (ADR 0006 / G3#67
 escalation path).
 

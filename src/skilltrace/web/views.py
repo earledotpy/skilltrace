@@ -1,15 +1,17 @@
-"""Daily pages — reads (T3) and browser writes (T4) over one mechanical transform.
+"""Daily pages — reads (T3) and browser writes (T4) over structured cards.
 
 The GET routes (`/`, `/next`, `/nodes/{id}`, `/health`) translate the CLI
-derivations into browser cards. The translation is deliberately mechanical
-(ADR 0006 / G3#67): every page calls the same line-producers the CLI prints
-(``derive_today`` / ``derive_next`` / ``derive_node_detail`` / ``health_report``)
-and transforms those canonical lines — escape per line, ``[tag]`` prefixes to
-banner classes, ``[pill]`` lines to pill classes, indentation to structure,
-uppercase kickers to kickers, ``---`` separators to card breaks. No Mentor
-prose is re-declared here, so CLI and serve cannot disagree; if the transform
-outgrows line-shape text, the sanctioned escalation is refactoring
-``render.py`` into structured data, never a parallel hand-written vocabulary.
+derivations into browser cards. The translation consumes the structured
+``MentorCard`` model the derivations produce (``mentor.cards``) — banners
+carry a ``kind`` field, pills carry a ``label`` field, kickers, titles,
+leads, labels, paragraphs, and sub-lines are typed parts, and each card is
+already a discrete unit. No Mentor prose is re-declared here, so CLI and
+serve cannot disagree; the legacy line grammar (``[tag]`` prefixes, ``---``
+separators, indentation, uppercase kickers) survives only as the terminal
+serializer ``render.cards_to_lines`` and the deprecated-compat parser
+``mentor.cards.lines_to_cards`` for out-of-scope line producers.
+
+The write routes (T4, G2#66 + G5#69) are thin glue over the *same* registry the
 
 The write routes (T4, G2#66 + G5#69) are thin glue over the *same* registry the
 CLI dispatches through: a confirmed action builds ``Context(root, args,
@@ -51,6 +53,17 @@ from ..commands.node_detail import (
 )
 from ..commands.recommend import derive_next
 from ..commands.today import derive_today
+from ..mentor.cards import (
+    Banner,
+    Kicker,
+    Label,
+    Lead,
+    MentorCard,
+    Pill,
+    Sub,
+    Title,
+    lines_to_cards,
+)
 from ..context import JoinedView, load_context_lenient
 from ..dispatch import Context, dispatch
 from ..analytics.derive import derive_analytics
@@ -380,99 +393,51 @@ def _finish_write(
     return _redirect_with_notice(next_url, lines, "error")
 
 
-# --- Mechanical line -> HTML transform ----------------------------------------
-
-_BANNER_PREFIXES = ("[warning] ", "[error] ", "[advisory] ")
-_PILL_RE = re.compile(r"\[(.+)\]")
+# --- Structured cards -> HTML ------------------------------------------------
 
 
 def _slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
 
 
-def _is_kicker(text: str) -> bool:
-    stripped = text.strip()
-    return (
-        bool(stripped)
-        and stripped == stripped.upper()
-        and any(ch.isalpha() for ch in stripped)
-        and len(stripped) <= 80
-    )
-
-
-def lines_to_blocks(lines: list[str]) -> list[list[str]]:
-    """Split canonical lines at ``---`` separators and standalone banners.
-
-    Banners begin their own block so advisory callouts render as their own
-    cards instead of gluing onto a neighbouring candidate card.
-    """
-    blocks: list[list[str]] = [[]]
-    for raw in lines:
-        stripped = raw.strip()
-        if stripped == "---":
-            blocks.append([])
-            continue
-        if any(stripped.startswith(prefix) for prefix in _BANNER_PREFIXES):
-            blocks.append([raw])
-            continue
-        blocks[-1].append(raw)
-    return [block for block in blocks if any(line.strip() for line in block)]
-
-
-def _transform_block(block: list[str]) -> str:
-    # Pre-strip blanks once so the label lookahead sees the real next line.
-    substantive = [line for line in block if line.strip()]
-    out: list[str] = []
-    for index, raw in enumerate(substantive):
-        stripped = raw.strip()
-
-        banner = next(
-            (p for p in _BANNER_PREFIXES if stripped.startswith(p)), None
+def _render_part(part) -> str:
+    """One typed card part to HTML — the single card-type-to-CSS-class map."""
+    if isinstance(part, Banner):
+        return f'<p class="banner {_esc(part.kind)}">{_esc(part.text)}</p>'
+    if isinstance(part, Pill):
+        return (
+            f'<span class="pill {_esc(_slug(part.label))}">{_esc(part.label)}</span>'
         )
-        if banner:
-            kind = banner.strip("[] ")
-            out.append(
-                f'<p class="banner {_esc(kind)}">{_esc(stripped[len(banner):])}</p>'
-            )
-            continue
+    if isinstance(part, Kicker):
+        return f'<div class="kicker">{_esc(part.text)}</div>'
+    if isinstance(part, (Title, Lead)):
+        return f'<p class="lead">{_esc(part.text)}</p>'
+    if isinstance(part, Label):
+        return f'<p class="label">{_esc(part.text)}</p>'
+    if isinstance(part, Sub):
+        return f'<div class="sub">{_esc(part.text)}</div>'
+    return f"<p>{_esc(part.text)}</p>"  # Para (and any future plain part)
 
-        if raw.startswith("  "):
-            match = _PILL_RE.fullmatch(stripped)
-            if match:
-                label = match.group(1)
-                out.append(
-                    f'<span class="pill {_esc(_slug(label))}">{_esc(label)}</span>'
-                )
-            else:
-                out.append(f'<div class="sub">{_esc(stripped)}</div>')
-            continue
 
-        if _is_kicker(stripped):
-            out.append(f'<div class="kicker">{_esc(stripped)}</div>')
-            continue
+def _render_card_inner(card: MentorCard) -> str:
+    return "\n".join(_render_part(part) for part in card.parts)
 
-        css = ""
-        if index:
-            previous_is_sub = substantive[index - 1].startswith("  ")
-            if not previous_is_sub and _is_kicker(substantive[index - 1].strip()):
-                css = ' class="lead"'  # first prose under a kicker leads the card
-        if (
-            not css
-            and index + 1 < len(substantive)
-            and substantive[index + 1].startswith("  ")
-            and len(stripped) <= 60
-        ):
-            css = ' class="label"'  # short callout heading above indented lines
-        out.append(f"<p{css}>{_esc(stripped)}</p>")
-    return "\n".join(out)
+
+def render_cards(cards: list[MentorCard]) -> str:
+    """The structured cards as one ``<div class="card">`` per card."""
+    return "".join(
+        f'<div class="card">\n{_render_card_inner(card)}\n</div>\n' for card in cards
+    )
 
 
 def cards_html(lines: list[str]) -> str:
-    """The canonical lines as one card per block."""
-    return "".join(
-        f'<div class="card">\n{_transform_block(block)}\n</div>\n'
-        for block in lines_to_blocks(lines)
-    )
+    """Deprecated compat: legacy lines as cards (health/reports/export only).
+
+    Parses ``lines`` via ``mentor.cards.lines_to_cards`` and renders through
+    :func:`render_cards` so out-of-scope line producers share the one HTML
+    pipeline. New code must pass ``MentorCard`` lists to ``render_cards``.
+    """
+    return render_cards(lines_to_cards(lines))
 
 
 # --- Shared cards ---------------------------------------------------------------
@@ -608,7 +573,7 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
 
     # Grid-two: left 1.2fr focus + right 0.8fr rail pressure.
     left_html = (
-        cards_html(model.lines)
+        render_cards(model.cards)
         + _start_confirm_card(view, root, model.focus_node_id)
         + _session_strip_card(view, root)
     )
@@ -833,16 +798,19 @@ def _why_details(rec) -> str:
 def _candidate_cards(model) -> str:
     """Candidate cards with a per-card collapsible "Why this?" attached.
 
-    Candidate blocks are recognized by their canonical OPTION kickers; the k-th
-    such block receives model.recommendations[k]'s reasoning. Other blocks
-    (warnings, remediation advisories, the locked appendix) pass through.
+    Candidate cards are recognized by their ``OPTION`` kicker; the k-th
+    such card receives model.recommendations[k]'s reasoning. Other cards
+    (warning banners, remediation advisories, the locked appendix) pass
+    through untouched.
     """
     rec_iter = iter(model.recommendations)
     html_out = []
-    for block in lines_to_blocks(model.lines):
-        first = next((line for line in block if line.strip()), "")
-        inner = _transform_block(block)
-        if first.strip().startswith("OPTION "):
+    for card in model.cards:
+        kicker = next(
+            (part.text for part in card.parts if isinstance(part, Kicker)), ""
+        )
+        inner = _render_card_inner(card)
+        if kicker.startswith("OPTION "):
             rec = next(rec_iter, None)
             if rec is not None:
                 inner += _why_details(rec)
@@ -878,7 +846,7 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
         + _flash_html(query or {})
         + _degraded_banner(view)
         + breadcrumb
-        + cards_html(model.lines)
+        + render_cards(model.cards)
         + actions
         + drill
     )
@@ -1187,7 +1155,7 @@ def health_body(root) -> tuple[str, str, int]:
         + '<div class="kicker">HEALTH ROLL-UP — FIVE VALIDATORS + LIVENESS</div>\n'
         + _table(["Layer", "Counts", "Status"], rows)
         + error_banners
-        + _transform_block(report.liveness_lines)
+        + cards_html(report.liveness_lines)
         + f'<p class="banner {verdict_class}">{_esc(report.verdict())}</p>\n'
         + '<p class="mut">Read fresh from the truth files at request time — '
         "CLI edits appear on refresh.</p>\n</div>\n"

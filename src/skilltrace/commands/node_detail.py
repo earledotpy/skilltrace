@@ -30,6 +30,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .. import render
+from ..mentor.cards import (
+    CardPart,
+    Kicker,
+    Label,
+    MentorCard,
+    Para,
+    Pill,
+    Sub,
+    Title,
+)
 from ..context import JoinedView, load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
@@ -150,7 +160,9 @@ def _unlocks_context(
 class NodeModel:
     """The Mentor-voice node-detail derivation shared by `node` and the serve page.
 
-    ``lines`` is the canonical Mentor output; the per-node facts ride
+    ``cards`` is the canonical Mentor output (a single card); ``lines`` is
+    the legacy terminal serialization (``render.cards_to_lines(cards)``)
+    kept so terminal output stays verbatim. The per-node facts ride
     alongside so the web drill-down card consumes them directly
     instead of re-deriving or importing private helpers.
     """
@@ -163,6 +175,7 @@ class NodeModel:
     unlocked_by: list[str]
     evidence_standing: str
     sections: list[MentorSection]
+    cards: list[MentorCard]
 
 
 def derive_node_detail(joined, node_id: str) -> NodeModel | None:
@@ -240,20 +253,29 @@ def derive_node_detail(joined, node_id: str) -> NodeModel | None:
     if context_text:
         sections.append(MentorSection(heading="Context", lines=[context_text]))
 
-    lines: list[str] = []
-    lines.append(render.section_kicker("This skill"))
-    lines.extend(render.section_title_state(node.title, state_label))
+    parts: list[CardPart] = [
+        Kicker(text=render.section_kicker("This skill")),
+        Title(text=node.title),
+        Pill(label=state_label),
+    ]
     for section in sections:
         if section.heading == "Brief":
-            lines.extend(render.section_brief(section.lines[0]))
+            parts.append(Para(text=section.lines[0]))
         elif section.heading == "Where to learn":
-            lines.extend(render.section_where_to_learn(section.lines))
+            parts.append(Label(text="Where to learn"))
+            for resource_line in section.lines:
+                parts.append(Sub(text=resource_line))
         elif section.heading == "How to proceed":
-            lines.extend(render.section_how_to_proceed(section.lines[0]))
+            parts.append(Label(text="How to proceed"))
+            parts.append(Sub(text=section.lines[0]))
         elif section.heading == "Do this next":
-            lines.extend(render.section_do_this_next(section.lines[0]))
+            parts.append(Kicker(text="DO THIS NEXT"))
+            parts.append(Sub(text=section.lines[0]))
         elif section.heading == "Context":
-            lines.extend(render.section_context(section.lines[0]))
+            parts.append(Para(text=section.lines[0]))
+
+    cards = [MentorCard(parts=parts)]
+    lines = render.cards_to_lines(cards)
 
     evidence_standing = _evidence_summary(node_id, specs, has_gate, records)
 
@@ -266,6 +288,7 @@ def derive_node_detail(joined, node_id: str) -> NodeModel | None:
         unlocked_by=unlocked,
         evidence_standing=evidence_standing,
         sections=sections,
+        cards=cards,
     )
 
 
