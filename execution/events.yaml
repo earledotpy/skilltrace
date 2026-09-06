@@ -241,3 +241,26 @@ events:
   command: sync
   args: {}
   records_touched: []
+- timestamp: '2026-09-05T22:50:46+00:00'
+  command: sync
+  args: {}
+  records_touched:
+  - agents.concepts.agent_fundamentals_01
+  - agents.deploy.fastapi_minimal_01
+- timestamp: '2026-09-06T20:57:21+00:00'
+  command: sync
+  args: {}
+  records_touched: []
+- timestamp: '2026-09-06T20:59:02+00:00'
+  command: verify-resource
+  args:
+    resource_id: hf-agents-course
+    broken: false
+    reason: null
+    check_url: true
+    timeout: null
+    method: null
+    follow_redirects: null
+    user_agent: null
+  records_touched:
+  - hf-agents-course
