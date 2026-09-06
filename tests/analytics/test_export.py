@@ -83,6 +83,48 @@ def _seed_with_threshold_trips(tmp_path: Path) -> Path:
     return root
 
 
+def _seed_populated(tmp_path: Path) -> Path:
+    """Seed repo where all four themes have reportable data.
+
+    Sessions + work (velocity), open blockers (blockers), a scheduled
+    review (reviews); evidence already has spec gaps on the seed repo.
+    Used to pin the full exact-field contract (all theme blocks present).
+    """
+    root = _seed_with_threshold_trips(tmp_path)
+    work_doc = {
+        "session_work": [
+            {
+                "id": "wrk.001",
+                "session_id": "ses.2026-08-10.001",
+                "node_id": "math.arithmetic.order_operations_01",
+                "created_at": "2026-08-10T10:30:00Z",
+                "minutes": 30,
+            },
+            {
+                "id": "wrk.002",
+                "session_id": "ses.2026-08-11.001",
+                "node_id": "math.algebra.variables_expressions_01",
+                "created_at": "2026-08-11T10:30:00Z",
+                "minutes": 45,
+            },
+        ]
+    }
+    _write_yaml(root, "execution/session_work.yaml", work_doc)
+    reviews_doc = {
+        "reviews": [
+            {
+                "id": "rev.math.arithmetic.order_operations_01.001",
+                "node_id": "math.arithmetic.order_operations_01",
+                "status": "scheduled",
+                "scheduled_for": "2026-08-01",
+                "created_at": "2026-07-15T10:00:00Z",
+            }
+        ]
+    }
+    _write_yaml(root, "execution/reviews.yaml", reviews_doc)
+    return root
+
+
 # ---------------------------------------------------------------------------
 # Registration and mutating contract
 # ---------------------------------------------------------------------------
@@ -260,18 +302,28 @@ class TestHTMLExport:
 # JSON: exact fields pinned (published G7 contract)
 # ---------------------------------------------------------------------------
 
-# The published subset from the G7 resolution comment.
+# The published subset (spec §7.3, T3 disambiguation: single `state_filter` field).
+# For theme=="all" on a populated repo all four theme blocks are present;
+# on an empty repo empty themes are omitted (meta keys + evidence stay).
 _REQUIRED_TOP_KEYS = {
     "generated_at",
     "period",
     "group_by",
-    "state",
+    "state_filter",
     "advisory_warnings",
     "velocity",
     "blockers",
     "reviews",
     "evidence",
 }
+
+_REQUIRED_META_KEYS = frozenset({
+    "generated_at",
+    "period",
+    "group_by",
+    "state_filter",
+    "advisory_warnings",
+})
 
 _REQUIRED_PERIOD_KEYS = {"start", "end", "days"}
 
@@ -317,7 +369,7 @@ class TestJSONExport:
         assert (root / "data" / "analytics-report.json").exists()
 
     def test_json_top_level_keys_exact(self, tmp_path):
-        root = _seed_repo(tmp_path)
+        root = _seed_populated(tmp_path)
         cli.run(["analytics", "export", "--format", "json"], root=root)
         payload = _load_json(root)
         assert set(payload.keys()) == _REQUIRED_TOP_KEYS, (
@@ -327,34 +379,99 @@ class TestJSONExport:
         )
 
     def test_json_period_keys_exact(self, tmp_path):
-        root = _seed_repo(tmp_path)
+        root = _seed_populated(tmp_path)
         cli.run(["analytics", "export", "--format", "json"], root=root)
         payload = _load_json(root)
         assert set(payload["period"].keys()) == _REQUIRED_PERIOD_KEYS
 
     def test_json_velocity_keys_exact(self, tmp_path):
-        root = _seed_repo(tmp_path)
+        root = _seed_populated(tmp_path)
         cli.run(["analytics", "export", "--format", "json"], root=root)
         payload = _load_json(root)
         assert set(payload["velocity"].keys()) == _REQUIRED_VELOCITY_KEYS
 
     def test_json_blockers_keys_exact(self, tmp_path):
-        root = _seed_repo(tmp_path)
+        root = _seed_populated(tmp_path)
         cli.run(["analytics", "export", "--format", "json"], root=root)
         payload = _load_json(root)
         assert set(payload["blockers"].keys()) == _REQUIRED_BLOCKERS_KEYS
 
     def test_json_reviews_keys_exact(self, tmp_path):
-        root = _seed_repo(tmp_path)
+        root = _seed_populated(tmp_path)
         cli.run(["analytics", "export", "--format", "json"], root=root)
         payload = _load_json(root)
         assert set(payload["reviews"].keys()) == _REQUIRED_REVIEWS_KEYS
 
     def test_json_evidence_keys_exact(self, tmp_path):
-        root = _seed_repo(tmp_path)
+        root = _seed_populated(tmp_path)
         cli.run(["analytics", "export", "--format", "json"], root=root)
         payload = _load_json(root)
         assert set(payload["evidence"].keys()) == _REQUIRED_EVIDENCE_KEYS
+
+    def test_json_single_state_filter_field_no_legacy_state(self, tmp_path):
+        """T3: exactly one state-filter field name; losing `state` variant gone."""
+        root = _seed_populated(tmp_path)
+        cli.run(["analytics", "export", "--format", "json"], root=root)
+        payload = _load_json(root)
+        assert "state_filter" in payload
+        assert "state" not in payload
+        assert isinstance(payload["state_filter"], list)
+
+    def test_json_state_filter_always_present_when_empty(self, tmp_path):
+        """T3: the filter field is always present, even with no --state flags."""
+        root = _seed_repo(tmp_path)
+        cli.run(["analytics", "export", "--format", "json"], root=root)
+        payload = _load_json(root)
+        assert "state_filter" in payload
+        assert payload["state_filter"] == []
+
+    def test_json_empty_themes_omitted_only_when_nothing_reportable(self, tmp_path):
+        """T3: bare seed omits empty velocity/blockers/reviews, keeps evidence.
+
+        Evidence has spec gaps on the seed repo (reportable), while the
+        other three themes hold literally nothing — they must be omitted,
+        and the meta keys must stay.
+        """
+        root = _seed_repo(tmp_path)
+        cli.run(["analytics", "export", "--format", "json"], root=root)
+        payload = _load_json(root)
+        for key in _REQUIRED_META_KEYS:
+            assert key in payload, f"meta key {key!r} must always be present"
+        assert "evidence" in payload
+        assert "velocity" not in payload
+        assert "blockers" not in payload
+        assert "reviews" not in payload
+
+    def test_json_single_theme_export_keeps_requested_block(self, tmp_path):
+        """T3: --theme velocity keeps only velocity (+ meta), even when populated."""
+        root = _seed_populated(tmp_path)
+        cli.run(
+            ["analytics", "export", "--format", "json", "--theme", "velocity"],
+            root=root,
+        )
+        payload = _load_json(root, theme="velocity")
+        assert "velocity" in payload
+        assert "blockers" not in payload
+        assert "reviews" not in payload
+        assert "evidence" not in payload
+        assert "state_filter" in payload
+
+    def test_json_single_theme_export_keeps_requested_block_when_empty(self, tmp_path):
+        """T3: single-theme export keeps the requested block even when empty.
+
+        On the bare seed velocity holds nothing, yet `--theme velocity`
+        must still carry the (zero) velocity block — omission-by-emptiness
+        applies to the all-themes export only.
+        """
+        root = _seed_repo(tmp_path)
+        cli.run(
+            ["analytics", "export", "--format", "json", "--theme", "velocity"],
+            root=root,
+        )
+        payload = _load_json(root, theme="velocity")
+        assert "velocity" in payload
+        assert set(payload["velocity"].keys()) == _REQUIRED_VELOCITY_KEYS
+        assert "state_filter" in payload
 
     def test_json_generated_at_is_iso8601_utc(self, tmp_path):
         root = _seed_repo(tmp_path)
@@ -377,7 +494,7 @@ class TestJSONExport:
         root = _seed_repo(tmp_path)
         cli.run(["analytics", "export", "--format", "json"], root=root)
         payload = _load_json(root)
-        assert isinstance(payload["state"], list)
+        assert isinstance(payload["state_filter"], list)
 
     def test_json_advisory_warnings_is_list(self, tmp_path):
         root = _seed_repo(tmp_path)
@@ -393,19 +510,19 @@ class TestJSONExport:
         assert any("blocker" in w.lower() for w in payload["advisory_warnings"])
 
     def test_json_completion_rate_is_float(self, tmp_path):
-        root = _seed_repo(tmp_path)
+        root = _seed_populated(tmp_path)
         cli.run(["analytics", "export", "--format", "json"], root=root)
         payload = _load_json(root)
         assert isinstance(payload["reviews"]["completion_rate"], float)
 
     def test_json_submission_rate_is_float(self, tmp_path):
-        root = _seed_repo(tmp_path)
+        root = _seed_populated(tmp_path)
         cli.run(["analytics", "export", "--format", "json"], root=root)
         payload = _load_json(root)
         assert isinstance(payload["evidence"]["submission_rate"], float)
 
     def test_json_by_week_items_have_correct_shape(self, tmp_path):
-        root = _seed_repo(tmp_path)
+        root = _seed_populated(tmp_path)
         cli.run(["analytics", "export", "--format", "json"], root=root)
         payload = _load_json(root)
         for bucket in payload["velocity"]["by_week"]:
@@ -431,7 +548,7 @@ class TestJSONExport:
             root=root,
         )
         payload = _load_json(root)
-        assert set(payload["state"]) == {"active", "passed"}
+        assert set(payload["state_filter"]) == {"active", "passed"}
 
     def test_json_group_by_reflected_in_payload(self, tmp_path):
         root = _seed_repo(tmp_path)

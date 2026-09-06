@@ -388,9 +388,12 @@ Top-level structure:
 }
 ```
 
+- `state_filter` is always present (may be `[]` when unfiltered).
 - `advisory_warnings` is always present (may be `[]`).
 - Theme blocks (`velocity`, `blockers`, `reviews`, `evidence`) are
   omitted only when there is literally nothing to report for that theme.
+  A single-theme export keeps the requested block and omits the rest by
+  selection.
 - The schema is the contract; `derive.py` internals may change without
   breaking it.
 
@@ -440,9 +443,10 @@ assertion); no new test infrastructure.
 tables + advisory banner (presence). HTML = self-contained (one inline
 `<style>`, zero JS), inline-SVG sparklines present per theme, advisory
 banner present (presence). JSON = exact fields pinned: `generated_at`,
-`period`, `group_by`, `state`, `advisory_warnings`, and the per-theme
-blocks (`velocity` / `blockers` / `reviews` / `evidence`); empty themes
-omitted only when literally nothing to report. The JSON contract is
+`period`, `group_by`, `state_filter`, `advisory_warnings`, and the per-theme
+blocks (`velocity` / `blockers` / `reviews` / `evidence`); `state_filter`
+and `advisory_warnings` are always present, empty themes omitted only
+when literally nothing to report. The JSON contract is
 published, not derived 1:1 from `derive.py` — pinned exactly.
 
 **Web layer** (`tests/web/test_analytics_dashboard.py`, new):
@@ -483,7 +487,7 @@ layer: presence only.
 | Evidence coverage per node + gap analysis | yes | presence | yes | presence |
 | Empty state (zero events) | yes (returns empty shape) | "no data" section | empty themes omitted | "no data" section |
 | Soft threshold (`min_sessions_for_full_data=3`) | yes (`is_limited` flag) | yes (`[advisory] Limited data — ...` line verbatim) | yes (`advisory_warnings` field) | yes (banner renders) |
-| State filter (`--state` repeatable, OR semantics) | yes (filter applied before grouping) | yes (flag-parsing + output section) | yes (`state` field in payload) | n/a (UI filters deferred to policy) |
+| State filter (`--state` repeatable, OR semantics) | yes (filter applied before grouping) | yes (flag-parsing + output section) | yes (`state_filter` field in payload) | n/a (UI filters deferred to policy) |
 | Advisory integration (`analytics_warnings()`) | n/a (lives in `policy/advisory.py`) | yes (warning block; count-capped 2 bits in `today`) | yes (`advisory_warnings` field) | yes (`#analytics-advisory` slot) |
 | Inline-SVG sparklines (weekly bucket) | n/a | n/a | HTML: presence | yes (one per theme card) |
 | JSON contract stability | n/a | n/a | yes (exact fields) | n/a |

@@ -413,6 +413,45 @@ def _render_html(
 # ---------------------------------------------------------------------------
 
 
+def _velocity_is_empty(v: VelocityResult) -> bool:
+    """Literally nothing reportable for velocity: no sessions, nodes, minutes,
+    group rows, and every weekly bucket holds zeros."""
+    if v.sessions_in_window != 0 or v.nodes_touched != 0 or v.total_minutes != 0:
+        return False
+    if v.group_rows:
+        return False
+    return all(
+        w.session_count == 0 and w.work_item_count == 0 and w.minutes == 0 and w.node_count == 0
+        for w in v.weeks
+    )
+
+
+def _blockers_is_empty(b: BlockersResult) -> bool:
+    """Literally nothing reportable for blockers: no open/resolved rows."""
+    return b.open_count == 0 and b.resolved_in_window == 0 and not b.rows
+
+
+def _reviews_is_empty(r: ReviewsResult) -> bool:
+    """Literally nothing reportable for reviews: no scheduled/completed/overdue."""
+    return (
+        r.scheduled_count == 0
+        and r.completed_in_window == 0
+        and r.overdue_count == 0
+        and not r.rows
+    )
+
+
+def _evidence_is_empty(e: EvidenceResult) -> bool:
+    """Literally nothing reportable for evidence: no specs, gaps, or records."""
+    return (
+        e.nodes_with_specs == 0
+        and e.nodes_with_gaps == 0
+        and e.accepted_count == 0
+        and e.rejected_count == 0
+        and not e.rows
+    )
+
+
 def _render_json(
     view: AnalyticsView,
     warnings: list[str],
@@ -420,16 +459,57 @@ def _render_json(
     theme: str,
     today: datetime.date,
 ) -> str:
-    """Produce the curated published JSON subset (G7 resolution).
+    """Produce the curated published JSON subset (spec §7.3, T3 contract).
 
-    Shape is the stable contract from the G7 resolution comment.  Empty
-    themes are still included with zeros (omit only when literally nothing
-    to report — but the spec says include with zeros, so we always include).
+    Stable contract: ``generated_at``, ``period``, ``group_by``,
+    ``state_filter`` (always present, ``[]`` when unfiltered),
+    ``advisory_warnings`` (always present), plus per-theme blocks.
+    Per-theme blocks are omitted only when literally nothing is reportable
+    for that theme. A single-theme export keeps the requested block even
+    when empty; all other themes are omitted by selection.
     """
     v, b, r, e = view.velocity, view.blockers, view.reviews, view.evidence
 
     # Period bounds derive from the injected `today` (§8.1), not the clock.
     start = today - datetime.timedelta(days=view.window_days)
+    velocity_block = {
+        "work_items_count": v.nodes_touched,
+        "work_items_per_week": sum(w.work_item_count for w in v.weeks) / len(v.weeks) if v.weeks else 0.0,
+        "minutes_logged": v.total_minutes,
+        "node_progress": v.nodes_touched,
+        "by_week": [
+            {"week_start": w.label, "items": w.work_item_count}
+            for w in v.weeks
+        ],
+        "by_group": [
+            {"group": g, "items": s}
+            for g, s, _n in v.group_rows
+        ],
+    }
+    blockers_block = {
+        "active_count": b.open_count,
+        "by_track": [
+            {"track": row.group, "count": 1}
+            for row in b.rows
+        ] if view.group_by == "track" else [],
+        "by_prefix": [
+            {"prefix": row.group, "count": 1}
+            for row in b.rows
+        ] if view.group_by == "prefix" else [],
+    }
+    reviews_block = {
+        "scheduled": r.scheduled_count,
+        "completed": r.completed_in_window,
+        "overdue": r.overdue_count,
+        "completion_rate": round(r.completion_rate, 4),
+    }
+    evidence_block = {
+        "total_records": e.accepted_count + e.rejected_count,
+        "accepted": e.accepted_count,
+        "rejected": e.rejected_count,
+        "nodes_with_gaps": e.nodes_with_gaps,
+        "submission_rate": round(e.coverage_rate, 4),
+    }
     payload: dict[str, Any] = {
         "generated_at": generated_at,
         "period": {
@@ -438,52 +518,27 @@ def _render_json(
             "days": view.window_days,
         },
         "group_by": view.group_by,
-        "state": list(view.state_filter),
+        "state_filter": list(view.state_filter),
         "advisory_warnings": list(warnings),
-        "velocity": {
-            "work_items_count": v.nodes_touched,
-            "work_items_per_week": sum(w.work_item_count for w in v.weeks) / len(v.weeks) if v.weeks else 0.0,
-            "minutes_logged": v.total_minutes,
-            "node_progress": v.nodes_touched,
-            "by_week": [
-                {"week_start": w.label, "items": w.work_item_count}
-                for w in v.weeks
-            ],
-            "by_group": [
-                {"group": g, "items": s}
-                for g, s, _n in v.group_rows
-            ],
-        },
-        "blockers": {
-            "active_count": b.open_count,
-            "by_track": [
-                {"track": row.group, "count": 1}
-                for row in b.rows
-            ] if view.group_by == "track" else [],
-            "by_prefix": [
-                {"prefix": row.group, "count": 1}
-                for row in b.rows
-            ] if view.group_by == "prefix" else [],
-        },
-        "reviews": {
-            "scheduled": r.scheduled_count,
-            "completed": r.completed_in_window,
-            "overdue": r.overdue_count,
-            "completion_rate": round(r.completion_rate, 4),
-        },
-        "evidence": {
-            "total_records": e.accepted_count + e.rejected_count,
-            "accepted": e.accepted_count,
-            "rejected": e.rejected_count,
-            "nodes_with_gaps": e.nodes_with_gaps,
-            "submission_rate": round(e.coverage_rate, 4),
-        },
     }
-    if theme != "all":
-        payload = {
-            key: value for key, value in payload.items()
-            if key not in {"velocity", "blockers", "reviews", "evidence"} or key == theme
+    if theme == "all":
+        if not _velocity_is_empty(v):
+            payload["velocity"] = velocity_block
+        if not _blockers_is_empty(b):
+            payload["blockers"] = blockers_block
+        if not _reviews_is_empty(r):
+            payload["reviews"] = reviews_block
+        if not _evidence_is_empty(e):
+            payload["evidence"] = evidence_block
+    else:
+        blocks = {
+            "velocity": velocity_block,
+            "blockers": blockers_block,
+            "reviews": reviews_block,
+            "evidence": evidence_block,
         }
+        if theme in blocks:
+            payload[theme] = blocks[theme]
     return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
 
 
