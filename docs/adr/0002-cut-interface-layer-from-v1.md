@@ -31,21 +31,29 @@ appending one audit event.
   real usage, with the framework document as reference — not from
   present-day guesses in cards.yaml.
 
-## Superseded note (2026-09-05)
+## Clarification note (2026-09-06)
 
-ADR 0007 reintroduces the interface layer as a **web-only sublayer** inside
-`src/skilltrace/web/interface/`. The five-layer engine invariant from this
-ADR is preserved; v1 still has five engine layers (graph, evidence,
-execution, policy, release). ADR 0007's reintroduced sublayer is not an
-engine layer and does not appear in release criteria.
+ADR 0007 describes a **web-only interface sublayer** inside
+`src/skilltrace/web/interface/`. This sublayer is **documentation-only
+background** for the Tier 1 web UI (ADR 0006, `docs/spec-tier1-serve.md`).
+It:
 
-The two anti-drift protections from this ADR's reasoning are preserved in
-0007 in a tighter form: the sublayer's source of truth is the live CLI
-dispatcher (`src/skilltrace/dispatch.py`'s `Registry`), not a hand-declared
-YAML, and the sublayer module raises on import if any card binding cannot
-resolve. The original concern about parallel hand-declared web vocabulary
-drifting from real CLI commands is addressed by deriving the vocabulary
-from the engine, not by removing the vocabulary.
+- Adds **no engine seam** — the CLI dispatcher registry is unchanged.
+- Adds **no new engine layer** — v1 remains five engine layers (graph, evidence,
+  execution, policy, release). `release/criteria.yaml`'s `criterion.layers.present`
+  stays 5.
+- Adds **no read path** — the engine never reads the sublayer; the sublayer
+  reads the engine (live dispatcher) at request time.
+
+The five-layer engine invariant from this ADR stands. The sublayer is a
+reflection of the engine, not a parallel source of truth. The original
+anti-drift protections (Python-derived vocabulary, import-time validation)
+are preserved in ADR 0007 in a tighter form.
+
+**Any future revival of the interface layer as an engine layer** (i.e.,
+promoting it to a sixth engine layer, adding it to release criteria,
+or giving it an engine read path) **requires its own hard-to-reverse
+decision record** (a new ADR with explicit reversal cost analysis).
 
 The original Context, Decision, and Consequences sections above are kept
 verbatim for historical record.
