@@ -32,6 +32,14 @@ shipped entries are append-only.
   via G-Retro [#103](https://github.com/earledotpy/skilltrace/issues/103) from "unversioned" via map
   [#86](https://github.com/earledotpy/skilltrace/issues/86));
   spec: [`docs/spec-tier2-retention-analytics.md`](./spec-tier2-retention-analytics.md).
+- **v2.0.0** — Slots v1.6 (event-log analytics) + v1.7
+  (resource web-verification) + v1.8 (Phase 2 ML seed graph) +
+  v1.9 (Phase 3 agent seed graph + deployment primer) + v2.0
+  (Portfolio builder); verified on the merged tree (100 nodes /
+  157 edges / 45 resources, full suite + all per-slot gates
+  green) via
+  [#183](https://github.com/earledotpy/skilltrace/issues/183)–
+  [#190](https://github.com/earledotpy/skilltrace/issues/190).
 
 ## Version slots
 

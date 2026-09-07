@@ -4,6 +4,25 @@ All releases and historical milestone records for SkillTrace. For future directi
 
 ---
 
+## v2.0.0 (released)
+
+Portfolio builder plus the full post-v1 slot sequence (v1.6–v1.9). Verified on the merged tree: 100 SkillNodes / 157 GraphEdges (all active) / 45 LearningResources, full test suite green, all per-slot exit gates green, hard boundaries intact.
+
+### Features
+- **v1.6 — Event-log analytics:** study velocity, blockers by domain, review completion, evidence coverage themes with rolling windows, Serve dashboard, and advisory-only pressure surfacing in `today`.
+- **v1.7 — Resource web-verification:** automated reachability checks with descriptive-only broken markers, stale-resource replacement, and warning-only retired-resource handling.
+- **v1.8 — Phase 2 ML seed graph:** four verified classical-ML sources plus the house-prices Capstone integration node.
+- **v1.9 — Phase 3 agent seed graph:** nine verified LLM/agent/MCP sources, a FastAPI + container-engine deployment primer, and the deployed-agent Capstone integration node.
+- **v2.0 — Portfolio builder:** default-deny Share profile with per-invocation redaction overrides, trigger-naming Honesty banners, preview/export sharing one pipeline, and a disposable bundle layout (Markdown index, HTML preview, JSON contract, manifest).
+- **Contract repairs:** disambiguated Portfolio bundle manifest vs. JSON contract names, single analytics state-filter field, Portfolio JSON shape matching the implementation, registry path corrected to the graph-side registry.
+- **Architecture ruling:** the cut interface layer stays cut (docs-only background, no engine read path).
+
+### Decisions Recorded
+- v2.0 readiness remediation spec and ticket order (#183–#190).
+- Interface-layer cut stands; any future revival needs its own hard-to-reverse decision record.
+
+---
+
 ## v1.5 (released)
 
 Tier 2: FSRS retention analytics overlay. Introduces memory stability modeling and decay-aware review recommendations on top of passed curriculum nodes.

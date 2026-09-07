@@ -84,10 +84,10 @@ See \docs/agents/domain.md\.
 
 ## Working conventions
 
-- Current phase: v1.0.0 stable released; v1.4 (Tier 1 Web UI / `skilltrace serve`)
-  and v1.5 (Tier 2 FSRS retention analytics) shipped. Next per
-  `docs/POST_V1_ROADMAP.md`: v1.6 — Event-log analytics v1. Follow the roadmap's
-  slot sequence; see `docs/POST_V1_ROADMAP.md` for the active direction.
+- Current phase: v2.0.0 released (slots v1.6–v2.0 shipped:
+  event-log analytics, resource web-verification, Phase 2 + Phase 3 seed
+  graphs, Portfolio builder). Follow the roadmap's slot sequence; see
+  `docs/POST_V1_ROADMAP.md` for the active direction.
 - Tests: `pytest` (per-layer suites under `tests/<layer>` as RCs land).
   Every RC's exit-gate commands must pass before it's done.
 - When a domain term is added or changed, update `CONTEXT.md` in the same
