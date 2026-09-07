@@ -63,9 +63,17 @@ def bundle_portfolio(
     *,
     today: datetime.date,
     dest: Path | None = None,
+    view=None,
 ) -> Path:
-    """Write the disposable bundle; refuse (no partial output) on load error."""
-    view = load_view_or_raise(root, options, today=today)
+    """Write the disposable bundle; refuse (no partial output) on load error.
+
+    ``view`` is the single shared view-loading path (T6): callers that have
+    already loaded the view via ``load_view_or_raise`` pass it in to avoid a
+    second load. When ``None``, the bundle loads the view itself so direct
+    callers (tests, scripts) keep the old signature.
+    """
+    if view is None:
+        view = load_view_or_raise(root, options, today=today)
 
     dest = dest if dest is not None else root / "data" / bundle_dir_name(today)
     artifacts_dir = dest / "artifacts"

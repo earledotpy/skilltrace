@@ -30,11 +30,13 @@ from .. import render
 from ..analytics.derive import derive_analytics
 from ..analytics.export import ExportError, export_analytics
 from ..analytics.models import (
+    AnalyticsParams,
     AnalyticsView,
     BlockersResult,
     EvidenceResult,
     ReviewsResult,
     VelocityResult,
+    grouping_label,
 )
 from ..analytics.policy import LIMITED_DATA_FOLLOWUP, limited_data_head
 from ..context import load_context_lenient
@@ -46,11 +48,12 @@ from ..graph.state import ProgressStoreError
 from ..policy.advisory import analytics_warnings
 
 
-def _resolve_params(ctx: Context) -> tuple[int, str, list[str], int]:
-    """Resolve window_days, group_by, state_filter, min_sessions from args + policy.
+def _resolve_params(ctx: Context) -> AnalyticsParams:
+    """Resolve the single window/group/filter bundle from args + policy.
 
-    Typed `analytics_policy` view is the single seam — every arg
-    coercion moves behind it (no per-caller try/except).
+    The tuple clump is now one ``AnalyticsParams`` value that threads every
+    ``derive_*`` call — a single source of truth for the rolling window
+    (T6 window/group/filter dedup).
     """
     args = ctx.args
     joined = ctx.joined
@@ -67,9 +70,14 @@ def _resolve_params(ctx: Context) -> tuple[int, str, list[str], int]:
     days = getattr(args, "days", None) or window_default
     group_by = getattr(args, "group_by", None) or group_by_default
     state_raw = getattr(args, "state", None) or []
-    state_filter = list(state_raw) if state_raw else []
+    state_filter = tuple(state_raw) if state_raw else ()
 
-    return int(days), str(group_by), state_filter, min_sessions
+    return AnalyticsParams(
+        window_days=int(days),
+        group_by=str(group_by),
+        state_filter=tuple(state_filter),
+        min_sessions_for_full_data=int(min_sessions),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +117,7 @@ def _render_velocity(v: VelocityResult, group_by: str) -> list[str]:
         lines.append("  (no work items in window)")
         return lines
     lines.append("")
-    col_label = "Prefix" if group_by == "prefix" else "Track"
+    col_label = grouping_label(group_by)
     lines.append(
         f"  {'Group (' + col_label + ')':<{_COL_W}}  {'Sessions':>{_NUM_W}}  {'Nodes':>{_NUM_W}}"
     )
@@ -129,7 +137,7 @@ def _render_blockers(b: BlockersResult, group_by: str) -> list[str]:
         lines.append("  (no open blockers)")
         return lines
     lines.append("")
-    col_label = "Prefix" if group_by == "prefix" else "Track"
+    col_label = grouping_label(group_by)
     lines.append(
         f"  {'Group (' + col_label + ')':<{_COL_W}}  {'Days open':>{_NUM_W}}  Description"
     )
@@ -179,7 +187,7 @@ def _render_evidence(e: EvidenceResult, group_by: str) -> list[str]:
         lines.append("  (no nodes with artifact specs)")
         return lines
     lines.append("")
-    col_label = "Prefix" if group_by == "prefix" else "Track"
+    col_label = grouping_label(group_by)
     lines.append(
         f"  {'Group (' + col_label + ')':<{_COL_W}}  {'State':<10}  {'Specs':>{_NUM_W}}  {'Accepted':>{_NUM_W}}  Gap"
     )
@@ -207,7 +215,7 @@ def _load_view(ctx: Context) -> tuple[AnalyticsView | None, CommandResult | None
         print(f"analytics: FAILED -- {exc}")
         return None, CommandResult(exit_code=1)
 
-    window_days, group_by, state_filter, min_sessions = _resolve_params(
+    params = _resolve_params(
         Context(root=root, args=ctx.args, joined=joined, clock=ctx.clock)
     )
     today = utc_today(clock=ctx.clock)
@@ -215,10 +223,7 @@ def _load_view(ctx: Context) -> tuple[AnalyticsView | None, CommandResult | None
     view = derive_analytics(
         joined,
         today=today,
-        window_days=window_days,
-        group_by=group_by,
-        state_filter=state_filter,
-        min_sessions_for_full_data=min_sessions,
+        params=params,
     )
     return view, None
 

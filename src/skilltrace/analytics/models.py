@@ -137,6 +137,36 @@ class EvidenceResult:
 # ---------------------------------------------------------------------------
 
 
+def grouping_label(group_by: str) -> str:
+    """Display label for a grouping dimension (the single CLI/export/Serve helper).
+
+    Every analytics surface renders the same ``group_by`` choice with the same
+    capitalised label — ``"Prefix"`` for ``prefix`` and ``"Track"`` for
+    ``track``. Sharing this helper prevents drift between theme tables.
+    """
+    return "Track" if group_by == "track" else "Prefix"
+
+
+@dataclass(frozen=True)
+class AnalyticsParams:
+    """One rolling-window/grouping/filter bundle for every theme derivation.
+
+    The window, grouping dimension, state filter, and soft-data threshold
+    travel as a single value so every ``derive_*`` call takes the same
+    derivation inputs (T6 window/group/filter dedup).
+    """
+
+    window_days: int
+    group_by: str
+    state_filter: tuple[str, ...] = ()
+    min_sessions_for_full_data: int = 3
+
+    @property
+    def state_filter_list(self) -> list[str]:
+        """Mutable copy for callers that still expect ``list[str]``."""
+        return list(self.state_filter)
+
+
 @dataclass
 class AnalyticsView:
     """The full analytics snapshot shared by the umbrella command and export."""

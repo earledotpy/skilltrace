@@ -35,11 +35,13 @@ from ..context import JoinedView, load_context_strict
 from ..policy.advisory import analytics_warnings
 from .derive import derive_analytics
 from .models import (
+    AnalyticsParams,
     AnalyticsView,
     BlockersResult,
     EvidenceResult,
     ReviewsResult,
     VelocityResult,
+    grouping_label,
 )
 from .policy import (
     LIMITED_DATA_FOLLOWUP,
@@ -85,17 +87,15 @@ def _default_path(theme: str, fmt: str) -> Path:
 def _load_view(
     root: Path,
     *,
-    days: int,
-    group_by: str,
-    state: list[str],
-    min_sessions: int,
+    params: AnalyticsParams,
     today: datetime.date,
 ) -> AnalyticsView:
     """Load the strict joined view and derive the analytics model.
 
     Raises ``ExportError`` on any load failure — never writes partial output.
     ``today`` arrives injected from the CLI/Serve layer (§8.1); this module
-    never reads the wall clock for derivation input.
+    never reads the wall clock for derivation input. ``params`` is the
+    single window/group/filter bundle that threads every theme derivation.
     """
     joined: JoinedView = load_context_strict(root)
     if not joined.ok:
@@ -107,10 +107,7 @@ def _load_view(
     return derive_analytics(
         joined,
         today=today,
-        window_days=days,
-        group_by=group_by,
-        state_filter=state,
-        min_sessions_for_full_data=min_sessions,
+        params=params,
     )
 
 
@@ -190,7 +187,7 @@ def _render_md(
         )
     if "velocity" in themes and v.group_rows:
         lines += [""]
-        col = "Prefix" if view.group_by == "prefix" else "Track"
+        col = grouping_label(view.group_by)
         lines += _md_summary_table(
             [col, "Sessions", "Nodes"],
             [[g, s, n] for g, s, n in v.group_rows[:10]],
@@ -203,7 +200,7 @@ def _render_md(
     if "blockers" in themes:
         lines += ["", "## Blockers", "", f"Open: {b.open_count}  ", f"Resolved in window: {b.resolved_in_window}", ""]
     if "blockers" in themes and b.rows:
-        col = "Prefix" if view.group_by == "prefix" else "Track"
+        col = grouping_label(view.group_by)
         lines += _md_summary_table(
             [col, "Days open", "Description"],
             [[row.group, row.days_open, row.description[:60]] for row in b.rows[:10]],
@@ -247,7 +244,7 @@ def _render_md(
         "",
         ]
     if "evidence" in themes and e.rows:
-        col = "Prefix" if view.group_by == "prefix" else "Track"
+        col = grouping_label(view.group_by)
         lines += _md_summary_table(
             [col, "State", "Specs", "Accepted", "Gap"],
             [[row.group, row.state, row.spec_count, row.accepted_count, "GAP" if row.gap else "ok"]
@@ -301,7 +298,7 @@ def _render_html(
     spark_v = sparkline_svg([(w.label, w.session_count) for w in v.weeks])
     vel_rows_html = ""
     if v.group_rows:
-        col = "Prefix" if view.group_by == "prefix" else "Track"
+        col = grouping_label(view.group_by)
         vel_rows_html = _html_table(
             [col, "Sessions", "Nodes"],
             [[g, s, n] for g, s, n in v.group_rows[:10]],
@@ -319,7 +316,7 @@ def _render_html(
     spark_b = sparkline_svg([("window", b.open_count)])
     blk_rows_html = ""
     if b.rows:
-        col = "Prefix" if view.group_by == "prefix" else "Track"
+        col = grouping_label(view.group_by)
         blk_rows_html = _html_table(
             [col, "Days open", "Description"],
             [[row.group, row.days_open, row.description[:60]] for row in b.rows[:10]],
@@ -355,7 +352,7 @@ def _render_html(
     )
     ev_rows_html = ""
     if e.rows:
-        col = "Prefix" if view.group_by == "prefix" else "Track"
+        col = grouping_label(view.group_by)
         ev_rows_html = _html_table(
             [col, "State", "Specs", "Accepted", "Gap"],
             [[row.group, row.state, row.spec_count, row.accepted_count, "GAP" if row.gap else "ok"]
@@ -609,13 +606,18 @@ def export_analytics(
         group_by = policy_group_by
 
     # Load and derive (today injected by the caller; wall clock only as fallback)
+    # T6 dedup: the window/group/filter bundle is one value that threads every
+    # theme derivation — build it once and pass it as a single argument.
     resolved_today = today if today is not None else datetime.date.today()
+    params = AnalyticsParams(
+        window_days=int(days),
+        group_by=str(group_by),
+        state_filter=tuple(state),
+        min_sessions_for_full_data=int(min_sessions),
+    )
     view = _load_view(
         root,
-        days=days,
-        group_by=group_by,
-        state=state,
-        min_sessions=min_sessions,
+        params=params,
         today=resolved_today,
     )
 

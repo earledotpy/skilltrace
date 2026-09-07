@@ -67,6 +67,7 @@ from ..mentor.cards import (
 from ..context import JoinedView, load_context_lenient
 from ..dispatch import Context, dispatch
 from ..analytics.derive import derive_analytics
+from ..analytics.models import AnalyticsParams
 from ..analytics.policy import limited_data_sentence
 from ..analytics.sparkline import sparkline_svg
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
@@ -1186,14 +1187,18 @@ def _analytics_view(root: Path, query: dict) -> tuple[object | None, tuple[str, 
         body, status = _status_page(400, "Analytics group-by must be prefix or track.")
         return None, ("Bad request", body, status)
     min_sessions = policy.min_sessions_for_full_data
+    # T6: the window/group/filter bundle is one value for every theme.
+    params = AnalyticsParams(
+        window_days=days,
+        group_by=group_by,
+        state_filter=(),
+        min_sessions_for_full_data=min_sessions,
+    )
     return (
         derive_analytics(
             view,
             today=utc_today(),
-            window_days=days,
-            group_by=group_by,
-            state_filter=[],
-            min_sessions_for_full_data=min_sessions,
+            params=params,
         ),
         None,
     )

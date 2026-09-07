@@ -85,22 +85,43 @@ def _today(ctx: Context) -> date:
     return utc_today(clock=ctx.clock)
 
 
-def portfolio_preview(ctx: Context) -> CommandResult:
-    """Render the portfolio to stdout (or ``--output``); never writes a bundle."""
-    args = ctx.args
+def _shared_portfolio_load(
+    ctx: Context, command: str
+) -> tuple[object | None, SelectionOptions | None, str | None, date | None, CommandResult | None]:
+    """Single shared view-loading path for preview and export (T6).
+
+    Returns ``(view, options, fmt, today, None)`` on success or
+    ``(None, None, None, None, error)`` on failure. Identical refusal
+    semantics for both surfaces: non-zero exit, ``portfolio <command>: FAILED``
+    message, no partial bundle or output.
+
+    Every portfolio surface must go through this function so the preview
+    pipeline cannot drift from the export pipeline (spec §4 — preview uses
+    the same selection, redaction, and rendering pipeline as export).
+    """
     options = _resolve_options(ctx)
     try:
         fmt = normalize_format(_resolve_format(ctx))
     except PortfolioExportError as exc:
-        print(f"portfolio preview: FAILED — {exc}")
-        return CommandResult(exit_code=1)
-    output_raw = getattr(args, "output", None)
+        print(f"portfolio {command}: FAILED — {exc}")
+        return None, None, None, None, CommandResult(exit_code=1)
     today = _today(ctx)
     try:
         view = load_view_or_raise(ctx.root, options, today=today)
     except PortfolioExportError as exc:
-        print(f"portfolio preview: FAILED — {exc}")
-        return CommandResult(exit_code=1)
+        print(f"portfolio {command}: FAILED — {exc}")
+        return None, None, None, None, CommandResult(exit_code=1)
+    return view, options, fmt, today, None
+
+
+def portfolio_preview(ctx: Context) -> CommandResult:
+    """Render the portfolio to stdout (or ``--output``); never writes a bundle."""
+    args = ctx.args
+    view, options, fmt, today, err = _shared_portfolio_load(ctx, "preview")
+    if err is not None:
+        return err
+    assert view is not None and options is not None and fmt is not None and today is not None
+    output_raw = getattr(args, "output", None)
     content = render_preview(view, options, fmt=fmt)
     if output_raw is not None and str(output_raw) != "-":
         dest = Path(str(output_raw))
@@ -116,13 +137,11 @@ def portfolio_preview(ctx: Context) -> CommandResult:
 def portfolio_export(ctx: Context) -> CommandResult:
     """Write the disposable bundle to ``data/portfolio-<date>/`` (MUTATING)."""
     args = ctx.args
-    options = _resolve_options(ctx)
-    try:
-        normalize_format(_resolve_format(ctx))
-    except PortfolioExportError as exc:
-        print(f"portfolio export: FAILED — {exc}")
-        return CommandResult(exit_code=1)
-    today = _today(ctx)
+    # Same single view-loading path as preview — identical refusal semantics (T6).
+    view, options, _fmt, today, err = _shared_portfolio_load(ctx, "export")
+    if err is not None:
+        return err
+    assert view is not None and options is not None and today is not None
     output_raw = getattr(args, "output", None)
     dest_override = (
         Path(str(output_raw))
@@ -130,7 +149,7 @@ def portfolio_export(ctx: Context) -> CommandResult:
         else None
     )
     try:
-        dest = bundle_portfolio(ctx.root, options, today=today, dest=dest_override)
+        dest = bundle_portfolio(ctx.root, options, today=today, dest=dest_override, view=view)
     except PortfolioExportError as exc:
         print(f"portfolio export: FAILED — {exc}")
         return CommandResult(exit_code=1)

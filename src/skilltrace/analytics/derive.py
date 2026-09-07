@@ -37,6 +37,7 @@ from typing import Any, Callable
 
 from ..execution.overdue import days_overdue as _days_overdue, is_overdue as _is_overdue, parse_date
 from .models import (
+    AnalyticsParams,
     AnalyticsView,
     BlockerRow,
     BlockersResult,
@@ -293,19 +294,37 @@ def derive_velocity(
     work: list,
     *,
     today: date,
-    window_days: int,
-    group_by: str,
-    state_filter: list[str],
-    nodes: list,
-    store: Any,
-    min_sessions_for_full_data: int,
+    window_days: int | None = None,
+    group_by: str | None = None,
+    state_filter: list[str] | tuple[str, ...] | None = None,
+    nodes: list | None = None,
+    store: Any = None,
+    min_sessions_for_full_data: int | None = None,
+    params: AnalyticsParams | None = None,
 ) -> VelocityResult:
     """Derive study-velocity metrics over a rolling window.
 
     ``today`` is required; the CLI is the only ``datetime.date.today()`` call
     site. ``state_filter`` is applied per work-item node (OR semantics).
+
+    ``params`` is the single window/group/filter bundle that threads every
+    theme derivation (T6). Callers may pass ``params`` instead of the four
+    separate ``window_days``/``group_by``/``state_filter``/
+    ``min_sessions_for_full_data`` arguments — the old form remains for
+    backward compatibility.
     """
-    cutoff = _window_start(today, window_days)
+    if params is not None:
+        window_days = params.window_days
+        group_by = params.group_by
+        state_filter = list(params.state_filter)
+        min_sessions_for_full_data = params.min_sessions_for_full_data
+        # nodes/store may still be passed separately; keep them as-is
+        if nodes is None:
+            nodes = []
+    else:
+        assert window_days is not None and group_by is not None and state_filter is not None and min_sessions_for_full_data is not None and nodes is not None and store is not None
+        state_filter = list(state_filter)  # normalise tuple/list
+    cutoff = _window_start(today, window_days)  # type: ignore[arg-type]
 
     # Sessions in window (completed or open, started on/after cutoff).
     window_sessions: set[str] = set()
@@ -314,13 +333,20 @@ def derive_velocity(
         if started is not None and started >= cutoff:
             window_sessions.add(s.id)
 
+    # Re-bundle for the framework — same single value that every theme uses.
+    velocity_params = AnalyticsParams(
+        window_days=window_days,  # type: ignore[arg-type]
+        group_by=group_by,  # type: ignore[arg-type]
+        state_filter=tuple(state_filter),  # type: ignore[arg-type]
+        min_sessions_for_full_data=min_sessions_for_full_data,  # type: ignore[arg-type]
+    )
     return derive_theme(
         work,
         today=today,
-        window_days=window_days,
-        group_by=group_by,
-        state_filter=state_filter,
-        min_sessions_for_full_data=min_sessions_for_full_data,
+        window_days=velocity_params.window_days,
+        group_by=velocity_params.group_by,
+        state_filter=list(velocity_params.state_filter),
+        min_sessions_for_full_data=velocity_params.min_sessions_for_full_data,
         nodes=nodes,
         store=store,
         sessions_in_window=len(window_sessions),
@@ -383,27 +409,48 @@ def derive_blockers(
     blockers: list,
     *,
     today: date,
-    window_days: int,
-    group_by: str,
-    state_filter: list[str],
-    nodes: list,
-    store: Any,
-    min_sessions_for_full_data: int,
-    sessions_in_window: int,
+    window_days: int | None = None,
+    group_by: str | None = None,
+    state_filter: list[str] | tuple[str, ...] | None = None,
+    nodes: list | None = None,
+    store: Any = None,
+    min_sessions_for_full_data: int | None = None,
+    sessions_in_window: int | None = None,
+    params: AnalyticsParams | None = None,
 ) -> BlockersResult:
     """Derive blocker metrics, grouped by *group_by* dimension.
 
     Open blockers are always included (they have no end date). Resolved
     blockers are included when resolved within the window. State filter
     applies to the blocker's node.
+
+    ``params`` is the single bundle (T6); the old four-arg form remains for
+    backward compatibility.
     """
+    if params is not None:
+        window_days = params.window_days
+        group_by = params.group_by
+        state_filter = list(params.state_filter)
+        min_sessions_for_full_data = params.min_sessions_for_full_data
+        if nodes is None:
+            nodes = []
+    else:
+        assert window_days is not None and group_by is not None and state_filter is not None and min_sessions_for_full_data is not None and nodes is not None and store is not None and sessions_in_window is not None
+        state_filter = list(state_filter)
+    assert sessions_in_window is not None
+    params_resolved = AnalyticsParams(
+        window_days=window_days,  # type: ignore[arg-type]
+        group_by=group_by,  # type: ignore[arg-type]
+        state_filter=tuple(state_filter),  # type: ignore[arg-type]
+        min_sessions_for_full_data=min_sessions_for_full_data,  # type: ignore[arg-type]
+    )
     return derive_theme(
         blockers,
         today=today,
-        window_days=window_days,
-        group_by=group_by,
-        state_filter=state_filter,
-        min_sessions_for_full_data=min_sessions_for_full_data,
+        window_days=params_resolved.window_days,
+        group_by=params_resolved.group_by,
+        state_filter=list(params_resolved.state_filter),
+        min_sessions_for_full_data=params_resolved.min_sessions_for_full_data,
         nodes=nodes,
         store=store,
         sessions_in_window=sessions_in_window,
@@ -475,25 +522,45 @@ def derive_reviews(
     sessions: list,
     *,
     today: date,
-    window_days: int,
-    state_filter: list[str],
-    min_sessions_for_full_data: int,
-    sessions_in_window: int,
-    store: Any,
+    window_days: int | None = None,
+    state_filter: list[str] | tuple[str, ...] | None = None,
+    min_sessions_for_full_data: int | None = None,
+    sessions_in_window: int | None = None,
+    store: Any = None,
+    params: AnalyticsParams | None = None,
 ) -> ReviewsResult:
     """Derive review completion-rate and overdue highlighting.
 
     Scheduled reviews from all time are included (overdue can be old).
     Completed reviews are counted when completed_at falls in the window.
     State filter applies to the review's node.
+
+    ``params`` is the single bundle (T6); the old form remains for
+    backward compatibility. ``group_by`` is fixed to ``"prefix"`` for
+    reviews, but the bundle still threads through for window/filter/threshold
+    consistency.
     """
+    if params is not None:
+        window_days = params.window_days
+        state_filter = list(params.state_filter)
+        min_sessions_for_full_data = params.min_sessions_for_full_data
+    else:
+        assert window_days is not None and state_filter is not None and min_sessions_for_full_data is not None and sessions_in_window is not None
+        state_filter = list(state_filter)
+    assert sessions_in_window is not None
+    params_resolved = AnalyticsParams(
+        window_days=window_days,  # type: ignore[arg-type]
+        group_by=params.group_by if params is not None else "prefix",
+        state_filter=tuple(state_filter),  # type: ignore[arg-type]
+        min_sessions_for_full_data=min_sessions_for_full_data,  # type: ignore[arg-type]
+    )
     return derive_theme(
         reviews,
         today=today,
-        window_days=window_days,
+        window_days=params_resolved.window_days,
         group_by="prefix",
-        state_filter=state_filter,
-        min_sessions_for_full_data=min_sessions_for_full_data,
+        state_filter=list(params_resolved.state_filter),
+        min_sessions_for_full_data=params_resolved.min_sessions_for_full_data,
         nodes=[],
         store=store,
         sessions_in_window=sessions_in_window,
@@ -555,11 +622,12 @@ def derive_evidence(
     store: Any,
     *,
     today: date,
-    window_days: int,
-    group_by: str,
-    state_filter: list[str],
-    min_sessions_for_full_data: int,
-    sessions_in_window: int,
+    window_days: int | None = None,
+    group_by: str | None = None,
+    state_filter: list[str] | tuple[str, ...] | None = None,
+    min_sessions_for_full_data: int | None = None,
+    sessions_in_window: int | None = None,
+    params: AnalyticsParams | None = None,
 ) -> EvidenceResult:
     """Derive evidence-coverage per node and gap analysis.
 
@@ -567,7 +635,25 @@ def derive_evidence(
     (non-superseded) evidence record. ``today`` is accepted for interface
     consistency (T-TestArch D1) even though evidence coverage is not
     date-windowed.
+
+    ``params`` is the single bundle (T6); the old four-arg form remains for
+    backward compatibility.
     """
+    if params is not None:
+        window_days = params.window_days
+        group_by = params.group_by
+        state_filter = list(params.state_filter)
+        min_sessions_for_full_data = params.min_sessions_for_full_data
+    else:
+        assert window_days is not None and group_by is not None and state_filter is not None and min_sessions_for_full_data is not None and sessions_in_window is not None
+        state_filter = list(state_filter)
+    assert sessions_in_window is not None
+    params_resolved = AnalyticsParams(
+        window_days=window_days,  # type: ignore[arg-type]
+        group_by=group_by,  # type: ignore[arg-type]
+        state_filter=tuple(state_filter),  # type: ignore[arg-type]
+        min_sessions_for_full_data=min_sessions_for_full_data,  # type: ignore[arg-type]
+    )
     # Index: spec_id -> live (non-superseded) record counts.
     superseded_ids: set[str] = {r.supersedes for r in records if r.supersedes is not None}
     accepted_by_spec: dict[str, int] = defaultdict(int)
@@ -588,10 +674,10 @@ def derive_evidence(
     return derive_theme(
         list(nodes),
         today=today,
-        window_days=window_days,
-        group_by=group_by,
-        state_filter=state_filter,
-        min_sessions_for_full_data=min_sessions_for_full_data,
+        window_days=params_resolved.window_days,
+        group_by=params_resolved.group_by,
+        state_filter=list(params_resolved.state_filter),
+        min_sessions_for_full_data=params_resolved.min_sessions_for_full_data,
         nodes=nodes,
         store=store,
         sessions_in_window=sessions_in_window,
@@ -616,10 +702,11 @@ def derive_analytics(
     joined: Any,
     *,
     today: date,
-    window_days: int,
-    group_by: str,
-    state_filter: list[str],
-    min_sessions_for_full_data: int,
+    window_days: int | None = None,
+    group_by: str | None = None,
+    state_filter: list[str] | tuple[str, ...] | None = None,
+    min_sessions_for_full_data: int | None = None,
+    params: AnalyticsParams | None = None,
 ) -> AnalyticsView:
     """Derive all four themes and wrap them in an AnalyticsView.
 
@@ -627,38 +714,52 @@ def derive_analytics(
     The CLI layer passes ``datetime.date.today()`` as ``today``; tests pass
     a frozen date. Each theme is derived through the ``derive_theme``
     framework via its thin ``derive_*`` wrapper.
+
+    ``params`` is the single bundle that threads every theme derivation
+    (T6). When ``params`` is given, the four separate window/group/filter
+    arguments are ignored and the same object is reused for all per-theme
+    calls. The old four-arg form remains for backward compatibility.
     """
+    if params is not None:
+        window_days = params.window_days
+        group_by = params.group_by
+        state_filter = list(params.state_filter)
+        min_sessions_for_full_data = params.min_sessions_for_full_data
+    else:
+        assert window_days is not None and group_by is not None and state_filter is not None and min_sessions_for_full_data is not None
+        state_filter = list(state_filter)  # type: ignore[assignment]
+    assert window_days is not None and group_by is not None and min_sessions_for_full_data is not None
+    # The single bundle that every theme derivation takes — one value for
+    # window + grouping + filter + threshold (T6).
+    bundle = AnalyticsParams(
+        window_days=window_days,  # type: ignore[arg-type]
+        group_by=group_by,  # type: ignore[arg-type]
+        state_filter=tuple(state_filter),  # type: ignore[arg-type]
+        min_sessions_for_full_data=min_sessions_for_full_data,  # type: ignore[arg-type]
+    )
     velocity = derive_velocity(
         joined.sessions,
         joined.work,
         today=today,
-        window_days=window_days,
-        group_by=group_by,
-        state_filter=state_filter,
+        params=bundle,
         nodes=joined.nodes,
         store=joined.store,
-        min_sessions_for_full_data=min_sessions_for_full_data,
     )
     sessions_in_window = velocity.sessions_in_window
 
     blockers = derive_blockers(
         joined.blockers,
         today=today,
-        window_days=window_days,
-        group_by=group_by,
-        state_filter=state_filter,
+        params=bundle,
         nodes=joined.nodes,
         store=joined.store,
-        min_sessions_for_full_data=min_sessions_for_full_data,
         sessions_in_window=sessions_in_window,
     )
     reviews = derive_reviews(
         joined.reviews,
         joined.sessions,
         today=today,
-        window_days=window_days,
-        state_filter=state_filter,
-        min_sessions_for_full_data=min_sessions_for_full_data,
+        params=bundle,
         sessions_in_window=sessions_in_window,
         store=joined.store,
     )
@@ -668,10 +769,7 @@ def derive_analytics(
         joined.nodes,
         joined.store,
         today=today,
-        window_days=window_days,
-        group_by=group_by,
-        state_filter=state_filter,
-        min_sessions_for_full_data=min_sessions_for_full_data,
+        params=bundle,
         sessions_in_window=sessions_in_window,
     )
 

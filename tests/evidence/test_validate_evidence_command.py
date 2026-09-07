@@ -47,7 +47,8 @@ def test_load_and_validate_seed_has_no_warnings():
     # nodes while pinning the known gateless set.
     result = load_and_validate_evidence(REPO_ROOT)
     assert result.ok
-    gateless = (
+    # v1.8 ML seed nodes (gateless by design — gates land with evidence slice)
+    ml_gateless = (
         "ml.capstone.house_prices_integration_01",
         "ml.classification.logistic_regression_01",
         "ml.evaluation.validation_metrics_01",
@@ -56,6 +57,22 @@ def test_load_and_validate_seed_has_no_warnings():
         "ml.regression.linear_regression_01",
         "ml.trees.ensembles_01",
     )
+    # v1.9 agent seed nodes (gateless by design — gates land with evidence slice)
+    agent_gateless = (
+        "agents.capstone.deployed_agent_integration_01",
+        "agents.concepts.agent_fundamentals_01",
+        "agents.data.llamaindex_rag_01",
+        "agents.deploy.docker_engine_build_run_01",
+        "agents.deploy.fastapi_minimal_01",
+        "agents.frameworks.langgraph_01",
+        "agents.frameworks.ms_agent_framework_01",
+        "agents.frameworks.openai_agents_sdk_01",
+        "agents.frameworks.pydanticai_01",
+        "agents.frameworks.smolagents_01",
+        "agents.optimization.dspy_01",
+        "agents.protocol.mcp_01",
+    )
+    gateless = ml_gateless + agent_gateless
     expected = [
         f"node {node_id} has no gate — it cannot accept evidence "
         "and is never pass-eligible."
