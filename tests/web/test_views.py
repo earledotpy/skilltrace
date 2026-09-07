@@ -194,10 +194,11 @@ def test_home_renders_today_dashboard(repo):
     assert "STUDY DAY PRESSURE" in body
     assert "overdue review" in body
     assert "available" in body and "locked" in body
-    # Health strip rides the home page (the v1.8 seed carries advisory
-    # gateless-node warnings, so the verdict names them and stays OK).
+    # Health strip rides the home page (the v1.8 + v1.9 seeds carry
+    # advisory gateless-node warnings — 7 ML + 12 agent nodes × 2 warnings
+    # each — so the verdict names them and stays OK).
     assert "HEALTH STRIP" in body
-    assert 'class="banner ok">health: OK (14 warning(s)).</p>' in body
+    assert 'class="banner ok">health: OK (38 warning(s)).</p>' in body
 
 
 def test_home_renders_fresh_per_request(repo):

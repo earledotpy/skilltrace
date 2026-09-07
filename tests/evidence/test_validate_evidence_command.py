@@ -40,11 +40,12 @@ def test_seed_validates_clean_and_logs_no_event(tmp_path, capsys):
 
 def test_load_and_validate_seed_has_no_warnings():
     # The seed covers 81 nodes with a gate + required spec and ships no
-    # records; the 7 v1.8 ML seed nodes are gateless by design (gates land
-    # with their evidence specs in a later slice), so a correct run emits
-    # exactly those seven curriculum-quality warnings — asserting that (not
-    # merely `ok`) catches a coverage check that spuriously warns on covered
-    # nodes while pinning the known gateless set.
+    # records; the 7 v1.8 ML seed nodes plus the 12 v1.9 agent seed nodes are
+    # gateless by design (gates land with their evidence specs in a later
+    # slice), so a correct run emits exactly those nineteen
+    # curriculum-quality warnings — asserting that (not merely `ok`) catches
+    # a coverage check that spuriously warns on covered nodes while pinning
+    # the known gateless set.
     result = load_and_validate_evidence(REPO_ROOT)
     assert result.ok
     # v1.8 ML seed nodes (gateless by design — gates land with evidence slice)
@@ -144,8 +145,8 @@ def test_real_artifact_drift_surfaces_as_warning(tmp_path, capsys):
     frozen = hash_artifact(artifact)
     _write_record(root, location="evidence/math/set_001.md", artifact_hash=frozen)
 
-    # Matching file → clean (aside from the 14 known v1.8 gateless-seed
-    # warnings, which are curriculum-quality, not drift).
+    # Matching file → clean (aside from the 38 known v1.8 + v1.9
+    # gateless-seed warnings, which are curriculum-quality, not drift).
     assert cli.run(["validate", "evidence"], root=root) == 0
     assert "artifact drift" not in capsys.readouterr().out
 
