@@ -1,5 +1,2 @@
-[VALID] Graph layer loaded successfully
-Nodes: 24
-Edges: 24
-available: 4
-locked: 20
+graph: 100 nodes, 157 edges (157 active); states: available=49, locked=51
+validate graph: OK.

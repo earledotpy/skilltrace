@@ -1,9 +1,11 @@
-Evidence Status
-===============
+Evidence & Proof Trail
+----------------------
+Every pass is backed by verified artifacts. Here is how your proof records stand:
 
-math.arithmetic.order_operations_01
------------------------------------
-Artifact specs: 1
-Validation gates: 1
-Evidence records: 0
-Accepted evidence: 0
+1. Apply order of operations (`math.arithmetic.order_operations_01`) / State: AVAILABLE
+   Gate: Learner manual review against rubric
+   Proof chain:
+   - Required Order of operations problem-set evidence: NOT YET SUBMITTED
+   Do this next: Submit your Order of operations problem-set evidence to become pass-eligible:
+   `skilltrace submit math.arithmetic.order_operations_01 --location <path> --accept`
+

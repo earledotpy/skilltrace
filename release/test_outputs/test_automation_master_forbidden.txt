@@ -1,5 +1,2 @@
-Action: master_node
-Permission: forbidden
-Allowed: False
-Requires confirmation: True
-Reason: Mastery must never be granted by automation in v0.1.
+check-automation master_node: forbidden (source: code)
+  'master_node' is a hard-boundary action and can never be automated; it requires an explicit learner command.

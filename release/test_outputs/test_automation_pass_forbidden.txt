@@ -1,5 +1,2 @@
-Action: pass_node
-Permission: forbidden
-Allowed: False
-Requires confirmation: True
-Reason: Passing nodes must remain an explicit evidence-backed user transition.
+check-automation pass_node: forbidden (source: code)
+  'pass_node' is a hard-boundary action and can never be automated; it requires an explicit learner command.

@@ -21,6 +21,12 @@ Portfolio builder plus the full post-v1 slot sequence (v1.6–v1.9). Verified on
 - v2.0 readiness remediation spec and ticket order (#183–#190).
 - Interface-layer cut stands; any future revival needs its own hard-to-reverse decision record.
 
+### Release Assets
+Attached assets in the v2.0.0 GitHub release:
+- `release/manifest.yaml` — release manifest
+- `release/test_results.yaml` — test run summary
+- `release/skilltrace-v2.0.0-release-assets.zip` — complete release artifacts
+
 ---
 
 ## v1.5 (released)

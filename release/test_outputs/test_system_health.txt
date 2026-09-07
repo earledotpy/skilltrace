@@ -1,10 +1,8 @@
-System Health
-=============
-[OK] Graph layer
-[OK] Evidence layer
-[OK] Execution layer
-[OK] Interface layer
-[OK] Policy layer
-[OK] Release layer
-
-Status: healthy
+graph: 100 nodes, 157 edges â€” OK
+evidence: 81 specs, 81 gates, 0 records, 0 attempts â€” OK, 38 warning(s) (see `skilltrace validate evidence`)
+execution: 0 sessions, 0 work items, 0 blockers, 0 remediation actions, 0 reviews â€” OK
+policy: 11 policy file(s) â€” OK
+resources: 45 resource(s) â€” OK
+progress store: 100 node(s); states: available=49, locked=51
+resources: 45 resource(s); verified=45, stale=0, unverified=0, broken=0
+health: OK (38 warning(s)).

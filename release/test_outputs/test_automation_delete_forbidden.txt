@@ -1,5 +1,2 @@
-Action: delete_record
-Permission: forbidden
-Allowed: False
-Requires confirmation: True
-Reason: Deleting learning records would damage auditability and is forbidden in v0.1.
+check-automation delete_record: forbidden (source: code)
+  'delete_record' is a hard-boundary action and can never be automated; it requires an explicit learner command.

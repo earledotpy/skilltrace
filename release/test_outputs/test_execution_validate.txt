@@ -1,7 +1,2 @@
-[VALID] Execution layer loaded successfully
-Sessions: 0
-Session_work: 0
-Blockers: 0
-Remediation_actions: 0
-Reviews: 0
-Events: 0
+execution: 0 sessions, 0 work items, 0 blockers, 0 remediation actions, 0 reviews
+validate execution: OK.

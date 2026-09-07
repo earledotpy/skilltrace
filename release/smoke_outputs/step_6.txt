@@ -1,10 +1,14 @@
-System Health
-=============
-[OK] Graph layer
-[OK] Evidence layer
-[OK] Execution layer
-[OK] Interface layer
-[OK] Policy layer
-[OK] Release layer
+TODAY
 
-Status: healthy
+There's no session open â€” your best focus today is Explain what an AI agent is and how tools extend an LLM. There's Study velocity is below target: 0.0 work items/week average (target: 2). and Review completion is below target: 0% (target: 80%). needing attention â€” but finishing your open work matters more than starting something new.
+
+Where to learn (top focus)
+  Hf Agents Course -- https://huggingface.co/learn/agents-course/unit0/introduction
+
+How to proceed
+  Start studying Explain what an AI agent is and how tools extend an LLM.
+
+DO THIS NEXT
+  Start studying agents.concepts.agent_fundamentals_01: `skilltrace start agents.concepts.agent_fundamentals_01`
+
+Also in range: Use basic Pandas DataFrame operations, Define and call Python functions.

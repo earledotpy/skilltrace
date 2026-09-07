@@ -1,18 +1,14 @@
+THIS SKILL
 Apply order of operations
-=========================
-ID: math.arithmetic.order_operations_01
-State: available
-Domain: mathematics
-Track: foundational
+  [Ready to start]
 
-Summary
--------
-Evaluate arithmetic expressions using standard order of operations.
+You're clear to begin Apply order of operations -- nothing is blocking you. It needs 3 accepted submission(s) to pass. You decide when the work is good enough, not an AI.
 
-Evidence required
------------------
-Artifact specs: 1
-- spec.math.arithmetic.order_operations: Evidence shows correct work, clear steps, and no recurring error pattern across required attempts.
-Validation gates: 1
-- gate.math.arithmetic.order_operations.closure (manual)
-Blockers: 0
+Where to learn
+  Khan Arithmetic -- https://www.khanacademy.org/math/arithmetic
+
+How to proceed
+  0 of 3 Order of operations problem-set evidence.
+
+DO THIS NEXT
+  Start studying Apply order of operations

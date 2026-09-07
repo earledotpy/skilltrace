@@ -1,6 +1,6 @@
 smoke_test_plan:
-  id: smoke.skill_graph_v1
-  title: Skill Graph v1.0 read-only smoke tests
+  id: smoke.skilltrace_v2
+  title: SkillTrace v2.0 read-only smoke tests
   description: Read-only tests proving the package validates, presents health/today/recommendation
     views, and enforces policy boundaries (5-layer engine, scaffold archived per ADR 0005).
   platform: cross_platform
@@ -37,29 +37,29 @@ smoke_test_plan:
     title: System health
     command: skilltrace health
     expected_output_contains:
-    - 'healthy'
+    - 'health: OK'
     mutates_files: false
     required: true
   - order: 6
     title: Today view
     command: skilltrace today
     expected_output_contains:
-    - 'Today'
+    - 'TODAY'
     mutates_files: false
     required: true
   - order: 7
     title: Recommendation
     command: skilltrace next --minutes 60 --limit 5 --show-locked
     expected_output_contains:
-    - 'next'
+    - 'OPTION 1'
     mutates_files: false
     required: true
   - order: 8
     title: Automation boundary
     command: skilltrace check-automation pass_node
     expected_output_contains:
-    - 'Permission: forbidden'
+    - 'forbidden'
     mutates_files: false
     required: true
   created_at: '2026-06-28'
-  updated_at: '2026-08-21'
+  updated_at: '2026-09-07'

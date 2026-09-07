@@ -1,6 +1,40 @@
-[VALID] Evidence layer loaded successfully
-Resources: 0
-Artifact_specs: 24
-Validation_gates: 24
-Attempts: 0
-Evidence_records: 0
+evidence: 81 specs, 81 gates, 0 records, 0 attempts
+[warning] node agents.capstone.deployed_agent_integration_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.capstone.deployed_agent_integration_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node agents.concepts.agent_fundamentals_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.concepts.agent_fundamentals_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node agents.data.llamaindex_rag_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.data.llamaindex_rag_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node agents.deploy.docker_engine_build_run_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.deploy.docker_engine_build_run_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node agents.deploy.fastapi_minimal_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.deploy.fastapi_minimal_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node agents.frameworks.langgraph_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.frameworks.langgraph_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node agents.frameworks.ms_agent_framework_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.frameworks.ms_agent_framework_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node agents.frameworks.openai_agents_sdk_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.frameworks.openai_agents_sdk_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node agents.frameworks.pydanticai_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.frameworks.pydanticai_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node agents.frameworks.smolagents_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.frameworks.smolagents_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node agents.optimization.dspy_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.optimization.dspy_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node agents.protocol.mcp_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node agents.protocol.mcp_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node ml.capstone.house_prices_integration_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node ml.capstone.house_prices_integration_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node ml.classification.logistic_regression_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node ml.classification.logistic_regression_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node ml.evaluation.validation_metrics_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node ml.evaluation.validation_metrics_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node ml.framing.ml_workflow_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node ml.framing.ml_workflow_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node ml.practice.titanic_baseline_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node ml.practice.titanic_baseline_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node ml.regression.linear_regression_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node ml.regression.linear_regression_01 has no required artifact spec â€” it is never pass-eligible.
+[warning] node ml.trees.ensembles_01 has no gate â€” it cannot accept evidence and is never pass-eligible.
+[warning] node ml.trees.ensembles_01 has no required artifact spec â€” it is never pass-eligible.
+validate evidence: OK (38 warning(s)).

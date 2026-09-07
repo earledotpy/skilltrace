@@ -1,25 +1,14 @@
-Skill Graph Home
-================
+TODAY
 
-Graph
------
-available: 4
-locked: 20
+There's no session open â€” your best focus today is Explain what an AI agent is and how tools extend an LLM. There's Study velocity is below target: 0.0 work items/week average (target: 2). and Review completion is below target: 0% (target: 80%). needing attention â€” but finishing your open work matters more than starting something new.
 
-Evidence
---------
-artifact_specs: 24
-validation_gates: 24
-evidence_records: 0
+Where to learn (top focus)
+  Hf Agents Course -- https://huggingface.co/learn/agents-course/unit0/introduction
 
-Execution
----------
-sessions: 0
-open_blockers: 0
-scheduled_reviews: 0
+How to proceed
+  Start studying Explain what an AI agent is and how tools extend an LLM.
 
-Recommended next
-----------------
-1. communication.notes.technical_summary_01 — Write a concise technical summary
-2. math.arithmetic.order_operations_01 — Apply order of operations
-3. tooling.cli.navigation_01 — Navigate folders from the command line
+DO THIS NEXT
+  Start studying agents.concepts.agent_fundamentals_01: `skilltrace start agents.concepts.agent_fundamentals_01`
+
+Also in range: Use basic Pandas DataFrame operations, Define and call Python functions.
