@@ -590,3 +590,12 @@ Tag:
 git tag v1.0.0
 git push origin v1.0.0
 ```
+
+## Post-v2 roadmap
+
+Post-v1 planning continues outside this v1 document:
+[`docs/POST_V1_ROADMAP.md`](./POST_V1_ROADMAP.md) carries the
+shipped v1.6–v2.0 slots, and
+[`docs/POST_V2_ROADMAP.md`](./POST_V2_ROADMAP.md) names the next
+slots (v2.1–v2.4) plus the Beyond list. This application roadmap
+is the frozen v1 plan and is not updated per slot.
