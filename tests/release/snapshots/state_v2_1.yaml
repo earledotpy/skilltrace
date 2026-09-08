@@ -1,0 +1,9 @@
+# v2.1 schema-freeze snapshot for graph/state.yaml (T-Storage-guard SA2).
+# Learner state lives in the progress store and must not grow new per-rec
+# fields. This pins the shipped shape so an accidental addition fails SA2.
+top_level_keys:
+  - progress
+record_keys:
+  - changed_at
+  - state
+  - transitions

@@ -1,5 +1,5 @@
 recommendation_policy:
-  id: policy.recommendation.default_v0_6
+  id: policy.recommendation.default_v0_7
   status: active
   title: Recommendation weights
   description: >
@@ -8,14 +8,18 @@ recommendation_policy:
     weight, so no readiness factor appears here. Track names are opaque
     (decision 18): each node's track is looked up in track_weights; an
     unmapped track scores 0 and warns. Weights are the only mechanism —
-    there are no boolean preference switches to disagree with them.
+    there are no boolean preference switches to disagree with them. v0.7
+    supersedes the dormant `review_due` weight with the active
+    `retention_urgency` factor (advisory sequencing, v2.1) and adds the
+    opaque `agent_signal` factor for Phase 3/4 agent recommendations.
   factor_weights:
     track_priority: 3.0
     downstream_leverage: 2.0
     micro_session_fit: 1.0
     active_continuation: 2.0
     remediation_priority: 4.0
-    review_due: 2.0
+    retention_urgency: 2.0
+    agent_signal: 1.5
     blocker_penalty: -3.0
   track_weights:
     foundational: 3.0
@@ -24,4 +28,4 @@ recommendation_policy:
     portfolio: 1.0
     remediation: 0.5
   created_at: 2026-07-04
-  updated_at: 2026-07-06
+  updated_at: 2026-09-08

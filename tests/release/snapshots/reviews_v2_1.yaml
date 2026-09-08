@@ -1,0 +1,16 @@
+# v2.1 schema-freeze snapshot for execution/reviews.yaml (T-Storage-guard SA1).
+# The records the engine writes must not grow new fields; this pins the
+# shipped shape so an accidental addition fails the gate.
+top_level_keys:
+  - reviews
+record_keys:
+  - cancel_reason
+  - cancelled_at
+  - completed_at
+  - created_at
+  - id
+  - node_id
+  - outcome
+  - result_summary
+  - scheduled_for
+  - status

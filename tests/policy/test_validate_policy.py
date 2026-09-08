@@ -228,4 +228,76 @@ def test_resource_web_verification_missing_field_fails_validation(policy_repo, c
     out = capsys.readouterr().out
     assert "validate policy: FAILED" in out
     assert "missing required field 'timeout_seconds'" in out
+# --- v2.1 recommendation factor-weight checks + retention extras (§3 T-Weights)
+
+
+def _recommendation_path(root) -> Path:
+    return root / "policy" / "recommendation.yaml"
+
+
+def _set_factor(root, name: str, value, *, remove: bool = False) -> None:
+    path = _recommendation_path(root)
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    weights = doc["recommendation_policy"]["factor_weights"]
+    if remove:
+        weights.pop(name, None)
+    else:
+        weights[name] = value
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+
+def test_reintroducing_dormant_review_due_fails_validation(policy_repo, capsys):
+    """The retired `review_due` placeholder must not be re-added (D-Weights)."""
+    _set_factor(policy_repo, "review_due", 2.0)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert "review_due" in out
+
+
+def test_missing_retention_urgency_fails_validation(policy_repo, capsys):
+    """The active sequencing factor is required; absence is a hard error."""
+    _set_factor(policy_repo, "retention_urgency", None, remove=True)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert "retention_urgency" in out
+
+
+@pytest.mark.parametrize("bad_value", ["high", True, float("nan")])
+def test_non_numeric_factor_weight_fails_validation(policy_repo, capsys, bad_value):
+    _set_factor(policy_repo, "agent_signal", bad_value)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert "agent_signal" in out
+
+
+def test_delay_table_out_of_range_fails_validation(policy_repo, capsys):
+    path = policy_repo / "policy" / "retention_model.yaml"
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    doc["retention_model_policy"]["delay_aware_multipliers"]["early"]["satisfactory"] = 0
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert "delay_aware_multipliers" in out
+
+
+def test_domain_scale_must_be_positive(policy_repo, capsys):
+    path = policy_repo / "policy" / "retention_model.yaml"
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    doc["retention_model_policy"]["domain_half_life_scales"] = {"math.linear": 0}
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert "domain_half_life_scales" in out
 

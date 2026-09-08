@@ -9,6 +9,8 @@ test_next_command.py.
 
 from __future__ import annotations
 
+import pytest
+
 from skilltrace.graph.edges import GraphEdge
 from skilltrace.graph.nodes import SkillNode
 from skilltrace.graph.recommendation import recommend
@@ -212,3 +214,55 @@ def test_locked_omitted_without_show_locked():
     store = _store(**{"a.b.lock_01": "locked"})
     result = recommend(nodes, [], store, _WEIGHTS, minutes=60, limit=10, show_locked=False)
     assert result.locked == []
+# --- v2.1 advisory sequencing factors (retention urgency + agent signal) -------
+
+_FW = {
+    "track_priority": 3.0,
+    "downstream_leverage": 2.0,
+    "micro_session_fit": 1.0,
+    "active_continuation": 2.0,
+    "remediation_priority": 4.0,
+    "retention_urgency": 2.0,
+    "agent_signal": 1.5,
+    "blocker_penalty": -3.0,
+}
+
+
+def test_retention_urgency_boosts_and_names_the_decay():
+    """A candidate with below-threshold prereqs gains the urgency factor."""
+    nodes = [_node("a.b.base_01"), _node("a.b.tgt_01")]
+    edges = [_edge("a.b.base_01", "a.b.tgt_01")]  # active hard prerequisite
+    store = _store(**{"a.b.base_01": "passed", "a.b.tgt_01": "available"})
+    result = recommend(
+        nodes, edges, store, _WEIGHTS, minutes=60, limit=10,
+        factor_weights=_FW, prereq_reviews_due={"a.b.tgt_01": 1},
+    )
+    rec = result.recommendations[0]
+    assert rec.node_id == "a.b.tgt_01"
+    assert rec.prereq_reviews_due == 1
+    assert "prerequisite review fading below retention" in rec.reason
+    # Track 3 (3.0) + session-fit 1.0 + retention_urgency 2.0*1.
+    assert rec.score == pytest.approx(3.0 * 3.0 + 1.0 + 2.0)
+
+def test_agent_signal_boosts_and_names_the_flag():
+    nodes = [_node("a.b.flagged_01")]
+    store = _store(**{"a.b.flagged_01": "available"})
+    result = recommend(
+        nodes, [], store, _WEIGHTS, minutes=60, limit=10,
+        factor_weights=_FW, agent_boosted={"a.b.flagged_01"},
+    )
+    rec = result.recommendations[0]
+    assert rec.agent_boosted is True
+    assert "agent signal" in rec.reason
+
+
+def test_sequencing_factors_stand_down_by_default():
+    """Without policy weights or injected signals, urgency/agent add nothing."""
+    nodes = [_node("a.b.plain_01")]
+    store = _store(**{"a.b.plain_01": "available"})
+    result = recommend(nodes, [], store, _WEIGHTS, minutes=60, limit=10)
+    rec = result.recommendations[0]
+    assert rec.prereq_reviews_due == 0
+    assert rec.agent_boosted is False
+    assert "retention" not in rec.reason
+    assert "agent" not in rec.reason

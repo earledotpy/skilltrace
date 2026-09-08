@@ -282,3 +282,99 @@ def test_today_argument_is_the_only_clock():
     assert a == b
     assert a.anchored_at == PASS_DATE
     assert a.confidence == pytest.approx(0.5 ** ((fixed - PASS_DATE).days / 7.0))
+# --- v2.1 delay-aware multipliers (spec §1 T-Personalization) ----------------
+
+
+DELAY_SEED = RetentionPolicySeed(
+    default_half_life_days=7.0,
+    satisfactory_growth_factor=2.0,
+    unsatisfactory_reduction_factor=0.5,
+    attention_threshold=0.5,
+    delay_aware_multipliers={
+        "early": {"satisfactory": 1.0, "unsatisfactory": 0.6},
+        "on_time": {"satisfactory": 2.0, "unsatisfactory": 0.5},
+        "late": {"satisfactory": 1.5, "unsatisfactory": 0.4},
+    },
+    on_time_window_days=2,
+)
+
+
+def _completed_scheduled(
+    review_id: str,
+    completed_on: date,
+    scheduled_on: date,
+    outcome: str,
+) -> Review:
+    return Review(
+        id=review_id,
+        node_id=NODE,
+        status="completed",
+        scheduled_for=scheduled_on.isoformat(),
+        created_at=scheduled_on.isoformat() + "T10:00:00+00:00",
+        completed_at=completed_on.isoformat() + "T10:00:00+00:00",
+        outcome=outcome,
+        result_summary="recall log",
+    )
+
+
+def _state_after_one(review) -> "object":
+    return compute_memory_state(
+        NODE,
+        asserted_state="passed",
+        pass_at=PASS_DATE,
+        reviews=[review],
+        seed=DELAY_SEED,
+        today=PASS_DATE + timedelta(days=2),
+    )
+
+
+def test_delay_on_time_satisfactory_doubles_half_life():
+    """On-time satisfactory (|delay| <= window) uses multiplier 2.0 (Tier 2 base)."""
+    on = PASS_DATE + timedelta(days=2)
+    state = _state_after_one(_completed_scheduled("rev.001", on, on, "satisfactory"))
+    assert state.half_life_days == pytest.approx(14.0)
+
+
+def test_delay_early_satisfactory_gives_modest_growth():
+    """Completed before its scheduled date: early multiplier 1.0, h stays 7."""
+    done = PASS_DATE + timedelta(days=1)
+    sched = PASS_DATE + timedelta(days=4)  # 3 days late-by-schedule -> early (delay -3)
+    state = _state_after_one(_completed_scheduled("rev.002", done, sched, "satisfactory"))
+    assert state.half_life_days == pytest.approx(7.0)
+
+
+def test_delay_late_unsatisfactory_reduces_hardest():
+    """Late + unsatisfactory: multiplier 0.4 -> h = 7 * 0.4 = 2.8."""
+    done = PASS_DATE + timedelta(days=5)
+    sched = PASS_DATE + timedelta(days=2)  # completed 3 days late
+    state = _state_after_one(_completed_scheduled("rev.003", done, sched, "unsatisfactory"))
+    assert state.half_life_days == pytest.approx(2.8)
+
+
+def test_base_scale_folds_domain_and_analytics_modifiers():
+    """The v2.1 per-node base scale (domain/coverage/velocity) cool the default h."""
+    state = compute_memory_state(
+        NODE,
+        asserted_state="passed",
+        pass_at=PASS_DATE,
+        reviews=[],
+        seed=SEED,
+        today=PASS_DATE,
+        base_scale=0.85,  # e.g. an incomplete-evidence scale
+    )
+    assert state.half_life_days == pytest.approx(7.0 * 0.85)
+
+
+def test_delay_table_parsed_from_doc():
+    doc = {
+        "default_half_life_days": 7,
+        "delay_aware_multipliers": {
+            "early": {"satisfactory": 1.0, "unsatisfactory": 0.6},
+            "on_time": {"satisfactory": 2.0, "unsatisfactory": 0.5},
+            "late": {"satisfactory": 1.5, "unsatisfactory": 0.4},
+        },
+        "on_time_window_days": 2,
+    }
+    seed = retention_seed_from_doc(doc)
+    assert seed.delay_aware_multipliers is not None
+    assert seed.delay_aware_multipliers["on_time"]["satisfactory"] == 2.0

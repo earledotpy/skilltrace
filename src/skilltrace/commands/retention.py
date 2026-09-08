@@ -90,8 +90,9 @@ def retention_status(ctx: Context) -> CommandResult:
         heading = f"{s.node_id}"
         if title:
             heading = f"{title} ({s.node_id})"
+        domain = ".".join(s.node_id.split(".")[:2]) if s.node_id.count(".") >= 1 else s.node_id
         print(
-            f"{heading}  state={s.asserted_state}  "
+            f"{heading}  state={s.asserted_state}  domain={domain}  "
             f"anchor={s.anchor_kind}@{s.anchored_at.isoformat()}"
         )
         print(

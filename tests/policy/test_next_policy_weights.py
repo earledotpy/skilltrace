@@ -118,3 +118,58 @@ def test_without_pressure_the_boost_and_penalty_vanish(policy_repo, capsys):
     assert ranked.index(TARGET) < ranked.index(REM)
     assert "remediation" not in _block_for(out, REM).lower()
     assert "blocker" not in _block_for(out, TARGET).lower()
+# --- v2.1 adaptive sequencing: prerequisite-retention urgency ------------------
+
+
+def _retention_repo(root):
+    """A candidate whose hard prerequisite is passed but far below retention."""
+    _write_node(root, TARGET, track="foundational")
+    _write_node(root, OTHER, track="foundational")
+    _write_node(root, "testing.policy.prereq_node_01", track="foundational")
+    _write_yaml(
+        root,
+        "graph/edges.yaml",
+        {
+            "edges": [
+                {
+                    "id": "edge.prereq_builds_target",
+                    "source": "testing.policy.prereq_node_01",
+                    "target": TARGET,
+                    "edge_type": "hard_prerequisite",
+                    "reason": "builds it",
+                    "active": True,
+                }
+            ]
+        },
+    )
+    # A 2019 pass is far below the default 7-day half-life -> due a review.
+    _write_yaml(
+        root,
+        "graph/state.yaml",
+        {
+            "progress": {
+                "testing.policy.prereq_node_01": {
+                    "state": "passed",
+                    "changed_at": "2019-01-01T10:00:00+00:00",
+                    "transitions": {"passed": "2019-01-01T10:00:00+00:00"},
+                },
+                TARGET: {"state": "available", "changed_at": "2026-07-01T10:00:00+00:00"},
+                OTHER: {"state": "available", "changed_at": "2026-07-01T10:00:00+00:00"},
+            }
+        },
+    )
+    return root
+
+
+def test_retention_urgency_reorders_the_candidate(policy_repo, capsys):
+    """A candidate whose foundation is fading outranks an identical tied node."""
+    root = _retention_repo(policy_repo)
+
+    rc = cli.run(["next", "--minutes", "30", "--limit", "5"], root=root)
+    assert rc == 0
+    out = capsys.readouterr().out
+
+    ranked = _ranked_ids(out)
+    assert ranked.index(TARGET) < ranked.index(OTHER)
+    # The Mentor brief on the target names the decaying foundation.
+    assert "retention threshold" in _block_for(out, TARGET).lower()

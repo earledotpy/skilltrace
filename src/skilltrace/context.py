@@ -173,9 +173,6 @@ class PolicyAccess:
         document = self._document("retention_model.yaml")
         required = (
             "default_half_life_days",
-            "satisfactory_growth_factor",
-            "unsatisfactory_reduction_factor",
-            "attention_threshold",
         )
         if not all(key in document for key in required):
             return None

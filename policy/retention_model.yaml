@@ -1,5 +1,5 @@
 retention_model_policy:
-  id: policy.retention.default_v0_9
+  id: policy.retention.default_v1_0
   status: active
   title: Retention model
   description: >
@@ -7,11 +7,27 @@ retention_model_policy:
     suggestion dates from the review history and the decay parameters below; it
     never writes. Cancelled reviews feed nothing. The model may warn and reorder
     recommendations on its own surfaces, never block a human command, and never
-    move asserted progress.
+    move asserted progress. v1.0 (v2.1) adds delay-aware multipliers on the
+    binary outcome, per-domain half-life scales, and analytics modifiers — all
+    pure-derivation, still nothing persisted.
   model: exponential_decay
   default_half_life_days: 7
-  satisfactory_growth_factor: 2.0
-  unsatisfactory_reduction_factor: 0.5
+  delay_aware_multipliers:
+    early:
+      satisfactory: 1.0
+      unsatisfactory: 0.6
+    on_time:
+      satisfactory: 2.0
+      unsatisfactory: 0.5
+    late:
+      satisfactory: 1.5
+      unsatisfactory: 0.4
+  on_time_window_days: 2
   attention_threshold: 0.5
+  domain_half_life_scales: {}
+  low_velocity_scale: 0.9
+  incomplete_evidence_scale: 0.85
+  min_half_life_days: 1
+  max_half_life_days: 365
   created_at: 2026-08-26
-  updated_at: 2026-08-26
+  updated_at: 2026-09-08

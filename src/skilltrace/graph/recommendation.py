@@ -56,6 +56,8 @@ DEFAULT_FACTOR_WEIGHTS: dict[str, float] = {
     "micro_session_fit": 1.0,
     "active_continuation": 0.5,
     "remediation_priority": 0.0,
+    "retention_urgency": 0.0,
+    "agent_signal": 0.0,
     "blocker_penalty": 0.0,
 }
 
@@ -79,6 +81,8 @@ class Recommendation:
     reason: str
     remediation_boosted: bool = False
     open_blocked: bool = False
+    prereq_reviews_due: int = 0
+    agent_boosted: bool = False
 
 
 @dataclass(frozen=True)
@@ -142,6 +146,7 @@ def _fits_session(micro_session_fit: dict, minutes: int) -> bool:
 def _reason(
     track: str, weight: float, mapped: bool, leverage: int, fits: bool,
     is_active: bool, minutes: int, boosted: bool, blocked: bool,
+    decay_count: int, agent: bool,
     factor_weights: dict[str, float],
 ) -> str:
     if mapped:
@@ -158,6 +163,17 @@ def _reason(
         parts.append(
             "active remediation edge "
             f"(+{factor_weights['remediation_priority']:g} policy boost)"
+        )
+    if decay_count:
+        noun = "prerequisite review" if decay_count == 1 else "prerequisite reviews"
+        parts.append(
+            f"{decay_count} {noun} fading below retention "
+            f"(+{factor_weights['retention_urgency']:g} policy boost)"
+        )
+    if agent:
+        parts.append(
+            "agent signal "
+            f"(+{factor_weights['agent_signal']:g} policy boost)"
         )
     if blocked:
         parts.append(
@@ -213,6 +229,8 @@ def recommend(
     factor_weights: dict[str, float] | None = None,
     remediation_boosted: frozenset[str] | set[str] = frozenset(),
     open_blocked: frozenset[str] | set[str] = frozenset(),
+    prereq_reviews_due: dict[str, int] | None = None,
+    agent_boosted: frozenset[str] | set[str] = frozenset(),
 ) -> RecommendationResult:
     """Rank `available`/`active` nodes for a `minutes`-long session.
 
@@ -224,6 +242,7 @@ def recommend(
     """
     weights = DEFAULT_FACTOR_WEIGHTS | (factor_weights or {})
     leverage_counts = _outgoing_active_edge_counts(edges)
+    prereq_due = prereq_reviews_due or {}
     recommendations: list[Recommendation] = []
     unmapped: set[str] = set()
 
@@ -242,6 +261,8 @@ def recommend(
         is_active = state == "active"
         boosted = node.id in remediation_boosted
         blocked = node.id in open_blocked
+        decay_count = prereq_due.get(node.id, 0)
+        agent = node.id in agent_boosted
 
         score = (
             weights["track_priority"] * weight
@@ -249,6 +270,8 @@ def recommend(
             + (weights["micro_session_fit"] if fits else 0.0)
             + (weights["active_continuation"] if is_active else 0.0)
             + (weights["remediation_priority"] if boosted else 0.0)
+            + (weights["retention_urgency"] * decay_count)
+            + (weights["agent_signal"] if agent else 0.0)
             + (weights["blocker_penalty"] if blocked else 0.0)
         )
         recommendations.append(
@@ -262,9 +285,11 @@ def recommend(
                 is_active=is_active,
                 remediation_boosted=boosted,
                 open_blocked=blocked,
+                prereq_reviews_due=decay_count,
+                agent_boosted=agent,
                 reason=_reason(
                     node.track, weight, mapped, leverage, fits, is_active,
-                    minutes, boosted, blocked, weights,
+                    minutes, boosted, blocked, decay_count, agent, weights,
                 ),
             )
         )

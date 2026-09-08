@@ -19,7 +19,7 @@ the locked nodes with their unsatisfied hard prerequisites named.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -48,10 +48,13 @@ from ..graph.recommendation import (
 )
 from ..graph.state import ProgressStoreError
 from ..mentor.prose import NodeState, resource_lines, state_phrase
+from ..execution.overdue import utc_today
+from ..policy.agent_input import load_agent_recommendations
 from ..policy.remediation_edges import (
     ActiveRemediation,
     active_remediations,
 )
+from ..policy.sequencing import prereq_retention_urgency
 from ..policy.weights import load_factor_weights, load_track_weights
 from ..resources.registry import LearningResource
 
@@ -137,6 +140,17 @@ def _contrastive_brief(
     if rec.open_blocked:
         sentences.append(
             "There's an open blocker on this node — advisory only, not stopping you."
+        )
+    if rec.prereq_reviews_due:
+        n = rec.prereq_reviews_due
+        noun = "prerequisite is" if n == 1 else "prerequisites are"
+        sentences.append(
+            f"{n} of this node's {noun} below retention threshold — "
+            "a quick review keeps the foundation solid (advisory)."
+        )
+    if rec.agent_boosted:
+        sentences.append(
+            "An agent signal flags this node as a suggested focus (advisory)."
         )
 
     # Summary of the node itself.
@@ -281,6 +295,7 @@ class NextModel:
     recommendations: list[Recommendation]
     locked: list[LockedCandidate]
     cards: list[MentorCard]
+    warnings: list[str] = field(default_factory=list)
 
 
 def derive_next(
@@ -291,8 +306,18 @@ def derive_next(
     limit: int = 5,
     show_locked: bool = False,
 ) -> NextModel:
-    """Load-free ranking over one loaded JoinedView. Pure of printing."""
+    """Load-free ranking over one loaded JoinedView. Pure of printing.
+
+    Advisory inputs (prerequisite-retention urgency, agent recommendations)
+    are derived fresh; a missing retention seed or agent file simply stands
+    the relevant factor down.
+    """
     active, blocked = _policy_pressure(joined)
+    today = utc_today()
+    urgency = prereq_retention_urgency(joined, today)
+    agent_recs, agent_warns = (
+        load_agent_recommendations(root) if root is not None else ({}, [])
+    )
     result = recommend(
         joined.nodes,
         joined.edges,
@@ -304,6 +329,8 @@ def derive_next(
         factor_weights=joined.policy.factor_weights,
         remediation_boosted={r.remediation_node for r in active},
         open_blocked=blocked,
+        prereq_reviews_due=urgency,
+        agent_boosted=set(agent_recs),
     )
     cards = _mentor_cards(
         result,
@@ -319,6 +346,7 @@ def derive_next(
         recommendations=list(result.recommendations),
         locked=list(result.locked),
         cards=cards,
+        warnings=list(agent_warns),
     )
 
 
@@ -341,6 +369,8 @@ def recommend_next(ctx: Context) -> CommandResult:
     )
     for line in model.lines:
         print(line)
+    for warning in model.warnings:
+        print(f"next: {warning}")
     return CommandResult()
 
 

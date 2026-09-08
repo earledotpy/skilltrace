@@ -49,7 +49,9 @@ from ..graph.recommendation import recommend
 from ..graph.state import ProgressStoreError
 from ..mentor.prose import resource_lines
 from ..policy.advisory import analytics_warnings
+from ..policy.agent_input import load_agent_recommendations
 from ..policy.remediation_edges import active_remediations
+from ..policy.sequencing import prereq_retention_urgency
 from ..resources.registry import LearningResource
 
 
@@ -250,6 +252,11 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
         attempts=attempts,
         failed_attempt_threshold=joined.policy.failed_attempt_threshold,
     )
+    seq_today = utc_today()
+    urgency = prereq_retention_urgency(joined, seq_today)
+    agent_recs, _agent_warns = (
+        load_agent_recommendations(root) if root is not None else ({}, [])
+    )
     result = recommend(
         nodes,
         edges,
@@ -260,6 +267,8 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
         factor_weights=joined.policy.factor_weights,
         remediation_boosted={r.remediation_node for r in active},
         open_blocked=open_blocked,
+        prereq_reviews_due=urgency,
+        agent_boosted=set(agent_recs),
     )
 
     # Focus skill: the open session's node if one is open, else the top pick.
