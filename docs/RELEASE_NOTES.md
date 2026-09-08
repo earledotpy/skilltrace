@@ -1,6 +1,6 @@
 # Release Notes
 
-All releases and historical milestone records for SkillTrace. For future direction, see [`docs/POST_V1_ROADMAP.md`](POST_V1_ROADMAP.md).
+All releases and historical milestone records for SkillTrace. For future direction, see [`docs/POST_V1_ROADMAP.md`](POST_V1_ROADMAP.md) (shipped v1.6–v2.0) and [`docs/POST_V2_ROADMAP.md`](POST_V2_ROADMAP.md) (next slots v2.1–v2.4).
 
 ---
 
