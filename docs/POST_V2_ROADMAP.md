@@ -42,6 +42,15 @@ verification note.
   green) via
   [#183](https://github.com/earledotpy/skilltrace/issues/183)–
   [#190](https://github.com/earledotpy/skilltrace/issues/190).
+- **v2.1.0** — Adaptive sequencing + retention overlay (FSRS):
+  retention-urgency sequencing from below-threshold prerequisite
+  retention pressure, advisory agent-signal factor, delay-aware
+  per-node retention model (seeds `policy.recommendation.default_v0_7`
+  + `policy.retention.default_v1_0`), `suggest reviews` retention
+  section, `retention status --node-id`; verified on the merged tree
+  (full suite green; v2.1 §7 functional gates exit 0 on seed, safety
+  + doc gates green); spec:
+  [`docs/spec-v2.1-adaptive-sequencing.md`](./spec-v2.1-adaptive-sequencing.md).
 
 ## Version slots
 
@@ -52,7 +61,7 @@ column capturing the compound-value chain.
 
 | Slot | Theme | ROI (L, C → combined) | Enables | Acceptance |
 |---|---|---|---|---|
-| **v2.1** | Adaptive sequencing + retention overlay (FSRS) — *carried fixed from POST_V1 verbatim per map [#191](https://github.com/earledotpy/skilltrace/issues/191): unshipped as of v2.0.0; binds to the v1.6 event log + v1.5 retention model; advisory-only* | **M** (M, M) | closes the long arc | retention overlay bound to v1.6 event log; advisory-only |
+| **v2.1** | Adaptive sequencing + retention overlay (FSRS) — *carried fixed from POST_V1 verbatim per map [#191](https://github.com/earledotpy/skilltrace/issues/191): shipped as v2.1.0; binds to the v1.6 event log + v1.5 retention model; advisory-only* | **M** (M, M) | closes the long arc | retention overlay bound to v1.6 event log; advisory-only |
 | **v2.2** | Provenance & graph-impact diagnostics — bounded gate-run receipts (immutable, optional fields: normalized command identity, root-relative inputs, tool/version, exit class, output hashes; secrets/unbounded logs excluded) + read-only pre-release graph-impact diagnostic (derived lock/unlock flips, recommendation changes, dangling refs, no-op edges) | **M** (M, M) | future gate-runner extension when a Phase 4/5 seed artifact needs it; trustworthy pre-release verification of curriculum edits | theme + ROI, plus: receipt fields immutable + optional; unrunnable gate = no record; receipt never passes/masters; diagnostic read-only, `edges.yaml`-only, asserted states immutable, never blocks a human action; pytest green |
 | **v2.3** | Verification-hygiene hardening: polite batch sweeps — per-host rate limiting, `robots.txt` respect, 429 backoff — over the existing `check-resource`/registry seam. *Scheduling automation re-deferred with named trigger; deep-verification ruled Beyond (see Beyond list).* | **M** (M, M) | (hygiene; no slot depends on it) | theme + ROI, plus: offline-fixture gates for bucket/backoff/`robots.txt` behavior; safety assertions extending the v1.7 posture (polite sweep still never writes `last_verified`, never clears `broken`, appends no new event shapes); policy seed keys validate under `validate policy`; pytest green |
 | **v2.4** | Tier 1 interface sublayer (ADR 0007): Python-derived View/Card vocabulary over the dispatcher registry — card-composed, de-CLI-flavoured daily screens; import-time + request-time validated | **M** (M, M) | future Tier 1 polish; no POST_V2 slot depends on it | theme + ROI, plus: sublayer import-validated (serve refuses to start on inconsistency); request-time gating omits engine-refused actions; no hand-declared YAML; existing Tier 1 route surface unchanged; pytest green |

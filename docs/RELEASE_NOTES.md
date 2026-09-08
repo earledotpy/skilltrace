@@ -1,6 +1,24 @@
 # Release Notes
 
-All releases and historical milestone records for SkillTrace. For future direction, see [`docs/POST_V1_ROADMAP.md`](POST_V1_ROADMAP.md) (shipped v1.6–v2.0) and [`docs/POST_V2_ROADMAP.md`](POST_V2_ROADMAP.md) (next slots v2.1–v2.4).
+All releases and historical milestone records for SkillTrace. For future direction, see [`docs/POST_V1_ROADMAP.md`](POST_V1_ROADMAP.md) (shipped v1.6–v2.0) and [`docs/POST_V2_ROADMAP.md`](POST_V2_ROADMAP.md) (shipped v2.1; next slots v2.2–v2.4).
+
+---
+
+## v2.1.0 (released)
+
+Adaptive sequencing + retention overlay (FSRS), carried fixed from the POST_V1 roadmap. Advisory-only throughout: the retention overlay reorders recommendations and names fading prerequisites; it never gates, blocks, or flips learner state. Verified on the merged tree: full test suite green, v2.1 §7 functional gates exit 0 on seed, safety + doc gates green.
+
+### Features
+- **Retention-urgency sequencing:** `next` and `today` boost candidates whose active hard-prerequisite sources are fading below the retention threshold, with a named reason clause on each card.
+- **Agent signal (advisory):** recommendations can carry an agent boost sourced from `data/agent_recommendations.yaml`; a missing file is silent, malformed entries are warn-and-ignore, and the engine never writes the file — AI input stays non-authoritative.
+- **Delay-aware retention model:** per-node half-life from review history with early/on-time/late × satisfactory/unsatisfactory multipliers, per-node base scales (domain, evidence gaps, velocity), and half-life clamps (policy seeds `policy.recommendation.default_v0_7` + `policy.retention.default_v1_0`).
+- **`suggest reviews` retention section:** derived below-threshold suggestions under the calendar-due list, with a count-based warning line; calendar ordering is never reordered by retention pressure.
+- **`retention status --node-id`:** filter the derived memory-state report to a single node.
+- **Policy validation:** `validate policy` enforces the new seed value ranges, requires `retention_urgency`, and rejects the retired `review_due` dormant weight.
+
+### Decisions Recorded
+- v2.1 spec written to the hand-off gate with all formula stubs filled (T-Personalization, T-Weights, T-AgentInput, T-Rendering, T-Storage-guard); see [`docs/spec-v2.1-adaptive-sequencing.md`](spec-v2.1-adaptive-sequencing.md).
+- D-Weights: no dormant factor weight survives; `review_due` is superseded by `retention_urgency`.
 
 ---
 

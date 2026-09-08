@@ -84,10 +84,11 @@ See \docs/agents/domain.md\.
 
 ## Working conventions
 
-- Current phase: v2.0.0 released (slots v1.6–v2.0 shipped:
-  event-log analytics, resource web-verification, Phase 2 + Phase 3 seed
-  graphs, Portfolio builder). Follow the roadmap's slot sequence; see
-  `docs/POST_V1_ROADMAP.md` for the active direction.
+- Current phase: v2.1.0 released (v2.1: adaptive sequencing + retention
+  overlay — retention-urgency + agent-signal sequencing factors,
+  delay-aware retention model, `suggest reviews` retention section).
+  Follow the roadmap's slot sequence; see
+  `docs/POST_V2_ROADMAP.md` for the active direction.
 - Tests: `pytest` (per-layer suites under `tests/<layer>` as RCs land).
   Every RC's exit-gate commands must pass before it's done.
 - When a domain term is added or changed, update `CONTEXT.md` in the same
