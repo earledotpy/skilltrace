@@ -77,6 +77,7 @@ def select(joined: JoinedView, options: SelectionOptions) -> list[SelectedNode]:
                     superseded=is_superseded,
                     artifact_path=_redaction.capture_location(record),
                     note=_redaction.capture_note(record),
+                    gate_run=_redaction.capture_receipt(record),
                 )
             )
         evidence.sort(key=lambda e: e.record_id)

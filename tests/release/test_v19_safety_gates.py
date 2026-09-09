@@ -400,6 +400,7 @@ def test_sa8_no_new_cli_subcommands():
         "check-automation", "check-resource", "check-resources",
         "eligibility", "evidence submit",
         "export html", "export markdown", "export sqlite",
+        "graph impact",
         "health", "master", "next", "node",
         "pass", "portfolio export", "portfolio preview",
         "remediation complete", "remediation create", "replace-resource",

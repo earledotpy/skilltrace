@@ -13,6 +13,12 @@ The decision itself is the pure `plan_submit` planner; this handler only loads
 the data, binds the three real side effects (run the gate via subprocess, hash
 the artifact, append the record), prints the plan, and maps it to a
 `CommandResult`. Refusals and an unrunnable gate exit non-zero and write nothing.
+
+v2.2: objective judgments freeze a bounded `gate_run` receipt onto the record
+(the planner's `_build_gate_run` in `..evidence.submission`) — the gate
+command's argv, root-relative inputs, exit class, and output hashes; manual
+submits never carry one, and a gate that cannot run still writes nothing at
+all.
 """
 
 from __future__ import annotations
@@ -20,6 +26,7 @@ from __future__ import annotations
 import hashlib
 import shlex
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -33,7 +40,12 @@ from ..evidence.evidence import (
     load_evidence_records,
     load_artifact_specs,
 )
-from ..evidence.submission import GateInfo, GateUnrunnable, SubmitOutcome, plan_submit
+from ..evidence.submission import (
+    GateInfo,
+    GateUnrunnable,
+    SubmitOutcome,
+    plan_submit,
+)
 from ..graph.state import ProgressStoreError, load_state
 
 _RECORDS_RELPATH = Path("evidence") / "evidence_records.yaml"
@@ -43,23 +55,44 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def _run_gate(command: str) -> int:
-    """Run an objective gate command loudly and return its exit code.
+def _run_gate(command: str):
+    """Run an objective gate command loudly and return its run result.
 
     `shell=False` is what makes "unable to run" distinguishable from "ran and
     failed": a missing executable raises `OSError` (→ `GateUnrunnable`, no
     verdict), whereas a command that runs and exits non-zero returns that code
-    (→ a rejection verdict). Output is not captured, so the command's own stdout/
-    stderr stream to the terminal — the "loud" run the issue calls for.
+    (→ a rejection verdict).
+
+    v2.2 (D-Capture): output is captured (`capture_output=True`), hashed by
+    the planner into the receipt, and then echoed to the terminal — stdout,
+    then stderr — so the "loud" run survives in content and order, at the
+    cost of the interleaving. Shipped checkers are short deterministic
+    scripts; streaming (`Popen` pump loops) is explicitly rejected for v2.2.
+    Returns a `GateRunResult` (the planner's seam value).
     """
+    from ..evidence.submission import GateRunResult, GateUnrunnable as _Unrunnable
+
     argv = shlex.split(command)
     if not argv:
-        raise GateUnrunnable("gate command is empty")
+        raise _Unrunnable("gate command is empty")
     try:
-        completed = subprocess.run(argv)  # noqa: S603 — curriculum-authored gate
+        completed = subprocess.run(  # noqa: S603 — curriculum-authored gate
+            argv, capture_output=True
+        )
     except OSError as exc:
-        raise GateUnrunnable(str(exc)) from exc
-    return completed.returncode
+        raise _Unrunnable(str(exc)) from exc
+    stdout = completed.stdout.decode("utf-8", errors="replace") if completed.stdout else ""
+    stderr = completed.stderr.decode("utf-8", errors="replace") if completed.stderr else ""
+    # Platform-stable provenance: a gate printing "\n" captures "\r\n" on
+    # Windows consoles, but the receipt must hash the same bytes everywhere —
+    # normalize CRLF to LF before the planner hashes (spec §1, D-Normalize).
+    stdout = stdout.replace("\r\n", "\n")
+    stderr = stderr.replace("\r\n", "\n")
+    if stdout:
+        print(stdout, end="" if stdout.endswith("\n") else "\n")
+    if stderr:
+        print(stderr, end="" if stderr.endswith("\n") else "\n", file=sys.stderr)
+    return GateRunResult(exit_code=completed.returncode, stdout=stdout, stderr=stderr)
 
 
 def _make_hasher(root: Path):
@@ -151,6 +184,8 @@ def submit(ctx: Context) -> CommandResult:
         run_gate=_run_gate,
         hasher=_make_hasher(root),
         now=_now_iso(),
+        root=root,
+        exists=lambda p: p.is_file(),
     )
 
     _report(outcome, node_id)

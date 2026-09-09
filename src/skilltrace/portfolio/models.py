@@ -43,6 +43,7 @@ class SelectedEvidence:
     superseded: bool
     artifact_path: str | None = None
     note: str | None = None
+    gate_run: dict | None = None
 
 
 @dataclass

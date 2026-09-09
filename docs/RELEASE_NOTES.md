@@ -4,6 +4,21 @@ All releases and historical milestone records for SkillTrace. For future directi
 
 ---
 
+## v2.2.0 (released)
+
+Provenance & graph-impact diagnostics (R-Provenance #194). Advisory-only throughout: gate-run receipts record how an objective gate ran, and the `graph impact` diagnostic reports what a curriculum edit would change — neither ever flips or blocks. Verified on the merged tree: full test suite green, v2.2 §7 functional gates exit 0 on seed, safety + doc gates green.
+
+### Features
+- **Gate-run receipts:** objective-gate evidence records gain an optional immutable `gate_run` borrowing the executed argv, root-relative input files, exit class (`passed`/`failed`), optional exit code, and `sha256:` output hashes — raw gate output is never stored. Unrunnable gates write no record, no receipt, no event; manual-gate records never carry one; a receipt never changes eligibility or readiness.
+- **`graph impact` (read-only):** advisory comparison of the working tree against a git-ref baseline (or `--baseline <path>` second checkout), reporting readiness flips on non-asserted nodes, asserted progress that stands against a baseline-edge edit, recommendation-list changes under identical store/weights, dangling references, and no-op edges. Appends no audit event and exits 0 whenever it can compute.
+- **Redaction:** receipt `command_argv`/`inputs` are classified under the existing portfolio **paths** dimension (default-deny, `--include-paths` overrides per export).
+
+### Decisions Recorded
+- v2.2 spec written to the hand-off gate with all D-* decisions filled; see [`docs/spec-v2.2-provenance-impact.md`](spec-v2.2-provenance-impact.md).
+- D-Flip: asserted progress is reported as standing, never revoked; the diagnostic reads relationships only from `edges.yaml` and never blocks a human action.
+
+---
+
 ## v2.1.0 (released)
 
 Adaptive sequencing + retention overlay (FSRS), carried fixed from the POST_V1 roadmap. Advisory-only throughout: the retention overlay reorders recommendations and names fading prerequisites; it never gates, blocks, or flips learner state. Verified on the merged tree: full test suite green, v2.1 §7 functional gates exit 0 on seed, safety + doc gates green.

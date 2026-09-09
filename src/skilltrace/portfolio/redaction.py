@@ -34,12 +34,30 @@ def visible_location(record: object, *, include_paths: bool) -> str:
     """The report-visible form of one evidence record's artifact path.
 
     The single funnel for artifact-path reads: denied paths surface as
-    ``[redacted]`` instead of leaking host-local layout.
+    ``[redacted]`` instead of leaking host-local layout. A record's
+    ``gate_run`` receipt (v2.2) is path-bearing provenance, so it is
+    classified under the same *paths* dimension: denied receipts drop
+    entirely, granted receipts pass through verbatim. Hashes and the exit
+    class are not path-bearing — shareable under the profile's other rules.
     """
     location = getattr(record, "location", None)
     if include_paths:
         return str(location) if location is not None else REDACTED
     return REDACTED
+
+
+def visible_receipt(receipt: dict | None, *, include_paths: bool) -> dict | None:
+    """The report-visible form of one selected evidence item's receipt.
+
+    Takes the *receipt mapping itself* (as carried on ``SelectedEvidence``),
+    not an engine record — renderers read selection state, never engine
+    records. A denied *paths* dimension drops the whole receipt (its
+    hashes and exit class never justify leaking where a checker ran);
+    granted, the receipt passes through untouched. ``None`` stays ``None``.
+    """
+    if receipt is None:
+        return None
+    return dict(receipt) if include_paths else None
 
 
 def capture_location(record: object) -> str | None:
@@ -51,6 +69,19 @@ def capture_location(record: object) -> str | None:
     """
     location = getattr(record, "location", None)
     return str(location) if location is not None else None
+
+
+def capture_receipt(record: object) -> dict | None:
+    """Copy one record's ``gate_run`` receipt into internal selection state.
+
+    The sanctioned provenance read beside ``capture_location``: it moves the
+    receipt dict (or ``None``) into ``SelectedEvidence`` so renderers read
+    from selection state, never engine records. Outbound surfaces still
+    funnel through ``visible_receipt`` (the *paths* dimension drops the
+    receipt wholesale when denied) — capture itself never redacts.
+    """
+    receipt = getattr(record, "gate_run", None)
+    return dict(receipt) if receipt is not None else None
 
 
 def capture_note(record: object) -> str | None:
@@ -77,6 +108,11 @@ def redact_node_block(block: dict, options: SelectionOptions) -> dict:
     Each denied dimension is replaced with ``[redacted]``; each granted
     dimension passes through untouched. Artifact bytes the learner selected
     are never touched — only the surrounding report fields are redacted.
+    A record's ``gate_run`` receipt is path-bearing provenance, so it rides
+    the *paths* dimension with the location: denied it drops out of the
+    block entirely; granted it passes through verbatim (hashes and the exit
+    class are shareable under the profile's other rules only because the
+    whole receipt is present).
     """
     evidence = [
         {
@@ -87,6 +123,7 @@ def redact_node_block(block: dict, options: SelectionOptions) -> dict:
                 else REDACTED
             ),
             "note": item.get("note") if options.include_notes else REDACTED,
+            "gate_run": item.get("gate_run") if options.include_paths else None,
         }
         for item in block.get("evidence", [])
     ]
@@ -183,7 +220,12 @@ def block_to_report_dict(node: SelectedNode, options: SelectionOptions) -> dict:
         "state": node.state,
         "title": node.title,
         "evidence": [
-            {"id": e.record_id, "location": e.artifact_path, "note": e.note}
+            {
+                "id": e.record_id,
+                "location": e.artifact_path,
+                "note": e.note,
+                "gate_run": e.gate_run,
+            }
             for e in node.evidence
         ],
         "artifacts": [e.artifact_path for e in node.evidence if e.artifact_path],

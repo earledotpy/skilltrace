@@ -150,3 +150,90 @@ def test_unknown_field_fails():
 
 def test_seed_records_load_empty():
     assert load_evidence_records(REPO_ROOT) == []
+
+
+# --- Gate-run receipts (v2.2, spec §3): closed optional mapping --------------
+
+_VALID_RECEIPT = {
+    "command_argv": ["python", "evidence/math/check_set_001.py"],
+    "inputs": ["evidence/math/set_001.md"],
+    "exit_class": "passed",
+}
+
+
+def _record_with_receipt(**receipt_overrides):
+    receipt = dict(_VALID_RECEIPT)
+    receipt.update(receipt_overrides)
+    return _record_with(gate_run=receipt)
+
+
+def test_record_without_gate_run_loads_and_defaults_to_none():
+    rec = load_evidence_record(dict(_VALID_RECORD))
+    assert rec.gate_run is None
+
+
+def test_valid_receipt_loads_verbatim():
+    rec = load_evidence_record(_record_with_receipt())
+    assert rec.gate_run == dict(_VALID_RECEIPT)
+
+
+def test_receipt_optional_keys_round_trip():
+    rec = load_evidence_record(
+        _record_with_receipt(
+            exit_code=0,
+            stdout_hash="sha256:" + "a" * 64,
+            stderr_hash="sha256:" + "b" * 64,
+            tool=None,
+            version=None,
+        )
+    )
+    assert rec.gate_run["exit_code"] == 0
+    assert rec.gate_run["stdout_hash"] == "sha256:" + "a" * 64
+    assert rec.gate_run["stderr_hash"] == "sha256:" + "b" * 64
+    assert rec.gate_run["tool"] is None and rec.gate_run["version"] is None
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"command_argv": []},  # a receipt referencing nothing is not provenance
+        {"command_argv": "python check.py"},  # not a list of strings
+        {"command_argv": ["python", 7]},  # non-string element
+        {"inputs": "evidence/math/set_001.md"},  # not a list
+        {"inputs": ["evidence/math/set_001.md", 3]},  # non-string element
+        {"exit_class": "timeout"},  # only passed/failed exist
+        {"exit_class": 0},
+        {"exit_code": "zero"},  # must be an int when present
+        {"stdout_hash": "abc123"},  # hash fields must be sha256:<hex>
+        {"stderr_hash": "md5:abc123"},
+        {"tool": "pytest"},  # never populated in v2.2
+        {"version": "8.3.1"},  # never populated in v2.2
+        {"gate": "field"},  # unknown key inside the mapping
+    ],
+)
+def test_bad_receipt_field_fails(overrides):
+    with pytest.raises(EvidenceLoadError) as excinfo:
+        load_evidence_record(_record_with_receipt(**overrides))
+    assert "gate_run" in str(excinfo.value)
+
+
+def test_receipt_missing_required_field_fails():
+    for key in ("command_argv", "inputs", "exit_class"):
+        receipt = dict(_VALID_RECEIPT)
+        receipt.pop(key)
+        with pytest.raises(EvidenceLoadError) as excinfo:
+            load_evidence_record(_record_with(gate_run=receipt))
+        assert "gate_run" in str(excinfo.value)
+
+
+def test_non_mapping_receipt_fails():
+    with pytest.raises(EvidenceLoadError) as excinfo:
+        load_evidence_record(_record_with(gate_run="python check.py"))
+    assert "receipt mapping" in str(excinfo.value)
+
+
+def test_null_gate_run_key_is_not_a_receipt():
+    # `gate_run:` with a null value is the absent case, not a malformed one —
+    # it must load as no receipt, mirroring the other optional record fields.
+    rec = load_evidence_record(_record_with(gate_run=None))
+    assert rec.gate_run is None

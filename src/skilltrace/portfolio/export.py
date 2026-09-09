@@ -21,6 +21,7 @@ from .redaction import (
     block_to_report_dict,
     redaction_notices,
     redact_node_block,
+    visible_receipt,
     visible_url,
 )
 
@@ -315,7 +316,11 @@ def render_json(
             loc = item["location"]
             if loc != REDACTED and loc in link_map:
                 loc = link_map[loc]
-            evidence.append({"id": item["id"], "location": loc, "note": item["note"]})
+            receipt = visible_receipt(item.get("gate_run"), include_paths=options.include_paths)
+            entry = {"id": item["id"], "location": loc, "note": item["note"]}
+            if receipt is not None:
+                entry["gate_run"] = receipt
+            evidence.append(entry)
         artifacts = [
             link_map.get(loc, loc) if loc != REDACTED else loc
             for loc in redacted["artifacts"]

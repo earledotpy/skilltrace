@@ -14,6 +14,7 @@ from skilltrace.portfolio.redaction import (
     redact_node_block,
     redaction_notices,
     visible_location,
+    visible_receipt,
     visible_url,
 )
 from skilltrace.portfolio.models import SelectedEvidence, SelectedNode
@@ -114,6 +115,52 @@ def test_visible_location_funnel():
     assert visible_url("https://example.com", include_urls=True) == (
         "https://example.com"
     )
+
+
+# --- Gate-run receipts under the paths dimension (v2.2, spec §3) ------------
+
+
+class _ReceiptRecord:
+    """Minimal *selected-evidence* double carrying a receipt mapping."""
+
+    def __init__(self, receipt):
+        self.gate_run = receipt
+
+
+def _visible(receipt, *, include_paths: bool) -> dict | None:
+    """Read the funnel the way renderers do: from selection-state mapping."""
+    from skilltrace.portfolio.redaction import capture_receipt
+
+    return visible_receipt(
+        capture_receipt(_ReceiptRecord(receipt)), include_paths=include_paths
+    )
+
+
+def test_receipt_without_paths_grant_drops_entirely():
+    assert _visible({"command_argv": ["python", "evidence/math/check.py"]}, include_paths=False) is None
+
+
+def test_receipt_with_paths_grant_passes_through_verbatim():
+    receipt = {
+        "command_argv": ["python", "evidence/math/check.py"],
+        "inputs": ["evidence/math/set_001.md"],
+        "exit_class": "passed",
+    }
+    assert _visible(receipt, include_paths=True) == receipt
+
+
+def test_record_without_receipt_is_none_in_both_dimensions():
+    assert _visible(None, include_paths=False) is None
+    assert _visible(None, include_paths=True) is None
+
+
+def test_capture_receipt_never_redacts_and_copies():
+    from skilltrace.portfolio.redaction import capture_receipt
+
+    receipt = {"command_argv": ["python", "check.py"], "exit_class": "passed"}
+    captured = capture_receipt(_ReceiptRecord(receipt))
+    assert captured == receipt and captured is not receipt
+    assert capture_receipt(_ReceiptRecord(None)) is None
     assert visible_url(None, include_urls=True) is None
 
 
@@ -136,6 +183,28 @@ def test_block_to_report_dict_maps_selected_node():
     )
     raw = block_to_report_dict(node, SelectionOptions())
     assert raw["evidence"] == [
-        {"id": "ev.001", "location": "evidence/a.md", "note": "n"}
+        {"id": "ev.001", "location": "evidence/a.md", "note": "n", "gate_run": None}
     ]
     assert raw["artifacts"] == ["evidence/a.md"]
+
+
+def test_block_to_report_dict_carries_captured_receipt():
+    node = SelectedNode(
+        node_id="portfolio.project.slope_calculator_01",
+        title="Slope calculator",
+        track="portfolio",
+        state="passed",
+        evidence=[
+            SelectedEvidence(
+                record_id="ev.001",
+                spec_id="spec.1",
+                accepted=True,
+                superseded=False,
+                artifact_path="evidence/a.md",
+                note="n",
+                gate_run={"command_argv": ["python", "check.py"]},
+            )
+        ],
+    )
+    raw = block_to_report_dict(node, SelectionOptions())
+    assert raw["evidence"][0]["gate_run"] == {"command_argv": ["python", "check.py"]}

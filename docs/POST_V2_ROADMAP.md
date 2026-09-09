@@ -51,6 +51,16 @@ verification note.
   (full suite green; v2.1 §7 functional gates exit 0 on seed, safety
   + doc gates green); spec:
   [`docs/spec-v2.1-adaptive-sequencing.md`](./spec-v2.1-adaptive-sequencing.md).
+- **v2.2.0** — Provenance & graph-impact diagnostics (R-Provenance
+  [#194](https://github.com/earledotpy/skilltrace/issues/194)):
+  gate-run receipts on objective-gate evidence records (exact argv, input
+  paths, exit class, optional exit code + output hashes), and the
+  read-only `graph impact` advisory comparing the working tree against a
+  git-ref baseline (flips, asserted-standing, recommendation diffs, dangling
+  references, no-op edges); verified on the merged tree (full suite green,
+  v2.2 §7 functional gates exit 0 on seed, safety + doc gates green);
+  spec:
+  [`docs/spec-v2.2-provenance-impact.md`](./spec-v2.2-provenance-impact.md).
 
 ## Version slots
 

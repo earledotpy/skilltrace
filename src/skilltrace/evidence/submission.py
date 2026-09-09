@@ -28,18 +28,40 @@ so a refused submit never executes a side-effecting command.
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from .eligibility import live_accepted_count as _live_accepted_count
 from .evidence import EvidenceRecord, ArtifactSpec
 from .ids import allocate_evidence_id
 
-# The gate runner returns the objective command's exit code, or raises
-# `GateUnrunnable` when the command could not be spawned at all. Kept as a seam
-# so the pure planner needs no subprocess: the command binds the real adapter,
-# tests inject a fake that returns a code or raises.
-GateRunner = Callable[[str], int]
+# The gate runner returns one run result: the verdict (exit code) plus both
+# captured output streams for the receipt — or raises `GateUnrunnable` when
+# the command could not be spawned at all. Kept as a seam so the pure planner
+# needs no subprocess: the command binds the real adapter, tests inject a
+# fake that returns a result (or a bare ``(exit_code, stdout, stderr)`` tuple,
+# which the planner accepts for brevity) or raises.
+GateRunner = Callable[[str], "GateRunResult"]
+
+
+@dataclass
+class GateRunResult:
+    """One objective-gate run: the verdict plus both captured output streams.
+
+    The streams are decoded text (the handler decodes subprocess bytes with
+    ``errors="replace"``); the planner hashes them into the receipt and never
+    freezes raw output. Defined here — not in a runner module — so the seam
+    (``GateRunner``) and its value travel together, mirroring how
+    ``SubmitOutcome`` lives beside ``plan_submit``. A plain
+    ``(exit_code, stdout, stderr)`` tuple unpacks identically and is accepted
+    anywhere a ``GateRunResult`` is.
+    """
+
+    exit_code: int
+    stdout: str = ""
+    stderr: str = ""
 
 # The hasher maps a record's `location` to the `sha256:<hex>` frozen into the
 # record. The command binds `hash the file bytes, else hash the location string`
@@ -77,9 +99,9 @@ class SubmitOutcome:
     `record` is the mapping to append to `evidence_records.yaml`, or `None` when
     nothing is written (a refusal or an unrunnable gate). `records_touched` feeds
     the audit event and is non-empty only when a record is written. `messages`
-    are informational lines (the loud gate command + exit code, the verdict);
-    `warnings` are advisory (locked node, eligibility drop); `errors` are refusal
-    or failure reasons.
+    are informational lines (the loud gate command + exit code, the verdict, the
+    receipt inputs); `warnings` are advisory (locked node, eligibility drop);
+    `errors` are refusal or failure reasons.
     """
 
     record: dict | None = None
@@ -142,12 +164,23 @@ def plan_submit(
     run_gate: GateRunner,
     hasher: ArtifactHasher,
     now: str,
+    root: Path | str | None = None,
+    exists: Callable[[Path], bool] | None = None,
 ) -> SubmitOutcome:
     """Decide one submission. Pure: no disk, no subprocess (both injected).
 
     Order matters: every refusable condition (spec resolution, gate presence,
     flag legality, supersede rules) is checked *before* the objective gate
     command runs, so a refused submit never executes a side-effecting command.
+
+    An objective judgment freezes a bounded `gate_run` receipt onto the
+    record (v2.2, spec §1): the executed argv, root-relative inputs, exit
+    class/code, and output hashes. The run result the gate runner returns is
+    the receipt's provenance source — the verdict still reads only the exit
+    code, so a receipt never changes judgment. `root`/`exists` locate the
+    input files the receipt names; they default to a no-file view (the
+    artifact alone is an input) so callers without a repo root — and the
+    pre-v2.2 fakes that pass none — keep working.
     """
     # --- Resolve the artifact spec -----------------------------------------
     spec = _resolve_spec(node_id, specs_for_node, spec_id)
@@ -183,7 +216,7 @@ def plan_submit(
         assert gate.command is not None  # objective gates always carry a command
         messages.append(f"gate command: {gate.command}")
         try:
-            code = run_gate(gate.command)
+            run = run_gate(gate.command)
         except GateUnrunnable as exc:
             return SubmitOutcome(
                 messages=messages,
@@ -193,9 +226,13 @@ def plan_submit(
                 ],
                 exit_code=_EXIT_GATE_UNRUNNABLE,
             )
-        messages.append(f"gate exit code: {code}")
-        accepted = code == 0
+        exit_code, stdout, stderr = _unpack_run(run)
+        messages.append(f"gate exit code: {exit_code}")
+        if stdout:
+            messages.append(f"gate stdout: {stdout.rstrip()}")
+        accepted = exit_code == 0
         accepted_by = "objective_gate"
+
     messages.append(f"verdict: {'ACCEPTED' if accepted else 'REJECTED'}")
 
     # --- Build the record ---------------------------------------------------
@@ -210,6 +247,13 @@ def plan_submit(
     record["accepted"] = accepted
     record["accepted_by"] = accepted_by
     record["artifact_hash"] = hasher(location)
+    if gate.authority == "objective":
+        # The verdict is settled above from the exit code alone; the receipt
+        # only records *how* the gate ran — provenance, never an authority.
+        record["gate_run"] = _build_gate_run(
+            gate.command, location, exit_code, stdout, stderr, root, exists
+        )
+        messages.append(f"gate inputs: {', '.join(record['gate_run']['inputs'])}")
     if supersedes is not None:
         record["supersedes"] = supersedes
         record["supersede_reason"] = supersede_reason
@@ -232,6 +276,100 @@ def plan_submit(
         warnings=warnings,
         exit_code=_EXIT_OK,
     )
+
+
+# The two — and only two — exit classes (spec §1, D-Exit). Zero ran and
+# passed; anything else ran and failed. Inability to run is not a class.
+_PASSED = "passed"
+_FAILED = "failed"
+
+_HASH_PREFIX = "sha256:"
+
+
+def _unpack_run(run: GateRunResult | tuple[int, str, str]) -> tuple[int, str, str]:
+    """Unpack a gate-run value into `(exit_code, stdout, stderr)`.
+
+    Accepts the `GateRunResult` seam value or a bare 3-tuple (the spec's TDD
+    shorthand); anything else is a contract violation, not a verdict.
+    """
+    if isinstance(run, GateRunResult):
+        return run.exit_code, run.stdout, run.stderr
+    if (
+        isinstance(run, tuple)
+        and len(run) == 3
+        and isinstance(run[0], int)
+        and isinstance(run[1], str)
+        and isinstance(run[2], str)
+    ):
+        return run[0], run[1], run[2]
+    raise TypeError(
+        "gate runner must return GateRunResult or (exit_code, stdout, stderr); "
+        f"got {run!r}."
+    )
+
+
+def _hash_stream(text: str) -> str:
+    """Hash one captured stream (`sha256:<hex>` over its UTF-8 bytes)."""
+    return _HASH_PREFIX + hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _build_gate_run(
+    command: str,
+    location: str,
+    exit_code: int,
+    stdout: str,
+    stderr: str,
+    root: Path | str | None,
+    exists: Callable[[Path], bool] | None,
+) -> dict:
+    """Freeze the bounded `gate_run` receipt for one objective judgment.
+
+    `command_argv` is the exact executed argv (`shlex.split`, no cwd
+    override, no substitution — the unchanged curriculum-authoring
+    contract); `inputs` is the submitted artifact first, then every argv
+    token that resolves to an existing file under the repo root,
+    deduplicated, root-relative, forward slashes (D-Normalize). Each
+    non-empty captured stream contributes its hash — raw output never
+    crosses the boundary. `tool`/`version` stay absent in v2.2: their
+    schema keys exist, but populating them means probing subprocesses,
+    which belongs to the future gate-runner (D-Normalize). Without a root
+    (or an `exists` probe) no token can resolve in-repo, so the receipt
+    carries the artifact alone.
+    """
+    import shlex
+    from pathlib import Path as _Path
+
+    argv = shlex.split(command)
+    inputs = [location]
+    if root is not None and exists is not None:
+        root_path = _Path(root)
+        for token in argv:
+            candidate = root_path / token
+            try:
+                is_file = exists(candidate)
+            except OSError:
+                continue
+            if not is_file:
+                continue
+            try:
+                rel = candidate.resolve().relative_to(root_path.resolve())
+            except ValueError:
+                continue  # outside the repo — not an input (D-Normalize)
+            rel_posix = rel.as_posix()
+            if rel_posix not in inputs:
+                inputs.append(rel_posix)
+    inputs[1:] = sorted(inputs[1:])
+    receipt: dict = {
+        "command_argv": argv,
+        "inputs": inputs,
+        "exit_class": _PASSED if exit_code == 0 else _FAILED,
+        "exit_code": exit_code,
+    }
+    if stdout:
+        receipt["stdout_hash"] = _hash_stream(stdout)
+    if stderr:
+        receipt["stderr_hash"] = _hash_stream(stderr)
+    return receipt
 
 
 def _resolve_spec(

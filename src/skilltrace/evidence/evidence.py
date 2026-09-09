@@ -68,6 +68,31 @@ ACCEPTED_BY_VALUES: frozenset[str] = frozenset({"objective_gate", "learner_manua
 # The two — and only two — outcomes. No scores, no third "partial".
 OUTCOMES: frozenset[str] = frozenset({"passed", "failed"})
 
+# v2.2 gate-run receipts: the optional provenance mapping an objective-gate
+# record may carry. The key set is closed inside the closed record schema —
+# unknown keys inside `gate_run` fail exactly like unknown record keys. Hash
+# fields must be `sha256:` over the captured stream (raw output is never
+# stored); `tool`/`version` are schema placeholders that stay unpopulated in
+# v2.2 (populating them means probing subprocesses — the future gate-runner).
+GATE_RUN_KEY = "gate_run"
+GATE_RUN_ALLOWED: frozenset[str] = frozenset(
+    {
+        "command_argv",
+        "inputs",
+        "exit_class",
+        "exit_code",
+        "stdout_hash",
+        "stderr_hash",
+        "tool",
+        "version",
+    }
+)
+GATE_RUN_REQUIRED: tuple[str, ...] = ("command_argv", "inputs", "exit_class")
+# The two — and only two — exit classes. Inability to run is not an exit class:
+# a gate that cannot be spawned produces no record at all.
+EXIT_CLASSES: frozenset[str] = frozenset({"passed", "failed"})
+_HASH_PREFIX = "sha256:"
+
 SPEC_SCHEMA = EvidenceSchema(
     kind="artifact spec",
     relpath=Path("evidence") / "artifact_specs.yaml",
@@ -130,6 +155,7 @@ RECORD_SCHEMA = EvidenceSchema(
             "accepted",
             "accepted_by",
             "artifact_hash",
+            GATE_RUN_KEY,
             "supersedes",
             "supersede_reason",
             "created_at",
@@ -223,6 +249,7 @@ class EvidenceRecord:
     note: str | None = None
     supersedes: str | None = None
     supersede_reason: str | None = None
+    gate_run: dict | None = None
     created_at: Any = None
     source_path: Path | None = None
 
@@ -436,6 +463,8 @@ def load_evidence_record(
             "ev.<node_id>.NNN."
         )
 
+    gate_run = _check_gate_run(data, ident, where)
+
     return EvidenceRecord(
         id=record_id,
         artifact_spec_id=data["artifact_spec_id"],
@@ -446,9 +475,100 @@ def load_evidence_record(
         note=data.get("note"),
         supersedes=supersedes,
         supersede_reason=supersede_reason,
+        gate_run=gate_run,
         created_at=data.get("created_at"),
         source_path=source_path,
     )
+
+
+def _check_gate_run(data: dict, ident: str, where: str) -> dict | None:
+    """Validate the optional `gate_run` receipt mapping (v2.2 spec §1/§3).
+
+    Present on the record (even as null) it must be a mapping carrying exactly
+    `command_argv`/`inputs`/`exit_class`, with `exit_class` one of the two
+    values, `exit_code` an int when present, both hash fields `sha256:<hex>`
+    when present, and no key outside the closed receipt set. A *missing*
+    `gate_run` is valid — pre-v2.2 and manual records carry none.
+    """
+    if GATE_RUN_KEY not in data:
+        return None
+    raw = data[GATE_RUN_KEY]
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise EvidenceLoadError(
+            f"{where}{ident} has non-mapping {GATE_RUN_KEY} {raw!r} — expected a "
+            "gate-run receipt mapping."
+        )
+    unknown = sorted(set(raw) - GATE_RUN_ALLOWED)
+    if unknown:
+        raise EvidenceLoadError(
+            f"{where}{ident} has unknown {GATE_RUN_KEY} field(s): "
+            f"{', '.join(unknown)}."
+        )
+    missing = [key for key in GATE_RUN_REQUIRED if raw.get(key) is None]
+    if missing:
+        raise EvidenceLoadError(
+            f"{where}{ident} has {GATE_RUN_KEY} missing required field(s): "
+            f"{', '.join(missing)}."
+        )
+    for key in ("command_argv", "inputs"):
+        value = raw[key]
+        if not isinstance(value, list) or not all(
+            isinstance(item, str) for item in value
+        ):
+            raise EvidenceLoadError(
+                f"{where}{ident} has non-string-list {GATE_RUN_KEY}.{key} "
+                f"{value!r}."
+            )
+    # A receipt referencing nothing is not provenance (spec §3): an empty
+    # command_argv fails (spec §1's verb-first seed contract means empty argv
+    # is never a legitimate receipt); an empty inputs list is legitimate
+    # (out-of-repo / URL artifacts).
+    if not raw["command_argv"]:
+        raise EvidenceLoadError(
+            f"{where}{ident} has empty {GATE_RUN_KEY}.command_argv — a receipt "
+            "referencing nothing is not provenance."
+        )
+    exit_class = raw["exit_class"]
+    if exit_class not in EXIT_CLASSES:
+        raise EvidenceLoadError(
+            f"{where}{ident} has unknown {GATE_RUN_KEY}.exit_class "
+            f"{exit_class!r} — expected one of {', '.join(sorted(EXIT_CLASSES))}."
+        )
+    exit_code = raw.get("exit_code")
+    if exit_code is not None and (
+        not isinstance(exit_code, int) or isinstance(exit_code, bool)
+    ):
+        raise EvidenceLoadError(
+            f"{where}{ident} has non-integer {GATE_RUN_KEY}.exit_code "
+            f"{exit_code!r}."
+        )
+    # tool/version are v2.2 schema placeholders — the planner never writes
+    # them (populating them means probing subprocesses, the future
+    # gate-runner's job), so a non-null value is a malformed receipt, not
+    # provenance (spec §1, D-Normalize).
+    for key in ("tool", "version"):
+        if raw.get(key) is not None:
+            raise EvidenceLoadError(
+                f"{where}{ident} has populated {GATE_RUN_KEY}.{key} "
+                f"{raw[key]!r} — tool/version stay unpopulated in v2.2."
+            )
+    for key in ("stdout_hash", "stderr_hash"):
+        value = raw.get(key)
+        if value is None:
+            continue
+        if (
+            not isinstance(value, str)
+            or not value.startswith(_HASH_PREFIX)
+            or len(value) <= len(_HASH_PREFIX)
+            or any(c not in "0123456789abcdef" for c in value[len(_HASH_PREFIX):])
+        ):
+            raise EvidenceLoadError(
+                f"{where}{ident} has malformed {GATE_RUN_KEY}.{key} {value!r} — "
+                f"expected sha256:<hex> over the captured stream."
+            )
+    return dict(raw)
 
 
 def load_assessment_attempt(

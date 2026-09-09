@@ -69,6 +69,40 @@ values only; it never defines engine behavior.
 month of an external roadmap. Anchors never control locking, readiness, or
 recommendation.
 
+## Provenance & diagnostics (v2.2)
+
+**Gate-run receipt** — a machine-readable record attached to an evidence
+record for an objective gate, capturing how that gate's verifier was actually
+invoked: the exact command line, the input files it ran against (as
+repository-relative paths), the serialized exit class, and optional exit code
+and output hashes. Receipts are metadata on the evidence record for an
+objective gate; they do not change what counts as evidence and they never
+touch eligibility. A gate record that the engine could not run (e.g., an
+unrunnable gate) carries no receipt. A manual gate never carries a receipt.
+Receipts are immutable once written, like evidence records.
+
+**Exit class** — the two-way categorization `passed` or `failed` that every
+runnable gate produces. It is the only machine-readable verdict a gate emits;
+any richer detail stays in the evidence record proper (attempt, artifacts,
+reviews). Exit class is the value captured in a gate-run receipt's exit-class
+field, and the only exit-class values a receipt may record.
+
+**Graph-impact diagnostic** — a read-only advisory command that compares the
+working tree's curriculum against a baseline (by default, the last committed
+state under git) and reports what the edit would change: readiness flips on
+non-asserted nodes, asserted nodes whose progress would stand against a
+baseline-edge edit, recommendation-list changes, evidence dangling across a
+deleted node, and edges whose removal would change nothing. It computes, never
+blocks: it exits 0 when it can compute, and 1 only when the baseline cannot be
+loaded. It is advisory, not a gate and not an acceptance authority.
+
+**No-op edge** — an active hard-prerequisite edge whose counterfactual removal
+would change nothing in the current state: the target is already asserted, so
+readiness for non-asserted nodes is unaffected, and the recommendation list
+under the same store and weights is unaffected. Reporting no-op edges is part
+of the graph-impact diagnostic; an edge being no-op is a property of the
+current state, not a permanent label.
+
 ## Edges & policy
 
 **GraphEdge** — a typed, directed relationship between two nodes (source

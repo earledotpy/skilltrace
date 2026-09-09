@@ -11,6 +11,8 @@ clean through `validate evidence`.
 
 from __future__ import annotations
 
+import hashlib
+import os
 import shutil
 from pathlib import Path
 
@@ -18,6 +20,7 @@ import yaml
 
 from skilltrace import cli
 from skilltrace.evidence.evidence import load_evidence_records
+from skilltrace.evidence.validation import load_and_validate_evidence
 from skilltrace.events import load_events
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -38,12 +41,32 @@ def _make_artifact(root: Path, relpath: str = "evidence/math/set_001.md") -> str
     return relpath
 
 
+def _run_cli(args: list[str], root: Path) -> int:
+    """Run the CLI with the repo root as the gate command's cwd.
+
+    Objective gates resolve their argv against the process cwd (the engine
+    passes no cwd override — the unchanged curriculum-authoring contract), so
+    the test temporarily chdirs into the seeded repo: a root-relative gate
+    command like `python evidence/math/check.py` then resolves exactly as it
+    does for a learner running `skilltrace` from their repo root.
+    """
+    previous = os.getcwd()
+    os.chdir(root)
+    try:
+        return cli.run(args, root=root)
+    finally:
+        os.chdir(previous)
+
+
 def _set_objective_gate(root: Path, node_id: str, command: str) -> None:
     """Turn `node_id`'s gate into an objective gate running `command`.
 
     The seed ships only manual gates; a test needing the objective path rewrites
     one node's single gate in place (not a second gate, which would be a
-    validate-evidence error).
+    validate-evidence error). `command` runs with the repo root as its cwd —
+    the submit handler inherits the caller's cwd, so tests pass a
+    root-relative script (never a bare `python checker.py` that would resolve
+    against the wrong directory).
     """
     path = root / "evidence" / "validation_gates.yaml"
     doc = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -225,4 +248,81 @@ def test_submit_alias_behaves_like_evidence_submit_and_audits_canonical(tmp_path
     assert len(events) == 1
     # Audited under the canonical command name regardless of the form typed.
     assert events[0]["command"] == "evidence submit"
-    assert events[0]["records_touched"] == [records[0].id]
+
+# --- Gate-run receipts on the wired path (v2.2, spec §1/§5) ------------------
+
+
+def _expected_hash(text: str) -> str:
+    return "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def test_objective_receipt_frozen_onto_appended_record(tmp_path):
+    root = _seed_repo(tmp_path)
+    loc = _make_artifact(root)
+    _set_objective_gate(root, NODE, "python evidence/math/check_set_001.py")
+    (root / "evidence" / "math" / "check_set_001.py").write_text(
+        "print('checker stdout')\n", encoding="utf-8"
+    )
+    rc = _run_cli(["evidence", "submit", NODE, "--location", loc], root=root)
+    assert rc == 0
+
+    records = load_evidence_records(root)
+    assert len(records) == 1
+    receipt = records[0].gate_run
+    assert receipt is not None
+    assert receipt["command_argv"] == ["python", "evidence/math/check_set_001.py"]
+    assert receipt["exit_class"] == "passed"
+    assert receipt["exit_code"] == 0
+    # Inputs: the submitted artifact plus every argv token resolving to an
+    # existing file under the repo root (the checker script itself here).
+    assert receipt["inputs"] == [
+        "evidence/math/set_001.md",
+        "evidence/math/check_set_001.py",
+    ]
+    # Output is hashed, never stored.
+    assert receipt["stdout_hash"] == _expected_hash("checker stdout\n")
+    assert "stderr_hash" not in receipt
+    # v2.2 never populates tool/version.
+    assert "tool" not in receipt and "version" not in receipt
+    assert "checker stdout" not in str(receipt)
+
+
+def test_manual_submit_never_carries_a_receipt(tmp_path):
+    root = _seed_repo(tmp_path)
+    loc = _make_artifact(root)
+    rc = cli.run(["evidence", "submit", NODE, "--location", loc, "--accept"], root=root)
+    assert rc == 0
+    records = load_evidence_records(root)
+    assert len(records) == 1
+    assert records[0].gate_run is None
+
+
+def test_failing_gate_receipt_exit_class_failed(tmp_path):
+    root = _seed_repo(tmp_path)
+    loc = _make_artifact(root)
+    _set_objective_gate(root, NODE, "python evidence/math/check_set_001.py")
+    (root / "evidence" / "math" / "check_set_001.py").write_text(
+        "import sys\nprint('bad')\nsys.exit(1)\n", encoding="utf-8"
+    )
+    rc = _run_cli(["evidence", "submit", NODE, "--location", loc], root=root)
+    # A failing gate is a rejection verdict: record + receipt still written.
+    assert rc == 0
+    records = load_evidence_records(root)
+    assert len(records) == 1 and records[0].accepted is False
+    receipt = records[0].gate_run
+    assert receipt["exit_class"] == "failed"
+    assert receipt["exit_code"] == 1
+    assert receipt["stdout_hash"] == _expected_hash("bad\n")
+    assert "stderr_hash" not in receipt
+
+
+def test_appended_record_with_receipt_revalidates_clean(tmp_path):
+    root = _seed_repo(tmp_path)
+    loc = _make_artifact(root)
+    _set_objective_gate(root, NODE, "python evidence/math/check_set_001.py")
+    (root / "evidence" / "math" / "check_set_001.py").write_text(
+        "print('ok')\n", encoding="utf-8"
+    )
+    rc = _run_cli(["evidence", "submit", NODE, "--location", loc], root=root)
+    assert rc == 0
+    assert load_and_validate_evidence(root).ok

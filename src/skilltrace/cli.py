@@ -743,6 +743,39 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional single node id to show retention state for.",
     )
+    # graph <command> — v2.2 read-only curriculum-edit advisory. The `impact`
+    # subcommand compares the working tree against a git-ref (or path) baseline;
+    # it is READ_ONLY and appends no audit event.
+    graph_parser = subcommands.add_parser(
+        "graph", help="Graph diagnostics (impact)."
+    )
+    graph_commands = graph_parser.add_subparsers(
+        dest="_graph_cmd", metavar="<command>"
+    )
+    graph_commands.required = True
+    impact_parser = graph_commands.add_parser(
+        "impact",
+        help="Advisory: what a curriculum edit would change (flips, rec diffs, dangling refs, no-op edges).",
+    )
+    impact_parser.add_argument(
+        "--from",
+        dest="from_ref",
+        default="HEAD",
+        help="Git ref to use as the baseline (default: HEAD).",
+    )
+    impact_parser.add_argument(
+        "--baseline",
+        default=None,
+        metavar="PATH",
+        help="Path to a second checkout to use as the baseline instead of a git ref.",
+    )
+    impact_parser.add_argument(
+        "--minutes",
+        type=int,
+        default=60,
+        help="Minutes available this session, used by the recommendation diff (default: 60).",
+    )
+    impact_parser.set_defaults(_command_name="graph impact")
     retention_status_parser.set_defaults(_command_name="retention status")
 
     # portfolio <preview|export> — v2.0 portfolio builder (map #174).

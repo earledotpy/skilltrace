@@ -21,6 +21,7 @@ from . import (
     eligibility,
     export,
     health,
+    impact,
     listings,
     master,
     node_detail,
@@ -79,6 +80,7 @@ def register_all(registry: Registry) -> Registry:
     export.register(registry)
     backup.register(registry)
     retention.register(registry)
+    impact.register(registry)
     analytics.register(registry)
     portfolio.register(registry)
     # Tier 1 local web UI (ADR 0006): READ_ONLY — serve appends no event; the
