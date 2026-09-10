@@ -509,10 +509,9 @@ def _add_analytics_shared_arguments(p: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `analytics` parser (issue #206, expand–contract).
+    """Attach the `analytics` parser (issue #207 contract).
 
-    Co-located owner of the `analytics` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `analytics` block.
+    Co-located owner of the `analytics` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     analytics_parser = subparsers.add_parser(
         "analytics", help="Event-log analytics (velocity, blockers, reviews, evidence)."

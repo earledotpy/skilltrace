@@ -215,11 +215,9 @@ def _add_session_close_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `start`/`work`/`session close` parsers plus the `close` alias (issue #204).
+    """Attach the `start`/`work`/`session close` parsers plus the `close` alias (issue #207 contract).
 
-    Co-located owner of the session argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `start`/`work`/`session`/`close`
-    blocks.
+    Co-located owner of the session argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     start_parser = subparsers.add_parser(
         "start",

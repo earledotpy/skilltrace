@@ -221,10 +221,9 @@ def _add_portfolio_shared_arguments(p: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `portfolio` parser (issue #206, expand–contract).
+    """Attach the `portfolio` parser (issue #207 contract).
 
-    Co-located owner of the `portfolio` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `portfolio` block.
+    Co-located owner of the `portfolio` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     portfolio_parser = subparsers.add_parser(
         "portfolio", help="Portfolio builder (preview, export)."

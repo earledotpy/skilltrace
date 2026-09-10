@@ -122,10 +122,9 @@ def register(registry: Registry) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `attempt record` parser (issue #204).
+    """Attach the `attempt record` parser (issue #207 contract).
 
-    Co-located owner of the `attempt record` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `attempt` block.
+    Co-located owner of the `attempt record` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     attempt_parser = subparsers.add_parser(
         "attempt", help="Assessment-attempt commands (record)."

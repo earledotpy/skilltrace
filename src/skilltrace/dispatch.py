@@ -77,9 +77,6 @@ Handler = Callable[[Context], CommandResult]
 # Builder a co-located command module supplies to own its argparse surface.
 # It receives the top-level ``subparsers`` action and attaches its own
 # parser(s), setting ``_command_name`` defaults matching the registry key(s).
-# ``None`` means the command is still built by the legacy mega-parser in
-# ``cli.build_parser`` (expand–contract: old path stays valid while commands
-# migrate one batch at a time).
 AddParserFn = Callable[[argparse._SubParsersAction], None]
 
 
@@ -94,10 +91,14 @@ class Command:
     # Optional automation-boundary label checked before dispatch. None means the
     # command is a plain learner action with no boundary gate.
     automation_action: str | None = None
-    # Optional co-located argparse builder (issue #204). When set, `cli`
-    # calls it to build this command's parser; otherwise the legacy
-    # mega-parser builds it. Dispatch Kind and audit behaviour are unchanged
-    # either way.
+    # Co-located argparse builder owning this command's CLI surface (issue
+    # #207 contract: the sole source of flags and help text). ``cli`` calls
+    # it to build this command's parser and refuses a command without one.
+    # Dispatch Kind and audit behaviour are unchanged either way. ``None``
+    # exists only for dispatch-level unit tests that never build a parser;
+    # every command registered for the real CLI sets a builder, keeping the
+    # command definition site the Python metadata site (ADR 0007) that
+    # future web Cards can derive from. No YAML command registry.
     add_parser: AddParserFn | None = None
 
 

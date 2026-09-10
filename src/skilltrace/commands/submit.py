@@ -257,10 +257,9 @@ def _add_evidence_submit_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `evidence submit` parser plus the `submit` alias (issue #204).
+    """Attach the `evidence submit` parser plus the `submit` alias (issue #207 contract).
 
-    Co-located owner of the `evidence submit` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `evidence`/`submit` blocks.
+    Co-located owner of the `evidence submit` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     evidence_parser = subparsers.add_parser(
         "evidence", help="Evidence-trail commands (submit)."

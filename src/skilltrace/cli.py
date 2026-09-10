@@ -37,8 +37,9 @@ def build_parser() -> argparse.ArgumentParser:
     Command names are attached as `_command_name` defaults matching the registry
     keys, so `run` can look the command up without re-deriving it from argparse
     internals. Every registered command owns its argparse surface via a
-    co-located `add_parser` builder in its command module (issue #206); this
-    function only orchestrates those builders. Shared builders (one module
+    co-located `add_parser` builder in its command module (issue #207
+    contract: the builders are the sole source of CLI flags); this function
+    only orchestrates those builders. Shared builders (one module
     registering several commands, e.g. `validate`) run once.
     """
     parser = argparse.ArgumentParser(
@@ -56,13 +57,17 @@ def build_parser() -> argparse.ArgumentParser:
     subcommands = parser.add_subparsers(dest="_command", metavar="<command>")
     subcommands.required = True
 
-    # Co-located path (issues #204/#206): each command module owns its flags
-    # and help text beside its handler registration.
+    # Co-located builders (issue #207 contract): each command module owns its
+    # flags and help text beside its handler registration. A command without
+    # a builder would be unreachable from the CLI, so fail loudly instead of
+    # skipping it silently.
     seen: set[int] = set()
     for command in REGISTRY.all():
         builder = command.add_parser
-        if builder is None:  # pragma: no cover - every command migrated (#206)
-            continue
+        if builder is None:
+            raise ValueError(
+                f"Command {command.name!r} has no co-located add_parser builder."
+            )
         if id(builder) in seen:
             continue
         seen.add(id(builder))

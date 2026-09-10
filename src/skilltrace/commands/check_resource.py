@@ -88,10 +88,9 @@ def register(registry: Registry) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `check-resource` parser to the top-level `subparsers` (issue #204).
+    """Attach the `check-resource` parser to the top-level `subparsers` (issue #207 contract).
 
-    Co-located owner of the `check-resource` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `check-resource` block.
+    Co-located owner of the `check-resource` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     check_resource_parser = subparsers.add_parser(
         "check-resource",

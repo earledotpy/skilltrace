@@ -375,10 +375,9 @@ def register(registry: Registry) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `next` parser to the top-level `subparsers` (issue #204).
+    """Attach the `next` parser to the top-level `subparsers` (issue #207 contract).
 
-    Co-located owner of the `next` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `next` block.
+    Co-located owner of the `next` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     next_parser = subparsers.add_parser(
         "next", help="Recommend prerequisite-safe nodes sized to available minutes."

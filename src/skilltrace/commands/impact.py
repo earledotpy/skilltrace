@@ -80,12 +80,12 @@ def register(registry: Registry) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `graph impact` parser (issue #204, expand–contract).
+    """Attach the `graph impact` parser (issue #207 contract).
 
-    Co-located owner of the `graph impact` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `graph` block. The
-    builder creates the `graph` parent itself (it runs before the legacy
-    blocks), so a second migration under `graph` must reuse it.
+    Co-located owner of the `graph impact` argparse surface (issue #207
+    contract: sole source of CLI flags and help text). The builder creates
+    the `graph` parent itself, so any other command under `graph` must reuse
+    it.
     """
     graph_parser = subparsers.add_parser(
         "graph", help="Graph diagnostics (impact)."

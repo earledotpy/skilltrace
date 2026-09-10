@@ -141,10 +141,9 @@ def register(registry: Registry) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `review schedule`/`complete`/`cancel` parsers (issue #204).
+    """Attach the `review schedule`/`complete`/`cancel` parsers (issue #207 contract).
 
-    Co-located owner of the `review` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `review` block.
+    Co-located owner of the `review` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     review_parser = subparsers.add_parser(
         "review", help="Review commands (schedule, complete, cancel)."

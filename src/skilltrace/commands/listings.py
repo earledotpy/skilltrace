@@ -76,10 +76,9 @@ def register(registry: Registry) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `blockers`/`reviews` listing parsers (issue #204).
+    """Attach the `blockers`/`reviews` listing parsers (issue #207 contract).
 
-    Co-located owner of the listings argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `blockers`/`reviews` blocks.
+    Co-located owner of the listings argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     blockers_parser = subparsers.add_parser("blockers", help="List open blockers.")
     blockers_parser.set_defaults(_command_name="blockers")

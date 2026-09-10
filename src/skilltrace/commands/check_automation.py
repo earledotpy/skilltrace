@@ -35,11 +35,9 @@ def register(registry: Registry) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `check-automation` parser (issue #206, expand–contract).
+    """Attach the `check-automation` parser (issue #207 contract).
 
-    Co-located owner of the `check-automation` argparse surface;
-    `cli.build_parser` calls this for the new path and skips its legacy
-    `check-automation` block.
+    Co-located owner of the `check-automation` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     check_parser = subparsers.add_parser(
         "check-automation",

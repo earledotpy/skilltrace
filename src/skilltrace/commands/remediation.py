@@ -97,10 +97,9 @@ def register(registry: Registry) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `remediation create`/`remediation complete` parsers (issue #204).
+    """Attach the `remediation create`/`remediation complete` parsers (issue #207 contract).
 
-    Co-located owner of the `remediation` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `remediation` block.
+    Co-located owner of the `remediation` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     remediation_parser = subparsers.add_parser(
         "remediation", help="Remediation-action commands (create, complete)."

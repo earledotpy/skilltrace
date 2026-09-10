@@ -103,10 +103,9 @@ def register(registry: Registry) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `export` parser (issue #206, expand–contract).
+    """Attach the `export` parser (issue #207 contract).
 
-    Co-located owner of the `export` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `export` block.
+    Co-located owner of the `export` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     export_parser = subparsers.add_parser(
         "export", help="Export a disposable data snapshot (markdown, sqlite, html)."

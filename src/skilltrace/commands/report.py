@@ -507,10 +507,9 @@ def register(registry: Registry) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `report` parsers to the top-level `subparsers` (issue #204).
+    """Attach the `report` parsers to the top-level `subparsers` (issue #207 contract).
 
-    Co-located owner of the `report` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `report` block.
+    Co-located owner of the `report` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     report_parser = subparsers.add_parser(
         "report", help="Generate learning and diagnostic reports."

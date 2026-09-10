@@ -1,14 +1,18 @@
-"""CLI co-location migrate (issue #206): every command owns its `add_parser`.
+"""CLI co-location contract (issue #207): co-located builders are the sole source.
 
-`cli.build_parser` only orchestrates the co-located builders; no legacy
-mega-parser blocks remain. No YAML registry; dispatch Kind and audit
+`cli.build_parser` only orchestrates the co-located `add_parser` builders;
+no mega-parser blocks remain. No YAML registry; dispatch Kind and audit
 behaviour unchanged.
 """
 
 from __future__ import annotations
 
+import pathlib
+
+import pytest
+
 from skilltrace import cli
-from skilltrace.dispatch import Kind
+from skilltrace.dispatch import Command, Kind, Registry
 from skilltrace.events import load_events
 
 
@@ -67,9 +71,48 @@ def test_dispatch_kind_and_audit_unchanged_across_paths(tmp_path):
     assert events[0]["command"] == "sync"
 
 
-def test_no_yaml_command_registry_introduced():
-    import pathlib
+def test_cli_module_is_orchestration_only():
+    """Contract: no per-command parser construction lives beside the builders.
 
-    repo = pathlib.Path(__file__).resolve().parents[2]
+    `cli.py` owns only the top-level parser and `--root`; every flag and
+    subcommand surface comes from a co-located command-module builder.
+    """
+    source = (pathlib.Path(cli.__file__).resolve()).read_text(encoding="utf-8")
+    assert "subparsers.add_parser(" not in source
+    assert ".set_defaults(" not in source
+    assert source.count("add_argument(") == 1  # `--root` only
+
+
+def test_build_parser_refuses_commands_without_a_builder(monkeypatch):
+    """Contract: a registered command without `add_parser` fails loudly.
+
+    Builders are the only source of CLI flags, so a builder-less command
+    must not be silently unreachable.
+    """
+    registry = Registry()
+    registry.register(
+        Command(name="orphan", kind=Kind.READ_ONLY, handler=lambda ctx: None)
+    )
+    monkeypatch.setattr(cli, "REGISTRY", registry)
+    with pytest.raises(ValueError, match="orphan"):
+        cli.build_parser()
+
+
+def test_full_help_smoke_lists_every_registered_command():
+    import re
+
+    parser = cli.build_parser()
+    help_text = parser.format_help()
+    # Each attached subcommand renders as an indented entry in the
+    # `{ <command> ... }` listing; every registered command's top level
+    # must be a real entry, not prose.
+    entries = set(re.findall(r"(?m)^    ([A-Za-z][\w-]*)", help_text))
+    for command in cli.REGISTRY.all():
+        top_level = command.name.split()[0]
+        assert top_level in entries, command.name
+
+
+def test_no_yaml_command_registry_introduced():
+    repo = pathlib.Path(cli.__file__).resolve().parents[2]
     assert not (repo / "graph" / "commands.yaml").exists()
     assert not (repo / "src" / "skilltrace" / "commands.yaml").exists()

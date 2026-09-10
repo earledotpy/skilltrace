@@ -73,10 +73,9 @@ def register(registry: Registry) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach `sync`'s parser to the top-level `subparsers` (issue #204).
+    """Attach `sync`'s parser to the top-level `subparsers` (issue #207 contract).
 
-    Co-located owner of the `sync` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `sync` block.
+    Co-located owner of the `sync` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     sync_parser = subparsers.add_parser(
         "sync", help="Recompute derived readiness (locked/available) for every node."

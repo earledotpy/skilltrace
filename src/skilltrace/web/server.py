@@ -105,10 +105,9 @@ def _add_serve_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Attach the `serve` parser (issue #206, expand–contract).
+    """Attach the `serve` parser (issue #207 contract).
 
-    Co-located owner of the `serve` argparse surface; `cli.build_parser`
-    calls this for the new path and skips its legacy `serve`/`ui` block.
+    Co-located owner of the `serve` argparse surface (issue #207 contract: sole source of CLI flags and help text).
     """
     serve_parser = subparsers.add_parser(
         "serve", help="Run the local web UI on loopback (foreground; read-only)."
