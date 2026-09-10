@@ -90,7 +90,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     Command names are attached as `_command_name` defaults matching the registry
     keys, so `run` can look the command up without re-deriving it from argparse
-    internals.
+    internals. Commands carrying a co-located `add_parser` builder (issue #204)
+    build their own surface; every other command is built by the legacy blocks
+    below so the old path stays valid during the expand–contract migration.
     """
     parser = argparse.ArgumentParser(
         prog="skilltrace",
@@ -106,6 +108,19 @@ def build_parser() -> argparse.ArgumentParser:
     # excluded from audit-event args (see dispatch._event_args).
     subcommands = parser.add_subparsers(dest="_command", metavar="<command>")
     subcommands.required = True
+
+    # Co-located path (issue #204, expand–contract): any registered command
+    # carrying an `add_parser` builder owns its argparse surface. Builders run
+    # first; the legacy blocks below skip the command names they cover so the
+    # old path remains valid for every command that has not migrated yet.
+    # Contract for future migrations: when a command gains a co-located
+    # builder, guard its legacy block with `if "<name>" not in colocated`
+    # (as `health`/`sync` below) until the contract phase removes the block.
+    colocated: set[str] = set()
+    for command in REGISTRY.all():
+        if command.add_parser is not None:
+            command.add_parser(subcommands)
+            colocated.add(command.name)
 
     # validate <target>
     validate_parser = subcommands.add_parser(
@@ -138,12 +153,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     resources_parser.set_defaults(_command_name="validate resources")
 
-    # health
-    health_parser = subcommands.add_parser(
-        "health",
-        help="Roll up the five validate targets plus liveness facts (read-only).",
-    )
-    health_parser.set_defaults(_command_name="health")
+    # health (co-located in commands/health.py when migrated)
+    if "health" not in colocated:
+        health_parser = subcommands.add_parser(
+            "health",
+            help="Roll up the five validate targets plus liveness facts (read-only).",
+        )
+        health_parser.set_defaults(_command_name="health")
 
     # node <node_id>
     node_parser = subcommands.add_parser(
@@ -152,11 +168,12 @@ def build_parser() -> argparse.ArgumentParser:
     node_parser.add_argument("node_id", help="Node to show the detail view for.")
     node_parser.set_defaults(_command_name="node")
 
-    # sync
-    sync_parser = subcommands.add_parser(
-        "sync", help="Recompute derived readiness (locked/available) for every node."
-    )
-    sync_parser.set_defaults(_command_name="sync")
+    # sync (co-located in commands/sync.py when migrated)
+    if "sync" not in colocated:
+        sync_parser = subcommands.add_parser(
+            "sync", help="Recompute derived readiness (locked/available) for every node."
+        )
+        sync_parser.set_defaults(_command_name="sync")
 
     # evidence <command>
     evidence_parser = subcommands.add_parser(

@@ -14,6 +14,7 @@ this command. Read-only: it appends no audit event.
 
 from __future__ import annotations
 
+import argparse
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -263,5 +264,19 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=health,
             help="Roll up the five validate targets plus liveness facts (read-only).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach `health`'s parser to the top-level `subparsers` (issue #204).
+
+    Co-located owner of the `health` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `health` block.
+    """
+    health_parser = subparsers.add_parser(
+        "health",
+        help="Roll up the five validate targets plus liveness facts (read-only).",
+    )
+    health_parser.set_defaults(_command_name="health")
