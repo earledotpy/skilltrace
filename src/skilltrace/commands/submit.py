@@ -83,11 +83,13 @@ def _run_gate(command: str):
         raise _Unrunnable(str(exc)) from exc
     stdout = completed.stdout.decode("utf-8", errors="replace") if completed.stdout else ""
     stderr = completed.stderr.decode("utf-8", errors="replace") if completed.stderr else ""
-    # Platform-stable provenance: a gate printing "\n" captures "\r\n" on
-    # Windows consoles, but the receipt must hash the same bytes everywhere —
-    # normalize CRLF to LF before the planner hashes (spec §1, D-Normalize).
-    stdout = stdout.replace("\r\n", "\n")
-    stderr = stderr.replace("\r\n", "\n")
+    # Platform-stable provenance funnels through the receipt module's single
+    # normalization place (spec §1, D-Normalize): the builder hashes the same
+    # normalized bytes, so CRLF captures hash identically everywhere.
+    from ..evidence.gate_receipt import normalize_stream
+
+    stdout = normalize_stream(stdout)
+    stderr = normalize_stream(stderr)
     if stdout:
         print(stdout, end="" if stdout.endswith("\n") else "\n")
     if stderr:
