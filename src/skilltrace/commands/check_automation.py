@@ -8,6 +8,8 @@ the answer is "forbidden"; the command fails only if it cannot answer.
 
 from __future__ import annotations
 
+import argparse
+
 from ..automation import check_automation
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 
@@ -27,5 +29,23 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=check_automation_command,
             help="Report whether an action may run on an automated path.",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `check-automation` parser (issue #206, expand–contract).
+
+    Co-located owner of the `check-automation` argparse surface;
+    `cli.build_parser` calls this for the new path and skips its legacy
+    `check-automation` block.
+    """
+    check_parser = subparsers.add_parser(
+        "check-automation",
+        help="Report whether an action may run on an automated path.",
+    )
+    check_parser.add_argument(
+        "action", help="Automation action label, e.g. pass_node or schedule_review."
+    )
+    check_parser.set_defaults(_command_name="check-automation")

@@ -1,8 +1,8 @@
-"""CLI co-location expand (issue #204): co-located `add_parser` beside `register`.
+"""CLI co-location migrate (issue #206): every command owns its `add_parser`.
 
-The legacy mega-parser in `cli.build_parser` remains valid; commands carrying
-a co-located builder own their surface while the rest fall back to the old
-path. No YAML registry; dispatch Kind and audit behaviour unchanged.
+`cli.build_parser` only orchestrates the co-located builders; no legacy
+mega-parser blocks remain. No YAML registry; dispatch Kind and audit
+behaviour unchanged.
 """
 
 from __future__ import annotations
@@ -13,28 +13,44 @@ from skilltrace.events import load_events
 
 
 def test_colocated_builders_are_registered_alongside_handlers():
-    for name in ("health", "sync"):
-        command = cli.REGISTRY.get(name)
-        assert command is not None
-        assert callable(command.add_parser)
+    for command in cli.REGISTRY.all():
+        assert callable(command.add_parser), command.name
 
 
-def test_unmigrated_commands_still_use_the_legacy_path():
-    command = cli.REGISTRY.get("next")
-    assert command is not None
-    assert command.add_parser is None
-
-
-def test_parser_covers_both_paths_without_duplicates():
+def test_parser_covers_colocated_commands_without_duplicates():
     parser = cli.build_parser()
     for argv, expected in (
         (["health"], "health"),
         (["sync"], "sync"),
         (["next"], "next"),
         (["validate", "graph"], "validate graph"),
+        (["evidence", "submit", "--location", "x", "n_01"], "evidence submit"),
+        (["submit", "--location", "x", "n_01"], "evidence submit"),
+        (["session", "close"], "session close"),
+        (["close"], "session close"),
+        (["serve"], "serve"),
+        (["ui"], "serve"),
+        (["graph", "impact"], "graph impact"),
+        (["check-resources", "--stale-only"], "check-resources"),
+        (["analytics", "export"], "analytics export"),
+        (["portfolio", "preview"], "portfolio preview"),
+        (["report", "evidence"], "report evidence"),
     ):
         args = parser.parse_args(argv)
         assert args._command_name == expected
+
+
+def test_check_resources_politeness_flags_match_prior_behaviour():
+    parser = cli.build_parser()
+    args = parser.parse_args(["check-resources", "--stale-only", "--no-robots"])
+    assert args.stale_only is True
+    assert args.no_robots is True
+    assert args.per_host_delay is None
+    assert args.backoff_attempts is None
+    help_text = parser.format_help()
+    assert "Alias for `evidence submit`." in help_text
+    assert "Alias for `session close`." in help_text
+    assert "Alias for `serve`." in help_text
 
 
 def test_dispatch_kind_and_audit_unchanged_across_paths(tmp_path):

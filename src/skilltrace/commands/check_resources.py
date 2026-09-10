@@ -14,6 +14,8 @@ retries), and out-of-range CLI values fail before any fetch.
 
 from __future__ import annotations
 
+import argparse
+
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution.overdue import utc_today
 from ..resources.registry import ResourceLoadError, load_resources
@@ -161,5 +163,70 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=check_resources,
             help="Check reachability of all (or stale-only) resource URLs (read-only, exits 0 on answered sweep).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `check-resources` parser to the top-level `subparsers` (issue #204).
+
+    Co-located owner of the `check-resources` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `check-resources` block.
+    """
+    check_resources_parser = subparsers.add_parser(
+        "check-resources",
+        help="Check reachability of all (or stale-only) resource URLs (read-only, exits 0 on answered sweep).",
+    )
+    selector = check_resources_parser.add_mutually_exclusive_group()
+    selector.add_argument(
+        "--all",
+        action="store_true",
+        help="Check every resource (the default when no selector is given).",
+    )
+    selector.add_argument(
+        "--stale-only",
+        action="store_true",
+        help="Check only resources whose derived status is stale under the policy window.",
+    )
+    check_resources_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help="Timeout in seconds (default: from policy).",
+    )
+    check_resources_parser.add_argument(
+        "--method",
+        choices=["HEAD", "GET"],
+        default=None,
+        help="HTTP method to use (default: from policy).",
+    )
+    check_resources_parser.add_argument(
+        "--follow-redirects",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Follow HTTP redirects (default: from policy).",
+    )
+    check_resources_parser.add_argument(
+        "--user-agent",
+        default=None,
+        help="Custom User-Agent string.",
+    )
+    check_resources_parser.add_argument(
+        "--per-host-delay",
+        type=float,
+        default=None,
+        help="Minimum seconds between requests to the same host (default: from polite-sweep policy).",
+    )
+    check_resources_parser.add_argument(
+        "--no-robots",
+        action="store_true",
+        help="Skip robots.txt checks (default: respect robots per polite-sweep policy).",
+    )
+    check_resources_parser.add_argument(
+        "--backoff-attempts",
+        type=int,
+        default=None,
+        help="Max total attempts on HTTP 429 (default: from polite-sweep policy).",
+    )
+    check_resources_parser.set_defaults(_command_name="check-resources")

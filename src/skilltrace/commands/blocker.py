@@ -8,6 +8,8 @@ blocker stays resolved; being stuck again is a new blocker.
 
 from __future__ import annotations
 
+import argparse
+
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ._common import now_iso as _now_iso, report_plan as _report
 from ..execution._store import ExecutionLoadError
@@ -77,6 +79,7 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=create,
             help="Record persistent stuckness on a node (explicit act; refused on locked).",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -85,5 +88,35 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=resolve,
             help="Resolve an open blocker with a required resolution summary.",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `blocker create`/`blocker resolve` parsers (issue #204).
+
+    Co-located owner of the `blocker` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `blocker` block.
+    """
+    blocker_parser = subparsers.add_parser(
+        "blocker", help="Blocker commands (create, resolve)."
+    )
+    blocker_commands = blocker_parser.add_subparsers(dest="_blocker_cmd", metavar="<command>")
+    blocker_commands.required = True
+    blocker_create = blocker_commands.add_parser(
+        "create", help="Record persistent stuckness on a node."
+    )
+    blocker_create.add_argument("node_id", help="Node the learner is stuck on.")
+    blocker_create.add_argument(
+        "--description", required=True, help="The obstacle this blocker names."
+    )
+    blocker_create.set_defaults(_command_name="blocker create")
+    blocker_resolve = blocker_commands.add_parser(
+        "resolve", help="Resolve an open blocker."
+    )
+    blocker_resolve.add_argument("blocker_id", help="Blocker to resolve (blk.<node>.NNN).")
+    blocker_resolve.add_argument(
+        "--summary", required=True, help="How the blocker was resolved."
+    )
+    blocker_resolve.set_defaults(_command_name="blocker resolve")

@@ -27,6 +27,7 @@ the friction-log resolution: **node -> today -> enrich next -> reports**.
 
 from __future__ import annotations
 
+import argparse
 from dataclasses import dataclass
 
 from .. import render
@@ -483,5 +484,19 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=node_detail,
             help="Show the Mentor-voice detail view for one node.",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `node` parser to the top-level `subparsers` (issue #204).
+
+    Co-located owner of the `node` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `node` block.
+    """
+    node_parser = subparsers.add_parser(
+        "node", help="Show the Mentor-voice detail view for one node."
+    )
+    node_parser.add_argument("node_id", help="Node to show the detail view for.")
+    node_parser.set_defaults(_command_name="node")

@@ -24,6 +24,7 @@ data, no audit events logged, never reads event log for state).
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 from ..context import load_context_lenient
@@ -464,6 +465,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=report_progress,
             help="Curriculum progress and track completion roll-up.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -472,6 +474,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=report_blockers,
             help="Obstacles, open remediation, and rescue nodes.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -480,6 +483,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=report_reviews,
             help="Retention checks, overdue reviews, and mastery candidates.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -488,6 +492,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=report_evidence,
             help="Proof trail audit, gates, specs, and supersession chains.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -496,5 +501,49 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=report_resources,
             help="Resource verification status snapshot.",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `report` parsers to the top-level `subparsers` (issue #204).
+
+    Co-located owner of the `report` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `report` block.
+    """
+    report_parser = subparsers.add_parser(
+        "report", help="Generate learning and diagnostic reports."
+    )
+    report_targets = report_parser.add_subparsers(dest="_report_target", metavar="<target>")
+    report_targets.required = True
+
+    report_progress_parser = report_targets.add_parser(
+        "progress", help="Curriculum progress and track completion roll-up."
+    )
+    report_progress_parser.set_defaults(_command_name="report progress")
+
+    report_blockers_parser = report_targets.add_parser(
+        "blockers", help="Obstacles, open remediation, and rescue nodes."
+    )
+    report_blockers_parser.set_defaults(_command_name="report blockers")
+
+    report_reviews_parser = report_targets.add_parser(
+        "reviews", help="Retention checks, overdue reviews, and mastery candidates."
+    )
+    report_reviews_parser.set_defaults(_command_name="report reviews")
+
+    report_evidence_parser = report_targets.add_parser(
+        "evidence", help="Proof trail audit, gates, specs, and supersession chains."
+    )
+    report_evidence_parser.add_argument(
+        "--node-id",
+        default=None,
+        help="Optional node ID to filter evidence trail.",
+    )
+    report_evidence_parser.set_defaults(_command_name="report evidence")
+
+    report_resources_parser = report_targets.add_parser(
+        "resources", help="Resource verification status snapshot."
+    )
+    report_resources_parser.set_defaults(_command_name="report resources")

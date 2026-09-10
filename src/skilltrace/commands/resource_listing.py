@@ -20,6 +20,8 @@ no external material.
 
 from __future__ import annotations
 
+import argparse
+
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..graph.nodes import NodeLoadError, load_nodes
 from ..resources.registry import (
@@ -101,5 +103,24 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=resources,
             help="List the resources supporting a node (the per-node reverse index).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `resources` parser to the top-level `subparsers` (issue #204).
+
+    Co-located owner of the `resources` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `resources` block.
+    """
+    resources_listing_parser = subparsers.add_parser(
+        "resources",
+        help="List the resources supporting a node (the per-node reverse index).",
+    )
+    resources_listing_parser.add_argument(
+        "--node-id",
+        required=True,
+        help="Node whose supporting resources to list.",
+    )
+    resources_listing_parser.set_defaults(_command_name="resources")

@@ -8,6 +8,8 @@ is empty because backup mutates no domain record, only a fresh file under
 
 from __future__ import annotations
 
+import argparse
+
 from ..backup import create_backup
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 
@@ -25,5 +27,19 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=backup,
             help="Zip graph/evidence/execution/policy/release into a timestamped archive under backups/.",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `backup` parser (issue #206, expand–contract).
+
+    Co-located owner of the `backup` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `backup` block.
+    """
+    backup_parser = subparsers.add_parser(
+        "backup",
+        help="Zip graph/evidence/execution/policy/release into a timestamped archive under backups/.",
+    )
+    backup_parser.set_defaults(_command_name="backup")

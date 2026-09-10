@@ -18,6 +18,7 @@ nothing written).
 
 from __future__ import annotations
 
+import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -115,5 +116,28 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=record,
             help="Record one assessment attempt (passed/failed) as an immutable fact.",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `attempt record` parser (issue #204).
+
+    Co-located owner of the `attempt record` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `attempt` block.
+    """
+    attempt_parser = subparsers.add_parser(
+        "attempt", help="Assessment-attempt commands (record)."
+    )
+    attempt_commands = attempt_parser.add_subparsers(dest="_attempt_cmd", metavar="<command>")
+    attempt_commands.required = True
+    record_parser = attempt_commands.add_parser(
+        "record", help="Record one assessment attempt (passed/failed) as an immutable fact."
+    )
+    record_parser.add_argument("node_id", help="Node the attempt was against.")
+    record_parser.add_argument(
+        "--outcome", required=True, help="Attempt outcome: passed or failed."
+    )
+    record_parser.add_argument("--note", default=None, help="Optional note attached to the attempt.")
+    record_parser.set_defaults(_command_name="attempt record")

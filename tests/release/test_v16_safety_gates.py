@@ -87,12 +87,13 @@ def test_sa2_no_new_sqlite_reader():
 
 # The only src/ files permitted to name the hard-boundary actions: the code
 # floor itself, the two explicit learner-command handlers (which carry no
-# automation_action by construction), and the check-automation help example.
+# automation_action by construction), and the check-automation help example
+# (co-located in its command module since #206; formerly in cli.py).
 _SA3_TOKEN_ALLOWLIST = {
     "src/skilltrace/automation.py",
     "src/skilltrace/commands/pass_.py",
     "src/skilltrace/commands/master.py",
-    "src/skilltrace/cli.py",
+    "src/skilltrace/commands/check_automation.py",
 }
 
 _CALL_RE = re.compile(r"\b(pass_node|master_node|delete_record)\s*\(")

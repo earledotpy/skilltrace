@@ -22,6 +22,7 @@ failures (exit 1, no event); a refusal is exit 2 with nothing written.
 
 from __future__ import annotations
 
+import argparse
 from datetime import datetime, timezone
 from typing import Callable
 
@@ -172,5 +173,20 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=pass_node,
             help="Assert a node passed (refuses without eligibility or on a locked node).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `pass` parser to the top-level `subparsers` (issue #204).
+
+    Co-located owner of the `pass` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `pass` block.
+    """
+    pass_parser = subparsers.add_parser(
+        "pass",
+        help="Assert a node passed (refuses without eligibility or on a locked node).",
+    )
+    pass_parser.add_argument("node_id", help="Node to assert as passed.")
+    pass_parser.set_defaults(_command_name="pass")

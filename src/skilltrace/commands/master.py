@@ -13,6 +13,8 @@ automates mastery lives in this being the sole caller of
 
 from __future__ import annotations
 
+import argparse
+
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence._schema import EvidenceLoadError
 from ..evidence.evidence import load_evidence_records, load_artifact_specs
@@ -86,5 +88,20 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=master_node,
             help="Assert a node mastered (refuses without mastery eligibility).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `master` parser to the top-level `subparsers` (issue #204).
+
+    Co-located owner of the `master` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `master` block.
+    """
+    master_parser = subparsers.add_parser(
+        "master",
+        help="Assert a node mastered (refuses without mastery eligibility).",
+    )
+    master_parser.add_argument("node_id", help="Node to assert as mastered.")
+    master_parser.set_defaults(_command_name="master")

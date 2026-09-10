@@ -6,6 +6,7 @@ and transfer its coverage to a live, verified candidate.
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -138,5 +139,30 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=replace_resource,
             help="Retire a broken or stale resource and transfer coverage to a candidate.",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `replace-resource` parser to the top-level `subparsers` (issue #204).
+
+    Co-located owner of the `replace-resource` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `replace-resource` block.
+    """
+    replace_resource_parser = subparsers.add_parser(
+        "replace-resource",
+        help="Retire an ailing resource and transfer its coverage to an active verified candidate.",
+    )
+    replace_resource_parser.add_argument(
+        "broken_id", help="Resource ID of the broken or stale resource to retire."
+    )
+    replace_resource_parser.add_argument(
+        "candidate_id", help="Resource ID of the verified replacement candidate."
+    )
+    replace_resource_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate and output planned changes as JSON without writing.",
+    )
+    replace_resource_parser.set_defaults(_command_name="replace-resource")

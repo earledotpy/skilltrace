@@ -23,6 +23,7 @@ all.
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import shlex
 import subprocess
@@ -221,5 +222,59 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=submit,
             help="Submit one item of evidence against a node (judged at submission).",
+            add_parser=add_parser,
         )
     )
+
+
+def _add_evidence_submit_arguments(parser: argparse.ArgumentParser) -> None:
+    """Attach `evidence submit`'s arguments to `parser`.
+
+    Shared by the canonical `evidence submit` parser and the top-level
+    `submit` alias so the two stay in lockstep.
+    """
+    parser.add_argument("node_id", help="Node the evidence is submitted against.")
+    parser.add_argument(
+        "--spec", default=None, help="Artifact spec id (optional when the node has exactly one)."
+    )
+    parser.add_argument(
+        "--location", required=True, help="Repo-relative path or URL of the artifact."
+    )
+    parser.add_argument("--note", default=None, help="Optional note attached to the record.")
+    verdict = parser.add_mutually_exclusive_group()
+    verdict.add_argument(
+        "--accept", action="store_true", help="Manual-gate verdict: accept (refused on objective nodes)."
+    )
+    verdict.add_argument(
+        "--reject", action="store_true", help="Manual-gate verdict: reject (refused on objective nodes)."
+    )
+    parser.add_argument(
+        "--supersedes", default=None, help="Evidence record id this submission corrects."
+    )
+    parser.add_argument(
+        "--reason", default=None, help="Why the correction supersedes (required with --supersedes)."
+    )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `evidence submit` parser plus the `submit` alias (issue #204).
+
+    Co-located owner of the `evidence submit` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `evidence`/`submit` blocks.
+    """
+    evidence_parser = subparsers.add_parser(
+        "evidence", help="Evidence-trail commands (submit)."
+    )
+    evidence_commands = evidence_parser.add_subparsers(dest="_evidence_cmd", metavar="<command>")
+    evidence_commands.required = True
+    submit_parser = evidence_commands.add_parser(
+        "submit", help="Submit one item of evidence against a node (judged at submission)."
+    )
+    _add_evidence_submit_arguments(submit_parser)
+    submit_parser.set_defaults(_command_name="evidence submit")
+
+    submit_alias_parser = subparsers.add_parser(
+        "submit", help="Alias for `evidence submit`."
+    )
+    _add_evidence_submit_arguments(submit_alias_parser)
+    submit_alias_parser.set_defaults(_command_name="evidence submit")

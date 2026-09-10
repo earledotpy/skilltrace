@@ -19,6 +19,7 @@ the locked nodes with their unsatisfied hard prerequisites named.
 
 from __future__ import annotations
 
+import argparse
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -368,5 +369,29 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=recommend_next,
             help="Recommend prerequisite-safe nodes sized to available minutes.",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `next` parser to the top-level `subparsers` (issue #204).
+
+    Co-located owner of the `next` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `next` block.
+    """
+    next_parser = subparsers.add_parser(
+        "next", help="Recommend prerequisite-safe nodes sized to available minutes."
+    )
+    next_parser.add_argument(
+        "--minutes", type=int, default=60, help="Minutes available this session."
+    )
+    next_parser.add_argument(
+        "--limit", type=int, default=5, help="Maximum number of recommendations."
+    )
+    next_parser.add_argument(
+        "--show-locked",
+        action="store_true",
+        help="Also show locked nodes (never recommended as available).",
+    )
+    next_parser.set_defaults(_command_name="next")

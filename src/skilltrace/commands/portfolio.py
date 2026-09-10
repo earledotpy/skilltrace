@@ -14,6 +14,7 @@ no audit event itself (SA6); the dispatcher owns the single export event.
 
 from __future__ import annotations
 
+import argparse
 import sys
 from datetime import date
 from pathlib import Path
@@ -167,6 +168,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=portfolio_preview,
             help="Render the portfolio to stdout (read-only; same pipeline as export).",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -175,5 +177,69 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=portfolio_export,
             help="Write the disposable portfolio bundle to data/portfolio-<date>/.",
+            add_parser=add_parser,
         )
     )
+
+
+def _add_portfolio_shared_arguments(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--node",
+        action="append",
+        default=None,
+        metavar="ID",
+        help="Restrict to named node(s) (repeatable).",
+    )
+    p.add_argument(
+        "--track",
+        default=None,
+        metavar="NAME",
+        help="Restrict to track (default from policy/portfolio.yaml; "
+        "omitted when --node is given without --track).",
+    )
+    p.add_argument("--include-active", action="store_true")
+    p.add_argument("--include-rejected", action="store_true")
+    p.add_argument("--include-superseded", action="store_true")
+    p.add_argument("--include-paths", action="store_true")
+    p.add_argument("--include-notes", action="store_true")
+    p.add_argument("--include-blockers", action="store_true")
+    p.add_argument("--include-reviews", action="store_true")
+    p.add_argument("--include-free-text", action="store_true")
+    p.add_argument("--include-urls", action="store_true")
+    p.add_argument(
+        "--format",
+        default=None,
+        metavar="<md|html|json>",
+        help="Output format (default from policy/portfolio.yaml).",
+    )
+    p.add_argument(
+        "--output",
+        default=None,
+        metavar="PATH",
+        help="Destination (use - for stdout).",
+    )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `portfolio` parser (issue #206, expand–contract).
+
+    Co-located owner of the `portfolio` argparse surface; `cli.build_parser`
+    calls this for the new path and skips its legacy `portfolio` block.
+    """
+    portfolio_parser = subparsers.add_parser(
+        "portfolio", help="Portfolio builder (preview, export)."
+    )
+    portfolio_commands = portfolio_parser.add_subparsers(
+        dest="_portfolio_cmd", metavar="<command>"
+    )
+    portfolio_commands.required = True
+    portfolio_preview_parser = portfolio_commands.add_parser(
+        "preview", help="Render the portfolio to stdout (read-only)."
+    )
+    _add_portfolio_shared_arguments(portfolio_preview_parser)
+    portfolio_preview_parser.set_defaults(_command_name="portfolio preview")
+    portfolio_export_parser = portfolio_commands.add_parser(
+        "export", help="Write the disposable portfolio bundle (mutating)."
+    )
+    _add_portfolio_shared_arguments(portfolio_export_parser)
+    portfolio_export_parser.set_defaults(_command_name="portfolio export")
