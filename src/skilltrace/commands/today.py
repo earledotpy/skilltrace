@@ -24,8 +24,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-import yaml
-
 from .. import render
 from ..mentor.cards import (
     CardPart,
@@ -46,12 +44,10 @@ from ..execution.records import Blocker, open_session
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError, SkillNode
 from ..graph.recommendation import recommend
+from ..graph.recommendation_prep import prepare
 from ..graph.state import ProgressStoreError
 from ..mentor.prose import resource_lines
 from ..policy.advisory import analytics_warnings
-from ..policy.agent_input import load_agent_recommendations
-from ..policy.remediation_edges import active_remediations
-from ..policy.sequencing import prereq_retention_urgency
 from ..resources.registry import LearningResource
 
 
@@ -236,39 +232,28 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
     session_work = joined.work
     blockers = joined.blockers
     reviews = joined.reviews
-    attempts = joined.attempts
     specs = joined.specs
     records = joined.records
 
     node_map = joined.node_map
     titles = joined.titles
 
-    # Top recommendations (same engine + advisory pressure as `next`).
-    open_blocked = {b.node_id for b in blockers if b.status == "open"}
-    active = active_remediations(
-        edges,
-        store=store,
-        blockers=blockers,
-        attempts=attempts,
-        failed_attempt_threshold=joined.policy.failed_attempt_threshold,
-    )
-    seq_today = utc_today()
-    urgency = prereq_retention_urgency(joined, seq_today)
-    agent_recs, _agent_warns = (
-        load_agent_recommendations(root) if root is not None else ({}, [])
-    )
+    # Top recommendations (same engine + advisory pressure as `next`,
+    # prepared once behind the shared seam).
+    today_dt = utc_today()
+    inputs = prepare(joined, root, today_dt)
     result = recommend(
         nodes,
         edges,
         store,
-        joined.policy.track_weights,
+        inputs.track_weights,
         minutes=minutes,
         limit=3,
-        factor_weights=joined.policy.factor_weights,
-        remediation_boosted={r.remediation_node for r in active},
-        open_blocked=open_blocked,
-        prereq_reviews_due=urgency,
-        agent_boosted=set(agent_recs),
+        factor_weights=inputs.factor_weights,
+        remediation_boosted=inputs.remediation_boosted,
+        open_blocked=inputs.open_blocked,
+        prereq_reviews_due=inputs.prereq_reviews_due,
+        agent_boosted=inputs.agent_boosted,
     )
 
     # Focus skill: the open session's node if one is open, else the top pick.
@@ -295,7 +280,6 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
     has_gate = (focus_node_id in joined.has_gate) if focus_node_id else False
 
     # Pressure facts for the brief — overdue funneled through the seam.
-    today_dt = utc_today()
     overdue = overdue_reviews(reviews, today=today_dt)
     open_blocker_list = [b for b in blockers if b.status == "open"]
 

@@ -14,7 +14,7 @@ from pathlib import Path
 import yaml
 
 from skilltrace import cli
-from skilltrace.commands.recommend import load_track_weights
+from skilltrace.policy.weights import load_track_weights
 from skilltrace.events import load_events
 from skilltrace.graph.nodes import load_nodes
 

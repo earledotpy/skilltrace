@@ -132,28 +132,17 @@ def _boost_inputs(joined, root: Path) -> dict:
     agent signals all come from files unchanged between the sides — the
     boost set is identical under baseline and current edges, so the diff
     isolates the *graph edit's* effect (spec §2, D-RecDiff).
-    """
-    from ..context import JoinedView
-    from ..policy.agent_input import load_agent_recommendations
-    from ..policy.remediation_edges import active_remediations
-    from ..policy.sequencing import prereq_retention_urgency
-    from ..execution.overdue import utc_today
 
-    blocked = {b.node_id for b in joined.blockers if b.status == "open"}
-    active = active_remediations(
-        joined.edges,
-        store=joined.store,
-        blockers=joined.blockers,
-        attempts=joined.attempts,
-        failed_attempt_threshold=joined.policy.failed_attempt_threshold,
-    )
-    urgency = prereq_retention_urgency(joined, utc_today())
-    agent_recs, _agent_warns = load_agent_recommendations(root)
+    One shared seam: `prepare()` behind `recommend()` (issue #201).
+    """
+    from ..graph.recommendation_prep import prepare
+
+    inputs = prepare(joined, root)
     return {
-        "remediation_boosted": {r.remediation_node for r in active},
-        "open_blocked": blocked,
-        "prereq_reviews_due": urgency,
-        "agent_boosted": set(agent_recs),
+        "remediation_boosted": set(inputs.remediation_boosted),
+        "open_blocked": set(inputs.open_blocked),
+        "prereq_reviews_due": dict(inputs.prereq_reviews_due),
+        "agent_boosted": set(inputs.agent_boosted),
     }
 
 

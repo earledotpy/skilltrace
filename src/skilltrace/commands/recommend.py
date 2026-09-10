@@ -22,8 +22,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import yaml
-
 from .. import render
 from ..mentor.cards import (
     CardPart,
@@ -46,16 +44,10 @@ from ..graph.recommendation import (
     RecommendationResult,
     recommend,
 )
+from ..graph.recommendation_prep import prepare
 from ..graph.state import ProgressStoreError
 from ..mentor.prose import NodeState, resource_lines, state_phrase
-from ..execution.overdue import utc_today
-from ..policy.agent_input import load_agent_recommendations
-from ..policy.remediation_edges import (
-    ActiveRemediation,
-    active_remediations,
-)
-from ..policy.sequencing import prereq_retention_urgency
-from ..policy.weights import load_factor_weights, load_track_weights
+from ..policy.remediation_edges import ActiveRemediation
 from ..resources.registry import LearningResource
 
 
@@ -309,28 +301,23 @@ def derive_next(
     """Load-free ranking over one loaded JoinedView. Pure of printing.
 
     Advisory inputs (prerequisite-retention urgency, agent recommendations)
-    are derived fresh; a missing retention seed or agent file simply stands
-    the relevant factor down.
+    are derived fresh by `prepare`; a missing retention seed or agent file
+    simply stands the relevant factor down.
     """
-    active, blocked = _policy_pressure(joined)
-    today = utc_today()
-    urgency = prereq_retention_urgency(joined, today)
-    agent_recs, agent_warns = (
-        load_agent_recommendations(root) if root is not None else ({}, [])
-    )
+    inputs = prepare(joined, root)
     result = recommend(
         joined.nodes,
         joined.edges,
         joined.store,
-        joined.policy.track_weights,
+        inputs.track_weights,
         minutes=minutes,
         limit=limit,
         show_locked=show_locked,
-        factor_weights=joined.policy.factor_weights,
-        remediation_boosted={r.remediation_node for r in active},
-        open_blocked=blocked,
-        prereq_reviews_due=urgency,
-        agent_boosted=set(agent_recs),
+        factor_weights=inputs.factor_weights,
+        remediation_boosted=inputs.remediation_boosted,
+        open_blocked=inputs.open_blocked,
+        prereq_reviews_due=inputs.prereq_reviews_due,
+        agent_boosted=inputs.agent_boosted,
     )
     cards = _mentor_cards(
         result,
@@ -339,14 +326,14 @@ def derive_next(
         joined.node_map,
         joined.resources_by_node,
         joined.store,
-        active,
+        list(inputs.active_remediations),
     )
     return NextModel(
         lines=render.cards_to_lines(cards),
         recommendations=list(result.recommendations),
         locked=list(result.locked),
         cards=cards,
-        warnings=list(agent_warns),
+        warnings=list(inputs.agent_warnings),
     )
 
 
@@ -372,26 +359,6 @@ def recommend_next(ctx: Context) -> CommandResult:
     for warning in model.warnings:
         print(f"next: {warning}")
     return CommandResult()
-
-
-def _policy_pressure(joined) -> tuple[list[ActiveRemediation], set[str]]:
-    """Derive the active remediation edges and open-blocked nodes (advisory-only).
-
-    Uses the already-joined blockers/attempts so no extra file reads are needed.
-    """
-    blockers = joined.blockers
-    attempts = joined.attempts
-    edges = joined.edges
-    store = joined.store
-    blocked = {b.node_id for b in blockers if b.status == "open"}
-    active = active_remediations(
-        edges,
-        store=store,
-        blockers=blockers,
-        attempts=attempts,
-        failed_attempt_threshold=joined.policy.failed_attempt_threshold,
-    )
-    return active, blocked
 
 
 def register(registry: Registry) -> None:
