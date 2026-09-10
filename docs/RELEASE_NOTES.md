@@ -1,6 +1,18 @@
 # Release Notes
 
-All releases and historical milestone records for SkillTrace. For future direction, see [`docs/POST_V1_ROADMAP.md`](POST_V1_ROADMAP.md) (shipped v1.6–v2.0) and [`docs/POST_V2_ROADMAP.md`](POST_V2_ROADMAP.md) (shipped v2.1; next slots v2.2–v2.4).
+All releases and historical milestone records for SkillTrace. For future direction, see [`docs/POST_V1_ROADMAP.md`](POST_V1_ROADMAP.md) (shipped v1.6–v2.0) and [`docs/POST_V2_ROADMAP.md`](POST_V2_ROADMAP.md) (shipped v2.1–v2.3; next slot v2.4).
+
+---
+
+## v2.3.0 (released)
+
+Verification-hygiene hardening: polite batch sweeps (G-Hygiene #193). Advisory-only throughout: per-host rate limiting, `robots.txt` respect, and bounded 429 backoff wrap the existing `check-resource`/registry seam — never asserting verification, never touching stored state. Verified on the merged tree: affected suites green, whole-repo sweep green modulo one pre-existing `test_cli.py` registry gap fixed in the same change.
+
+### Features
+- **Polite batch sweep:** `check-resources` runs `polite_batch()` — nominal per-host spacing (first request immediate, later same-host requests wait `per_host_delay_seconds`), one `robots.txt` fetch per host with fail-open, and 429-only bounded exponential backoff (`Retry-After` honored when larger).
+- **Policy seed:** new `policy/polite_sweep.yaml` (`enabled`, `per_host_delay_seconds`, `respect_robots`, `backoff_max_attempts`, `backoff_base_seconds`, `backoff_max_seconds`) validated under `validate policy`; disabled seed degrades the sweep to v1.8 behavior.
+- **CLI flags:** `--per-host-delay`, `--no-robots`, `--backoff-attempts` (out-of-range values fail before any fetch); sweep User-Agent default now comes from `policy/resource_web_verification.yaml`.
+- **Read-only posture:** a polite sweep never sets `last_verified`, never clears or writes `broken`, and emits no audit event; scheduling automation stays re-deferred.
 
 ---
 

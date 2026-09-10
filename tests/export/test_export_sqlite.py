@@ -57,7 +57,7 @@ def test_export_sqlite_contains_every_record_type(export_repo):
         assert json.loads(resources[0][1]) == [MASTERED_NODE]
 
         policies = conn.execute("SELECT filename FROM policies").fetchall()
-        assert len(policies) == 11  # one row per shipped policy file (incl. retention_model, analytics, resource_web_verification, and portfolio)
+        assert len(policies) == 12  # one row per shipped policy file (incl. retention_model, analytics, resource_web_verification, portfolio, and polite_sweep)
     finally:
         conn.close()
 

@@ -1,11 +1,15 @@
-"""`skilltrace check-resources` — minimal batch sweep over resource URLs (v1.8 G-Batch).
+"""`skilltrace check-resources` — polite batch sweep over resource URLs (v2.3).
 
-Runs the v1.7 `check_url` sequentially (via the `batch()` helper: no token
-bucket, no `robots.txt`, no retry loop) over a selector of registry entries.
-Read-only: prints one line per resource plus a summary, exits 0 on answered
-sweeps (a BROKEN verdict is the resource's, not the command's), writes
-nothing (never sets `last_verified`, never clears or writes `broken`) and
-emits no audit event.
+Runs the v1.7 `check_url` sequentially (via the `polite_batch()` helper:
+per-host rate limiting, `robots.txt` respect, bounded 429 backoff) over a
+selector of registry entries. Read-only: prints one line per resource plus
+a summary, exits 0 on answered sweeps (a BROKEN verdict is the resource's,
+not the command's), writes nothing (never sets `last_verified`, never
+clears or writes `broken`) and emits no audit event.
+
+Respecting disabled seeds: with the sweep policy disabled the command
+degrades to the v1.8 behavior (robots skipped, no extra delay, no 429
+retries), and out-of-range CLI values fail before any fetch.
 """
 
 from __future__ import annotations
@@ -14,7 +18,8 @@ from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution.overdue import utc_today
 from ..resources.registry import ResourceLoadError, load_resources
 from ..resources.status import VerificationStatus, derive_status, stale_after_days
-from ..resources.web_check import batch, resolve_web_verification_policy
+from ..resources.polite_sweep import polite_batch, resolve_polite_sweep_policy
+from ..resources.web_check import resolve_web_verification_policy
 
 
 def check_resources(ctx: Context) -> CommandResult:
@@ -31,6 +36,8 @@ def check_resources(ctx: Context) -> CommandResult:
     if not policy.enabled:
         print("check-resources: FAILED — web check is disabled by policy.")
         return CommandResult(exit_code=1)
+
+    sweep_policy = resolve_polite_sweep_policy(root)
 
     if getattr(ctx.args, "stale_only", False):
         today = utc_today(clock=ctx.clock)
@@ -61,20 +68,67 @@ def check_resources(ctx: Context) -> CommandResult:
     user_agent = (
         ctx.args.user_agent
         if ctx.args.user_agent is not None
-        else "skilltrace/1.8 check-resources"
+        else policy.user_agent
     )
-
+    respect_robots = (
+        False if getattr(ctx.args, "no_robots", False) or not sweep_policy.enabled
+        else sweep_policy.respect_robots
+    )
+    backoff_max_attempts = (
+        1
+        if not sweep_policy.enabled
+        else (
+            ctx.args.backoff_attempts
+            if ctx.args.backoff_attempts is not None
+            else sweep_policy.backoff_max_attempts
+        )
+    )
+    if (
+        isinstance(backoff_max_attempts, bool)
+        or not isinstance(backoff_max_attempts, int)
+        or not (1 <= backoff_max_attempts <= 10)
+    ):
+        print(
+            "check-resources: FAILED — --backoff-attempts must be an "
+            f"integer in [1, 10]; got {ctx.args.backoff_attempts!r}."
+        )
+        return CommandResult(exit_code=1)
+    per_host_delay = (
+        0.0
+        if not sweep_policy.enabled
+        else (
+            ctx.args.per_host_delay
+            if ctx.args.per_host_delay is not None
+            else sweep_policy.per_host_delay_seconds
+        )
+    )
+    if (
+        isinstance(per_host_delay, bool)
+        or not isinstance(per_host_delay, (int, float))
+        or not (0 <= per_host_delay <= 600)
+    ):
+        print(
+            "check-resources: FAILED — --per-host-delay must be a number "
+            f"in [0, 600]; got {ctx.args.per_host_delay!r}."
+        )
+        return CommandResult(exit_code=1)
     try:
-        pairs = batch(
+        pairs = polite_batch(
             [resource.url for resource in selected],
             timeout_seconds=timeout,
             follow_redirects=follow_redirects,
             method=method,
             user_agent=user_agent,
+            per_host_delay_seconds=per_host_delay,
+            respect_robots=respect_robots,
+            backoff_max_attempts=backoff_max_attempts,
+            backoff_base_seconds=sweep_policy.backoff_base_seconds,
+            backoff_max_seconds=sweep_policy.backoff_max_seconds,
         )
     except ValueError as exc:
         print(f"check-resources: FAILED — {exc}")
         return CommandResult(exit_code=1)
+
 
     ok_count = 0
     for resource, (_, result) in zip(selected, pairs):

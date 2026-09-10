@@ -492,3 +492,14 @@ predicate (`execution.overdue.overdue_reviews`) shared by every surface
 clock is read through one funnel (`execution.overdue.utc_today`) that
 honors the dispatcher's `Context.clock` override so midnight-UTC
 transitions cannot turn a passing test red.
+
+## Resource verification (v1.7–v2.3)
+
+**Polite sweep** — the v2.3 batch hygiene wrapping the advisory URL
+reachability check: nominal per-host spacing (a host's first request
+proceeds immediately, later same-host requests wait
+`per_host_delay_seconds`), one `robots.txt` fetch per host with fail-open
+on any fetch failure, and bounded 429-only backoff. A polite sweep is
+pure network reads: it never sets `last_verified`, never clears or writes
+`broken`, and emits no audit event.
+

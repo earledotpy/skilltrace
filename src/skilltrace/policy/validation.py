@@ -49,7 +49,10 @@ def load_and_validate_policy(root: Path | str) -> PolicyValidationResult:
             result.errors.extend(_portfolio_value_ranges(doc, root, filename))
         if filename == "resource_web_verification.yaml":
             result.errors.extend(_resource_web_verification_value_ranges(doc, root, filename))
+        if filename == "polite_sweep.yaml":
+            result.errors.extend(_polite_sweep_value_ranges(doc, root, filename))
     return result
+
 
 
 def _retention_value_ranges(doc: dict, root: Path | str, filename: str) -> list[str]:
@@ -344,4 +347,110 @@ def _resource_web_verification_value_ranges(
         )
 
     return errors
+
+
+def _is_bad_number(value: object) -> bool:
+    """True when a policy seed numeric is missing, bool, non-numeric, or non-finite."""
+    if value is None or isinstance(value, bool) or not isinstance(value, (int, float)):
+        return True
+    return isinstance(value, float) and (math.isnan(value) or math.isinf(value))
+
+
+def _polite_sweep_value_ranges(doc: dict, root: Path | str, filename: str) -> list[str]:
+    """v2.3 value-range checks for the polite sweep policy seed.
+
+    Enforces booleans for enabled/respect_robots, numeric in [0, 600] for
+    per_host_delay_seconds, integer in [1, 10] for backoff_max_attempts,
+    positive numerics for the backoff durations with base <= max, and
+    rejects unknown fields.
+    """
+    errors: list[str] = []
+    policy_path = Path(root) / "policy" / filename
+
+    allowed_fields = {
+        "id",
+        "status",
+        "title",
+        "description",
+        "enabled",
+        "per_host_delay_seconds",
+        "respect_robots",
+        "backoff_max_attempts",
+        "backoff_base_seconds",
+        "backoff_max_seconds",
+        "created_at",
+        "updated_at",
+    }
+    unknown = sorted(set(doc) - allowed_fields)
+    if unknown:
+        errors.append(
+            f"{policy_path}: unknown field(s): {', '.join(unknown)}."
+        )
+
+    required_fields = (
+        "id",
+        "status",
+        "title",
+        "description",
+        "enabled",
+        "per_host_delay_seconds",
+        "respect_robots",
+        "backoff_max_attempts",
+        "backoff_base_seconds",
+        "backoff_max_seconds",
+    )
+    for req in required_fields:
+        if req not in doc:
+            errors.append(f"{policy_path}: missing required field {req!r}.")
+
+    enabled = doc.get("enabled")
+    if enabled is not None and not isinstance(enabled, bool):
+        errors.append(f"{policy_path}: enabled must be a boolean; got {enabled!r}.")
+
+    respect = doc.get("respect_robots")
+    if respect is not None and not isinstance(respect, bool):
+        errors.append(
+            f"{policy_path}: respect_robots must be a boolean; got {respect!r}."
+        )
+
+    delay = doc.get("per_host_delay_seconds")
+    if _is_bad_number(delay) or not (0 <= delay <= 600):
+        errors.append(
+            f"{policy_path}: per_host_delay_seconds must be a finite number in [0, 600]; got {delay!r}."
+        )
+
+    attempts = doc.get("backoff_max_attempts")
+    if attempts is not None and (
+        isinstance(attempts, bool) or not isinstance(attempts, int) or not (1 <= attempts <= 10)
+    ):
+        errors.append(
+            f"{policy_path}: backoff_max_attempts must be an integer in [1, 10]; got {attempts!r}."
+        )
+
+    base = doc.get("backoff_base_seconds")
+    if _is_bad_number(base) or not (0 < base <= 60):
+        errors.append(
+            f"{policy_path}: backoff_base_seconds must be a finite number in (0, 60]; got {base!r}."
+        )
+
+    ceiling = doc.get("backoff_max_seconds")
+    if _is_bad_number(ceiling) or not (0 < ceiling <= 600):
+        errors.append(
+            f"{policy_path}: backoff_max_seconds must be a finite number in (0, 600]; got {ceiling!r}."
+        )
+
+    if (
+        isinstance(base, (int, float)) and not isinstance(base, bool)
+        and isinstance(ceiling, (int, float)) and not isinstance(ceiling, bool)
+        and not (isinstance(base, float) and (math.isnan(base) or math.isinf(base)))
+        and not (isinstance(ceiling, float) and (math.isnan(ceiling) or math.isinf(ceiling)))
+        and base > ceiling
+    ):
+        errors.append(
+            f"{policy_path}: backoff_base_seconds ({base!r}) must not exceed "
+            f"backoff_max_seconds ({ceiling!r})."
+        )
+
+    return errors
+
 

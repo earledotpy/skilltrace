@@ -301,3 +301,81 @@ def test_domain_scale_must_be_positive(policy_repo, capsys):
     assert "validate policy: FAILED" in out
     assert "domain_half_life_scales" in out
 
+
+# --- v2.3 polite sweep value-range checks ------------------------------------
+
+
+def _polite_sweep_path(root) -> Path:
+    return root / "policy" / "polite_sweep.yaml"
+
+
+def _set_polite_sweep_field(root, key: str, value, *, remove: bool = False) -> None:
+    path = _polite_sweep_path(root)
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if remove:
+        doc["polite_sweep_policy"].pop(key, None)
+    else:
+        doc["polite_sweep_policy"][key] = value
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "key,bad_value",
+    [
+        ("per_host_delay_seconds", -1),
+        ("per_host_delay_seconds", 601),
+        ("per_host_delay_seconds", True),
+        ("backoff_max_attempts", 0),
+        ("backoff_max_attempts", 11),
+        ("backoff_max_attempts", True),
+        ("backoff_max_attempts", 2.5),
+        ("respect_robots", "yes"),
+        ("backoff_base_seconds", 0),
+        ("backoff_base_seconds", 61),
+        ("backoff_max_seconds", 0),
+        ("backoff_max_seconds", 601),
+        ("enabled", "true"),
+    ],
+)
+def test_polite_sweep_seed_value_range_violation_fails_validation(policy_repo, capsys, key, bad_value):
+    _set_polite_sweep_field(policy_repo, key, bad_value)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "validate policy: FAILED" in out
+    assert key in out
+
+
+def test_polite_sweep_backoff_base_above_max_fails_validation(policy_repo, capsys):
+    _set_polite_sweep_field(policy_repo, "backoff_base_seconds", 30)
+    _set_polite_sweep_field(policy_repo, "backoff_max_seconds", 10)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "must not exceed" in out
+
+
+def test_polite_sweep_missing_field_fails_validation(policy_repo, capsys):
+    _set_polite_sweep_field(policy_repo, "respect_robots", None, remove=True)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "missing required field 'respect_robots'" in out
+
+
+def test_polite_sweep_unknown_field_fails_validation(policy_repo, capsys):
+    _set_polite_sweep_field(policy_repo, "aggressiveness", "maximum")
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "unknown field" in out
+
+
+def test_polite_sweep_disabled_seed_still_validates_clean(policy_repo, capsys):
+    """Disabling the sweep policy is valid — the sweep degrades to v1.8."""
+    _set_polite_sweep_field(policy_repo, "enabled", False)
+    rc = cli.run(["validate", "policy"], root=policy_repo)
+    assert rc == 0
+    assert "validate policy: OK" in capsys.readouterr().out
+
+

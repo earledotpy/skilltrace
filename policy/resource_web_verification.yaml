@@ -10,6 +10,8 @@ resource_web_verification_policy:
   timeout_seconds: 10
   follow_redirects: true
   check_method: HEAD
-  user_agent: SkillTrace/1.7
+  user_agent: skilltrace/2.3 check-resources
   created_at: 2026-09-03
-  updated_at: 2026-09-03
+  updated_at: 2026-09-09
+
+

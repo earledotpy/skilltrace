@@ -20,6 +20,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 import yaml
 
 from skilltrace import cli
@@ -83,7 +84,11 @@ def test_check_resources_all_ok(resources_repo, capsys):
     before = _registry_bytes(resources_repo)
     with patch(
         "urllib.request.OpenerDirector.open",
-        side_effect=[_ok("https://example.com/a"), _ok("https://example.com/b")],
+        side_effect=[
+            _ok("https://example.com/robots.txt"),
+            _ok("https://example.com/a"),
+            _ok("https://example.com/b"),
+        ],
     ):
         rc = cli.run(["check-resources", "--all"], root=resources_repo)
     assert rc == 0
@@ -103,7 +108,10 @@ def test_check_resources_default_selector_is_all(resources_repo, capsys):
     before = _registry_bytes(resources_repo)
     with patch(
         "urllib.request.OpenerDirector.open",
-        side_effect=[_ok("https://example.com/a")],
+        side_effect=[
+            _ok("https://example.com/robots.txt"),
+            _ok("https://example.com/a"),
+        ],
     ):
         rc = cli.run(["check-resources"], root=resources_repo)
     assert rc == 0
@@ -127,6 +135,7 @@ def test_check_resources_mixed_ok_and_broken_still_exit_0(resources_repo, capsys
     with patch(
         "urllib.request.OpenerDirector.open",
         side_effect=[
+            _ok("https://example.com/robots.txt"),
             _ok("https://example.com/good"),
             _http_error("https://example.com/gone", 404, "Not Found"),
             urllib.error.URLError("Connection refused"),
@@ -151,7 +160,10 @@ def test_check_resources_all_broken_still_exit_0(resources_repo, capsys):
     before = _registry_bytes(resources_repo)
     with patch(
         "urllib.request.OpenerDirector.open",
-        side_effect=[_http_error("https://example.com/gone", 500, "Server Error")],
+        side_effect=[
+            _ok("https://example.com/robots.txt"),
+            _http_error("https://example.com/gone", 500, "Server Error"),
+        ],
     ):
         rc = cli.run(["check-resources", "--all"], root=resources_repo)
     assert rc == 0
@@ -162,7 +174,7 @@ def test_check_resources_all_broken_still_exit_0(resources_repo, capsys):
     assert load_events(resources_repo) == []
 
 
-def test_check_resources_429_is_broken_with_no_retry(resources_repo, capsys):
+def test_check_resources_429_backs_off_bounded_then_reports_broken(resources_repo, capsys):
     _write_res(
         resources_repo,
         [{"id": "rate-res", "url": "https://example.com/rate", "cost": "free"}],
@@ -170,17 +182,109 @@ def test_check_resources_429_is_broken_with_no_retry(resources_repo, capsys):
     with patch(
         "urllib.request.OpenerDirector.open",
         side_effect=[
-            _http_error("https://example.com/rate", 429, "Too Many Requests")
+            _ok("https://example.com/robots.txt"),
+            _http_error("https://example.com/rate", 429, "Too Many Requests"),
+            _http_error("https://example.com/rate", 429, "Too Many Requests"),
         ],
     ) as mock_open:
-        rc = cli.run(["check-resources", "--all"], root=resources_repo)
+        rc = cli.run(
+            ["check-resources", "--all", "--backoff-attempts", "2", "--per-host-delay", "0"],
+            root=resources_repo,
+        )
     assert rc == 0
     out = capsys.readouterr().out
     assert "check-resources: BROKEN rate-res — status 429" in out
     assert "check-resources: 1 checked, 0 OK, 1 BROKEN" in out
-    # Re-deferred backoff: exactly one attempt, no retry loop.
-    assert mock_open.call_count == 1
+    # Bounded backoff: exactly two total attempts (initial + one retry), then
+    # the 429 is the resource's BROKEN verdict.
+    assert mock_open.call_count == 3  # robots + two 429 attempts
     assert load_events(resources_repo) == []
+
+
+def test_check_resources_429_default_attempts_is_policy_three(resources_repo, capsys):
+    _write_res(
+        resources_repo,
+        [{"id": "rate-res", "url": "https://example.com/rate", "cost": "free"}],
+    )
+    with patch(
+        "urllib.request.OpenerDirector.open",
+        side_effect=[
+            _ok("https://example.com/robots.txt"),
+            _http_error("https://example.com/rate", 429, "Too Many Requests"),
+            _http_error("https://example.com/rate", 429, "Too Many Requests"),
+            _http_error("https://example.com/rate", 429, "Too Many Requests"),
+        ],
+    ) as mock_open:
+        rc = cli.run(
+            ["check-resources", "--all", "--per-host-delay", "0"],
+            root=resources_repo,
+        )
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "check-resources: BROKEN rate-res — status 429" in out
+    # Policy default: three bounded attempts, then BROKEN.
+    assert mock_open.call_count == 4  # robots + three 429 attempts
+    assert load_events(resources_repo) == []
+
+
+def test_check_resources_no_robots_flag_skips_robots_fetch(resources_repo, capsys):
+    _write_res(
+        resources_repo,
+        [{"id": "res-a", "url": "https://example.com/a", "cost": "free"}],
+    )
+    with patch(
+        "urllib.request.OpenerDirector.open",
+        side_effect=[_ok("https://example.com/a")],
+    ) as mock_open:
+        rc = cli.run(["check-resources", "--all", "--no-robots"], root=resources_repo)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "check-resources: OK res-a — status 200" in out
+    assert mock_open.call_count == 1  # only the target URL, no robots fetch
+
+
+def test_check_resources_disabled_sweep_policy_degrades_to_plain_batch(resources_repo, capsys):
+    _write_res(
+        resources_repo,
+        [{"id": "rate-res", "url": "https://example.com/rate", "cost": "free"}],
+    )
+    sweep_path = resources_repo / "policy" / "polite_sweep.yaml"
+    doc = yaml.safe_load(sweep_path.read_text(encoding="utf-8"))
+    doc["polite_sweep_policy"]["enabled"] = False
+    sweep_path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+    with patch(
+        "urllib.request.OpenerDirector.open",
+        side_effect=[
+            _http_error("https://example.com/rate", 429, "Too Many Requests"),
+        ],
+    ) as mock_open:
+        rc = cli.run(["check-resources", "--all", "--per-host-delay", "5"], root=resources_repo)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "check-resources: BROKEN rate-res — status 429" in out
+    # Disabled: explicit delay ignored, robots skipped, no 429 retry.
+    assert mock_open.call_count == 1
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["check-resources", "--all", "--backoff-attempts", "0"],
+        ["check-resources", "--all", "--backoff-attempts", "11"],
+        ["check-resources", "--all", "--per-host-delay", "-1"],
+        ["check-resources", "--all", "--per-host-delay", "601"],
+    ],
+)
+def test_check_resources_rejects_out_of_range_sweep_flags(resources_repo, capsys, argv):
+    _write_res(
+        resources_repo,
+        [{"id": "res-a", "url": "https://example.com/a", "cost": "free"}],
+    )
+    with patch("urllib.request.OpenerDirector.open") as mock_open:
+        rc = cli.run(argv, root=resources_repo)
+    assert rc == 1
+    assert "check-resources: FAILED" in capsys.readouterr().out
+    assert mock_open.call_count == 0
 
 
 def test_check_resources_empty_registry(resources_repo, capsys):
@@ -227,7 +331,10 @@ def test_check_resources_stale_only_selects_stale(resources_repo, capsys):
     before = _registry_bytes(resources_repo)
     with patch(
         "urllib.request.OpenerDirector.open",
-        side_effect=[_ok("https://example.com/stale")],
+        side_effect=[
+            _ok("https://example.com/robots.txt"),
+            _ok("https://example.com/stale"),
+        ],
     ) as mock_open:
         rc = cli.run(["check-resources", "--stale-only"], root=resources_repo)
     assert rc == 0
@@ -238,7 +345,7 @@ def test_check_resources_stale_only_selects_stale(resources_repo, capsys):
     assert "fresh-res" not in out
     assert "never-res" not in out
     assert "check-resources: 1 checked, 1 OK, 0 BROKEN" in out
-    assert mock_open.call_count == 1
+    assert mock_open.call_count == 2  # robots + the one stale entry
     assert _registry_bytes(resources_repo) == before
     assert load_events(resources_repo) == []
 

@@ -62,6 +62,18 @@ verification note.
   spec:
   [`docs/spec-v2.2-provenance-impact.md`](./spec-v2.2-provenance-impact.md).
 
+- **v2.3.0** — Verification-hygiene hardening: polite batch sweeps
+  (G-Hygiene [#193](https://github.com/earledotpy/skilltrace/issues/193)):
+  nominal per-host spacing, one `robots.txt` fetch per host with
+  fail-open, and bounded 429-only backoff over the existing
+  `check-resource`/registry seam, with the `polite_sweep.yaml` seed
+  validated under `validate policy`; sweeps stay manual (scheduling
+  re-deferred) and purely read-only (never sets `last_verified`, never
+  clears or writes `broken`, emits no event); verified on the merged tree
+  (affected suites green, whole-repo sweep green modulo one pre-existing
+  `test_cli.py` registry gap fixed in the same change); spec:
+  [`docs/spec-v2.3-polite-sweep.md`](./spec-v2.3-polite-sweep.md).
+
 ## Version slots
 
 The slot table, output of G-Slots
@@ -208,7 +220,8 @@ doc would restate a glossary ruling, not add a new one.
 - [`docs/spec-tier2-retention-analytics.md`](./spec-tier2-retention-analytics.md) (v1.5 spec)
 - Per-slot specs for v1.6–v2.0 shipped with their slots; specs
   for v2.1+ are written when each slot ships (slot-row only
-  until then, per G-Slots).
+  until then, per G-Slots). v2.3 ships
+  [`docs/spec-v2.3-polite-sweep.md`](./spec-v2.3-polite-sweep.md).
 - [`docs/skilltrace-application-roadmap.md`](./skilltrace-application-roadmap.md) (v1 application plan;
   its post-v1 section already points at POST_V1 — POST_V2 joins
   that pointer trail when it lands)

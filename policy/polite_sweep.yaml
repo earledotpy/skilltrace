@@ -1,0 +1,16 @@
+polite_sweep_policy:
+  id: policy.polite_sweep.default_v2_3
+  status: active
+  title: Polite sweep hygiene
+  description: >
+    Verification-hygiene defaults for batch sweeps: per-host rate limiting,
+    robots.txt respect, and bounded 429 backoff. Pure network reads — a
+    sweep never writes state or emits events.
+  enabled: true
+  per_host_delay_seconds: 1.0
+  respect_robots: true
+  backoff_max_attempts: 3
+  backoff_base_seconds: 1.0
+  backoff_max_seconds: 60.0
+  created_at: 2026-09-09
+  updated_at: 2026-09-09

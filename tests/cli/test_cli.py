@@ -80,6 +80,7 @@ def test_registry_has_the_expected_commands():
         "serve",
         "check-resource",
         "check-resources",
+        "graph impact",
         "replace-resource",
     }
 

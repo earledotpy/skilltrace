@@ -479,6 +479,23 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Custom User-Agent string.",
     )
+    check_resources_parser.add_argument(
+        "--per-host-delay",
+        type=float,
+        default=None,
+        help="Minimum seconds between requests to the same host (default: from polite-sweep policy).",
+    )
+    check_resources_parser.add_argument(
+        "--no-robots",
+        action="store_true",
+        help="Skip robots.txt checks (default: respect robots per polite-sweep policy).",
+    )
+    check_resources_parser.add_argument(
+        "--backoff-attempts",
+        type=int,
+        default=None,
+        help="Max total attempts on HTTP 429 (default: from polite-sweep policy).",
+    )
     check_resources_parser.set_defaults(_command_name="check-resources")
 
     # replace-resource <broken_id> <candidate_id> [--dry-run]

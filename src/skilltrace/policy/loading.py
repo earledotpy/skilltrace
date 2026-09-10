@@ -19,6 +19,7 @@ POLICY_FILES: dict[str, str] = {
     "analytics.yaml": "analytics_policy",
     "automation_boundary.yaml": "automation_boundary_policy",
     "mastery_promotion.yaml": "mastery_promotion_policy",
+    "polite_sweep.yaml": "polite_sweep_policy",
     "portfolio.yaml": "portfolio_policy",
     "recommendation.yaml": "recommendation_policy",
     "remediation.yaml": "remediation_policy",

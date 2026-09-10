@@ -25,7 +25,7 @@ class WebVerificationPolicyDefaults:
     timeout_seconds: int = 10
     follow_redirects: bool = True
     check_method: Literal["HEAD", "GET"] = "HEAD"
-    user_agent: str = "SkillTrace/1.7"
+    user_agent: str = "skilltrace/2.3 check-resources"
 
 
 def resolve_web_verification_policy(root: str | Path | None) -> WebVerificationPolicyDefaults:
@@ -57,7 +57,7 @@ def resolve_web_verification_policy(root: str | Path | None) -> WebVerificationP
 
     ua = doc.get("user_agent")
     if not isinstance(ua, str) or not ua.strip():
-        ua = "SkillTrace/1.7"
+        ua = "skilltrace/2.3 check-resources"
 
     return WebVerificationPolicyDefaults(
         enabled=enabled,
@@ -89,18 +89,20 @@ class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def check_url(
+def check_url_detailed(
     url: str,
     *,
     timeout_seconds: int,
     follow_redirects: bool,
     method: Literal["HEAD", "GET"],
     user_agent: str,
-) -> WebCheckResult:
-    """Check reachability of a single HTTP/HTTPS URL via urllib.request.
+) -> tuple[WebCheckResult, dict[str, str]]:
+    """Internal: like `check_url` but also returns the HTTP failure headers.
 
-    Raises ValueError on invalid arguments.
-    Expected HTTP/transport/timeout failures return `ok=False`.
+    The v2.3 polite sweep needs the `Retry-After` header from a 429 to
+    schedule backoff; `check_url` deliberately collapses errors into a
+    frozen `WebCheckResult` with no headers. The public `check_url` seam
+    delegates here and drops the headers.
     """
     if not isinstance(url, str) or not url.strip():
         raise ValueError(f"Invalid URL: expected non-empty string, got {url!r}.")
@@ -144,24 +146,25 @@ def check_url(
                 status_code=code,
                 final_url=final_url,
                 reason=None if ok else str(code),
-            )
+            ), {}
     except urllib.error.HTTPError as exc:
         code = exc.code
         final_url = getattr(exc, "url", url) or url
         reason_str = str(exc.reason).lower() if exc.reason else f"http {code}"
+        headers = {k: v for k, v in (exc.headers or {}).items()} if exc.headers else {}
         return WebCheckResult(
             ok=False,
             status_code=code,
             final_url=final_url,
             reason=reason_str,
-        )
+        ), headers
     except (TimeoutError, socket.timeout):
         return WebCheckResult(
             ok=False,
             status_code=None,
             final_url=None,
             reason=f"timeout after {timeout_seconds}s",
-        )
+        ), {}
     except urllib.error.URLError as exc:
         if isinstance(exc.reason, (TimeoutError, socket.timeout)) or "timed out" in str(exc.reason).lower():
             return WebCheckResult(
@@ -169,20 +172,44 @@ def check_url(
                 status_code=None,
                 final_url=None,
                 reason=f"timeout after {timeout_seconds}s",
-            )
+            ), {}
         return WebCheckResult(
             ok=False,
             status_code=None,
             final_url=None,
             reason=str(exc.reason),
-        )
+        ), {}
     except OSError as exc:
         return WebCheckResult(
             ok=False,
             status_code=None,
             final_url=None,
             reason=str(exc),
-        )
+        ), {}
+
+
+def check_url(
+    url: str,
+    *,
+    timeout_seconds: int,
+    follow_redirects: bool,
+    method: Literal["HEAD", "GET"],
+    user_agent: str,
+) -> WebCheckResult:
+    """Check reachability of a single HTTP/HTTPS URL via urllib.request.
+
+    Raises ValueError on invalid arguments.
+    Expected HTTP/transport/timeout failures return `ok=False`.
+    """
+    result, _headers = check_url_detailed(
+        url,
+        timeout_seconds=timeout_seconds,
+        follow_redirects=follow_redirects,
+        method=method,
+        user_agent=user_agent,
+    )
+    return result
+
 
 
 def batch(
