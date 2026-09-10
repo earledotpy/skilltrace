@@ -83,18 +83,22 @@ def bundle_portfolio(
     # anything when the source tree cannot even be listed is handled by the
     # strict load above; a copy failure aborts via exception with nothing
     # rendered yet — callers see non-zero, never a half bundle presented OK).
+    # ``view.nodes`` are share-ready blocks: granted locations are verbatim
+    # raw paths, denied ones are ``[redacted]`` and never copied.
+    from .redaction import REDACTED as _REDACTED
+
     planned: dict[str, str] = {}  # raw local path -> bundle-relative link
     used: set[str] = set()
     copies: list[tuple[Path, str]] = []
     for node in view.nodes:
-        for item in node.evidence:
-            raw = item.artifact_path
-            if not raw or raw in planned or _is_external(raw):
+        for item in node["evidence"]:
+            raw = item["location"]
+            if not raw or raw == _REDACTED or raw in planned or _is_external(raw):
                 continue
             source = root / raw
             if not source.is_file():
                 continue
-            name = _unique_name(used, node.node_id, raw)
+            name = _unique_name(used, node["node_id"], raw)
             used.add(name)
             planned[raw] = bundle_relative(name)
             copies.append((source, name))
@@ -115,7 +119,7 @@ def bundle_portfolio(
         _manifest_json(view, options, planned), encoding="utf-8"
     )
     for node in view.nodes:
-        (nodes_dir / f"{node.node_id}.md").write_text(
+        (nodes_dir / f"{node['node_id']}.md").write_text(
             _node_detail_md(node, view, options, planned), encoding="utf-8"
         )
     return dest
@@ -154,13 +158,17 @@ def _manifest_json(
 def _node_detail_md(
     node, view, options: SelectionOptions, planned: dict[str, str]
 ) -> str:
-    """One per-node detail page (Markdown, same pipeline as the index)."""
+    """One per-node detail page (Markdown, same pipeline as the index).
+
+    Format-only: ``node`` is already a share-ready block — locations are
+    rewritten via ``planned`` but never re-redacted here.
+    """
     from .redaction import REDACTED, redaction_notices
 
     lines = [
-        f"# {node.title}",
+        f"# {node['title']}",
         "",
-        f"Node: {node.node_id} — {node.state}",
+        f"Node: {node['node_id']} — {node['state']}",
         "",
     ]
     for banner in view.honesty_banners:
@@ -172,13 +180,12 @@ def _node_detail_md(
         lines.append("")
     lines.append("| Evidence | Location |")
     lines.append("| --- | --- |")
-    if not node.evidence:
+    if not node["evidence"]:
         lines.append("| (none) | - |")
-    for item in node.evidence:
-        if options.include_paths and item.artifact_path:
-            loc = planned.get(item.artifact_path, item.artifact_path)
-        else:
-            loc = REDACTED
-        lines.append(f"| {item.record_id} | {loc} |")
+    for item in node["evidence"]:
+        loc = item["location"]
+        if loc != REDACTED and loc in planned:
+            loc = planned[loc]
+        lines.append(f"| {item['id']} | {loc} |")
     lines.append("")
     return "\n".join(lines)

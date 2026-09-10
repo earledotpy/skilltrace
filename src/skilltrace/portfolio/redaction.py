@@ -106,10 +106,10 @@ def redact_node_block(block: dict, options: SelectionOptions) -> dict:
     dimension passes through untouched. Artifact bytes the learner selected
     are never touched — only the surrounding report fields are redacted.
     A record's ``gate_run`` receipt is path-bearing provenance, so it rides
-    the *paths* dimension with the location: denied it drops out of the
-    block entirely; granted it passes through verbatim (hashes and the exit
-    class are shareable under the profile's other rules only because the
-    whole receipt is present).
+    the *paths* dimension via ``gate_receipt.for_share``: denied it drops
+    out of the block entirely; granted it passes through as a copy (hashes
+    and the exit class are shareable under the profile's other rules only
+    because the whole receipt is present).
     """
     evidence = [
         {
@@ -120,7 +120,9 @@ def redact_node_block(block: dict, options: SelectionOptions) -> dict:
                 else REDACTED
             ),
             "note": item.get("note") if options.include_notes else REDACTED,
-            "gate_run": item.get("gate_run") if options.include_paths else None,
+            "gate_run": _receipt_for_share(
+                item.get("gate_run"), include_paths=options.include_paths
+            ),
         }
         for item in block.get("evidence", [])
     ]

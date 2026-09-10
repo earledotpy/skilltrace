@@ -1,10 +1,11 @@
 """Portfolio derivation and rendering (v2.0 spec §4–§5).
 
-``build_view`` derives the snapshot from live truth; ``render_markdown``,
-``render_html``, and ``render_json`` render it. Preview and export share this
-pipeline (CONTEXT.md: preview uses the same selection, redaction, and
-rendering pipeline as export). The wall clock enters only as the injected
-``today`` keyword — no module reads the clock itself (§8.1).
+``pipeline.build_portfolio`` derives the share-ready snapshot from live
+truth; ``render_markdown``, ``render_html``, and ``render_json`` only
+format it. Preview and export share this pipeline (CONTEXT.md: preview
+uses the same selection, redaction, and rendering pipeline as export).
+The wall clock enters only as the injected ``today`` keyword — no module
+reads the clock itself (§8.1).
 """
 
 from __future__ import annotations
@@ -18,11 +19,7 @@ from ..context import JoinedView, load_context_strict
 from .models import PortfolioView, SelectedNode, SelectionOptions
 from .redaction import (
     REDACTED,
-    block_to_report_dict,
     redaction_notices,
-    redact_node_block,
-    visible_receipt,
-    visible_url,
 )
 
 #: Honesty-banner trigger phrases (spec §4.3). Named verbatim in the banner.
@@ -116,20 +113,14 @@ def build_view(
     *,
     today: datetime.date,
 ) -> PortfolioView:
-    """Derive the portfolio snapshot from the joined truth files."""
-    from .selection import select
+    """Derive the share-ready snapshot from the joined truth files.
 
-    nodes = select(joined, options)
-    window = joined.policy.portfolio.resource_staleness_days
-    banners = compute_honesty_banners(
-        nodes, today=today, staleness_days=window
-    )
-    return PortfolioView(
-        selection=options,
-        nodes=nodes,
-        honesty_banners=banners,
-        generated_at=f"{today.isoformat()}T00:00:00Z",
-    )
+    Thin compatibility alias over ``pipeline.build_portfolio`` — the
+    production pipeline. New callers prefer ``build_portfolio`` directly.
+    """
+    from .pipeline import build_portfolio
+
+    return build_portfolio(joined, options, today=today)
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +146,12 @@ def render_markdown(
     *,
     links: dict[str, str] | None = None,
 ) -> str:
-    """Compact per-project sections with tables; plain-text readable."""
+    """Compact per-project sections with tables; plain-text readable.
+
+    Format-only: ``view.nodes`` are already share-ready blocks from
+    ``pipeline.build_portfolio`` — no redaction is applied here. ``links``
+    only rewrites granted local paths to bundle-relative links.
+    """
     link_map = links or {}
     lines = [
         "# Portfolio",
@@ -176,30 +172,28 @@ def render_markdown(
         lines.append("(no nodes match the selection)")
         return "\n".join(lines) + "\n"
     for node in view.nodes:
-        raw = block_to_report_dict(node, options)
-        redacted = redact_node_block(raw, options)
-        lines.append(f"## {node.title} ({node.node_id}) — {node.state}")
+        lines.append(f"## {node['title']} ({node['node_id']}) — {node['state']}")
         lines.append("")
         lines.append("| Evidence | Location |")
         lines.append("| --- | --- |")
-        if not redacted["evidence"]:
+        if not node["evidence"]:
             lines.append("| (none) | - |")
-        for item in redacted["evidence"]:
+        for item in node["evidence"]:
             loc = item["location"]
             if loc != REDACTED and loc in link_map:
                 loc = link_map[loc]
             lines.append(f"| {item['id']} | {loc} |")
-        if options.include_blockers and redacted["blockers"]:
+        if options.include_blockers and node["blockers"]:
             lines.append("")
             lines.append("| Blocker | Description |")
             lines.append("| --- | --- |")
-            for item in redacted["blockers"]:
+            for item in node["blockers"]:
                 lines.append(f"| {item['id']} | {item['description']} |")
-        if options.include_reviews and redacted["reviews"]:
+        if options.include_reviews and node["reviews"]:
             lines.append("")
             lines.append("| Review | Summary |")
             lines.append("| --- | --- |")
-            for item in redacted["reviews"]:
+            for item in node["reviews"]:
                 lines.append(f"| {item['id']} | {item['result_summary']} |")
         lines.append("")
     return "\n".join(lines).rstrip("\n") + "\n"
@@ -230,7 +224,11 @@ def render_html(
     *,
     links: dict[str, str] | None = None,
 ) -> str:
-    """Self-contained HTML: one inline ``<style>``, zero JavaScript."""
+    """Self-contained HTML: one inline ``<style>``, zero JavaScript.
+
+    Format-only: ``view.nodes`` are already share-ready — no redaction or
+    receipt filtering here; granted paths are only rewritten via ``links``.
+    """
     link_map = links or {}
     parts = [
         f"<h1>Portfolio</h1>",
@@ -249,16 +247,14 @@ def render_html(
     if not view.nodes:
         parts.append("<p>(no nodes match the selection)</p>")
     for node in view.nodes:
-        raw = block_to_report_dict(node, options)
-        redacted = redact_node_block(raw, options)
         parts.append(
-            f"<h2>{html.escape(node.title)} "
-            f"({html.escape(node.node_id)}) — {html.escape(node.state)}</h2>"
+            f"<h2>{html.escape(node['title'])} "
+            f"({html.escape(node['node_id'])}) — {html.escape(node['state'])}</h2>"
         )
         rows = ""
-        if not redacted["evidence"]:
+        if not node["evidence"]:
             rows = "<tr><td>(none)</td><td>-</td></tr>"
-        for item in redacted["evidence"]:
+        for item in node["evidence"]:
             loc = item["location"]
             if loc != REDACTED and loc in link_map:
                 loc = link_map[loc]
@@ -270,11 +266,11 @@ def render_html(
             "<table><thead><tr><th>Evidence</th><th>Location</th></tr></thead>"
             f"<tbody>{rows}</tbody></table>"
         )
-        if redacted["resources"]:
+        if node["resources"]:
             res_rows = "".join(
                 f"<tr><td>{html.escape(str(r['id']))}</td>"
-                f"<td>{html.escape(str(visible_url(r['url'], include_urls=options.include_urls)))}</td></tr>"
-                for r in redacted["resources"]
+                f"<td>{html.escape(str(r['url']))}</td></tr>"
+                for r in node["resources"]
             )
             parts.append(
                 "<table><thead><tr><th>Resource</th><th>URL</th></tr></thead>"
@@ -305,31 +301,33 @@ def render_json(
     *,
     links: dict[str, str] | None = None,
 ) -> str:
-    """Render the stable JSON contract (never a 1:1 mirror of internals)."""
+    """Render the stable JSON contract (never a 1:1 mirror of internals).
+
+    Format-only: receipts and paths are already share-filtered by the
+    pipeline — passed through verbatim here, never re-redacted.
+    """
     link_map = links or {}
     nodes = []
     for node in view.nodes:
-        raw = block_to_report_dict(node, options)
-        redacted = redact_node_block(raw, options)
         evidence = []
-        for item in redacted["evidence"]:
+        for item in node["evidence"]:
             loc = item["location"]
             if loc != REDACTED and loc in link_map:
                 loc = link_map[loc]
-            receipt = visible_receipt(item.get("gate_run"), include_paths=options.include_paths)
+            receipt = item.get("gate_run")
             entry = {"id": item["id"], "location": loc, "note": item["note"]}
             if receipt is not None:
                 entry["gate_run"] = receipt
             evidence.append(entry)
         artifacts = [
             link_map.get(loc, loc) if loc != REDACTED else loc
-            for loc in redacted["artifacts"]
+            for loc in node["artifacts"]
         ]
         nodes.append(
             {
-                "node_id": node.node_id,
-                "state": node.state,
-                "title": node.title,
+                "node_id": node["node_id"],
+                "state": node["state"],
+                "title": node["title"],
                 "evidence": evidence,
                 "artifacts": artifacts,
             }
