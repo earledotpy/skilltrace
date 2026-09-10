@@ -146,21 +146,8 @@ def _validate_anchors(data: dict[str, Any], path: Path) -> tuple[dict[str, Any],
     return tuple(anchors)
 
 
-def load_node(path: Path | str) -> SkillNode:
-    """Load and validate one node markdown file into a `SkillNode`.
-
-    Raises `NodeLoadError` (naming the file) on a missing/malformed frontmatter,
-    a forbidden key, an invalid node ID, a missing required field, or a roadmap
-    anchor that is not `reference_only`.
-    """
-    path = Path(path)
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError as exc:
-        raise NodeLoadError(f"{path}: cannot read node file: {exc}") from exc
-
-    data = _parse_frontmatter(text, path)
-
+def _build_node(data: dict[str, Any], path: Path) -> SkillNode:
+    """Validate one frontmatter mapping into a `SkillNode` (pure of I/O)."""
     present_forbidden = sorted(FORBIDDEN_FRONTMATTER_KEYS & data.keys())
     if present_forbidden:
         raise NodeLoadError(
@@ -201,6 +188,34 @@ def load_node(path: Path | str) -> SkillNode:
         updated_at=data.get("updated_at"),
         source_path=path,
     )
+
+
+def load_node_from_text(text: str, source_path: Path | str) -> SkillNode:
+    """Parse and validate one node markdown blob into a `SkillNode` (no disk I/O).
+
+    The graph-impact baseline adapters (issue #205) read baseline blobs
+    straight from `git show` and parse them here, so no temp node files
+    are dropped on disk. Errors name `source_path` (the repo-relative
+    curriculum path), never a temp file.
+    """
+    path = Path(source_path)
+    return _build_node(_parse_frontmatter(text, path), path)
+
+
+def load_node(path: Path | str) -> SkillNode:
+    """Load and validate one node markdown file into a `SkillNode`.
+
+    Raises `NodeLoadError` (naming the file) on a missing/malformed frontmatter,
+    a forbidden key, an invalid node ID, a missing required field, or a roadmap
+    anchor that is not `reference_only`.
+    """
+    path = Path(path)
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise NodeLoadError(f"{path}: cannot read node file: {exc}") from exc
+
+    return load_node_from_text(text, path)
 
 
 def load_nodes(root: Path | str | None = None) -> list[SkillNode]:

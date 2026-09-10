@@ -154,6 +154,36 @@ def load_edge(
     )
 
 
+def load_edges_from_text(
+    text: str, source_path: Path | None = None, *, allow_empty: bool = False
+) -> list[GraphEdge]:
+    """Parse and validate one edges.yaml blob into `GraphEdge`s (no disk I/O).
+
+    The graph-impact baseline adapters (issue #205) read the baseline
+    `graph/edges.yaml` straight from `git show` and parse it here with
+    `allow_empty=True`: an empty/whitespace blob means the pre-edges era —
+    no baseline edges.
+    """
+    if not text.strip():
+        if allow_empty:
+            return []
+    try:
+        doc = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise EdgeLoadError(f"{source_path}: unparseable edges YAML: {exc}") from exc
+
+    if not isinstance(doc, dict) or "edges" not in doc:
+        raise EdgeLoadError(f"{source_path}: expected a top-level 'edges:' mapping.")
+
+    raw = doc["edges"]
+    if not isinstance(raw, list):
+        raise EdgeLoadError(f"{source_path}: 'edges' must be a list.")
+
+    return [
+        load_edge(item, source_path=source_path, index=i) for i, item in enumerate(raw)
+    ]
+
+
 def load_edges(root: Path | str | None = None) -> list[GraphEdge]:
     """Load every edge from `graph/edges.yaml` (default root: auto-detected).
 
@@ -169,18 +199,4 @@ def load_edges(root: Path | str | None = None) -> list[GraphEdge]:
     except OSError as exc:
         raise EdgeLoadError(f"{path}: cannot read edges file: {exc}") from exc
 
-    try:
-        doc = yaml.safe_load(text)
-    except yaml.YAMLError as exc:
-        raise EdgeLoadError(f"{path}: unparseable edges YAML: {exc}") from exc
-
-    if not isinstance(doc, dict) or "edges" not in doc:
-        raise EdgeLoadError(f"{path}: expected a top-level 'edges:' mapping.")
-
-    raw = doc["edges"]
-    if not isinstance(raw, list):
-        raise EdgeLoadError(f"{path}: 'edges' must be a list.")
-
-    return [
-        load_edge(item, source_path=path, index=i) for i, item in enumerate(raw)
-    ]
+    return load_edges_from_text(text, source_path=path)
