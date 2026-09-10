@@ -30,9 +30,10 @@ from __future__ import annotations
 import argparse
 
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..resources.polite_sweep import check_urls
 from ..resources.registry import ResourceLoadError, load_resources
 from ..resources.verification import record_verification, today_iso
-from ..resources.web_check import check_url, resolve_web_verification_policy
+from ..resources.web_check import resolve_web_verification_policy
 
 
 def verify_resource(ctx: Context) -> CommandResult:
@@ -105,13 +106,18 @@ def verify_resource(ctx: Context) -> CommandResult:
         )
 
         try:
-            result = check_url(
-                target.url,
+            pairs = check_urls(
+                [target.url],
+                root=root,
                 timeout_seconds=timeout,
                 follow_redirects=follow_redirects,
                 method=method,
                 user_agent=user_agent,
+                per_host_delay_seconds=0.0,
+                respect_robots=False,
+                backoff_max_attempts=1,
             )
+            result = pairs[0][1]
         except ValueError as exc:
             print(f"verify-resource: FAILED — {exc}")
             return CommandResult(exit_code=1)

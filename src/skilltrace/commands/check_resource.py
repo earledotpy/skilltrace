@@ -1,17 +1,19 @@
 """`skilltrace check-resource <resource_id>` — pure read-only URL checker (v1.7 §4.1).
 
-Performs an advisory-only reachability check on a single resource's URL.
-Read-only, never writes a marker or changes last_verified, emits no audit event.
+Performs an advisory-only reachability check on a single resource's URL
+via the deep `check_urls()` sweep as a one-element plain fetch (no
+robots gate, no delay, no retry). Read-only, never writes a marker or
+changes stored verification state, emits no audit event.
 """
 
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..resources.registry import ResourceLoadError, load_resources
-from ..resources.web_check import check_url, resolve_web_verification_policy
+from ..resources.polite_sweep import check_urls
+from ..resources.web_check import resolve_web_verification_policy
 
 
 def check_resource(ctx: Context) -> CommandResult:
@@ -39,31 +41,23 @@ def check_resource(ctx: Context) -> CommandResult:
         print(f"check-resource: FAILED — web check is disabled by policy.")
         return CommandResult(exit_code=1)
 
-    timeout = ctx.args.timeout if ctx.args.timeout is not None else policy.timeout_seconds
-    method = ctx.args.method if ctx.args.method is not None else policy.check_method
-    follow_redirects = (
-        ctx.args.follow_redirects
-        if ctx.args.follow_redirects is not None
-        else policy.follow_redirects
-    )
-    user_agent = (
-        ctx.args.user_agent
-        if ctx.args.user_agent is not None
-        else "skilltrace/1.7 resource-check"
-    )
-
     try:
-        result = check_url(
-            target.url,
-            timeout_seconds=timeout,
-            follow_redirects=follow_redirects,
-            method=method,
-            user_agent=user_agent,
+        pairs = check_urls(
+            [target.url],
+            root=root,
+            timeout_seconds=ctx.args.timeout,
+            follow_redirects=ctx.args.follow_redirects,
+            method=ctx.args.method,
+            user_agent=ctx.args.user_agent,
+            per_host_delay_seconds=0.0,
+            respect_robots=False,
+            backoff_max_attempts=1,
         )
     except ValueError as exc:
         print(f"check-resource: FAILED — {exc}")
         return CommandResult(exit_code=1)
 
+    result = pairs[0][1]
     if result.ok:
         print(f"check-resource: OK {resource_id} — status {result.status_code}, final_url {result.final_url}")
     else:

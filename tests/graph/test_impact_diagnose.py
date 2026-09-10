@@ -325,7 +325,7 @@ def test_git_source_bad_node_blob_is_unavailable(tmp_path):
 
 
 def _write_checkout(root: Path) -> None:
-    from tests._builders import write_node
+    from _builders import write_node
 
     write_node(root, "math.a_01")
     write_node(root, "math.b_01")

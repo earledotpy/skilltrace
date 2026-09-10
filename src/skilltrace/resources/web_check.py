@@ -12,9 +12,9 @@ import socket
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Iterable
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 
 @dataclass(frozen=True)
@@ -96,13 +96,19 @@ def check_url_detailed(
     follow_redirects: bool,
     method: Literal["HEAD", "GET"],
     user_agent: str,
+    opener: Callable[..., Any] | None = None,
 ) -> tuple[WebCheckResult, dict[str, str]]:
     """Internal: like `check_url` but also returns the HTTP failure headers.
 
-    The v2.3 polite sweep needs the `Retry-After` header from a 429 to
+    The polite sweep needs the `Retry-After` header from a 429 to
     schedule backoff; `check_url` deliberately collapses errors into a
     frozen `WebCheckResult` with no headers. The public `check_url` seam
     delegates here and drops the headers.
+
+    `opener`, when given, is a callable taking `(request, timeout=...)`
+    returning a context-manager response; it replaces the default
+    `urllib.request.build_opener().open` call so tests can inject a fake
+    without patching urllib internals.
     """
     if not isinstance(url, str) or not url.strip():
         raise ValueError(f"Invalid URL: expected non-empty string, got {url!r}.")
@@ -134,10 +140,14 @@ def check_url_detailed(
     if not follow_redirects:
         handlers.append(_NoRedirectHandler())
 
-    opener = urllib.request.build_opener(*handlers)
+    if opener is None:
+        default_opener = urllib.request.build_opener(*handlers)
+        open_call = default_opener.open
+    else:
+        open_call = opener
 
     try:
-        with opener.open(req, timeout=timeout_seconds) as resp:
+        with open_call(req, timeout=timeout_seconds) as resp:
             code = getattr(resp, "status", None) or resp.getcode()
             final_url = resp.geturl()
             ok = 200 <= code < 400
@@ -195,6 +205,7 @@ def check_url(
     follow_redirects: bool,
     method: Literal["HEAD", "GET"],
     user_agent: str,
+    opener: Callable[..., Any] | None = None,
 ) -> WebCheckResult:
     """Check reachability of a single HTTP/HTTPS URL via urllib.request.
 
@@ -207,38 +218,6 @@ def check_url(
         follow_redirects=follow_redirects,
         method=method,
         user_agent=user_agent,
+        opener=opener,
     )
     return result
-
-
-
-def batch(
-    entries: Iterable[str],
-    *,
-    timeout_seconds: int,
-    follow_redirects: bool,
-    method: Literal["HEAD", "GET"],
-    user_agent: str,
-) -> list[tuple[str, WebCheckResult]]:
-    """Check a list of URLs sequentially, preserving input order (v1.8 G-Batch).
-
-    A thin loop over `check_url`: no token bucket, no `robots.txt`, no retry
-    loop — a 429 (or any HTTP/transport/timeout failure) is reported as
-    `ok=False` via the result's `reason`, never retried. Pure network reads:
-    performs zero writes (never calls `record_verification`, never sets
-    `last_verified`, never clears `broken`) and emits no event. An empty
-    input yields an empty list.
-    """
-    return [
-        (
-            entry,
-            check_url(
-                entry,
-                timeout_seconds=timeout_seconds,
-                follow_redirects=follow_redirects,
-                method=method,
-                user_agent=user_agent,
-            ),
-        )
-        for entry in entries
-    ]
