@@ -25,7 +25,7 @@
 - [ ] **Pass modal (server-rendered, per-request `JoinedView` lenient):** node title+id+current state; per-required-spec accepted/minimum counts; gate authority (objective/manual); `passed_but_not_backed` warning when present; auto-review note ("confirming schedules reviews per `policy/cadence.py`"); explicit Confirm button. No pre-disabled state — current eligibility renders as advisory text beside the button; domain refusal on click is truth (`[warning]`/`[error]` per `src/skilltrace/render.py:1`).
 - [ ] **Master modal is two-step.** Step 1 shows mastery facts (passed date, satisfactory spaced review, spacing policy value `policy/mastery.py:66`); step 2 is explicit "this is permanent" confirm. Mastered never demotes (`AGENTS.md: Safety rules`, `CONTEXT.md:40`).
 - [ ] **Exit-code → browser mapping:** `0` asserted → close modal, refresh view, success line + auto-scheduled review ids; `2` domain refusal (locked/ineligible/backward) → modal stays open, refusal text verbatim inline; `1` operational failure → dismiss modal, page-level banner suggesting `skilltrace validate`.
-- [ ] **Locked & advisory rendering.** Locked nodes rendered, never hidden: locked pill + unsatisfied `hard_prerequisite` list wherever node appears; `Start`/`Pass` visible but domain-refused on click ("locked is the only wall"). Recommendation lists keep opt-in "show locked" toggle (`next --show-locked` parity). Advisory policies (workload, cadence, remediation pressure, track weights) are passive UI only — banners/pills/pressure strip/"Why this?" collapsibles — never disable a control or refuse a submit; refusals come only from hard checks (`CONTEXT.md:107` Advisory policy).
+- [ ] **Locked & advisory rendering.** Locked nodes rendered, never hidden: locked pill + unsatisfied `hard_prerequisite` list wherever node appears; `Start`/`Pass` handling splits per ADR 0007 §Validation (Amendment 2026-09-11): a **structural** wall (pass or master on a `locked` node, master on a node that is not `passed`) **omits** the control — absent markup, never `disabled` — while the node and its unmet prerequisites still render ("locked is the only wall" survives intact); **judgment** eligibility stays live with advisory text and domain refusal on click is truth. Recommendation lists keep opt-in "show locked" toggle (`next --show-locked` parity). Advisory policies (workload, cadence, remediation pressure, track weights) are passive UI only — banners/pills/pressure strip/"Why this?" collapsibles — never disable a control or refuse a submit; refusals come only from hard checks (`CONTEXT.md:107` Advisory policy).
 - [ ] **Event provenance.** Web-initiated mutations append under same canonical `_command_name` (`pass`, `master`, `start`, …) plus `source: "web"` in event args (rides in `Context`, not `argv`, so `dispatch._event_args` underscore exclusion untouched). Events remain audit-only, never read to compute state. No delete affordance at all in Tier 1 (`delete_record` moot; supersession CLI-only until G5 affordances).
 - [ ] **No pending acceptance queue, no generic `PATCH /state`.** Pass/master are the only hard-boundary writes; `active` via `start` is forward-only but evidentially weightless.
 
@@ -34,22 +34,48 @@
 - [ ] **Stdlib-only shell.** `http.server.ThreadingHTTPServer` behind thin `BaseHTTPRequestHandler` router, ~150–250 lines owned glue (routing, query/form parsing, HTML assembly). Zero new deps — `pyproject.toml: requires-python >=3.14`, `dependencies = ["PyYAML>=6.0"]` untouched. Rejected: Flask (~7 transitive), FastAPI+uvicorn (async overkill), serving disposable exports (`data/export.html`/`data/skilltrace.db` never read back per `src/skilltrace/export_data.py:1`).
 - [ ] **Read seam — lenient, fresh per request.** Every `GET` calls `load_context_lenient(root)` (`src/skilltrace/context.py:260`) anew: no cache, no file-watch. CLI/editor mutations appear on next refresh. Strict entrypoint reserved for `export html` (`src/skilltrace/context.py:200`). Never read `data/*.db`/`data/export.md`.
 - [ ] **Write seam — G2 constraint realized.** `serve` itself is `READ_ONLY` (appends no event); browser writes nest-dispatch through registry per §B.
-- [ ] **MVP route table (6 + 4 extended via G5):**
-  ```
-  GET  /                              today dashboard (today brief + top rec + health strip + pressure excerpts)
-  GET  /next?minutes=&limit=&locked=  recommendation list (mirrors CLI flags)
-  GET  /nodes/{id}                    node detail (Mentor 7-part shape + eligibility)
-  GET  /health                        health roll-up (5 validators + liveness)
-  GET  /nodes/{id}/pass       → POST /nodes/{id}/pass                 pass flow (G2 modal)
-  GET  /nodes/{id}/master     → GET  /nodes/{id}/master/confirm → POST /nodes/{id}/master/confirm   master two-step (G2)
-  POST /nodes/{id}/start        (G5)  start — node detail + today's top pick
-  POST /work                    (G5)  work — session strip + node detail (notes/minutes/blocked→notes)
-  POST /session/close           (G5)  session close — optional honest-end behind "forgot to close?" reveal
-  POST /nodes/{id}/blockers     (G5)  blocker create
-  POST /blockers/{id}/resolve   (G5)  blocker resolve
-  POST /nodes/{id}/evidence     (G5)  evidence submit (spec select auto when node has exactly one; manual-gate radios only on manual nodes)
-  ```
-  All server-rendered HTML, standard form POSTs, redirect-after-POST, zero JavaScript. No audit-log view, no delete affordance in Tier 1.
+- [ ] **Normative route table** — ratified in [#220](https://github.com/earledotpy/skilltrace/issues/220) (G-RouteSurface) and amended into `docs/adr/0007-reintroduce-interface-layer.md` (Amendment 2026-09-11). **This §C is the normative table; the ADR carries rationale only.** Six columns per row: Path · Method · **View identity** (per ADR 0007 Vocabulary — a view's identity is its screen name, never its path, so the active-view marking derives from the seam and not from string-matching the request path) · Params · **Authority** (where the `AGENTS.md` hard boundary becomes visible per route) · **Nav** (daily-loop / periodic / none). Reads:
+
+  | Path | Method | View identity | Params | Authority | Nav |
+  |---|---|---|---|---|---|
+  | `/` | GET | `today` | `notice`, `kind` (flash carry) | read | daily-loop |
+  | `/next` | GET | `next` | `minutes` (60), `limit`, `locked` — human-labelled controls; command gloss removed | read | daily-loop |
+  | `/nodes/jump` | GET | `finder` | `node_id` (optional — **absent ⇒ title-first list**; present ⇒ resolve + redirect) | read | none — header form |
+  | `/nodes/{id}` | GET | `node` | `notice`, `kind` | read | none |
+  | `/nodes/{id}/pass` | GET | `pass-step` | — | read (acceptance step) | none |
+  | `/nodes/{id}/master` | GET | `master-step` | — | read (acceptance step) | none |
+  | `/nodes/{id}/master/confirm` | GET | `master-confirm` | — | read (acceptance step) | none |
+  | `/health` | GET | `health` | — | read | **none** — header pill strip + `Full roll-up →` |
+  | `/analytics` | GET | `analytics` | `theme` (`all`·`velocity`·`blockers`·`reviews`·`evidence`), `days` (`analytics_policy.default_window_days`), `group-by` (`prefix`\|`track`, `default_group_by`) | read | **periodic** (separated group) |
+
+  Writes:
+
+  | Path | Method | View identity | Params / form facts | Authority | Nav |
+  |---|---|---|---|---|---|
+  | `/work` | POST | — | notes, optional minutes, blocked (requires notes) | learner-write | — |
+  | `/session/close` | POST | — | optional honest-end | learner-write | — |
+  | `/analytics/export` | POST | — | `theme`, `format`, `group_by`, `days` | advisory export — delegates to the canonical command, writes a disposable artifact; **no progress write** | — |
+  | `/nodes/{id}/start` | POST | — | optional template | learner-write — `active`, forward-only | — |
+  | `/nodes/{id}/pass` | POST | — | — | **learner-write — hard boundary; never automatable** | — |
+  | `/nodes/{id}/master/confirm` | POST | — | — | **learner-write — hard boundary; never automatable** | — |
+  | `/nodes/{id}/blockers` | POST | — | description (required) | learner-write | — |
+  | `/blockers/{id}/resolve` | POST | — | summary (required) | learner-write — open rows only | — |
+  | `/nodes/{id}/evidence` | POST | — | location, spec, verdict radios (manual gates only), supersede + reason | learner-write — acceptance frozen at submission (`docs/adr/0003-acceptance-frozen-at-submission.md`) | — |
+  | *anything else* | GET/POST | — | — | 404 — **full chrome** via the shared error body | — |
+
+  **Response contract.** Every POST → `303 See Other` + flash notice, refusals included; **no 4xx ever leaves a write** (a 4xx error page re-submits on refresh — unacceptable on a `pass`/`master` route). Refusal copy is human, `kind ∈ {ok, warning, error}`, rendered through `src/skilltrace/render.py`'s `[warning]`/`[error]` classes. The unknown-route fallthrough and unknown-node-id render the **same shared error body** as every other error (full chrome — header, nav, empty health strip), because the learner who typed a bad URL most needs the affordance back into the loop; when the context cannot be loaded at all, the shell falls back to a chrome-less minimal page rather than faulting itself.
+
+  All server-rendered HTML, standard form POSTs, redirect-after-POST, zero JavaScript — this table is the tier-0 posture, and the JavaScript-budget decision (ADR 0008, G-JS) remains open and unclaimed by it. No audit-log view, no delete affordance in Tier 1.
+
+  **Not a route (deliberate).** Each absence is a decision with a warrant and, where one exists, the trigger that re-opens it — recorded rather than silently dropped, since an unwritten gap is indistinguishable from an oversight:
+
+  | Absence | Warrant | Re-opens when |
+  |---|---|---|
+  | `--state` filtering on the web | No audit verdict and no locked preference row asks for it; the web is a daily loop, not a query console. `next --show-locked`'s half is expressed as a "Not ready yet — and why" card rather than a flag. | a slot that needs multi-state querying on the web |
+  | `/reviews` (any review write flow) | Deferred by preference row P1.9 — `review complete` is CLI-only, so no web surface exists to prefer. Today's overdue-review rows link to their **node** page, not to a review surface. | **any slot that adds a review write flow to the web** |
+  | graph / dependency view | No audit verdict, no locked preference row; graph-visualisation technology is already out of scope. | a verdict *and* a preference row both ask |
+  | `/today` alias for `/` | One view, one URL. An alias would need a canonical-choice rule and would duplicate active-view marking. | never (closed) |
+
 - [ ] **Rendering — `render.py` voice reused verbatim + mechanical transform.** Pages call `src/skilltrace/render.py:42` helpers and transform terminal lines mechanically (escape per line, `[pill]` → CSS class, indentation → structure). One voice source, drift impossible, no CLI refactor. Sanctioned escalation if crusty: refactor `render.py` into structured section data — never parallel hand-declared web vocabulary (ADR 0002 lesson).
 - [ ] **Placement & traits.** Subpackage `src/skilltrace/web/` (not `interface/`/`views/`). `serve` registered READ_ONLY + `ui` alias (`src/skilltrace/cli.py:68` `REGISTRY` pattern like `close`→`session close`). Styling: one inline `<style>` block — no static-file routing. Port 8341 default, fail-fast if busy (`--port` override); browser auto-open `http://127.0.0.1:<port>` via stdlib `webbrowser` (`--no-browser` opt-out); loopback-only (no `--host`); foreground until `Ctrl+C`; `--root` global semantics resolved at startup; `data/*` never touched so gitignore interaction nil; Windows UTF-8 via `src/skilltrace/cli.py:530`.
 

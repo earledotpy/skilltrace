@@ -3,6 +3,7 @@
 Date: 2026-09-05
 Status: accepted
 Supersedes: ADR 0002
+Amended: 2026-09-11 (route surface + request-time gating)
 
 ## Context
 
@@ -55,8 +56,13 @@ name chosen by ADR 0006 is preserved; the cut vocabulary is restored
 
 The sublayer contains four objects:
 
-- **View** — a screen in the web UI, addressed by URL. `/today`, `/next`,
-  `/node/<id>`, `/health` are views.
+- **View** — a screen in the web UI, addressed by URL. `/`, `/next`,
+  `/nodes/<id>`, `/health`, `/analytics`, `/nodes/jump` are views, as are the
+  three acceptance steps (`/nodes/<id>/pass`, `/nodes/<id>/master`,
+  `/nodes/<id>/master/confirm`). A view's identity is its screen name
+  (`today`, `next`, `node`, `health`, `analytics`, `finder`, `pass-step`,
+  `master-step`, `master-confirm`), never its path: the path addresses the
+  view, it does not name it.
 - **Card** — a unit the user can see and act on within a view. A card has:
   title, view-binding (which view it lives on), command-binding (the CLI
   command it invokes), gating conditions (e.g. "show only when the bound
@@ -95,10 +101,18 @@ verbatim.
 At import time *and* at request time. The sublayer module raises on import
 if any card's command-binding, view-binding, or required state cannot
 resolve against the live dispatcher. The web server refuses to start if the
-sublayer is inconsistent. At request time, a card whose gating conditions
-fail for the current learner state is omitted (not shown disabled, not
-shown failing) so the UI never offers an action that the engine would
-refuse.
+sublayer is inconsistent. At request time, gating is computed fresh per
+request and splits in two.
+
+**Structural** walls — an action that can never succeed against this record as
+it stands (pass or master on a `locked` node, master on a node that is not
+`passed`, an evidence form on a node with no artifact spec and no gate) —
+**omit** the action: absent markup, never a disabled control. **Judgment**
+eligibility — anything fresh per-request data can change — stays **live with
+advisory text**, and the domain's refusal on click is the truthful answer.
+Omission never hides the wall: the node still renders with its unmet
+prerequisites. Advisory policy never omits and never disables; it warns and
+reorders.
 
 This restores `validate_interface`'s protection from the original cut,
 without restoring its YAML.
@@ -130,10 +144,38 @@ without restoring its YAML.
 - Promoting the sublayer to an engine-level sixth layer.
 - Renaming `src/skilltrace/web/` to `interface/`.
 - Adding a `criterion.web.interface.valid` release check.
-- Expanding the Tier 1 MVP route surface beyond what
-  `docs/spec-tier1-serve.md` currently lists.
+- Adding a new top-level view to the Tier 1 route surface. Restructuring the
+  existing surface — merging, folding, re-placing, de-nav-ing, or retiring a
+  view — is in scope where an audit verdict and a locked preference row both
+  warrant it. The normative route table lives in
+  `docs/spec-tier1-serve.md` §C, not in this ADR.
 - Mining or restoring any of the four archived YAMLs at
   `archive/scaffold-v0.1/interface/`.
+
+## Amendment 2026-09-11 — route surface and request-time gating
+
+Two non-goals moved; no decision was reversed. The architecture stands:
+Python-derived View/Card/Command/active-view vocabulary, import-time and
+request-time validation, one audit event per action.
+
+1. **Route surface.** The "no expanding the Tier 1 MVP route surface" non-goal
+   was already false in practice — `/analytics` (GET + POST export) and
+   `/nodes/jump` shipped without appearing in §C. It is replaced by a
+   **downward-only restructure gate**: views may be merged, folded,
+   re-placed, de-nav-ed, or retired on evidence (one audit verdict plus one
+   locked preference row); no new top-level view is added. §C is the
+   normative table; this ADR records only the gate and its rationale.
+2. **Request-time gating.** §Validation's unqualified omission rule collided
+   with Tier 1's "buttons are never pre-disabled" criterion. The collision is
+   resolved by splitting structural from judgment eligibility (§Validation),
+   per the locked preference row P4.1, which assigned the language to this
+   amendment. `docs/spec-tier1-serve.md` §B is aligned in the same change:
+   "locked rendered, never hidden" survives intact, but pass/master on a
+   locked node are omitted rather than rendered-then-refused.
+
+Ratified in [#220](https://github.com/earledotpy/skilltrace/issues/220)
+(G-RouteSurface). ADR 0008 remains reserved for the JavaScript-budget
+decision (G-JS); nothing in this amendment claims it.
 
 ## Reversal cost
 
