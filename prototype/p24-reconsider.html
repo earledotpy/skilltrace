@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE — P24 Reconsider — THROWAWAY</title>
+<!-- prototype/p24-reconsider.html — THROWAWAY decision aid for P2-Reconsider (#222), wayfinder map #208.
+     Not production code. Single inline <style>, no build step, no dependencies (ADR 0006 discipline).
+     Question: a NEW information architecture for the same daily loop — graph-first vs plan-first (or both).
+     Inputs: G-Preferences #219 (locked table; P5.1–P5.5 + P1.7 scoreable), G-RouteSurface #220 (nav =
+     Today/Next + separated Analytics, Health as header calm-line, title-first jump finder), G-MentorVoice #229
+     (locked presentation contract: NextAction facts, intent->affordance labels, forbidden vocabulary).
+     Variants (?v=, floating bar): graph — the skill map as primary object, today's focus as a viewport onto it;
+     plan — a week-shaped plan surface with today as one day; graph-dense — graph-first at the tighter density band.
+     Legibility of a 100-node graph by ABSTRACTION, not dump: pathway summaries + the current spine only.
+     Static shapes/CSS only — no graph-viz libraries (map out-of-scope). Palette exploration per P5.5.
+     Tier-0 discipline: zero design-claim JS; only script is the throwaway variant switcher.
+     Interactions that WANTED JS: week navigation (prev/next week) in the plan variant; expand/collapse or
+     fetch-refresh of a pathway's full chain (graph-first); both are affordance upgrades, not requirements.
+     Feeds G-JS: plan-first leans hardest on JS-free freshness; graph-first's "what unlocks what" wants
+     fetch-refresh but degrades to plain links.
+-->
+<style>
+  /* Tokens — P5.4: hex literals live ONLY in these token blocks. One accent per variant. Light-first. */
+  :root, body[data-v=graph] {
+    --bg:#f8f9f4; --fg:#232619; --mut:#6b6f5e; --border:#e3e6da; --card:#ffffff;
+    --accent:#3a6b35; --accent-ink:#ffffff; --accent-soft:#e4efe2;
+    --ok:#e7f3ec; --warn:#faf0d7; --attn:#dcefff; --you:#2f6b4f;
+  }
+  body[data-v=plan] {
+    --bg:#f6f7f9; --fg:#20242b; --mut:#626a75; --border:#e1e4ea; --card:#ffffff;
+    --accent:#40566b; --accent-ink:#ffffff; --accent-soft:#e6ebf1;
+    --ok:#e9f2ea; --warn:#faf0d7; --attn:#dcefff; --you:#40566b;
+  }
+  body[data-v=graph-dense] {
+    --bg:#fbf7f0; --fg:#2b2622; --mut:#7a6f63; --border:#ece2d3; --card:#fffdf9;
+    --accent:#b0562c; --accent-ink:#fff8f3; --accent-soft:#f7e7dc;
+    --ok:#e7f3ec; --warn:#faf0d7; --attn:#dcefff; --you:#b0562c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; color:var(--fg); background:var(--bg); font:16px/1.55 Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Segoe UI', system-ui, sans-serif}
+  h1,h2,h3{font-weight:600; line-height:1.2; margin:0}
+  .throwaway-banner{background:#422006; color:#ffedd5; text-align:center; padding:5px 10px; font:12px/1.4 'Segoe UI',system-ui,sans-serif}
+  .throwaway-banner code{color:#ffe4c4}
+  /* shell — locked route surface (#220): Today + Next daily-loop nav, Analytics a separated periodic
+     group, Health NOT a nav stop (calm line), jump as the title-first finder. Both spines keep this. */
+  header{background:var(--card); border-bottom:1px solid var(--border)}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 28px}
+  .topline{display:flex; align-items:baseline; gap:20px; padding:20px 0 0}
+  .topline .brand{font-size:19px; font-weight:700}
+  nav{display:flex; gap:22px; align-items:center; margin-left:auto}
+  nav a{color:var(--mut); text-decoration:none; font-size:15px; padding:6px 2px; border-bottom:2px solid transparent}
+  nav a.here{color:var(--fg); font-weight:700; border-bottom-color:var(--accent)}
+  nav .group{border-left:1px solid var(--border); padding-left:22px}
+  .jump{margin-left:14px}
+  .jump input{border:1px solid var(--border); border-radius:10px; padding:7px 12px; font:inherit; font-size:14px; width:210px; background:var(--bg); color:var(--fg)}
+  .healthline{display:flex; gap:16px; align-items:center; padding:10px 0 14px; font-size:14px; color:var(--mut)}
+  .healthline .calm::before{content:"✓"; color:var(--accent); margin-right:7px; font-weight:700}
+  .healthline a{color:var(--accent)}
+  .attn-pill{background:var(--attn); border-radius:999px; padding:3px 12px; color:var(--fg); font-size:13px; font-weight:600}
+
+  main.wrap{padding:44px 28px 120px}
+  /* P5.2: section gap > intra-card gap. graph 48 / plan 32 / graph-dense 28.
+     Card padding: graph 32 / plan 24 / graph-dense 20 (the tighter density band, explored). */
+  section{margin:0 0 var(--section-gap)}
+  body[data-v=graph]{--card-pad:32px; --section-gap:48px}
+  body[data-v=plan]{--card-pad:24px; --section-gap:32px}
+  body[data-v=graph-dense]{--card-pad:20px; --section-gap:28px}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:var(--card-pad)}
+
+  .heading{font-size:13.5px; font-weight:600; color:var(--mut); margin:0 0 10px; letter-spacing:.02em}
+  .pills{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .pill{border-radius:999px; padding:4px 13px; font-size:13.5px; font-weight:600}
+  .pill.available{background:var(--accent-soft); color:var(--fg)}
+  .pill.locked{background:var(--warn)}
+  .pill.active{background:var(--ok)}
+  .pill.passed{background:transparent; border:1px solid var(--border); color:var(--mut)}
+  .why{color:var(--mut); font-size:15px; margin:10px 0 0; max-width:68ch}
+  .measure{max-width:70ch}
+  p{margin:10px 0}
+
+  /* P5.1: the one display heading — the opening question only */
+  .display{font-size:32px; margin:6px 0 14px}
+  body[data-v=graph-dense] .display{font-size:30px}
+  .node-title{font-size:24px; margin:8px 0 4px}
+
+  .cta{display:inline-block; background:var(--accent); color:var(--accent-ink); border-radius:11px; padding:12px 22px; font-size:16px; font-weight:600; text-decoration:none}
+  .cta:hover{filter:brightness(1.05)}
+  .quiet{display:inline-block; color:var(--fg); border:1px solid var(--border); background:transparent; border-radius:11px; padding:11px 18px; font-size:15px; text-decoration:none; margin-left:12px}
+  .quiet:hover{border-color:var(--mut)}
+
+  .countset{display:flex; gap:26px; flex-wrap:wrap; align-items:center; color:var(--mut); font-size:15px}
+  .countset b{color:var(--fg); font-weight:600}
+  .pointer{margin-top:12px}
+  .pointer a{color:var(--accent)}
+
+  .row{border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin-bottom:12px; background:var(--card)}
+  .row .meta{color:var(--mut); font-size:14px; margin-top:5px}
+  .row a.link{color:var(--accent); text-decoration:none; font-size:14.5px}
+  details{margin:10px 0 0}
+  summary{cursor:pointer; font-size:14.5px; color:var(--mut); font-weight:600}
+  summary:hover{color:var(--fg)}
+  details .inner{margin:10px 0 0; max-width:70ch}
+  details .inner p{margin:6px 0}
+  ul.plain{margin:6px 0 0; padding-left:18px}
+  ul.plain li{margin:4px 0}
+  hr{border:0; border-top:1px solid var(--border); margin:0 0 var(--section-gap)}
+</style>
+</head>
+<body data-v="graph">
+<div class="throwaway-banner">PROTOTYPE — throwaway decision aid for <code>P2-Reconsider (#222)</code>, wayfinder map <code>#208</code>. Not production code. Variants: <code>?v=graph · ?v=plan · ?v=graph-dense</code></div>
+<header>
+  <div class="wrap topline">
+    <span class="brand">SkillTrace</span>
+    <nav>
+      <a href="#" class="here" id="home-nav">Today</a>
+      <a href="#">Next</a>
+      <span class="group"><a href="#">Analytics</a></span>
+      <span class="jump"><input type="text" placeholder="Find a skill by name…"></span>
+    </nav>
+  </div>
+  <div class="wrap healthline">
+    <span class="calm">Everything checks out</span>
+    <span class="attn-pill">1 advisory — one material link hasn't been re-checked in 90 days</span>
+    <a href="#">Full roll-up →</a>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ==================== VARIANT: GRAPH-FIRST ====================
+     The skill map is the primary object: where am I, what does this unlock, what unlocks it.
+     Today's focus is a VIEWPORT onto the map, not a standalone dashboard. The 100-node graph is
+     legible through abstraction — five pathway summaries + the current spine. No raw node dump,
+     no tables on the daily surface (P5.3), no JS. -->
+<section id="graph-home" aria-label="Your map">
+  <p class="heading">Your map</p>
+  <h1 class="display">Where are you in the graph today?</h1>
+
+  <!-- pathway summaries: how a 100-node graph becomes legible. One card per pathway, progress in
+       plain words; canonical state words stay (P3.4); zero-count work is not shown (P1.3). -->
+  <div class="pills" style="gap:12px; align-items:stretch">
+    <div class="card" style="flex:1; min-width:180px; padding:18px 20px">
+      <b>Data foundations</b>
+      <p class="why" style="margin:6px 0 0">You are here — <b>Use basic Pandas DataFrame operations</b> is your active skill.</p>
+      <p style="margin:8px 0 0; font-size:14px; color:var(--mut)">8 of 14 skills passed · 3 available · 3 locked</p>
+      <p style="margin:8px 0 0"><span class="pill active" style="font-size:12.5px">you are here</span></p>
+    </div>
+    <div class="card" style="flex:1; min-width:180px; padding:18px 20px">
+      <b>Working with data</b>
+      <p class="why" style="margin:6px 0 0">The next pathway over — two of its skills are already open to you.</p>
+      <p style="margin:8px 0 0; font-size:14px; color:var(--mut)">2 of 9 skills passed · 1 available</p>
+      <p style="margin:8px 0 0"><a href="#" style="color:var(--accent); font-size:14px; text-decoration:none">See what's open →</a></p>
+    </div>
+    <div class="card" style="flex:1; min-width:180px; padding:18px 20px">
+      <b>Statistics &amp; inference</b>
+      <p class="why" style="margin:6px 0 0">Pairs well with the Pandas work when your datasets grow.</p>
+      <p style="margin:8px 0 0; font-size:14px; color:var(--mut)">5 of 11 skills passed · 1 in progress</p>
+      <p style="margin:8px 0 0"><a href="#" style="color:var(--accent); font-size:14px; text-decoration:none">See the pathway →</a></p>
+    </div>
+  </div>
+
+  <!-- the current spine: today's focus as a viewport. Only the relevant slice of the chain renders —
+       the passed steps behind you, where you stand, what the next steps open. Static CSS chips;
+       no viz library. The full 100-node map is never rendered raw. -->
+  <div class="card" style="margin-top:20px">
+    <div class="heading">The spine of Data foundations</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
+      <span class="pill passed" style="font-size:13px">Load data from files ✓</span>
+      <span style="color:var(--mut)">→</span>
+      <span class="pill passed" style="font-size:13px">Clean missing values ✓</span>
+      <span style="color:var(--mut)">→</span>
+      <span class="pill active" style="font-size:13px; border:1.5px solid var(--you)">Use basic Pandas DataFrame operations</span>
+      <span style="color:var(--mut)">→</span>
+      <span class="pill available" style="font-size:13px">Filter rows &amp; select columns</span>
+      <span style="color:var(--mut)">→</span>
+      <span class="pill locked" style="font-size:13px">Group &amp; summarise</span>
+      <a href="#" style="color:var(--accent); font-size:14px; margin-left:8px">What does each open? →</a>
+    </div>
+    <details>
+      <summary>What unlocks what from here</summary>
+      <div class="inner">
+        <p>Passing <b>Use basic Pandas DataFrame operations</b> opens 5 skills across two pathways, including <b>Filter rows and select columns in Pandas</b> and <b>Clean data with Pandas</b>. Nothing is waiting on you beyond this one skill.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ TODAY'S FOCUS — a viewport card, shared by graph-first and graph-dense.
+     One focus, one action (P1.1): the focus is named once, its CTA lives in the card.
+     Bounded day (P1.2): the count set + one muted pointer. Days practiced (P1.7): one honest
+     line in the count set — a mirror, never a metronome. Zero-count pills dropped (P1.3). -->
+<section id="focus" aria-label="Today's focus">
+  <div class="card">
+    <div class="pills">
+      <span class="pill active">active</span>
+      <span class="why" style="margin:0">Session from yesterday is still open — you can pick up where you left.</span>
+    </div>
+    <h2 class="node-title">Use basic Pandas DataFrame operations</h2>
+    <p class="why measure">Best fit for a 30-minute session, and it opens the most beyond it. Nothing is blocked behind it.</p>
+    <div style="margin-top:24px">
+      <a class="cta" href="#">Continue Use basic Pandas DataFrame operations</a>
+    </div>
+    <details>
+      <summary>Why this one is your focus today</summary>
+      <div class="inner">
+        <p>You're mid-skill, and it opens the most beyond it. Your reviews are clear, and you have no overdue work in the way.</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="countset" style="margin-top:20px">
+    <span><b>34</b> days practiced</span>
+    <span><b>2</b> reviews due</span>
+    <span><b>1</b> in progress</span>
+  </div>
+  <p class="pointer"><a href="#">12 more ready when you are →</a></p>
+</section>
+<!-- ==================== VARIANT: PLAN-FIRST ====================
+     A week-shaped plan surface with today as one day of it. The week shows where work landed
+     (factually, from logs) and where reviews fall; only today carries the CTA. The plan is a
+     MIRROR of what happened and what the engine will ask — reviews are derived from passing,
+     never promises the learner made. A missed day is simply blank, never a break (P1.7's
+     honesty rules at week scale). No tables — CSS lanes only (P5.3). -->
+<section id="plan-home" aria-label="This week">
+  <p class="heading">This week</p>
+  <h1 class="display">Today is Wednesday. Here's the week around it.</h1>
+
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px">
+    <div class="card" style="padding:16px 18px">
+      <div class="heading" style="margin-bottom:6px">Monday</div>
+      <p style="margin:0; font-size:14.5px"><b>Use basic Pandas DataFrame operations</b></p>
+      <p class="why" style="margin:4px 0 0; font-size:13.5px">Work logged — the join script</p>
+    </div>
+    <div class="card" style="padding:16px 18px">
+      <div class="heading" style="margin-bottom:6px">Tuesday</div>
+      <p style="margin:0; font-size:14.5px"><b>Descriptive statistics basics</b></p>
+      <p class="why" style="margin:4px 0 0; font-size:13.5px">Work logged — notebook sketch</p>
+    </div>
+    <div class="card" style="padding:16px 18px; border:1.5px solid var(--you)">
+      <div class="heading" style="margin-bottom:6px; color:var(--fg)">Wednesday — today</div>
+      <div class="pills">
+        <span class="pill active" style="font-size:12.5px">active</span>
+        <span class="why" style="margin:0; font-size:13px">Session still open from yesterday</span>
+      </div>
+      <p style="margin:6px 0 0; font-size:14.5px"><b>Use basic Pandas DataFrame operations</b></p>
+      <div style="margin-top:12px">
+        <a class="cta" href="#" style="font-size:15px; padding:10px 18px">Continue Use basic Pandas DataFrame operations</a>
+      </div>
+      <details>
+        <summary>Why this one today</summary>
+        <div class="inner"><p>You're mid-skill and it opens the most beyond it. Two reviews fall due Thursday.</p></div>
+      </details>
+    </div>
+    <div class="card" style="padding:16px 18px">
+      <div class="heading" style="margin-bottom:6px">Thursday</div>
+      <p style="margin:0; font-size:14.5px"><b>2 reviews come due</b></p>
+      <p class="why" style="margin:4px 0 0; font-size:13.5px">From Load data from files and Clean missing values — scheduled when you passed them</p>
+    </div>
+    <div class="card" style="padding:16px 18px">
+      <div class="heading" style="margin-bottom:6px">Friday</div>
+      <p class="why" style="margin:0; font-size:13.5px">Nothing scheduled yet — the engine will know by Thursday what's worth a look.</p>
+    </div>
+    <div class="card" style="padding:16px 18px; background:transparent; border-style:dashed">
+      <div class="heading" style="margin-bottom:6px">The weekend</div>
+      <p class="why" style="margin:0; font-size:13.5px">Blank. Nothing is owed — the week starts again when you do.</p>
+    </div>
+  </div>
+
+  <div class="countset" style="margin-top:20px">
+    <span><b>34</b> days practiced</span>
+    <span><b>2</b> reviews due</span>
+    <span><b>1</b> in progress</span>
+  </div>
+  <p class="pointer"><a href="#">12 more ready when you are →</a></p>
+</section>
+
+<hr>
+<!-- ============ SHARED ACROSS ALL VARIANTS: /next candidates + node detail.
+     The IA re-spines the daily loop, not the domain: /next stays the raw backlog's home (P1.2),
+     node detail stays brief-first (P2.5). Graph-first adds one "In the map" line — the only
+     graph-flavour node detail needs. Candidate titles are links per the locked route surface. -->
+<section aria-label="Ready next" id="next">
+  <h2 style="font-size:20px">Ready next</h2>
+  <p class="why" style="margin:0 0 14px">What the engine recommends, and why — in plain words.</p>
+
+  <div class="row">
+    <div class="pills"><b>Filter rows and select columns in Pandas</b> <span class="pill available">available</span></div>
+    <p class="why" style="margin:6px 0 0">You're mid-node in the skill that opens this one — finishing it makes this your natural next step.</p>
+    <div class="meta">About 30–60 min · opens 4 skills · 2 trusted materials</div>
+    <p style="margin:10px 0 0"><a class="link" href="#" style="color:var(--accent); text-decoration:none">View skill →</a></p>
+  </div>
+
+  <div class="row">
+    <div class="pills"><b>Use variables and expressions in Python</b> <span class="pill available">available</span></div>
+    <p class="why" style="margin:6px 0 0">Short and foundational — a good filler if today's session goes faster than planned.</p>
+    <div class="meta">About 30–90 min · opens 5 skills</div>
+    <p style="margin:10px 0 0"><a class="link" href="#" style="color:var(--accent); text-decoration:none">View skill →</a></p>
+  </div>
+
+  <!-- P4.1: structurally impossible actions are omitted — a locked node gets no start button,
+       but the wall is shown (P3.4: canonical state word + plain-language reason line). -->
+  <div class="row">
+    <div class="pills"><b>Clean data with Pandas</b> <span class="pill locked">locked</span></div>
+    <p class="why" style="margin:6px 0 0">locked — <b>Use basic Pandas DataFrame operations</b> needs to be passed first.</p>
+    <div class="meta">About 45–90 min · opens 6 skills once it's yours</div>
+    <p style="margin:10px 0 0"><a class="link" href="#" style="color:var(--accent); text-decoration:none">See what it will unlock →</a></p>
+  </div>
+</section>
+<!-- ============ NODE DETAIL — brief-first (P2.5): title, state, one-line why, resources,
+     one next action as a button (never behind a disclosure). "Why" one click deep. -->
+<section aria-label="Skill detail" id="node">
+  <h2 style="font-size:24px; margin-bottom:4px">Use basic Pandas DataFrame operations</h2>
+  <!-- P3.2: node id only as muted secondary text on node detail -->
+  <p style="margin:0; font-size:12.5px; color:var(--mut)">data.pandas.dataframe_basics_01</p>
+
+  <div class="card" style="margin-top:18px">
+    <div class="pills">
+      <span class="pill available">available</span>
+      <span class="why" style="margin:0">Nothing is holding this back — every prerequisite is behind you.</span>
+    </div>
+    <p class="why measure" style="margin-top:14px">You can start this skill now. To pass it, one approved piece of work is needed — you decide when your work is good enough, not the computer.</p>
+
+    <div class="heading" style="margin-top:24px">Where to learn</div>
+    <div class="row"><b>Pandas official guide</b><div class="meta">Free · checked today · the reference this skill was built around</div></div>
+    <div class="row"><b>Python for Data Analysis — first chapters</b><div class="meta">Free intro · by the library's author</div></div>
+
+    <!-- the one next action as a button — never behind a disclosure (P2.5 guard) -->
+    <div style="margin-top:26px">
+      <a class="cta" href="#">Start Use basic Pandas DataFrame operations</a>
+      <a class="quiet" href="#">Mark this skill passed…</a>
+      <p class="why" style="margin-top:10px">Passing asks for your confirmation — nothing here claims you're ready. If the piece of work isn't approved yet, it will tell you plainly.</p>
+    </div>
+
+    <details>
+      <summary>Why this one is your focus today</summary>
+      <div class="inner"><p>Best fit for a 30-minute session, and it opens the most beyond it.</p></div>
+    </details>
+    <details>
+      <summary>Requirements and history</summary>
+      <div class="inner">
+        <p><b>To pass:</b> one approved piece of work — the solution script for this skill's basics. Submit it when you're happy with it; an objective check runs automatically and decides the verdict honestly.</p>
+        <p>Nothing submitted yet, no sessions yet. The first review gets set for you the day you pass.</p>
+        <p><b>In the map:</b> the third step of Data foundations' spine — passing it opens 5 skills, including <b>Filter rows and select columns in Pandas</b>.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+</main>
+<!-- throwaway variant switcher — the ONLY script; a prototype affordance, not a design claim -->
+<div style="position:fixed; bottom:14px; left:50%; transform:translateX(-50%); background:#1f2430; color:#e8eaf0; border-radius:999px; padding:8px 16px; font:13px/1.4 'Segoe UI',system-ui,sans-serif; display:flex; gap:12px; align-items:center; box-shadow:0 4px 16px rgba(0,0,0,.25)" role="navigation" aria-label="prototype variants">
+  <span style="opacity:.7">variant</span>
+  <a href="?v=graph" data-v="graph" style="color:#fff; text-decoration:none; opacity:.55">graph</a>
+  <a href="?v=plan" data-v="plan" style="color:#fff; text-decoration:none; opacity:.55">plan</a>
+  <a href="?v=graph-dense" data-v="graph-dense" style="color:#fff; text-decoration:none; opacity:.55">graph-dense</a>
+</div>
+<script>
+  // throwaway only: read ?v= and switch the token block. In the design itself, zero JS is claimed.
+  var v = new URLSearchParams(location.search).get('v');
+  if (['graph','plan','graph-dense'].indexOf(v) >= 0) document.body.dataset.v = v;
+  var cur = document.body.dataset.v;
+  document.querySelectorAll('[role=navigation][aria-label="prototype variants"] a').forEach(function(a){
+    a.style.opacity = a.dataset.v === cur ? '1' : '.55';
+    a.style.fontWeight = a.dataset.v === cur ? '700' : '400';
+    a.href = '?v=' + a.dataset.v;
+  });
+</script>
+</body>
+</html>
