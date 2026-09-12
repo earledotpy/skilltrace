@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE — P24 Evolve — THROWAWAY</title>
+<!-- prototype/p24-evolve.html — THROWAWAY decision aid for P1-Evolve (#221), part of wayfinder map #208.
+     Not production code. Single inline <style>, no build step, no dependencies (ADR 0006 discipline).
+     Inputs: G-Preferences #219 (locked table; P5.1–P5.5 scoreable), G-RouteSurface #220 (locked route
+     surface: nav = Today/Next + separated Analytics, Health as header calm-line, friendly finder),
+     G-MentorVoice #229 (locked presentation contract: NextAction facts, intent->affordance, forbidden vocabulary).
+     Three internal variants (?v=calm | ?v=roomy | ?v=editorial, or the floating bar) — airiness/density band +
+     palette exploration per P5.5 (hue/palette/width/rail/breakpoints belong to G-Direction).
+     Interaction posture: every design-claim interaction is tier-0 (zero JS). The ONLY script is the
+     throwaway variant switcher (~15 lines) — a prototype affordance, not a design claim. Interactions that
+     WANTED JS: none. Feeds G-JS: nothing in this direction was blocked for want of JS.
+-->
+<style>
+  /* Tokens — P5.4: hex literals live ONLY in these token blocks. One accent per variant.
+     Light-first; dark mode out of scope. */
+  :root, body[data-v=calm] {
+    --bg:#faf9f7; --fg:#25211c; --mut:#6f675e; --border:#e8e2da; --card:#ffffff;
+    --accent:#2f6b4f; --accent-ink:#ffffff; --accent-soft:#e4efe8;
+    --ok:#e7f3ec; --warn:#faf0d7; --attn:#dcefff;
+  }
+  body[data-v=roomy] {
+    --bg:#f6f7f9; --fg:#20242b; --mut:#626a75; --border:#e1e4ea; --card:#ffffff;
+    --accent:#40566b; --accent-ink:#ffffff; --accent-soft:#e6ebf1;
+    --ok:#e9f2ea; --warn:#faf0d7; --attn:#dcefff;
+  }
+  body[data-v=editorial] {
+    --bg:#fbf7f0; --fg:#2b2622; --mut:#7a6f63; --border:#ece2d3; --card:#fffdf9;
+    --accent:#b0562c; --accent-ink:#fff8f3; --accent-soft:#f7e7dc;
+    --ok:#e7f3ec; --warn:#faf0d7; --attn:#dcefff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; color:var(--fg); background:var(--bg); font:16px/1.55 Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Segoe UI', system-ui, sans-serif}
+  /* P5.1: humanist 16px base at ~1.55. Display heading ~2x base (32px; 36px in editorial) — used ONLY on
+     Today's opening question. */
+  h1,h2,h3{font-weight:600; line-height:1.2; margin:0}
+  /* throwaway banner (pattern: p1b-polish.html) */
+  .throwaway-banner{background:#422006; color:#ffedd5; text-align:center; padding:5px 10px; font:12px/1.4 'Segoe UI',system-ui,sans-serif}
+  .throwaway-banner code{color:#ffe4c4}
+
+  /* shell */
+  header{background:var(--card); border-bottom:1px solid var(--border)}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 28px}
+  .topline{display:flex; align-items:baseline; gap:20px; padding:20px 0 0}
+  .topline .brand{font-size:19px; font-weight:700; letter-spacing:.01em}
+  /* nav per locked route surface (#220): Today + Next daily-loop, Analytics a separated periodic group.
+     Health is NOT a nav stop — it is the calm line below + "Full roll-up" link. */
+  nav{display:flex; gap:22px; align-items:center; margin-left:auto}
+  nav a{color:var(--mut); text-decoration:none; font-size:15px; padding:6px 2px; border-bottom:2px solid transparent}
+  nav a.here{color:var(--fg); font-weight:700; border-bottom-color:var(--accent)}
+  nav .group{border-left:1px solid var(--border); padding-left:22px}
+  .jump{margin-left:14px}
+  .jump input{border:1px solid var(--border); border-radius:10px; padding:7px 12px; font:inherit; font-size:14px; width:210px; background:var(--bg); color:var(--fg)}
+  .healthline{display:flex; gap:16px; align-items:center; padding:10px 0 14px; font-size:14px; color:var(--mut)}
+  .healthline .calm::before{content:"✓"; color:var(--accent); margin-right:7px; font-weight:700}
+  .healthline a{color:var(--accent)}
+  .attn-pill{background:var(--attn); border-radius:999px; padding:3px 12px; color:var(--fg); font-size:13px; font-weight:600}
+
+  main.wrap{padding:44px 28px 120px}
+  /* P5.2: section gap 32–48px, visibly greater than intra-card 12–16px. Variant bands:
+     calm 48 / roomy 32 / editorial 40. Card padding: calm 32 / roomy 24 / editorial 32. */
+  section{margin:0 0 var(--section-gap)}
+  body[data-v=calm]{--card-pad:32px; --section-gap:48px}
+  body[data-v=roomy]{--card-pad:24px; --section-gap:32px}
+  body[data-v=editorial]{--card-pad:32px; --section-gap:40px}
+
+  .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:var(--card-pad)}
+
+  /* sentence-case small headings replace the ALL-CAPS kicker register (P3.6) */
+  .heading{font-size:13.5px; font-weight:600; color:var(--mut); margin:0 0 10px; letter-spacing:.02em}
+  .pills{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .pill{border-radius:999px; padding:4px 13px; font-size:13.5px; font-weight:600}
+  .pill.available{background:var(--accent-soft); color:var(--fg)}
+  .pill.locked{background:var(--warn)}
+  .pill.active{background:var(--ok)}
+  .pill.muted{background:transparent; border:1px solid var(--border); color:var(--mut); font-weight:500}
+
+  .why{color:var(--mut); font-size:15px; margin:10px 0 0; max-width:68ch}
+  /* P5.2 prose measure 65–75ch */
+  .measure{max-width:70ch}
+  p{margin:10px 0}
+
+  /* P5.1: the one display heading — Today's opening question only */
+  .display{font-size:32px; margin:6px 0 14px}
+  body[data-v=editorial] .display{font-size:36px}
+  .node-title{font-size:24px; margin:8px 0 4px}
+
+  /* one primary CTA per view (P1.1/P5.3); secondary actions quiet, never a second accent */
+  .cta{display:inline-block; background:var(--accent); color:var(--accent-ink); border-radius:11px; padding:12px 22px; font-size:16px; font-weight:600; text-decoration:none}
+  .cta:hover{filter:brightness(1.05)}
+  .quiet{display:inline-block; color:var(--fg); border:1px solid var(--border); background:transparent; border-radius:11px; padding:11px 18px; font-size:15px; text-decoration:none; margin-left:12px}
+  .quiet:hover{border-color:var(--mut)}
+
+  /* the bounded count set (P1.2) — days practiced sits here as one honest line (P1.7):
+     a mirror, never a metronome — no target, no countdown, no loss framing. */
+  .countset{display:flex; gap:26px; flex-wrap:wrap; align-items:center; color:var(--mut); font-size:15px}
+  .countset b{color:var(--fg); font-weight:600}
+  .pointer{margin-top:12px}
+  .pointer a{color:var(--accent)}
+
+  /* Next candidates + node resources as cards; "Why this?" one human sentence, disclosure optional (P2.7) */
+  .row{border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin-bottom:12px; background:var(--card)}
+  .row .meta{color:var(--mut); font-size:14px; margin-top:5px}
+  .row a.link{color:var(--accent); text-decoration:none; font-size:14.5px}
+  details{margin:10px 0 0}
+  summary{cursor:pointer; font-size:14.5px; color:var(--mut); font-weight:600}
+  summary:hover{color:var(--fg)}
+  details .inner{margin:10px 0 0; max-width:70ch}
+  details .inner p{margin:6px 0}
+  ul.plain{margin:6px 0 0; padding-left:18px}
+  ul.plain li{margin:4px 0}
+  /* resource cards (node detail) */
+  .resources{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px}
+  .resource{border:1px solid var(--border); border-radius:12px; padding:16px 18px; background:var(--card)}
+  .resource .name{font-weight:600}
+  .resource .meta{color:var(--mut); font-size:14px; margin-top:4px}
+
+  /* node id — muted secondary text, node detail only (P3.2) */
+  .nodeid{font-size:13px; color:var(--mut); margin-top:2px}
+
+  .split{display:grid; grid-template-columns:1.25fr .75fr; gap:40px; align-items:start}
+  @media(max-width:960px){.split{grid-template-columns:1fr}}
+  body[data-v=calm] .split{grid-template-columns:1fr}
+
+  /* dense diagnostics register — belongs to health/analytics detail, not the daily loop (P2.1) */
+  table{border-collapse:collapse; font-size:14px; width:100%}
+  th{text-align:left; color:var(--mut); font-weight:600; border-bottom:1px solid var(--border); padding:8px 10px}
+  td{border-bottom:1px solid var(--border); padding:8px 10px}
+
+  /* floating variant bar — throwaway affordance only, not a design claim */
+  .variantbar{position:fixed; bottom:14px; left:50%; transform:translateX(-50%); background:#2b2622; color:#ffedd5; border-radius:12px; padding:8px 12px; display:flex; gap:8px; align-items:center; font:13px/1 'Segoe UI',system-ui,sans-serif; z-index:50}
+  .variantbar a{color:#ffe4c4; text-decoration:none; padding:5px 10px; border-radius:8px; border:1px solid transparent}
+  .variantbar a.on{background:#5a4a2f; color:#fff; font-weight:700}
+  .variantbar span{opacity:.75; padding:0 2px}
+
+  hr{border:none; border-top:1px solid var(--border); margin:var(--section-gap) 0}
+</style>
+</head>
+<body data-v="calm">
+<div class="throwaway-banner">PROTOTYPE — THROWAWAY — <code>prototype/p24-evolve.html</code> — P1-Evolve (#221): the current dashboard language, tightened — airier, de-CLI-flavoured, built against the locked preference table, route surface and Mentor presentation contract. Not production code.</div>
+
+<header>
+  <div class="wrap">
+    <div class="topline">
+      <span class="brand">SkillTrace</span>
+      <nav aria-label="primary">
+        <a href="#" class="here">Today</a>
+        <a href="#next">Next</a>
+        <span class="group"><a href="#analytics-note">Analytics</a></span>
+        <span class="jump"><input type="text" placeholder="Find a skill by title…" aria-label="Find a skill by title"></span>
+      </nav>
+    </div>
+    <div class="healthline" aria-label="health">
+      <!-- P2.3: health goes ambient — one calm line when fine; an attention pill with a count links to detail when not. -->
+      <span class="calm">Everything looks good.</span>
+      <a href="#health-detail">Full roll-up →</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ TODAY — airy daily register (P2.1). Cap per P5.3: <=4 card-level blocks,
+     exactly one primary CTA, zero tables, no <details> on the primary path. ============ -->
+<section aria-label="Today">
+
+  <!-- block 1 — the focus card, containing its single primary CTA (P1.1) -->
+  <div class="card">
+    <!-- P5.1: the display heading (~2x base) lives only on this opening question -->
+    <h1 class="display measure">Ready to get back to your Pandas session?</h1>
+    <h2 class="node-title">Use basic Pandas DataFrame operations</h2>
+    <div class="pills" style="margin-top:10px">
+      <span class="pill available">available</span>
+      <span class="why" style="margin:0">Nothing is holding this back — every prerequisite is behind you.</span>
+    </div>
+    <p class="why">Best fit for a 30-minute session. Passing it opens 7 further skills, starting with <b>Filter rows and select columns in Pandas</b>.</p>
+    <p style="margin:22px 0 0">
+      <a class="cta" href="#">Start Use basic Pandas DataFrame operations</a>
+    </p>
+  </div>
+
+  <!-- block 2 — the bounded count set (P1.2); days practiced as one honest line (P1.7).
+       Zero-count pills dropped (P1.3); nothing here is a target or a countdown. -->
+  <div class="card">
+    <div class="countset">
+      <span><b>12 days practiced</b> so far</span>
+      <span><b>2 reviews</b> waiting — forgetting is expected</span>
+      <span><b>1 open blocker</b></span>
+    </div>
+    <p class="pointer">There are <b>4 more skills</b> ready when you are. <a href="#next">See what else is next →</a></p>
+  </div>
+
+  <!-- block 3 — overdue resumable, never shaming (P1.4): longest-waiting first, "start back where you left".
+       Pressure attaches to memory, never to a broken run (P1.10). -->
+  <div class="card">
+    <span class="pill active">active</span>
+    <b style="margin-left:10px">Define and call Python functions</b>
+    <p class="why">You opened this a few days ago and the work is half done. Start back where you left.</p>
+    <p style="margin:12px 0 0"><a class="link" style="color:var(--accent); text-decoration:none; font-weight:600" href="#">Continue Define and call Python functions →</a></p>
+  </div>
+
+  <!-- That's Today. Three blocks; the focus card carries the view's one primary action.
+       No raw backlog (P1.2), no tables, no disclosures on the primary path (P5.3). -->
+</section>
+
+<hr>
+<!-- ============ NEXT — daily register. Bounded controls with human labels (#220: command gloss removed). ============ -->
+<section aria-label="Next" id="next">
+  <h2 style="font-size:24px">What else is next</h2>
+  <p class="why measure">Shaped for a 60-minute session, showing 5 candidates. <a href="#" class="link" style="margin-left:4px">Change these →</a></p>
+
+  <div style="margin-top:22px">
+    <div class="row">
+      <div class="pills"><b>Query rows and columns with SELECT</b> <span class="pill available">available</span></div>
+      <p class="why" style="margin:6px 0 0">A natural step after your Pandas basics — the same ideas, applied to real databases.</p>
+      <div class="meta">About 20–45 min · opens 5 skills · 3 trusted materials — Sqlbolt, Select Star SQL, SQLite Docs</div>
+      <p style="margin:10px 0 0"><a class="link" href="#">View skill →</a></p>
+      <!-- P2.7: one human why-sentence on the card; the itemised reasons sit behind a disclosure, human-labelled only -->
+      <details>
+        <summary>Why this one?</summary>
+        <div class="inner">
+          <p>You're mid-way through the data track, and this one unlocks the most beyond it. No open blockers, and it fits a 60-minute session comfortably.</p>
+          <ul class="plain">
+            <li>Fits your session: yes, with room to spare</li>
+            <li>Opens 5 further skills afterwards</li>
+            <li>No open blockers, nothing overdue behind it</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
+    <div class="row">
+      <div class="pills"><b>Summarize a dataset with descriptive statistics</b> <span class="pill available">available</span></div>
+      <p class="why" style="margin:6px 0 0">Pairs well with the Pandas work — the maths you'll lean on when your datasets grow.</p>
+      <div class="meta">About 30–60 min · opens 4 skills · 2 trusted materials — Khan Statistics, OpenIntro</div>
+      <p style="margin:10px 0 0"><a class="link" href="#">View skill →</a></p>
+    </div>
+
+    <div class="row">
+      <div class="pills"><b>Use variables and expressions in Python</b> <span class="pill available">available</span></div>
+      <p class="why" style="margin:6px 0 0">Short and foundational — a good filler if today's session goes faster than planned.</p>
+      <div class="meta">About 30–90 min · opens 5 skills</div>
+      <p style="margin:10px 0 0"><a class="link" href="#">View skill →</a></p>
+    </div>
+
+    <!-- P4.1: structurally impossible actions are omitted — a locked node gets no start button,
+         but the wall is shown (P3.4: canonical state word + plain-language reason line). -->
+    <div class="row">
+      <div class="pills"><b>Clean data with Pandas</b> <span class="pill locked">locked</span></div>
+      <p class="why" style="margin:6px 0 0">locked — <b>Use basic Pandas DataFrame operations</b> needs to be passed first.</p>
+      <div class="meta">About 45–90 min · opens 6 skills once it's yours</div>
+      <p style="margin:10px 0 0"><a class="link" href="#">See what it will unlock →</a></p>
+    </div>
+  </div>
+</section>
+
+<hr>
+<!-- ============ NODE DETAIL — brief-first (P2.5): title, state, one-line why, resources as cards,
+     one next action as a button (never behind a disclosure), "why" one click deep. ============ -->
+<section aria-label="Skill detail" id="node">
+  <h2 style="font-size:24px; margin-bottom:4px">Use basic Pandas DataFrame operations</h2>
+  <!-- P3.2: the node id appears only as small muted secondary text on node detail -->
+  <p class="nodeid">data.pandas.dataframe_basics_01</p>
+
+  <div class="card" style="margin-top:18px">
+    <div class="pills">
+      <span class="pill available">available</span>
+      <span class="why" style="margin:0">Nothing is holding this back — every prerequisite is behind you.</span>
+    </div>
+    <!-- the opening human line (the Brief fact) -->
+    <p class="why measure" style="margin-top:14px">You can start this skill now. To pass it, one approved piece of work is needed — you decide when your work is good enough, not the computer.</p>
+
+    <div class="heading" style="margin-top:24px">Where to learn</div>
+    <div class="resources">
+      <div class="resource">
+        <div class="name">Pandas official guide</div>
+        <div class="meta">Free · checked today · the reference this skill was built around</div>
+      </div>
+      <div class="resource">
+        <div class="name">Python for Data Analysis — first chapters</div>
+        <div class="meta">Free intro · by the library's author</div>
+      </div>
+    </div>
+
+    <!-- the one next action as a button — never behind a disclosure (P2.5 guard).
+         Judgment eligibility stays live with advisory text (P4.1): the pass action is not
+         structurally impossible, so it is neither omitted nor pre-disabled. -->
+    <div style="margin-top:26px">
+      <a class="cta" href="#">Start Use basic Pandas DataFrame operations</a>
+      <a class="quiet" href="#">Mark this skill passed…</a>
+      <p class="why" style="margin-top:10px">Passing asks for your confirmation — nothing here claims you're ready. If the piece of work isn't approved yet, it will tell you plainly.</p>
+    </div>
+
+    <details>
+      <summary>Why this one is your focus today</summary>
+      <div class="inner">
+        <p>Best fit for a 30-minute session, and it opens the most beyond it. Nothing is blocked behind it, and you have no overdue work in the way.</p>
+      </div>
+    </details>
+
+    <!-- Pass requirements stated once (P2.5). Drill-down facts one click deep, state-aware.
+         The gate is described in human words — never a command, path or file name (P3.1).
+         The evidence form is omitted entirely when a node has no spec and no gate (P2.6/P4.1). -->
+    <details>
+      <summary>Requirements and history</summary>
+      <div class="inner">
+        <p><b>To pass:</b> one approved piece of work — the solution script for this skill's basics. Submit it when you're happy with it; an objective check runs automatically and decides the verdict honestly.</p>
+        <p>Nothing submitted yet, no sessions yet. The first review gets set for you the day you pass.</p>
+        <p>If you pass this skill, 5 further skills open, including <b>Filter rows and select columns in Pandas</b>.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<hr>
+
+<!-- ============ dense diagnostics register (P2.1) — the "Full roll-up" shape, collapsed and one click
+     deep behind the calm health line. Tables are legitimate in this register only. ============ -->
+<section aria-label="Health detail" id="health-detail">
+  <div class="card">
+    <h2 style="font-size:20px">Full roll-up</h2>
+    <details>
+      <summary>Layer checks — all fine today</summary>
+      <div class="inner">
+        <table>
+          <tr><th>What's checked</th><th>State</th><th>Count</th></tr>
+          <tr><td>Skills and their links</td><td>fine</td><td>81 · 124</td></tr>
+          <tr><td>Learning materials</td><td>all checked</td><td>29</td></tr>
+          <tr><td>Ready to start</td><td>—</td><td>45</td></tr>
+          <tr><td>Waiting on prerequisites</td><td>—</td><td>36</td></tr>
+        </table>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- note: the Analytics nav stop leads to the periodic register (one theme at a time, collapsed tables,
+     no pseudo-sparklines per P2.2); its density exploration lives with the other directions — this prototype
+     scopes to /today + /next + node detail per the brief. -->
+<section id="analytics-note" style="color:var(--mut); font-size:14px">
+  Analytics is a periodic stop, kept out of the daily loop's way — see the full roll-up register above for the density treatment it inherits.
+</section>
+
+</main>
+
+<!-- throwaway variant switcher — the ONLY script; a prototype affordance, not a design claim -->
+<div class="variantbar" role="navigation" aria-label="prototype variants">
+  <span>variant</span>
+  <a href="?v=calm" data-v="calm">calm</a>
+  <a href="?v=roomy" data-v="roomy">roomy</a>
+  <a href="?v=editorial" data-v="editorial">editorial</a>
+</div>
+<script>
+  // throwaway only: read ?v= and switch the token block. In the design itself, zero JS is claimed.
+  var v = new URLSearchParams(location.search).get('v');
+  if (['calm','roomy','editorial'].indexOf(v) >= 0) document.body.dataset.v = v;
+  var cur = document.body.dataset.v;
+  document.querySelectorAll('.variantbar a').forEach(function(a){
+    a.classList.toggle('on', a.dataset.v === cur);
+    a.href = '?v=' + a.dataset.v;
+  });
+</script>
+</body>
+</html>
