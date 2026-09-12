@@ -20,6 +20,7 @@ reports**.
 
 from __future__ import annotations
 
+import argparse
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -409,5 +410,23 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=today,
             help="Show the Mentor-voice daily study view (read-only).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `today` parser to the top-level `subparsers` (issue #207 contract).
+
+    Co-located owner of the `today` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    today_parser = subparsers.add_parser(
+        "today", help="Show the Mentor-voice daily study view (read-only)."
+    )
+    today_parser.add_argument(
+        "--minutes",
+        type=int,
+        default=30,
+        help="Minutes available this session, used to size the top recommendation.",
+    )
+    today_parser.set_defaults(_command_name="today")

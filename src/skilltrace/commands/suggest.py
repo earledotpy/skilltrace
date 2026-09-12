@@ -16,6 +16,7 @@ section appends a single count-based advisory line that downstream surfaces
 
 from __future__ import annotations
 
+import argparse
 from datetime import date, timedelta
 
 from ..context import load_context_lenient
@@ -218,6 +219,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=suggest_remediation,
             help="Suggest corrective work from derived remediation pressure.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -226,5 +228,27 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=suggest_reviews,
             help="Suggest the scheduled reviews now due or overdue.",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `suggest` parser (issue #207 contract).
+
+    Co-located owner of the `suggest` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    suggest_parser = subparsers.add_parser(
+        "suggest", help="Advisory suggestions (remediation, reviews)."
+    )
+    suggest_topics = suggest_parser.add_subparsers(dest="_suggest_cmd", metavar="<topic>")
+    suggest_topics.required = True
+    suggest_remediation = suggest_topics.add_parser(
+        "remediation",
+        help="Suggest corrective work from derived remediation pressure.",
+    )
+    suggest_remediation.set_defaults(_command_name="suggest remediation")
+    suggest_reviews = suggest_topics.add_parser(
+        "reviews", help="Suggest the scheduled reviews now due or overdue."
+    )
+    suggest_reviews.set_defaults(_command_name="suggest reviews")

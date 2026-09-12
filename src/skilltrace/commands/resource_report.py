@@ -28,6 +28,7 @@ obvious:
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
@@ -240,5 +241,18 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=resource_report,
             help="Report every resource's derived verification status (always exit 0, read-only).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `resource-report` parser to the top-level `subparsers` (issue #207 contract).
+
+    Co-located owner of the `resource-report` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    resource_report_parser = subparsers.add_parser(
+        "resource-report",
+        help="Report every resource's derived verification status (always exit 0, read-only).",
+    )
+    resource_report_parser.set_defaults(_command_name="resource-report")

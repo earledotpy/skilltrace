@@ -14,61 +14,49 @@ no audit event itself (SA6); the dispatcher owns the single export event.
 
 from __future__ import annotations
 
+import argparse
 import sys
 from datetime import date
 from pathlib import Path
 
-from ..context import load_context_strict
+from ..context import JoinedView, load_context_strict
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution.overdue import utc_today
 from ..portfolio.bundle import bundle_portfolio
 from ..portfolio.export import (
     PortfolioExportError,
-    load_view_or_raise,
     normalize_format,
     render_preview,
 )
 from ..portfolio.models import SelectionOptions
+from ..portfolio.pipeline import build_portfolio
 
 
-def _resolve_track(ctx: Context) -> str | None:
+def _resolve_track(args: object, policy_track: str) -> str | None:
     """Resolve the track filter: explicit ``--track`` wins; ``--node`` without
     ``--track`` drops the restriction; otherwise the policy default applies."""
-    args = ctx.args
     nodes = list(getattr(args, "node", None) or [])
     track = getattr(args, "track", None)
     if track is not None:
         return str(track)
     if nodes:
         return None
-    return _policy_default(ctx, "default_track", "portfolio")
+    return policy_track
 
 
-def _resolve_format(ctx: Context) -> str:
+def _resolve_format(args: object, policy_format: str) -> str:
     """Resolve the output format: explicit ``--format`` wins; otherwise the
     policy default applies (spec §6.2/§7 — policy values, not constants)."""
-    fmt = getattr(ctx.args, "format", None)
+    fmt = getattr(args, "format", None)
     if fmt:
         return str(fmt)
-    return _policy_default(ctx, "default_format", "md")
+    return policy_format
 
 
-def _policy_default(ctx: Context, field: str, fallback: str) -> str:
-    """Read one portfolio policy default, failing open to ``fallback``."""
-    try:
-        joined = load_context_strict(ctx.root)
-        if joined.ok:
-            return str(getattr(joined.policy.portfolio, field))
-    except Exception:  # noqa: BLE001 - fail open to the spec default
-        pass
-    return fallback
-
-
-def _resolve_options(ctx: Context) -> SelectionOptions:
-    args = ctx.args
+def _resolve_options(args: object, *, track: str | None) -> SelectionOptions:
     return SelectionOptions(
         nodes=tuple(getattr(args, "node", None) or []),
-        track=_resolve_track(ctx),
+        track=track,
         include_active=bool(getattr(args, "include_active", False)),
         include_rejected=bool(getattr(args, "include_rejected", False)),
         include_superseded=bool(getattr(args, "include_superseded", False)),
@@ -90,7 +78,9 @@ def _shared_portfolio_load(
 ) -> tuple[object | None, SelectionOptions | None, str | None, date | None, CommandResult | None]:
     """Single shared view-loading path for preview and export (T6).
 
-    Returns ``(view, options, fmt, today, None)`` on success or
+    One ``JoinedView`` load serves policy defaults, selection, and
+    redaction together — no second load solely for portfolio policy
+    values. Returns ``(view, options, fmt, today, None)`` on success or
     ``(None, None, None, None, error)`` on failure. Identical refusal
     semantics for both surfaces: non-zero exit, ``portfolio <command>: FAILED``
     message, no partial bundle or output.
@@ -99,18 +89,28 @@ def _shared_portfolio_load(
     pipeline cannot drift from the export pipeline (spec §4 — preview uses
     the same selection, redaction, and rendering pipeline as export).
     """
-    options = _resolve_options(ctx)
-    try:
-        fmt = normalize_format(_resolve_format(ctx))
-    except PortfolioExportError as exc:
-        print(f"portfolio {command}: FAILED — {exc}")
-        return None, None, None, None, CommandResult(exit_code=1)
     today = _today(ctx)
     try:
-        view = load_view_or_raise(ctx.root, options, today=today)
+        joined: JoinedView = load_context_strict(ctx.root)
+    except Exception as exc:  # noqa: BLE001 - strict loaders fail open to refusal
+        print(f"portfolio {command}: FAILED — {exc}")
+        return None, None, None, None, CommandResult(exit_code=1)
+    if not joined.ok:
+        print(
+            "portfolio "
+            + command
+            + ": FAILED — Cannot build portfolio — data load failed:\n"
+            + "\n".join(f"  {e}" for e in joined.errors)
+        )
+        return None, None, None, None, CommandResult(exit_code=1)
+    policy = joined.policy.portfolio
+    options = _resolve_options(ctx.args, track=_resolve_track(ctx.args, policy.default_track))
+    try:
+        fmt = normalize_format(_resolve_format(ctx.args, policy.default_format))
     except PortfolioExportError as exc:
         print(f"portfolio {command}: FAILED — {exc}")
         return None, None, None, None, CommandResult(exit_code=1)
+    view = build_portfolio(joined, options, today=today)
     return view, options, fmt, today, None
 
 
@@ -168,6 +168,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=portfolio_preview,
             help="Render the portfolio to stdout (read-only; same pipeline as export).",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -176,5 +177,68 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=portfolio_export,
             help="Write the disposable portfolio bundle to data/portfolio-<date>/.",
+            add_parser=add_parser,
         )
     )
+
+
+def _add_portfolio_shared_arguments(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--node",
+        action="append",
+        default=None,
+        metavar="ID",
+        help="Restrict to named node(s) (repeatable).",
+    )
+    p.add_argument(
+        "--track",
+        default=None,
+        metavar="NAME",
+        help="Restrict to track (default from policy/portfolio.yaml; "
+        "omitted when --node is given without --track).",
+    )
+    p.add_argument("--include-active", action="store_true")
+    p.add_argument("--include-rejected", action="store_true")
+    p.add_argument("--include-superseded", action="store_true")
+    p.add_argument("--include-paths", action="store_true")
+    p.add_argument("--include-notes", action="store_true")
+    p.add_argument("--include-blockers", action="store_true")
+    p.add_argument("--include-reviews", action="store_true")
+    p.add_argument("--include-free-text", action="store_true")
+    p.add_argument("--include-urls", action="store_true")
+    p.add_argument(
+        "--format",
+        default=None,
+        metavar="<md|html|json>",
+        help="Output format (default from policy/portfolio.yaml).",
+    )
+    p.add_argument(
+        "--output",
+        default=None,
+        metavar="PATH",
+        help="Destination (use - for stdout).",
+    )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `portfolio` parser (issue #207 contract).
+
+    Co-located owner of the `portfolio` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    portfolio_parser = subparsers.add_parser(
+        "portfolio", help="Portfolio builder (preview, export)."
+    )
+    portfolio_commands = portfolio_parser.add_subparsers(
+        dest="_portfolio_cmd", metavar="<command>"
+    )
+    portfolio_commands.required = True
+    portfolio_preview_parser = portfolio_commands.add_parser(
+        "preview", help="Render the portfolio to stdout (read-only)."
+    )
+    _add_portfolio_shared_arguments(portfolio_preview_parser)
+    portfolio_preview_parser.set_defaults(_command_name="portfolio preview")
+    portfolio_export_parser = portfolio_commands.add_parser(
+        "export", help="Write the disposable portfolio bundle (mutating)."
+    )
+    _add_portfolio_shared_arguments(portfolio_export_parser)
+    portfolio_export_parser.set_defaults(_command_name="portfolio export")

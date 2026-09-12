@@ -11,6 +11,8 @@ stable across every learner state.
 
 from __future__ import annotations
 
+import argparse
+
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence.validation import (
     EvidenceValidationResult,
@@ -147,6 +149,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=validate_graph,
             help="Validate the skill graph (nodes, edges, cycles).",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -155,6 +158,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=validate_evidence,
             help="Validate the evidence trail (specs, gates, records, attempts).",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -163,6 +167,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=validate_execution,
             help="Validate the execution history (sessions, work, blockers, actions, reviews).",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -171,6 +176,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=validate_policy,
             help="Validate the policy seed files (boundary agreement, structural shape).",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -179,5 +185,42 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=validate_resources,
             help="Validate the resource registry (slug IDs, URL-or-path, node links).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `validate` parsers to the top-level `subparsers` (issue #207 contract).
+
+    Co-located owner of the `validate` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    validate_parser = subparsers.add_parser(
+        "validate", help="Validate a layer of the repository."
+    )
+    validate_targets = validate_parser.add_subparsers(dest="_target", metavar="<target>")
+    validate_targets.required = True
+    graph_parser = validate_targets.add_parser(
+        "graph", help="Validate the skill graph (nodes, edges, cycles)."
+    )
+    graph_parser.set_defaults(_command_name="validate graph")
+    evidence_parser = validate_targets.add_parser(
+        "evidence",
+        help="Validate the evidence trail (specs, gates, records, attempts).",
+    )
+    evidence_parser.set_defaults(_command_name="validate evidence")
+    execution_parser = validate_targets.add_parser(
+        "execution",
+        help="Validate the execution history (sessions, work, blockers, actions, reviews).",
+    )
+    execution_parser.set_defaults(_command_name="validate execution")
+    policy_parser = validate_targets.add_parser(
+        "policy",
+        help="Validate the policy seed files (boundary agreement, structural shape).",
+    )
+    policy_parser.set_defaults(_command_name="validate policy")
+    resources_parser = validate_targets.add_parser(
+        "resources",
+        help="Validate the resource registry (slug IDs, URL-or-path, node links).",
+    )
+    resources_parser.set_defaults(_command_name="validate resources")

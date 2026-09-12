@@ -66,16 +66,22 @@ class SelectedNode:
 
 @dataclass
 class PortfolioView:
-    """The derived portfolio snapshot: selection metadata + node blocks."""
+    """The derived share-ready portfolio snapshot.
+
+    ``nodes`` are redacted node blocks (the ``redact_node_block`` contract:
+    denied dimensions already ``[redacted]`` / dropped, granted dimensions
+    verbatim). Built once by ``pipeline.build_portfolio`` — renderers only
+    format, never re-apply redaction.
+    """
 
     selection: SelectionOptions
-    nodes: list[SelectedNode] = field(default_factory=list)
+    nodes: list[dict] = field(default_factory=list)
     honesty_banners: list[str] = field(default_factory=list)
     generated_at: str = ""
 
     @property
     def summary(self) -> dict[str, int]:
-        evidence_count = sum(len(n.evidence) for n in self.nodes)
+        evidence_count = sum(len(n.get("evidence", [])) for n in self.nodes)
         return {
             "node_count": len(self.nodes),
             "evidence_count": evidence_count,

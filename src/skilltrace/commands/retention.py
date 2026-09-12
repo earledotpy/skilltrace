@@ -9,6 +9,7 @@ history and the policy seed, with no writes and no audit event. The
 
 from __future__ import annotations
 
+import argparse
 from datetime import date
 from pathlib import Path
 
@@ -109,5 +110,30 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=retention_status,
             help="Derive the retention model's memory state for every passed/mastered node (or one node).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `retention` parser (issue #207 contract).
+
+    Co-located owner of the `retention` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    retention_parser = subparsers.add_parser(
+        "retention", help="Retention model commands (status)."
+    )
+    retention_commands = retention_parser.add_subparsers(
+        dest="_retention_cmd", metavar="<command>"
+    )
+    retention_commands.required = True
+    retention_status_parser = retention_commands.add_parser(
+        "status",
+        help="Show the retention model's memory state for passed/mastered nodes (or one).",
+    )
+    retention_status_parser.add_argument(
+        "--node-id",
+        default=None,
+        help="Optional single node id to show retention state for.",
+    )
+    retention_status_parser.set_defaults(_command_name="retention status")

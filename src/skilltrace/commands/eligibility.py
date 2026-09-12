@@ -17,6 +17,8 @@ stands and is not revoked (ADR 0003).
 
 from __future__ import annotations
 
+import argparse
+
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence._schema import EvidenceLoadError
 from ..evidence.eligibility import EligibilityResult, compute_eligibility
@@ -143,5 +145,24 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=eligibility,
             help="Report whether a node is pass-eligible, with per-spec counts.",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `eligibility` parser to the top-level `subparsers` (issue #207 contract).
+
+    Co-located owner of the `eligibility` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    eligibility_parser = subparsers.add_parser(
+        "eligibility",
+        help="Report whether a node is pass-eligible, with per-spec counts.",
+    )
+    eligibility_parser.add_argument("node_id", help="Node to compute pass-eligibility for.")
+    eligibility_parser.add_argument(
+        "--mastery",
+        action="store_true",
+        help="Compute mastery eligibility (passed + accepted evidence + spaced satisfactory review).",
+    )
+    eligibility_parser.set_defaults(_command_name="eligibility")

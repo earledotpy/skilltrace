@@ -1,24 +1,25 @@
 """`skilltrace check-resources` — polite batch sweep over resource URLs (v2.3).
 
-Runs the v1.7 `check_url` sequentially (via the `polite_batch()` helper:
-per-host rate limiting, `robots.txt` respect, bounded 429 backoff) over a
-selector of registry entries. Read-only: prints one line per resource plus
-a summary, exits 0 on answered sweeps (a BROKEN verdict is the resource's,
-not the command's), writes nothing (never sets `last_verified`, never
-clears or writes `broken`) and emits no audit event.
+Runs the deep `check_urls()` sweep (policy merge, per-host rate limiting,
+`robots.txt` respect, bounded 429 backoff) over a selector of registry
+entries. Read-only: prints one line per resource plus a summary, exits 0
+on answered sweeps (a failure verdict is the resource's, not the
+command's), writes nothing and emits no audit event.
 
-Respecting disabled seeds: with the sweep policy disabled the command
-degrades to the v1.8 behavior (robots skipped, no extra delay, no 429
-retries), and out-of-range CLI values fail before any fetch.
+Respecting disabled seeds: with the sweep policy disabled the sweep
+degrades to plain sequential behavior (robots skipped, no extra delay, no
+429 retries), and out-of-range CLI values fail before any fetch.
 """
 
 from __future__ import annotations
+
+import argparse
 
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution.overdue import utc_today
 from ..resources.registry import ResourceLoadError, load_resources
 from ..resources.status import VerificationStatus, derive_status, stale_after_days
-from ..resources.polite_sweep import polite_batch, resolve_polite_sweep_policy
+from ..resources.polite_sweep import check_urls
 from ..resources.web_check import resolve_web_verification_policy
 
 
@@ -36,8 +37,6 @@ def check_resources(ctx: Context) -> CommandResult:
     if not policy.enabled:
         print("check-resources: FAILED — web check is disabled by policy.")
         return CommandResult(exit_code=1)
-
-    sweep_policy = resolve_polite_sweep_policy(root)
 
     if getattr(ctx.args, "stale_only", False):
         today = utc_today(clock=ctx.clock)
@@ -58,72 +57,19 @@ def check_resources(ctx: Context) -> CommandResult:
             )
             return CommandResult(exit_code=1)
 
-    timeout = ctx.args.timeout if ctx.args.timeout is not None else policy.timeout_seconds
-    method = ctx.args.method if ctx.args.method is not None else policy.check_method
-    follow_redirects = (
-        ctx.args.follow_redirects
-        if ctx.args.follow_redirects is not None
-        else policy.follow_redirects
-    )
-    user_agent = (
-        ctx.args.user_agent
-        if ctx.args.user_agent is not None
-        else policy.user_agent
-    )
-    respect_robots = (
-        False if getattr(ctx.args, "no_robots", False) or not sweep_policy.enabled
-        else sweep_policy.respect_robots
-    )
-    backoff_max_attempts = (
-        1
-        if not sweep_policy.enabled
-        else (
-            ctx.args.backoff_attempts
-            if ctx.args.backoff_attempts is not None
-            else sweep_policy.backoff_max_attempts
-        )
-    )
-    if (
-        isinstance(backoff_max_attempts, bool)
-        or not isinstance(backoff_max_attempts, int)
-        or not (1 <= backoff_max_attempts <= 10)
-    ):
-        print(
-            "check-resources: FAILED — --backoff-attempts must be an "
-            f"integer in [1, 10]; got {ctx.args.backoff_attempts!r}."
-        )
-        return CommandResult(exit_code=1)
-    per_host_delay = (
-        0.0
-        if not sweep_policy.enabled
-        else (
-            ctx.args.per_host_delay
-            if ctx.args.per_host_delay is not None
-            else sweep_policy.per_host_delay_seconds
-        )
-    )
-    if (
-        isinstance(per_host_delay, bool)
-        or not isinstance(per_host_delay, (int, float))
-        or not (0 <= per_host_delay <= 600)
-    ):
-        print(
-            "check-resources: FAILED — --per-host-delay must be a number "
-            f"in [0, 600]; got {ctx.args.per_host_delay!r}."
-        )
-        return CommandResult(exit_code=1)
     try:
-        pairs = polite_batch(
+        pairs = check_urls(
             [resource.url for resource in selected],
-            timeout_seconds=timeout,
-            follow_redirects=follow_redirects,
-            method=method,
-            user_agent=user_agent,
-            per_host_delay_seconds=per_host_delay,
-            respect_robots=respect_robots,
-            backoff_max_attempts=backoff_max_attempts,
-            backoff_base_seconds=sweep_policy.backoff_base_seconds,
-            backoff_max_seconds=sweep_policy.backoff_max_seconds,
+            root=root,
+            timeout_seconds=ctx.args.timeout,
+            follow_redirects=ctx.args.follow_redirects,
+            method=ctx.args.method,
+            user_agent=ctx.args.user_agent,
+            per_host_delay_seconds=ctx.args.per_host_delay,
+            respect_robots=(
+                False if getattr(ctx.args, "no_robots", False) else None
+            ),
+            backoff_max_attempts=ctx.args.backoff_attempts,
         )
     except ValueError as exc:
         print(f"check-resources: FAILED — {exc}")
@@ -161,5 +107,69 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=check_resources,
             help="Check reachability of all (or stale-only) resource URLs (read-only, exits 0 on answered sweep).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `check-resources` parser to the top-level `subparsers` (issue #207 contract).
+
+    Co-located owner of the `check-resources` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    check_resources_parser = subparsers.add_parser(
+        "check-resources",
+        help="Check reachability of all (or stale-only) resource URLs (read-only, exits 0 on answered sweep).",
+    )
+    selector = check_resources_parser.add_mutually_exclusive_group()
+    selector.add_argument(
+        "--all",
+        action="store_true",
+        help="Check every resource (the default when no selector is given).",
+    )
+    selector.add_argument(
+        "--stale-only",
+        action="store_true",
+        help="Check only resources whose derived status is stale under the policy window.",
+    )
+    check_resources_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help="Timeout in seconds (default: from policy).",
+    )
+    check_resources_parser.add_argument(
+        "--method",
+        choices=["HEAD", "GET"],
+        default=None,
+        help="HTTP method to use (default: from policy).",
+    )
+    check_resources_parser.add_argument(
+        "--follow-redirects",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Follow HTTP redirects (default: from policy).",
+    )
+    check_resources_parser.add_argument(
+        "--user-agent",
+        default=None,
+        help="Custom User-Agent string.",
+    )
+    check_resources_parser.add_argument(
+        "--per-host-delay",
+        type=float,
+        default=None,
+        help="Minimum seconds between requests to the same host (default: from polite-sweep policy).",
+    )
+    check_resources_parser.add_argument(
+        "--no-robots",
+        action="store_true",
+        help="Skip robots.txt checks (default: respect robots per polite-sweep policy).",
+    )
+    check_resources_parser.add_argument(
+        "--backoff-attempts",
+        type=int,
+        default=None,
+        help="Max total attempts on HTTP 429 (default: from polite-sweep policy).",
+    )
+    check_resources_parser.set_defaults(_command_name="check-resources")

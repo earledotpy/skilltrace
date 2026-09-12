@@ -91,7 +91,7 @@ _SA3_TOKEN_ALLOWLIST = {
     "src/skilltrace/automation.py",
     "src/skilltrace/commands/pass_.py",
     "src/skilltrace/commands/master.py",
-    "src/skilltrace/cli.py",
+    "src/skilltrace/commands/check_automation.py",
 }
 
 _CALL_RE = re.compile(r"\b(pass_node|master_node|delete_record)\s*\(")

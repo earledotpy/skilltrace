@@ -27,10 +27,13 @@ and the resource carries only current truth.
 
 from __future__ import annotations
 
+import argparse
+
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..resources.polite_sweep import check_urls
 from ..resources.registry import ResourceLoadError, load_resources
 from ..resources.verification import record_verification, today_iso
-from ..resources.web_check import check_url, resolve_web_verification_policy
+from ..resources.web_check import resolve_web_verification_policy
 
 
 def verify_resource(ctx: Context) -> CommandResult:
@@ -103,13 +106,18 @@ def verify_resource(ctx: Context) -> CommandResult:
         )
 
         try:
-            result = check_url(
-                target.url,
+            pairs = check_urls(
+                [target.url],
+                root=root,
                 timeout_seconds=timeout,
                 follow_redirects=follow_redirects,
                 method=method,
                 user_agent=user_agent,
+                per_host_delay_seconds=0.0,
+                respect_robots=False,
+                backoff_max_attempts=1,
             )
+            result = pairs[0][1]
         except ValueError as exc:
             print(f"verify-resource: FAILED — {exc}")
             return CommandResult(exit_code=1)
@@ -170,5 +178,59 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=verify_resource,
             help="Record a resource verification (success by default; --broken with --reason for a failed check).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `verify-resource` parser to the top-level `subparsers` (issue #207 contract).
+
+    Co-located owner of the `verify-resource` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    verify_resource_parser = subparsers.add_parser(
+        "verify-resource",
+        help="Record a resource verification (success by default; --broken with --reason for a failed check).",
+    )
+    verify_resource_parser.add_argument(
+        "resource_id", help="Resource whose URL and claims were checked."
+    )
+    verify_resource_parser.add_argument(
+        "--broken",
+        action="store_true",
+        help="Record a failed check (the dated broken marker) instead of a verification; requires --reason.",
+    )
+    verify_resource_parser.add_argument(
+        "--reason",
+        default=None,
+        help="Why the resource is broken (required with --broken).",
+    )
+    verify_resource_parser.add_argument(
+        "--check-url",
+        action="store_true",
+        help="Run automated URL preflight check before recording (records broken on failure; never sets last_verified).",
+    )
+    verify_resource_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help="Timeout in seconds for --check-url (default: from policy).",
+    )
+    verify_resource_parser.add_argument(
+        "--method",
+        choices=["HEAD", "GET"],
+        default=None,
+        help="HTTP method for --check-url (default: from policy).",
+    )
+    verify_resource_parser.add_argument(
+        "--follow-redirects",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Follow HTTP redirects for --check-url (default: from policy).",
+    )
+    verify_resource_parser.add_argument(
+        "--user-agent",
+        default=None,
+        help="Custom User-Agent string for --check-url.",
+    )
+    verify_resource_parser.set_defaults(_command_name="verify-resource")

@@ -14,6 +14,8 @@ and never touch the path attribute on engine records directly.
 
 from __future__ import annotations
 
+from ..evidence.gate_receipt import capture as _capture_receipt
+from ..evidence.gate_receipt import for_share as _receipt_for_share
 from .models import SelectedNode, SelectionOptions
 
 #: What a denied field reads as in the JSON contract (spec §3.3).
@@ -49,15 +51,12 @@ def visible_location(record: object, *, include_paths: bool) -> str:
 def visible_receipt(receipt: dict | None, *, include_paths: bool) -> dict | None:
     """The report-visible form of one selected evidence item's receipt.
 
-    Takes the *receipt mapping itself* (as carried on ``SelectedEvidence``),
-    not an engine record — renderers read selection state, never engine
-    records. A denied *paths* dimension drops the whole receipt (its
-    hashes and exit class never justify leaking where a checker ran);
-    granted, the receipt passes through untouched. ``None`` stays ``None``.
+    Thin adapter over `gate_receipt.for_share` — takes the *receipt mapping
+    itself* (as carried on ``SelectedEvidence``), not an engine record.
+    A denied *paths* dimension drops the whole receipt; granted, the receipt
+    passes through untouched. ``None`` stays ``None``.
     """
-    if receipt is None:
-        return None
-    return dict(receipt) if include_paths else None
+    return _receipt_for_share(receipt, include_paths=include_paths)
 
 
 def capture_location(record: object) -> str | None:
@@ -74,14 +73,12 @@ def capture_location(record: object) -> str | None:
 def capture_receipt(record: object) -> dict | None:
     """Copy one record's ``gate_run`` receipt into internal selection state.
 
-    The sanctioned provenance read beside ``capture_location``: it moves the
-    receipt dict (or ``None``) into ``SelectedEvidence`` so renderers read
-    from selection state, never engine records. Outbound surfaces still
-    funnel through ``visible_receipt`` (the *paths* dimension drops the
-    receipt wholesale when denied) — capture itself never redacts.
+    Thin adapter over `gate_receipt.capture`: moves the receipt dict (or
+    ``None``) into ``SelectedEvidence`` so renderers read from selection
+    state, never engine records. Outbound surfaces still funnel through
+    ``visible_receipt`` — capture itself never redacts.
     """
-    receipt = getattr(record, "gate_run", None)
-    return dict(receipt) if receipt is not None else None
+    return _capture_receipt(record)
 
 
 def capture_note(record: object) -> str | None:
@@ -109,10 +106,10 @@ def redact_node_block(block: dict, options: SelectionOptions) -> dict:
     dimension passes through untouched. Artifact bytes the learner selected
     are never touched — only the surrounding report fields are redacted.
     A record's ``gate_run`` receipt is path-bearing provenance, so it rides
-    the *paths* dimension with the location: denied it drops out of the
-    block entirely; granted it passes through verbatim (hashes and the exit
-    class are shareable under the profile's other rules only because the
-    whole receipt is present).
+    the *paths* dimension via ``gate_receipt.for_share``: denied it drops
+    out of the block entirely; granted it passes through as a copy (hashes
+    and the exit class are shareable under the profile's other rules only
+    because the whole receipt is present).
     """
     evidence = [
         {
@@ -123,7 +120,9 @@ def redact_node_block(block: dict, options: SelectionOptions) -> dict:
                 else REDACTED
             ),
             "note": item.get("note") if options.include_notes else REDACTED,
-            "gate_run": item.get("gate_run") if options.include_paths else None,
+            "gate_run": _receipt_for_share(
+                item.get("gate_run"), include_paths=options.include_paths
+            ),
         }
         for item in block.get("evidence", [])
     ]

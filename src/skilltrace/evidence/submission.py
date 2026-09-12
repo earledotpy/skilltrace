@@ -28,13 +28,19 @@ so a refused submit never executes a side-effecting command.
 
 from __future__ import annotations
 
-import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from .eligibility import live_accepted_count as _live_accepted_count
 from .evidence import EvidenceRecord, ArtifactSpec
+from .gate_receipt import (
+    EXIT_FAILED as _FAILED,
+    EXIT_PASSED as _PASSED,
+    HASH_PREFIX as _HASH_PREFIX,
+    build as _receipt_build,
+    hash_stream as _receipt_hash_stream,
+)
 from .ids import allocate_evidence_id
 
 # The gate runner returns one run result: the verdict (exit code) plus both
@@ -278,12 +284,9 @@ def plan_submit(
     )
 
 
-# The two — and only two — exit classes (spec §1, D-Exit). Zero ran and
-# passed; anything else ran and failed. Inability to run is not a class.
-_PASSED = "passed"
-_FAILED = "failed"
-
-_HASH_PREFIX = "sha256:"
+# The two — and only two — exit classes live in `gate_receipt` (spec §1,
+# D-Exit: zero ran and passed, anything else ran and failed; inability to
+# run is not a class), re-exported above as `_PASSED`/`_FAILED`.
 
 
 def _unpack_run(run: GateRunResult | tuple[int, str, str]) -> tuple[int, str, str]:
@@ -309,8 +312,12 @@ def _unpack_run(run: GateRunResult | tuple[int, str, str]) -> tuple[int, str, st
 
 
 def _hash_stream(text: str) -> str:
-    """Hash one captured stream (`sha256:<hex>` over its UTF-8 bytes)."""
-    return _HASH_PREFIX + hashlib.sha256(text.encode("utf-8")).hexdigest()
+    """Hash one captured stream (`sha256:<hex>` over its normalized bytes).
+
+    Thin adapter over `gate_receipt.hash_stream` — normalization lives in
+    the receipt module's builder/runner contract.
+    """
+    return _receipt_hash_stream(text)
 
 
 def _build_gate_run(
@@ -324,52 +331,11 @@ def _build_gate_run(
 ) -> dict:
     """Freeze the bounded `gate_run` receipt for one objective judgment.
 
-    `command_argv` is the exact executed argv (`shlex.split`, no cwd
-    override, no substitution — the unchanged curriculum-authoring
-    contract); `inputs` is the submitted artifact first, then every argv
-    token that resolves to an existing file under the repo root,
-    deduplicated, root-relative, forward slashes (D-Normalize). Each
-    non-empty captured stream contributes its hash — raw output never
-    crosses the boundary. `tool`/`version` stay absent in v2.2: their
-    schema keys exist, but populating them means probing subprocesses,
-    which belongs to the future gate-runner (D-Normalize). Without a root
-    (or an `exists` probe) no token can resolve in-repo, so the receipt
-    carries the artifact alone.
+    Thin adapter over `gate_receipt.build` — argv splitting, input
+    collection, exit-class mapping, and normalized stream hashing all live
+    in the receipt module.
     """
-    import shlex
-    from pathlib import Path as _Path
-
-    argv = shlex.split(command)
-    inputs = [location]
-    if root is not None and exists is not None:
-        root_path = _Path(root)
-        for token in argv:
-            candidate = root_path / token
-            try:
-                is_file = exists(candidate)
-            except OSError:
-                continue
-            if not is_file:
-                continue
-            try:
-                rel = candidate.resolve().relative_to(root_path.resolve())
-            except ValueError:
-                continue  # outside the repo — not an input (D-Normalize)
-            rel_posix = rel.as_posix()
-            if rel_posix not in inputs:
-                inputs.append(rel_posix)
-    inputs[1:] = sorted(inputs[1:])
-    receipt: dict = {
-        "command_argv": argv,
-        "inputs": inputs,
-        "exit_class": _PASSED if exit_code == 0 else _FAILED,
-        "exit_code": exit_code,
-    }
-    if stdout:
-        receipt["stdout_hash"] = _hash_stream(stdout)
-    if stderr:
-        receipt["stderr_hash"] = _hash_stream(stderr)
-    return receipt
+    return _receipt_build(command, location, exit_code, stdout, stderr, root, exists)
 
 
 def _resolve_spec(

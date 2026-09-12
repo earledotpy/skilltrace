@@ -9,17 +9,33 @@ only from the passed edge lists (plus the same derived-readiness code `sync`
 uses) — never node frontmatter. Writes nothing, blocks nothing; the command
 shell renders it. Mirrors `check_graph` / `recommend` / `plan_submit` in the
 house pure-core style.
+
+`diagnose` (issue #205) is the production diagnostic path: it owns baseline
+loading behind `BaselineSource` adapters (git ref, path, in-memory), reuses
+the ranking `prepare` seam for boost inputs, collects dangling-reference
+inputs from the joined view, and calls `compute_impact`. The CLI command is
+renderer/exit-code only.
 """
 
 from __future__ import annotations
 
+import subprocess
 from dataclasses import dataclass, field
+from datetime import date
+from pathlib import Path
+from typing import TYPE_CHECKING, Callable, Protocol
 
-from .edges import GraphEdge
-from .nodes import SkillNode
+import yaml
+
+from .edges import EdgeLoadError, GraphEdge, load_edges, load_edges_from_text
+from .nodes import NodeLoadError, SkillNode, load_node_from_text, load_nodes
 from .readiness import _active_hard_prereqs_by_target, derive_readiness
 from .recommendation import recommend
+from .recommendation_prep import prepare
 from .state import ASSERTED_STATES, ProgressStore
+
+if TYPE_CHECKING:
+    from ..context import JoinedView
 
 
 @dataclass(frozen=True)
@@ -305,5 +321,272 @@ def _no_op_edges(
         noop.append(NoOpEdge(edge.id, edge.source, edge.target))
     noop.sort(key=lambda e: e.edge_id)
     return noop
+
+
+# --- Baseline sources + diagnose() (issue #205) --------------------------------
+#
+# The diagnostic's production path. Baseline loading lives behind the
+# `BaselineSource` protocol so tests exercise `diagnose()` with the in-memory
+# adapter — no live git, no temp curriculum files — while the CLI's default
+# path keeps the read-only git fetch seam. Ranking boosts come from the
+# `prepare` seam behind `recommend()` (issue #201); nothing here hand-assembles
+# boost kwargs. Advisory and read-only: `diagnose` writes nothing and blocks
+# nothing; it raises `BaselineUnavailable` only when the baseline cannot be
+# loaded at all.
+
+
+class BaselineUnavailable(Exception):
+    """The baseline side cannot be loaded at all (non-git dir, unknown ref)."""
+
+
+@dataclass(frozen=True)
+class Baseline:
+    """One loaded baseline side: curriculum plus its display label."""
+
+    nodes: list[SkillNode]
+    edges: list[GraphEdge]
+    label: str
+
+
+class BaselineSource(Protocol):
+    """Where the baseline side of a `diagnose()` run comes from."""
+
+    @property
+    def label(self) -> str:
+        """Display label for the baseline side (rendered after `graph impact vs`)."""
+        ...  # pragma: no cover - protocol surface
+
+    def load(self) -> Baseline:
+        """Load baseline nodes/edges; raise `BaselineUnavailable` when impossible."""
+        ...  # pragma: no cover - protocol surface
+
+
+def _is_missing_blob(exc: BaselineUnavailable) -> bool:
+    """True when a `git show` failure just means the path is absent at the ref."""
+    message = str(exc).lower()
+    return "does not exist" in message or "exists on disk, but not in" in message
+
+
+def _run_git(root: Path, *argv: str) -> str:
+    """Run one read-only git file-fetch; any failure is unavailable."""
+    try:
+        completed = subprocess.run(
+            ["git", *argv],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as exc:
+        raise BaselineUnavailable(f"not a git repository ({exc})") from exc
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout or "").strip().splitlines()
+        raise BaselineUnavailable(detail[0] if detail else "git command failed")
+    return completed.stdout
+
+
+@dataclass(frozen=True)
+class GitBaselineSource:
+    """Baseline from the tracked `graph/nodes/*.md` blobs plus `edges.yaml` at `ref`.
+
+    Blobs are parsed from text via `load_node_from_text` — no temp node files
+    are dropped on disk. `run_git` is the injectable fetch seam (tests stub it;
+    production uses the module `_run_git`).
+    """
+
+    root: Path
+    ref: str = "HEAD"
+    run_git: Callable[..., str] | None = None
+
+    @property
+    def label(self) -> str:
+        return self.ref
+
+    def _git(self, *argv: str) -> str:
+        runner = self.run_git or _run_git
+        return runner(self.root, *argv)
+
+    def load(self) -> Baseline:
+        run = self._git
+        run("rev-parse", "--verify", "--quiet", f"{self.ref}^{{commit}}")
+        out = run("ls-tree", "-r", "--name-only", self.ref, "--", "graph/nodes/")
+        nodes: list[SkillNode] = []
+        for relpath in (line for line in out.splitlines() if line.strip()):
+            if not relpath.endswith(".md"):
+                continue
+            try:
+                blob = run("show", f"{self.ref}:{relpath}")
+            except BaselineUnavailable as exc:
+                if _is_missing_blob(exc):
+                    continue
+                raise
+            if not blob:
+                continue
+            try:
+                nodes.append(
+                    load_node_from_text(blob, self.root / relpath)
+                )
+            except NodeLoadError as exc:
+                raise BaselineUnavailable(str(exc)) from exc
+        try:
+            edges_text = run("show", f"{self.ref}:graph/edges.yaml")
+        except BaselineUnavailable as exc:
+            if _is_missing_blob(exc):
+                edges_text = ""
+            else:
+                raise
+        edges = _baseline_edges_from_text(edges_text, self.root, self.ref)
+        return Baseline(nodes=nodes, edges=edges, label=self.label)
+
+
+def _baseline_edges_from_text(edges_text: str, root: Path, ref: str) -> list[GraphEdge]:
+    """Parse baseline `edges.yaml` text with the legacy loader's tolerance.
+
+    Matches the pre-deepening git baseline loader: an empty blob, a
+    comments-only document, a non-mapping, or a mapping without an `edges:`
+    list means the pre-edges era — no baseline edges — rather than a load
+    failure. Genuinely unparseable YAML and invalid edge items still raise
+    `BaselineUnavailable` (exit 1: the baseline cannot be loaded).
+    """
+    try:
+        doc = yaml.safe_load(edges_text)
+    except yaml.YAMLError as exc:
+        raise BaselineUnavailable(
+            f"baseline {ref}: unparseable edges.yaml: {exc}"
+        ) from exc
+    if not isinstance(doc, dict) or not doc.get("edges"):
+        return []
+    try:
+        return load_edges_from_text(
+            edges_text,
+            source_path=root / "graph" / "edges.yaml",
+            allow_empty=True,
+        )
+    except EdgeLoadError as exc:
+        raise BaselineUnavailable(
+            f"baseline {ref}: unparseable edges.yaml: {exc}"
+        ) from exc
+
+
+@dataclass(frozen=True)
+class PathBaselineSource:
+    """Baseline from a second checkout on disk (no git needed)."""
+
+    path: Path
+
+    @property
+    def label(self) -> str:
+        return f"baseline {self.path}"
+
+    def load(self) -> Baseline:
+        try:
+            nodes = load_nodes(self.path)
+        except NodeLoadError as exc:
+            raise BaselineUnavailable(str(exc)) from exc
+        try:
+            edges = (
+                load_edges(self.path)
+                if (self.path / "graph" / "edges.yaml").exists()
+                else []
+            )
+        except EdgeLoadError as exc:
+            raise BaselineUnavailable(str(exc)) from exc
+        return Baseline(nodes=nodes, edges=edges, label=self.label)
+
+
+@dataclass(frozen=True)
+class InMemoryBaselineSource:
+    """Baseline from already-loaded nodes/edges (tests; no git, no files)."""
+
+    nodes: tuple[SkillNode, ...] = ()
+    edges: tuple[GraphEdge, ...] = ()
+    baseline_label: str = "in-memory baseline"
+
+    @property
+    def label(self) -> str:
+        return self.baseline_label
+
+    def load(self) -> Baseline:
+        return Baseline(
+            nodes=list(self.nodes), edges=list(self.edges), label=self.label
+        )
+
+
+@dataclass(frozen=True)
+class DiagnoseOutcome:
+    """The computed advisory report plus the baseline label it was computed against."""
+
+    report: ImpactReport
+    baseline_label: str
+
+
+def _dangling_inputs(joined: "JoinedView") -> dict:
+    """Collect dangling-reference inputs from the current evidence trail."""
+    return {
+        "dangling_specs": [(s.id, s.node_id) for s in joined.specs],
+        "dangling_gates": [(g.id, g.node_id) for g in joined.gates],
+        "dangling_records": [
+            (r.id, r.artifact_spec_id, r.location) for r in joined.records
+        ],
+        "dangling_attempts": [(a.id, a.node_id) for a in joined.attempts],
+    }
+
+
+def diagnose(
+    joined: "JoinedView",
+    baseline: BaselineSource,
+    *,
+    root: Path | None = None,
+    minutes: int = 60,
+    limit: int = 5,
+    today: date | None = None,
+) -> DiagnoseOutcome:
+    """Run the graph-impact diagnostic: the production path behind `graph impact`.
+
+    Loads the baseline side through `baseline` (raising `BaselineUnavailable`
+    when it cannot be loaded), prepares ranking boost inputs once via the
+    shared `prepare` seam, and diffs baseline against the joined view's
+    current nodes/edges over the shared progress store. Read-only: writes
+    nothing, blocks nothing, never revokes asserted progress.
+    """
+    loaded = baseline.load()
+    inputs = prepare(joined, root, today)
+    report = compute_impact(
+        loaded.nodes,
+        loaded.edges,
+        joined.nodes,
+        joined.edges,
+        joined.store,
+        minutes=minutes,
+        limit=limit,
+        **inputs.recommend_kwargs(),
+        **_dangling_inputs(joined),
+    )
+    return DiagnoseOutcome(report=report, baseline_label=loaded.label)
+
+
+def format_report(report: ImpactReport, baseline_label: str) -> list[str]:
+    """Render the advisory findings as terminal lines. Pure of printing."""
+    lines = [f"graph impact vs {baseline_label}:"]
+    if report.quiet:
+        lines.append("  no changes — the edit flips no readiness, moves no recommendation,")
+        lines.append("  dangles no reference, and leaves no no-op edge.")
+        return lines
+    for flip in report.flips:
+        lines.append(f"  flip: {flip.node_id}: {flip.baseline_state} -> {flip.current_state}")
+    for node_id in report.asserted_standing:
+        lines.append(f"  asserted progress stands (not revoked): {node_id}")
+    for change in report.recommendation_changes:
+        before = f"#{change.baseline_rank}" if change.baseline_rank is not None else "(unranked)"
+        after = f"#{change.current_rank}" if change.current_rank is not None else "(unranked)"
+        lines.append(f"  recommendation: {change.node_id}: {before} -> {after}")
+    for dangling in report.dangling:
+        lines.append(
+            f"  dangling: {dangling.node_id} still named by "
+            f"{', '.join(sorted(dangling.referenced_by))}"
+        )
+    for edge in report.no_op_edges:
+        lines.append(f"  no-op edge: {edge.edge_id} ({edge.source} -> {edge.target})")
+    return lines
 
 

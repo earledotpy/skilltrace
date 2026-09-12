@@ -24,6 +24,7 @@ Mutating: `analytics export` appends exactly one audit event (Kind.MUTATING).
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 from .. import render
@@ -433,6 +434,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=analytics_umbrella,
             help="Event-log analytics: all four themes stacked (velocity, blockers, reviews, evidence).",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -441,6 +443,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=analytics_velocity,
             help="Study-velocity analytics: session cadence and node progress over the rolling window.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -449,6 +452,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=analytics_blockers,
             help="Blocker analytics: active stuckness grouped by domain prefix or track.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -457,6 +461,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=analytics_reviews,
             help="Review analytics: completion rate and overdue highlighting.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -465,6 +470,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=analytics_evidence,
             help="Evidence-coverage analytics: per-node gap analysis.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -473,5 +479,98 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=analytics_export,
             help="Export analytics as Markdown, HTML, or JSON (default: data/analytics-report.<ext>).",
+            add_parser=add_parser,
         )
     )
+
+
+def _add_analytics_shared_arguments(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--days",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Rolling window in days (default from policy/analytics.yaml).",
+    )
+    p.add_argument(
+        "--group-by",
+        default=None,
+        choices=["prefix", "track"],
+        metavar="<prefix|track>",
+        help="Grouping dimension (default from policy/analytics.yaml).",
+    )
+    p.add_argument(
+        "--state",
+        action="append",
+        default=None,
+        metavar="STATE",
+        help="Filter by node state (repeatable; OR semantics): active, passed, mastered, locked, available.",
+    )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `analytics` parser (issue #207 contract).
+
+    Co-located owner of the `analytics` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    analytics_parser = subparsers.add_parser(
+        "analytics", help="Event-log analytics (velocity, blockers, reviews, evidence)."
+    )
+    analytics_parser.set_defaults(_command_name="analytics")
+    analytics_commands = analytics_parser.add_subparsers(
+        dest="_analytics_cmd", metavar="<command>"
+    )
+    analytics_commands.required = False  # bare `analytics` is the umbrella
+
+    _add_analytics_shared_arguments(analytics_parser)
+
+    analytics_velocity_parser = analytics_commands.add_parser(
+        "velocity", help="Study-velocity analytics: session cadence and node progress."
+    )
+    _add_analytics_shared_arguments(analytics_velocity_parser)
+    analytics_velocity_parser.set_defaults(_command_name="analytics velocity")
+
+    analytics_blockers_parser = analytics_commands.add_parser(
+        "blockers", help="Blocker analytics: active stuckness grouped by domain or track."
+    )
+    _add_analytics_shared_arguments(analytics_blockers_parser)
+    analytics_blockers_parser.set_defaults(_command_name="analytics blockers")
+
+    analytics_reviews_parser = analytics_commands.add_parser(
+        "reviews", help="Review analytics: completion rate and overdue highlighting."
+    )
+    _add_analytics_shared_arguments(analytics_reviews_parser)
+    analytics_reviews_parser.set_defaults(_command_name="analytics reviews")
+
+    analytics_evidence_parser = analytics_commands.add_parser(
+        "evidence", help="Evidence-coverage analytics: per-node gap analysis."
+    )
+    _add_analytics_shared_arguments(analytics_evidence_parser)
+    analytics_evidence_parser.set_defaults(_command_name="analytics evidence")
+
+    analytics_export_parser = analytics_commands.add_parser(
+        "export",
+        help="Export analytics as Markdown, HTML, or JSON.",
+    )
+    _add_analytics_shared_arguments(analytics_export_parser)
+    analytics_export_parser.add_argument(
+        "--theme",
+        default=None,
+        choices=["all", "velocity", "blockers", "reviews", "evidence"],
+        metavar="<all|velocity|blockers|reviews|evidence>",
+        help="Theme to export (default: all).",
+    )
+    analytics_export_parser.add_argument(
+        "--format",
+        default=None,
+        choices=["md", "html", "json"],
+        metavar="<md|html|json>",
+        help="Output format (default: md).",
+    )
+    analytics_export_parser.add_argument(
+        "--output",
+        default=None,
+        metavar="PATH",
+        help="Output path override (use - for stdout; default: data/analytics-report-<theme>.<ext>).",
+    )
+    analytics_export_parser.set_defaults(_command_name="analytics export")

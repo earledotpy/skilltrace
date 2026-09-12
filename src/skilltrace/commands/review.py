@@ -8,6 +8,8 @@ learner-only with a required reason, and the record stays as history.
 
 from __future__ import annotations
 
+import argparse
+
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ._common import now_iso as _now_iso, report_plan as _report
 from ..execution._store import ExecutionLoadError
@@ -115,6 +117,7 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=schedule,
             help="Schedule a retention check on a passed or mastered node.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -123,6 +126,7 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=complete,
             help="Complete a scheduled review (outcome + result summary required).",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -131,5 +135,45 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=cancel,
             help="Cancel a scheduled review (reason required; the record is kept).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `review schedule`/`complete`/`cancel` parsers (issue #207 contract).
+
+    Co-located owner of the `review` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    review_parser = subparsers.add_parser(
+        "review", help="Review commands (schedule, complete, cancel)."
+    )
+    review_commands = review_parser.add_subparsers(dest="_review_cmd", metavar="<command>")
+    review_commands.required = True
+    review_schedule = review_commands.add_parser(
+        "schedule", help="Schedule a retention check on a passed or mastered node."
+    )
+    review_schedule.add_argument("node_id", help="Node to schedule a review for.")
+    review_schedule.add_argument(
+        "--date", required=True, help="Date the review is due (YYYY-MM-DD)."
+    )
+    review_schedule.set_defaults(_command_name="review schedule")
+    review_complete = review_commands.add_parser(
+        "complete", help="Complete a scheduled review."
+    )
+    review_complete.add_argument("review_id", help="Review to complete (rev.<node>.NNN).")
+    review_complete.add_argument(
+        "--outcome", required=True, help="satisfactory or unsatisfactory."
+    )
+    review_complete.add_argument(
+        "--summary", required=True, help="Result summary of the retention check."
+    )
+    review_complete.set_defaults(_command_name="review complete")
+    review_cancel = review_commands.add_parser(
+        "cancel", help="Cancel a scheduled review (the record is kept)."
+    )
+    review_cancel.add_argument("review_id", help="Review to cancel (rev.<node>.NNN).")
+    review_cancel.add_argument(
+        "--reason", required=True, help="Why the review is cancelled."
+    )
+    review_cancel.set_defaults(_command_name="review cancel")

@@ -12,6 +12,7 @@ read fresh per request by the handler; `data/*` is never touched.
 
 from __future__ import annotations
 
+import argparse
 import errno
 import webbrowser
 from pathlib import Path
@@ -83,5 +84,37 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=serve,
             help="Run the local web UI on loopback (foreground; read-only).",
+            add_parser=add_parser,
         )
     )
+
+
+def _add_serve_arguments(parser: argparse.ArgumentParser) -> None:
+    """Attach `serve`'s arguments to `parser` (canonical + `ui` alias)."""
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=DEFAULT_PORT,
+        help="Loopback port to serve on (fails fast if already in use).",
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Do not auto-open the browser at the served URL.",
+    )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `serve` parser (issue #207 contract).
+
+    Co-located owner of the `serve` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    serve_parser = subparsers.add_parser(
+        "serve", help="Run the local web UI on loopback (foreground; read-only)."
+    )
+    _add_serve_arguments(serve_parser)
+    serve_parser.set_defaults(_command_name="serve")
+
+    ui_alias_parser = subparsers.add_parser("ui", help="Alias for `serve`.")
+    _add_serve_arguments(ui_alias_parser)
+    ui_alias_parser.set_defaults(_command_name="serve")

@@ -32,7 +32,7 @@ _SA4_TOKEN_ALLOWLIST = {
     "src/skilltrace/automation.py",
     "src/skilltrace/commands/pass_.py",
     "src/skilltrace/commands/master.py",
-    "src/skilltrace/cli.py",
+    "src/skilltrace/commands/check_automation.py",
 }
 
 # The v2.1 advisory-only surfaces (relative to SRC) must never write outcome.

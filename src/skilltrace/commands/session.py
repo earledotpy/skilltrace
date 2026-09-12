@@ -11,6 +11,8 @@ load facts and bind the writes.
 
 from __future__ import annotations
 
+import argparse
+
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ._common import now_iso as _now_iso, report_plan as _report
 from ..execution._store import ExecutionLoadError
@@ -180,6 +182,7 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=start,
             help="Open a new session with its first work item on a node.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -188,6 +191,7 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=work,
             help="Add a work item for a node to the open session.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -196,5 +200,63 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=close,
             help="Complete the open session (--end records an honest past end time).",
+            add_parser=add_parser,
         )
     )
+
+
+def _add_session_close_arguments(parser: argparse.ArgumentParser) -> None:
+    """Attach `session close`'s arguments to `parser` (canonical + `close` alias)."""
+    parser.add_argument(
+        "--end",
+        default=None,
+        help="Honest end timestamp for a forgotten session (after start, not in the future).",
+    )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `start`/`work`/`session close` parsers plus the `close` alias (issue #207 contract).
+
+    Co-located owner of the session argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    start_parser = subparsers.add_parser(
+        "start",
+        help="Open a new session with its first work item on a node.",
+    )
+    start_parser.add_argument("node_id", help="Node to start working on.")
+    start_parser.add_argument(
+        "--template",
+        default=None,
+        help="Optional session template label (e.g. micro/standard/deep).",
+    )
+    start_parser.set_defaults(_command_name="start")
+
+    work_parser = subparsers.add_parser(
+        "work", help="Add a work item for a node to the open session."
+    )
+    work_parser.add_argument("node_id", help="Node the work item is about.")
+    work_parser.add_argument(
+        "--blocked",
+        action="store_true",
+        help="This stint ended stuck (session-scoped observation; requires --notes).",
+    )
+    work_parser.add_argument("--notes", default=None, help="Notes on the work item.")
+    work_parser.add_argument(
+        "--minutes", type=int, default=None, help="Optional minutes spent on this item."
+    )
+    work_parser.set_defaults(_command_name="work")
+
+    session_parser = subparsers.add_parser("session", help="Session commands (close).")
+    session_commands = session_parser.add_subparsers(dest="_session_cmd", metavar="<command>")
+    session_commands.required = True
+    close_parser = session_commands.add_parser(
+        "close", help="Complete the open session."
+    )
+    _add_session_close_arguments(close_parser)
+    close_parser.set_defaults(_command_name="session close")
+
+    close_alias_parser = subparsers.add_parser(
+        "close", help="Alias for `session close`."
+    )
+    _add_session_close_arguments(close_alias_parser)
+    close_alias_parser.set_defaults(_command_name="session close")

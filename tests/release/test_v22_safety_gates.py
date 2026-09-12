@@ -171,18 +171,30 @@ def test_sa4_graph_impact_never_flips_asserted_nodes():
 
 
 def test_sa5_receipt_stores_only_hash_streams_never_raw_output():
-    """Raw gate output is hashed; the receipt stores `*_hash`, never `stdout`/`stderr`."""
+    """Raw gate output is hashed; the receipt stores `*_hash`, never `stdout`/`stderr`.
+
+    The receipt interface lives in `evidence/gate_receipt.py` (issue #202);
+    `submission.py` stays a thin adapter, so both files are pinned: no raw
+    output keys anywhere, hashes built in exactly one place.
+    """
+    receipt_module = SRC / "evidence" / "gate_receipt.py"
     submission = SRC / "evidence" / "submission.py"
     hits = []
-    for lineno, line in enumerate(_code_text(submission).splitlines(), start=1):
-        if re.search(r'receipt\["stdout"\]|receipt\["stderr"\]', line):
-            hits.append(f"{submission.relative_to(REPO_ROOT).as_posix()}:{lineno}:{line.strip()}")
+    for path in (receipt_module, submission):
+        for lineno, line in enumerate(_code_text(path).splitlines(), start=1):
+            if re.search(r'receipt\["stdout"\]|receipt\["stderr"\]', line):
+                hits.append(f"{path.relative_to(REPO_ROOT).as_posix()}:{lineno}:{line.strip()}")
     assert hits == [], "receipt storing raw output: " f"{hits}"
-    text = submission.read_text(encoding="utf-8")
-    # The only output keys the receipt may carry are the sha256-prefixed hashes.
-    assert 'receipt["stdout_hash"] = _hash_stream(stdout)' in text
-    assert 'receipt["stderr_hash"] = _hash_stream(stderr)' in text
-    assert "_HASH_PREFIX + hashlib.sha256" in text
+    text = receipt_module.read_text(encoding="utf-8")
+    # The only output keys the receipt may carry are the sha256-prefixed hashes,
+    # built through the typed receipt (hashes only — raw output never crosses).
+    assert "stdout_hash=hash_stream(stdout)" in text
+    assert "stderr_hash=hash_stream(stderr)" in text
+    assert "HASH_PREFIX + hashlib.sha256" in text
+    # The adapter delegates rather than re-implementing hashing.
+    adapter = submission.read_text(encoding="utf-8")
+    assert "return _receipt_hash_stream(text)" in adapter
+    assert "return _receipt_build(" in adapter
 
 
 # --- SA6 — doc gate: spec exists, §7 command list verbatim ----------------------

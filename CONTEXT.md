@@ -503,3 +503,17 @@ on any fetch failure, and bounded 429-only backoff. A polite sweep is
 pure network reads: it never sets `last_verified`, never clears or writes
 `broken`, and emits no audit event.
 
+## Interface sublayer (v2.4 — locked, not yet built)
+
+<!-- Terms locked by the v2.4 interface-direction map before the sublayer
+     exists. Glossary only; the surfaces that render them land with v2.4. -->
+
+**Days practiced** — a derived count of the distinct days on which the
+learner logged work, computed from existing execution records (session
+`started_at`, work `created_at`); never stored, never a new record type.
+It is a mirror, not a metronome: it carries no target, no countdown, no
+loss framing, and no streak mechanic, and a day without work is simply
+absent rather than shown as a break. It never affects eligibility,
+ranking, recommendation order, or advisory pressure, and it never appears
+in a refusal.
+

@@ -12,6 +12,8 @@ command before anything touches disk).
 
 from __future__ import annotations
 
+import argparse
+
 from ..context import load_context_strict
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..export_data import ExportData, load_export_data
@@ -77,6 +79,7 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=export_markdown,
             help="Write a compact Markdown snapshot to data/export.md.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -85,6 +88,7 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=export_sqlite,
             help="Rebuild the SQLite mirror at data/skilltrace.db.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -93,5 +97,30 @@ def register(registry: Registry) -> None:
             kind=Kind.MUTATING,
             handler=export_html,
             help="Write a self-contained HTML snapshot to data/export.html.",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `export` parser (issue #207 contract).
+
+    Co-located owner of the `export` argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    export_parser = subparsers.add_parser(
+        "export", help="Export a disposable data snapshot (markdown, sqlite, html)."
+    )
+    export_targets = export_parser.add_subparsers(dest="_export_target", metavar="<target>")
+    export_targets.required = True
+    export_markdown_parser = export_targets.add_parser(
+        "markdown", help="Write a compact Markdown snapshot to data/export.md."
+    )
+    export_markdown_parser.set_defaults(_command_name="export markdown")
+    export_sqlite_parser = export_targets.add_parser(
+        "sqlite", help="Rebuild the SQLite mirror at data/skilltrace.db."
+    )
+    export_sqlite_parser.set_defaults(_command_name="export sqlite")
+    export_html_parser = export_targets.add_parser(
+        "html", help="Write a self-contained HTML snapshot to data/export.html."
+    )
+    export_html_parser.set_defaults(_command_name="export html")

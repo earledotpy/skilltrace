@@ -1,7 +1,9 @@
-"""Polite batch sweep — verification-hygiene hardening (v2.3).
+"""Deep resource URL-check interface — policy merge plus polite sweep.
 
-Wraps the v1.7 `check_url` seam with three politeness layers for batch
-sweeps:
+One production call path for URL sweeps (`check_urls`): it merges the
+`resource_web_verification` and `polite_sweep` policy seeds with explicit
+caller overrides, then checks URLs sequentially with three politeness
+layers:
 
 - **Per-host rate limiting** — nominal per-host spacing: a host's first
   request proceeds immediately and any later same-host request waits
@@ -11,17 +13,21 @@ sweeps:
   URLs are never fetched and report `ok=False` with a `robots.txt disallow`
   reason. Any robots fetch failure (404, transport error, timeout) fails
   open: the URL is checked anyway. A robots check must never turn a
-  reachable resource broken.
+  reachable resource into a failure verdict.
 - **429 backoff** — a 429 may be retried with bounded exponential backoff
   (base doubling, capped at `backoff_max_seconds`); a larger `Retry-After`
   header wins. Only 429 is retried — every other HTTP/transport/timeout
-  failure is final after one attempt. `backoff_max_attempts=1` (the
-  default) reproduces the v1.8 never-retry behavior exactly.
+  failure is final after one attempt. `backoff_max_attempts=1`
+  reproduces the never-retry behavior exactly.
 
-Pure network reads: performs zero writes (never calls
-`record_verification`, never sets `last_verified`, never clears `broken`)
-and emits no event. Order is preserved; an empty input yields an empty
-list.
+Pure network reads: performs zero writes (never touches stored
+verification state) and emits no event. Order is preserved; an empty input
+yields an empty list.
+
+The robots cache and per-host spacing machinery are internal to this
+module (underscore names, not exported). Tests exercise the sweep through
+`check_urls` with an injected `opener` (plus an injected `sleep`), never
+by poking internals.
 """
 
 from __future__ import annotations
@@ -32,15 +38,14 @@ import urllib.parse
 import urllib.request
 import urllib.robotparser
 from collections.abc import Callable, Iterable
+from typing import Any
 
-from .web_check import WebCheckResult, check_url_detailed
+from .web_check import WebCheckResult, check_url_detailed, resolve_web_verification_policy
 
 __all__ = [
-    "PerHostBucket",
     "PoliteSweepDefaults",
-    "RobotsCache",
     "WebCheckResult",
-    "polite_batch",
+    "check_urls",
     "resolve_polite_sweep_policy",
 ]
 
@@ -51,26 +56,24 @@ def _host_of(url: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Robots cache
+# Internal robots cache (not part of the public interface)
 # ---------------------------------------------------------------------------
 
 
-class RobotsCache:
-    """Per-host `robots.txt` cache; disallowed URLs are never fetched.
+class _RobotsCache:
+    """Per-host `robots.txt` cache; disallowed URLs are never fetched."""
 
-    One fetch per host (keyed by normalized hostname). Any fetch failure —
-    missing file, transport error, timeout — fails open (the URL is
-    allowed), because a robots check must never turn a reachable resource
-    broken. Performs no writes of its own (the underlying RobotFileParser
-    caches only in memory).
-    """
-
-    def __init__(self, *, user_agent: str, timeout_seconds: int = 10) -> None:
+    def __init__(
+        self,
+        *,
+        user_agent: str,
+        timeout_seconds: int = 10,
+        opener: Callable[..., Any] | None = None,
+    ) -> None:
         self._user_agent = user_agent
         self._timeout_seconds = timeout_seconds
+        self._opener = opener
         self._parsers: dict[str, urllib.robotparser.RobotFileParser | None] = {}
-
-    host_of = staticmethod(_host_of)
 
     def allowed(self, url: str) -> bool:
         host = _host_of(url)
@@ -92,9 +95,16 @@ class RobotsCache:
             method="GET",
         )
         try:
-            with urllib.request.build_opener().open(req, timeout=self._timeout_seconds) as response:
-                body = response.read() if hasattr(response, "read") else b""
-                status = response.getcode()
+            if self._opener is None:
+                with urllib.request.build_opener().open(
+                    req, timeout=self._timeout_seconds
+                ) as response:
+                    body = response.read() if hasattr(response, "read") else b""
+                    status = response.getcode()
+            else:
+                with self._opener(req, timeout=self._timeout_seconds) as response:
+                    body = response.read() if hasattr(response, "read") else b""
+                    status = response.getcode()
         except (urllib.error.URLError, urllib.error.HTTPError, OSError, ValueError):
             return None  # fail open
         if status is not None and status >= 400:
@@ -109,19 +119,12 @@ class RobotsCache:
 
 
 # ---------------------------------------------------------------------------
-# Per-host rate limiting
+# Internal per-host spacing (not part of the public interface)
 # ---------------------------------------------------------------------------
 
 
-class PerHostBucket:
-    """Monotonic per-host spacing: same-host requests are delayed apart.
-
-    `reserve(host)` returns the seconds the caller must sleep before the
-    Callers sleep the returned amount: `polite_batch` calls `sleep()` on
-    every result (including 0) via its injected sleeper. The optional
-    `on_sleep` hook exists only so unit tests can observe reservations
-    without monkeying a clock; the bucket itself never sleeps.
-    """
+class _PerHostBucket:
+    """Monotonic per-host spacing: same-host requests are delayed apart."""
 
     def __init__(
         self,
@@ -133,16 +136,8 @@ class PerHostBucket:
         self._on_sleep = on_sleep
         self._seen: set[str] = set()
 
-    host_of = staticmethod(_host_of)
-
     def reserve(self, host: str) -> float:
-        """Return the delay before this request (0 for a host's first).
-
-        Nominal spacing: any same-host request after the first returns the
-        full `per_host_delay_seconds` and records the host as seen. Real
-        callers sleep the returned amount, preserving at-least spacing;
-        this keeps the returned delays deterministic for offline tests.
-        """
+        """Return the delay before this request (0 for a host's first)."""
         if self._delay <= 0:
             delay = 0.0
         elif host in self._seen:
@@ -230,7 +225,7 @@ def resolve_polite_sweep_policy(root) -> PoliteSweepDefaults:
 
 
 # ---------------------------------------------------------------------------
-# The polite batch sweep
+# The deep sweep interface
 # ---------------------------------------------------------------------------
 
 
@@ -245,35 +240,138 @@ def _retry_after_seconds(headers: dict[str, str]) -> float | None:
     return value if value >= 0 else None
 
 
-def polite_batch(
+def check_urls(
     entries: Iterable[str],
     *,
-    timeout_seconds: int,
-    follow_redirects: bool,
-    method: str,
-    user_agent: str,
-    per_host_delay_seconds: float = 0.0,
-    respect_robots: bool = True,
-    backoff_max_attempts: int = 1,
-    backoff_base_seconds: float = 1.0,
-    backoff_max_seconds: float = 60.0,
+    root=None,
+    timeout_seconds: int | None = None,
+    follow_redirects: bool | None = None,
+    method: str | None = None,
+    user_agent: str | None = None,
+    per_host_delay_seconds: float | None = None,
+    respect_robots: bool | None = None,
+    backoff_max_attempts: int | None = None,
+    backoff_base_seconds: float | None = None,
+    backoff_max_seconds: float | None = None,
+    opener: Callable[..., Any] | None = None,
     sleep: Callable[[float], None] = time.sleep,
 ) -> list[tuple[str, WebCheckResult]]:
-    """Check URLs sequentially with per-host spacing, robots, and 429 backoff.
+    """Check URLs end-to-end: policy merge plus polite sweep.
 
-    A polite loop over `check_url_detailed` (same result shape as the v1.8
-    `batch()` plus the v2.3 hygiene layers). A 429 is retried until
-    `backoff_max_attempts` total attempts with exponential backoff
-    (`Retry-After` honored when larger); every other failure is final after
-    one attempt. Pure network reads: performs zero writes and emits no
-    event. An empty input yields an empty list; input order is preserved.
+    `None` parameters resolve from the policy seeds under `root`
+    (`resource_web_verification.yaml` for timeout/method/redirects/agent;
+    `polite_sweep.yaml` for delay/robots/backoff). Explicit values win.
+    A disabled sweep policy degrades to a plain sequential sweep
+    (robots skipped, no extra delay, no 429 retries).
+
+    `opener`, when given, replaces the default urllib open call for both
+    the `robots.txt` fetch and each URL fetch — tests inject a fake here.
+    `sleep` receives every spacing/backoff wait (tests inject a recorder).
+
+    Raises ValueError on invalid merged arguments before any fetch.
+    Pure network reads: performs zero writes and emits no event. An empty
+    input yields an empty list; input order is preserved.
     """
+    web_policy = resolve_web_verification_policy(root)
+    sweep_policy = resolve_polite_sweep_policy(root)
+
+    timeout = web_policy.timeout_seconds if timeout_seconds is None else timeout_seconds
+    follow = web_policy.follow_redirects if follow_redirects is None else follow_redirects
+    meth = web_policy.check_method if method is None else method
+    agent = web_policy.user_agent if user_agent is None else user_agent
+
+    delay = (
+        sweep_policy.per_host_delay_seconds
+        if per_host_delay_seconds is None
+        else per_host_delay_seconds
+    )
+    respect = sweep_policy.respect_robots if respect_robots is None else respect_robots
+    attempts_opt = (
+        sweep_policy.backoff_max_attempts
+        if backoff_max_attempts is None
+        else backoff_max_attempts
+    )
+    base = (
+        sweep_policy.backoff_base_seconds
+        if backoff_base_seconds is None
+        else backoff_base_seconds
+    )
+    ceiling = (
+        sweep_policy.backoff_max_seconds
+        if backoff_max_seconds is None
+        else backoff_max_seconds
+    )
+
+    if root is not None and not sweep_policy.enabled:
+        respect = False
+        delay = 0.0
+        attempts_opt = 1
+
+    if (
+        isinstance(timeout, bool)
+        or not isinstance(timeout, int)
+        or not (1 <= timeout <= 120)
+    ):
+        raise ValueError(
+            "Invalid timeout_seconds: expected integer in [1, 120], "
+            f"got {timeout!r}."
+        )
+    if not isinstance(follow, bool):
+        raise ValueError(
+            f"Invalid follow_redirects: expected bool, got {follow!r}."
+        )
+    if meth not in ("HEAD", "GET"):
+        raise ValueError(f"Invalid method: expected 'HEAD' or 'GET', got {meth!r}.")
+    if not isinstance(agent, str) or not agent.strip():
+        raise ValueError(
+            f"Invalid user_agent: expected non-empty string, got {agent!r}."
+        )
+    if (
+        isinstance(delay, bool)
+        or not isinstance(delay, (int, float))
+        or not (0 <= float(delay) <= 600)
+    ):
+        raise ValueError(
+            "check-resources: FAILED — --per-host-delay must be a number "
+            f"in [0, 600]; got {per_host_delay_seconds!r}."
+            if per_host_delay_seconds is not None
+            else f"Invalid per_host_delay_seconds: expected number in [0, 600], got {delay!r}."
+        )
+    if not isinstance(respect, bool):
+        raise ValueError(
+            f"Invalid respect_robots: expected bool, got {respect!r}."
+        )
+    if (
+        isinstance(attempts_opt, bool)
+        or not isinstance(attempts_opt, int)
+        or not (1 <= attempts_opt <= 10)
+    ):
+        raise ValueError(
+            "check-resources: FAILED — --backoff-attempts must be an "
+            f"integer in [1, 10]; got {backoff_max_attempts!r}."
+            if backoff_max_attempts is not None
+            else f"Invalid backoff_max_attempts: expected integer in [1, 10], got {attempts_opt!r}."
+        )
+    if not _is_number(base) or not (0 < float(base) <= 60):
+        raise ValueError(
+            f"Invalid backoff_base_seconds: expected number in (0, 60], got {base!r}."
+        )
+    if not _is_number(ceiling) or not (0 < float(ceiling) <= 600):
+        raise ValueError(
+            f"Invalid backoff_max_seconds: expected number in (0, 600], got {ceiling!r}."
+        )
+
+    delay = float(delay)
+    base = float(base)
+    ceiling = float(ceiling)
+    attempts = max(1, int(attempts_opt))
+
     robots = (
-        RobotsCache(user_agent=user_agent, timeout_seconds=timeout_seconds)
-        if respect_robots
+        _RobotsCache(user_agent=agent, timeout_seconds=timeout, opener=opener)
+        if respect
         else None
     )
-    bucket = PerHostBucket(per_host_delay_seconds=per_host_delay_seconds)
+    bucket = _PerHostBucket(per_host_delay_seconds=delay)
 
     pairs: list[tuple[str, WebCheckResult]] = []
     for entry in entries:
@@ -291,35 +389,72 @@ def polite_batch(
             )
             continue
 
-        if per_host_delay_seconds > 0:
+        if delay > 0:
             sleep(bucket.reserve(_host_of(entry)))
 
         result, headers = check_url_detailed(
             entry,
-            timeout_seconds=timeout_seconds,
-            follow_redirects=follow_redirects,
-            method=method,
-            user_agent=user_agent,
+            timeout_seconds=timeout,
+            follow_redirects=follow,
+            method=meth,  # type: ignore[arg-type]
+            user_agent=agent,
+            opener=opener,
         )
 
-        attempts = max(1, int(backoff_max_attempts))
         attempt = 1
         while not result.ok and result.status_code == 429 and attempt < attempts:
-            wait = backoff_base_seconds * (2 ** (attempt - 1))
+            wait = base * (2 ** (attempt - 1))
             retry_after = _retry_after_seconds(headers)
             if retry_after is not None and retry_after > wait:
                 wait = retry_after
-            wait = min(wait, backoff_max_seconds)
+            wait = min(wait, ceiling)
             sleep(wait)
             attempt += 1
             result, headers = check_url_detailed(
                 entry,
-                timeout_seconds=timeout_seconds,
-                follow_redirects=follow_redirects,
-                method=method,
-                user_agent=user_agent,
+                timeout_seconds=timeout,
+                follow_redirects=follow,
+                method=meth,  # type: ignore[arg-type]
+                user_agent=agent,
+                opener=opener,
             )
 
         pairs.append((entry, result))
     return pairs
 
+
+def polite_batch(
+    entries: Iterable[str],
+    *,
+    timeout_seconds: int,
+    follow_redirects: bool,
+    method: str,
+    user_agent: str,
+    per_host_delay_seconds: float = 0.0,
+    respect_robots: bool = True,
+    backoff_max_attempts: int = 1,
+    backoff_base_seconds: float = 1.0,
+    backoff_max_seconds: float = 60.0,
+    sleep: Callable[[float], None] = time.sleep,
+    opener: Callable[..., Any] | None = None,
+) -> list[tuple[str, WebCheckResult]]:
+    """Legacy alias over `check_urls` (kept out of the public interface).
+
+    Existing callers pass fully-resolved values with no policy root, so
+    this forwards verbatim with `root=None`.
+    """
+    return check_urls(
+        entries,
+        root=None,
+        timeout_seconds=timeout_seconds,
+        follow_redirects=follow_redirects,
+        method=method,
+        user_agent=user_agent,
+        per_host_delay_seconds=per_host_delay_seconds,
+        respect_robots=respect_robots,
+        backoff_max_attempts=backoff_max_attempts,
+        backoff_base_seconds=backoff_base_seconds,
+        backoff_max_seconds=backoff_max_seconds,
+        opener=opener,
+        sleep=sleep,
+    )

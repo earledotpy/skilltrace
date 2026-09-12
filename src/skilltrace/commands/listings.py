@@ -9,6 +9,8 @@ analytics, web) shares one definition.
 
 from __future__ import annotations
 
+import argparse
+
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution._store import ExecutionLoadError
 from ..execution.overdue import is_overdue, utc_today
@@ -59,6 +61,7 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=blockers,
             help="List open blockers.",
+            add_parser=add_parser,
         )
     )
     registry.register(
@@ -67,5 +70,19 @@ def register(registry: Registry) -> None:
             kind=Kind.READ_ONLY,
             handler=reviews,
             help="List scheduled reviews (overdue derived, never stored).",
+            add_parser=add_parser,
         )
     )
+
+
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Attach the `blockers`/`reviews` listing parsers (issue #207 contract).
+
+    Co-located owner of the listings argparse surface (issue #207 contract: sole source of CLI flags and help text).
+    """
+    blockers_parser = subparsers.add_parser("blockers", help="List open blockers.")
+    blockers_parser.set_defaults(_command_name="blockers")
+    reviews_parser = subparsers.add_parser(
+        "reviews", help="List scheduled reviews (overdue derived, never stored)."
+    )
+    reviews_parser.set_defaults(_command_name="reviews")
