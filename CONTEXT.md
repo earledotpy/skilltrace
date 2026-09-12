@@ -470,13 +470,20 @@ rendering pipeline as export; it is `READ_ONLY` and emits no audit event.
 
 ## Mentor voice (v1.x)
 
-**Mentor section** — one rendered block of the Mentor-voice output: a
-heading plus its lines, the typed shape that every read-only command and
-view renders. The canonical section headings are `Brief`, `Where to
-learn`, `How to proceed`, `Do this next`, and `Context`. The dispatch
-(`mentor.prose.brief_for(state, facts, perspective)`) is state-keyed
+**Mentor section** — one rendered block of the Mentor-voice output: a heading plus its lines, the typed shape that every read-only command and view renders. The canonical section headings are `Brief`, `Where to learn`, `How to proceed`, `Do this next`, and `Context`. The dispatch (`mentor.prose.brief_for(state, facts, perspective)`) is state-keyed
 (one branch per NodeState), not a string-template engine — future voice
-tuning is a per-state edit, not a template rewrite.
+tuning is a per-state edit, not a template rewrite. The canonical
+headings and their register are the **CLI's presentation** of these
+sections, not a cross-surface contract: other surfaces render the same
+Mentor facts with their own composition and copy standards.
+
+**Next-action fact** — the structured statement of the single next human
+action the Mentor seam emits alongside its human copy: which action
+(from a closed vocabulary), which node it binds to, the command that
+performs it, and any eligibility judgment. It carries no prose. Each
+surface renders its own affordance from it — the CLI prints the command
+line; the web renders a button or plain copy. Which action is possible
+is derived once; how it is presented is per-surface.
 
 **Node facts** — the uniform tuple every Mentor section consumes
 (`mentor.prose.NodeFacts`): node, state, specs, records, gate presence,
