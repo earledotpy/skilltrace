@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE — P24 Radical — THROWAWAY</title>
+<!-- prototype/p24-radical.html — THROWAWAY decision aid for P3-Radical (#223), wayfinder map #208.
+     Not production code. Single inline <style>, no build step, no dependencies (ADR 0006 discipline).
+     Question: how far can "less technical, friendlier" go before it stops being a study tool?
+     Inputs: G-Preferences #219 (locked table; scoreable rows P5.1–P5.5 + P1.7), G-RouteSurface #220
+     (nav = Today/Next + separated Analytics, Health as calm line, title-first jump finder),
+     G-MentorVoice #229 (NextAction facts, one affordance per intent, forbidden vocabulary).
+     Variants (?v=, floating bar):
+       stack       — today card-stack: the focus card IS the page; queue/pressure/health recede
+                     behind deliberate reveals.
+       palette     — finder-first: the palette (friendly names only) is the primary navigator;
+                     the home view is a minimal canvas (one line + one CTA).
+       stack-quiet — the card-stack at the airiest band: warmer palette, wider gaps.
+     Tier note (R3): the palette shape REQUIRES JS in reality (type-to-filter, keyboard selection,
+     /-trigger). CSS cannot do it; this prototype shows the static open state and names the JS,
+     contingent on G-JS's posture decision. The stack shape needs ZERO JS in the real build.
+     Scored against the live /today baseline: 7 competing blocks, focus named up to 4 times.
+-->
+<style>
+  /* Tokens — P5.4: hex literals live ONLY in these token blocks. One accent per variant. */
+  :root, body[data-v=stack] {
+    --bg:#f7f8f3; --fg:#24271d; --mut:#6d7260; --border:#e4e7d9; --card:#ffffff;
+    --accent:#3a6b35; --accent-ink:#ffffff; --accent-soft:#e6efe3;
+    --ok:#e7f3ec; --warn:#faf0d7; --attn:#dcefff; --you:#2f6b4f;
+    --pad:28px; --gap:40px;
+  }
+  body[data-v=palette] {
+    --bg:#f5f6f8; --fg:#20242b; --mut:#646b76; --border:#e1e4ea; --card:#ffffff;
+    --accent:#40566b; --accent-ink:#ffffff; --accent-soft:#e6ebf1;
+    --ok:#e9f2ea; --warn:#faf0d7; --attn:#dcefff; --you:#40566b;
+    --pad:28px; --gap:36px;
+  }
+  body[data-v=stack-quiet] {
+    --bg:#fbf6ee; --fg:#2b2620; --mut:#7d7263; --border:#ece2d2; --card:#fffdf8;
+    --accent:#9c5a2e; --accent-ink:#fff8f2; --accent-soft:#f6e8da;
+    --ok:#e7f3ec; --warn:#faf0d7; --attn:#dcefff; --you:#9c5a2e;
+    --pad:32px; --gap:48px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; color:var(--fg); background:var(--bg);
+       font:16px/1.55 Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Segoe UI', system-ui, sans-serif}
+  h1,h2,h3{font-weight:600; line-height:1.2; margin:0}
+  .throwaway-banner{background:#422006; color:#ffedd5; text-align:center; padding:5px 10px; font:12px/1.4 'Segoe UI',system-ui,sans-serif}
+  .throwaway-banner code{color:#ffe4c4}
+  /* P5.1: display heading ~2x base (32px), used ONLY on Today's opening question */
+  .opening{font-size:32px; font-weight:700; line-height:1.15; letter-spacing:-0.01em}
+  .measure{max-width:70ch}
+  .why{color:var(--mut); font-size:14.5px; line-height:1.5}
+  .state-pill{display:inline-block; font-size:12.5px; padding:3px 12px; border-radius:999px; background:var(--ok); color:#1e4d2b; font-weight:600}
+  .attn-pill{display:inline-block; font-size:12.5px; padding:3px 12px; border-radius:999px; background:var(--attn); color:#274b66; font-weight:600}
+  .cta{display:inline-block; background:var(--accent); color:var(--accent-ink); text-decoration:none;
+       font:600 16px/1.2 Georgia,serif; padding:13px 26px; border-radius:10px}
+  .quiet-link{color:var(--mut); font-size:14px}
+  .days{color:var(--mut); font-size:13.5px; margin-top:14px}   /* P1.7: quiet honest number */
+  /* card padding 24–32 (--pad), section gap 32–48 (--gap) vs intra-card 12–16 (P5.2) */
+  .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:var(--pad)}
+  .card + .card, section + section{margin-top:var(--gap)}
+  details{border:1px solid var(--border); border-radius:12px; background:var(--card)}
+  details + details{margin-top:14px}
+  summary{cursor:pointer; padding:13px 18px; color:var(--mut); font-size:14.5px; list-style:none}
+  summary::before{content:'› '; color:var(--mut)}
+  details[open] summary{border-bottom:1px solid var(--border)}
+  .inner{padding:14px 18px 16px}
+  /* == STACK: the focus card is the page == */
+  .stack-shell{max-width:680px; margin:0 auto; padding:44px 28px 120px}
+  .stack-top{display:flex; align-items:baseline; gap:14px; margin-bottom:var(--gap)}
+  .stack-top .brand{font-size:17px; font-weight:700}
+  .stack-top nav{margin-left:auto}
+  .stack-top nav a{color:var(--mut); text-decoration:none; font-size:14px; padding:4px 10px}
+  .focus-block{margin-top:22px}
+  .reveal-row{margin-top:var(--gap)}
+  .counts{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px}
+  .count-chip{font-size:13.5px; color:var(--fg); background:var(--accent-soft); padding:5px 14px; border-radius:999px}
+  /* == PALETTE: the finder is the navigator == */
+  .pal-shell{max-width:620px; margin:0 auto; padding:56px 28px 120px}
+  .pal-top{display:flex; align-items:baseline; gap:16px; margin-bottom:var(--gap)}
+  .pal-top .brand{font-size:17px; font-weight:700}
+  .finder{border:1.5px solid var(--accent); border-radius:12px; background:var(--card);
+          padding:15px 20px; display:flex; gap:12px; align-items:baseline; box-shadow:0 2px 10px rgba(0,0,0,.05)}
+  .finder .q{color:var(--mut)}
+  .finder .cursor{width:1px; height:18px; background:var(--accent); align-self:center}
+  .finder .k{margin-left:auto; font-size:12.5px; color:var(--mut)}
+  .pal-results{margin-top:10px; border:1px solid var(--border); border-radius:12px; background:var(--card); overflow:hidden}
+  .pal-results .grp{padding:10px 20px 4px; font-size:12px; color:var(--mut); font-weight:600}
+  .pal-results a{display:block; padding:9px 20px; color:var(--fg); text-decoration:none; font-size:15px}
+  .pal-results a.sel{background:var(--accent-soft)}
+  .pal-results a span{color:var(--mut); font-size:13px; margin-left:10px}
+  .pal-canvas{margin-top:var(--gap)}
+  .pal-line{font-size:19px; line-height:1.45}
+</style>
+</head>
+<body data-v="stack">
+<div class="throwaway-banner">PROTOTYPE — throwaway decision aid for P3-Radical (#223) — not production code. Switch variants with <code>?v=stack|palette|stack-quiet</code> or the bar below.</div>
+<!-- == VARIANT: stack — today card-stack == -->
+<main class="stack-shell" data-page="stack">
+
+  <div class="stack-top">
+    <span class="brand">Skilltrace</span>
+    <nav>
+      <a href="#">Next</a>
+      <a href="#">Analytics</a>
+    </nav>
+  </div>
+
+  <h1 class="opening">Ready for a half-hour of Pandas?</h1>
+
+  <section class="card focus-block">
+    <!-- P1.1: the focus named ONCE, here; the card contains the single primary CTA -->
+    <h2 style="font-size:21px; margin:0">Use basic Pandas DataFrame operations</h2>
+    <p style="margin:12px 0 0">
+      <span class="state-pill">available</span>
+      <span class="why" style="margin-left:10px">Every prerequisite is behind you — nothing is holding this back.</span>
+    </p>
+    <p class="measure why" style="margin:16px 0 0">A short, guided step on the data foundations path. It opens the most beyond it and fits today's session.</p>
+
+    <div style="margin-top:24px">
+      <a class="cta" href="#">Start this session</a>
+      <a class="quiet-link" href="#" style="margin-left:16px">Continue a session you opened…</a>
+    </div>
+
+    <p class="days">14 days practiced since you started.</p> <!-- P1.7 -->
+  </section>
+
+  <!-- queue / pressure / health recede behind deliberate reveals — nothing competing above -->
+  <section class="reveal-row">
+    <details>
+      <summary>What else is queued — 12 skills ready</summary>
+      <div class="inner">
+        <div class="counts">
+          <span class="count-chip">12 ready to start</span>
+          <span class="count-chip">1 close to done</span>
+        </div>
+        <p class="why" style="margin:0">Your backlog stays off this page. The Next page walks it one step at a time.</p>
+      </div>
+    </details>
+    <details>
+      <summary>How things are going</summary>
+      <div class="inner">
+        <p style="margin:0; display:flex; gap:12px; align-items:center">
+          <span style="font-size:15px">Nothing needs your attention today.</span>
+          <span class="attn-pill">1 thing worth a look</span>
+        </p>
+        <p class="why" style="margin:10px 0 0">One review is a few days old. It'll keep — the Next page carries it.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Yesterday and before</summary>
+      <div class="inner">
+        <p style="margin:0; font-size:15px">Last week you finished <b>Filter rows and select columns in Pandas</b>. One piece of work was approved on Tuesday.</p>
+      </div>
+    </details>
+  </section>
+</main>
+
+<!-- == VARIANT: palette — finder-first (static open state; real shape needs JS, named for G-JS) == -->
+<main class="pal-shell" data-page="palette">
+
+  <div class="pal-top">
+    <span class="brand">Skilltrace</span>
+  </div>
+
+  <section aria-label="Go anywhere">
+    <div class="finder">
+      <span class="cursor"></span>
+      <span class="q">Where to?</span>
+      <span class="k">press / anywhere</span>
+    </div>
+    <div class="pal-results">
+      <div class="grp">Jump to a skill</div>
+      <a class="sel" href="#">Use basic Pandas DataFrame operations <span>your focus today</span></a>
+      <a href="#">Build a small data-cleaning script <span>ready to start</span></a>
+      <a href="#">Plot with Matplotlib <span>3 steps away</span></a>
+      <div class="grp">Do something</div>
+      <a href="#">Start a session on your focus</a>
+      <a href="#">Bring the next piece of evidence</a>
+      <a href="#">Mark a skill passed…</a>
+      <div class="grp">Look around</div>
+      <a href="#">Analytics</a>
+      <a href="#">How things are going</a>
+    </div>
+  </section>
+
+  <!-- minimal canvas: one line, one CTA, one quiet number -->
+  <section class="pal-canvas card">
+    <p class="pal-line" style="margin:0">Today you're <b>two pieces in</b> on <b>Use basic Pandas DataFrame operations</b>.</p>
+    <div style="margin-top:20px">
+      <a class="cta" href="#">Keep going</a>
+    </div>
+    <p class="days">14 days practiced since you started.</p>
+  </section>
+</main>
+
+<!-- == VARIANT: stack-quiet — the airiest band == -->
+<main class="stack-shell" data-page="stack-quiet">
+
+  <div class="stack-top">
+    <span class="brand">Skilltrace</span>
+    <nav>
+      <a href="#">Next</a>
+      <a href="#">Analytics</a>
+    </nav>
+  </div>
+
+  <h1 class="opening">A quiet half-hour with Pandas?</h1>
+
+  <section class="card focus-block">
+    <h2 style="font-size:21px; margin:0">Use basic Pandas DataFrame operations</h2>
+    <p style="margin:12px 0 0">
+      <span class="state-pill">available</span>
+      <span class="why" style="margin-left:10px">Every prerequisite is behind you — nothing is holding this back.</span>
+    </p>
+    <p class="measure why" style="margin:18px 0 0">The next step on your data foundations path.</p>
+    <div style="margin-top:28px">
+      <a class="cta" href="#">Start this session</a>
+    </div>
+    <p class="days">14 days practiced since you started.</p>
+  </section>
+
+  <section class="reveal-row">
+    <details>
+      <summary>Everything else</summary>
+      <div class="inner">
+        <div class="counts">
+          <span class="count-chip">12 ready to start</span>
+          <span class="count-chip">1 close to done</span>
+        </div>
+        <p style="margin:0; font-size:15px">Nothing needs attention today. One review can wait a few days.</p>
+      </div>
+    </details>
+  </section>
+</main>
+
+<!-- throwaway variant switcher — the ONLY script; a prototype affordance, not a design claim -->
+<div style="position:fixed; bottom:14px; left:50%; transform:translateX(-50%); background:#1f2430; color:#e8eaf0; border-radius:999px; padding:8px 16px; font:13px/1.4 'Segoe UI',system-ui,sans-serif; display:flex; gap:12px; align-items:center; box-shadow:0 4px 16px rgba(0,0,0,.25)" role="navigation" aria-label="prototype variants">
+  <span style="opacity:.7">variant</span>
+  <a href="?v=stack" data-v="stack" style="color:#fff; text-decoration:none; opacity:.55">stack</a>
+  <a href="?v=palette" data-v="palette" style="color:#fff; text-decoration:none; opacity:.55">palette</a>
+  <a href="?v=stack-quiet" data-v="stack-quiet" style="color:#fff; text-decoration:none; opacity:.55">stack-quiet</a>
+</div>
+<script>
+  // throwaway only: read ?v=, show the matching page + token block. In the design itself:
+  // stack needs ZERO JS; palette needs JS (type-to-filter, arrow keys, /-trigger) — G-JS.
+  var v = new URLSearchParams(location.search).get('v');
+  if (['stack','palette','stack-quiet'].indexOf(v) >= 0) document.body.dataset.v = v;
+  var cur = document.body.dataset.v;
+  var pages = {stack:'stack', palette:'palette', 'stack-quiet':'stack-quiet'};
+  document.querySelectorAll('[data-page]').forEach(function(m){
+    m.style.display = (m.dataset.page === pages[cur]) ? '' : 'none';
+  });
+  document.querySelectorAll('[role=navigation][aria-label="prototype variants"] a').forEach(function(a){
+    a.style.opacity = a.dataset.v === cur ? '1' : '.55';
+    a.style.fontWeight = a.dataset.v === cur ? '700' : '400';
+    a.href = '?v=' + a.dataset.v;
+  });
+</script>
+
+</body>
+</html>
