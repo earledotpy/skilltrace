@@ -335,8 +335,8 @@ class DrilldownModel:
     work_rows: list[tuple[str, int | None, str]]
     blocker_rows: list[tuple[str, str, str]]
     remediation_rows: list[tuple[str, str, str]]
-    prereq_rows: list[tuple[str, str, bool]]  # title, state, unsatisfied
-    unlock_rows: list[str]
+    prereq_rows: list[tuple[str, str, str, bool]]  # id, title, state, unsatisfied
+    unlock_rows: list[tuple[str, str]]  # id, title
     event_rows: list[tuple[str, str]]  # timestamp, command
 
 
@@ -444,10 +444,13 @@ def derive_node_drilldown(
             pid = edge.source
             pstate = store.state_of(pid)
             title = view.titles.get(pid, pid)
-            prereq_rows.append((title, pstate, (pid, pstate) in unsatisfied_set))
+            prereq_rows.append((pid, title, pstate, (pid, pstate) in unsatisfied_set))
 
-    unlock_rows: list[str] = [
-        view.titles.get(uid, uid) for uid in model.unlocked_by
+    # Carrying the id alongside the title: titles are the human label,
+    # ids are what the web route resolves `/nodes/{id}` by — building
+    # hrefs from titles 404s (issue #228).
+    unlock_rows: list[tuple[str, str]] = [
+        (uid, view.titles.get(uid, uid)) for uid in model.unlocked_by
     ]
 
     # Original-order preservation within a node — events are audit-only
