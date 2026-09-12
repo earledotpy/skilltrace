@@ -1056,15 +1056,15 @@ def _drill_down_card(
     ]
     prereq_rows = [
         [
-            f'<a href="/nodes/{_esc(title)}">{_esc(title)}</a>',
+            f'<a href="/nodes/{_esc(pid)}">{_esc(title)}</a>',
             _esc(pstate),
             "no — must pass first" if unsatisfied else "yes",
         ]
-        for (title, pstate, unsatisfied) in drilldown.prereq_rows
+        for (pid, title, pstate, unsatisfied) in drilldown.prereq_rows
     ]
     unlock_rows = [
-        [f'<a href="/nodes/{_esc(uid)}">{_esc(uid)}</a>']
-        for uid in drilldown.unlock_rows
+        [f'<a href="/nodes/{_esc(uid)}">{_esc(title)}</a>']
+        for (uid, title) in drilldown.unlock_rows
     ]
     # Display newest first.
     event_rows = [

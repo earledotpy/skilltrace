@@ -323,6 +323,26 @@ def test_node_page_drill_down_sections(repo):
     assert "Resources" in body
 
 
+def test_graph_edge_links_use_ids_not_titles(repo):
+    # Issue #228: the Graph edges drill-down once built hrefs from node
+    # titles (which 404, since /nodes/{id} resolves by id). The label
+    # shows the title; the href carries the id — and every href must
+    # resolve on the server.
+    import html as _html
+
+    node_id = _first_node_id(repo)
+    _, body, status = views.node_body(repo, node_id)
+    assert status == 200
+    if "Graph edges" not in body:
+        return  # seeded node has no graph edges; nothing to check
+    section = body.split("Graph edges", 1)[1].split("</details>", 1)[0]
+    for raw in section.split('href="/nodes/')[1:]:
+        target = _html.unescape(raw.split('"', 1)[0])
+        assert " " not in target, f"href built from a title: /nodes/{target}"
+        _, _, rstatus = views.node_body(repo, target)
+        assert rstatus == 200, f"edge link 404s: /nodes/{target}"
+
+
 def test_locked_node_shows_reason_and_prereqs(repo):
     node_id = _first_node_id(repo, state="locked")
     _, body, status = views.node_body(repo, node_id)
