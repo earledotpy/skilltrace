@@ -30,6 +30,7 @@ from ..mentor.cards import (
     Label,
     Lead,
     MentorCard,
+    NextAction,
     Para,
     Pill,
     Sub,
@@ -248,8 +249,17 @@ def _mentor_cards(
             parts.append(Sub(text=resource_line))
         parts.append(Label(text="How to proceed"))
         parts.append(Sub(text=_how_to_proceed(node, state, minutes)))
-        parts.append(Kicker(text="DO THIS NEXT"))
-        parts.append(Sub(text=_do_this_next(node, state)))
+        # The next action as the structured fact (v2.4 §E): the CLI-printed
+        # line rides in ``command`` so cards_to_lines stays byte-identical to
+        # the pre-fact Kicker+Sub pair; the web renders the intent's
+        # affordance and never this command string.
+        parts.append(
+            NextAction(
+                intent="start",
+                node_id=node.id,
+                command=_do_this_next(node, state),
+            )
+        )
 
         cards.append(MentorCard(parts=parts))
 

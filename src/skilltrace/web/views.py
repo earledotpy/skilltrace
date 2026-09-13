@@ -1,17 +1,14 @@
 """Daily pages — reads (T3) and browser writes (T4) over structured cards.
 
-The GET routes (`/`, `/next`, `/nodes/{id}`, `/health`) translate the CLI
-derivations into browser cards. The translation consumes the structured
-``MentorCard`` model the derivations produce (``mentor.cards``) — banners
-carry a ``kind`` field, pills carry a ``label`` field, kickers, titles,
-leads, labels, paragraphs, and sub-lines are typed parts, and each card is
-already a discrete unit. No Mentor prose is re-declared here, so CLI and
-serve cannot disagree; the legacy line grammar (``[tag]`` prefixes, ``---``
-separators, indentation, uppercase kickers) survives only as the terminal
-serializer ``render.cards_to_lines`` and the deprecated-compat parser
-``mentor.cards.lines_to_cards`` for out-of-scope line producers.
-
-The write routes (T4, G2#66 + G5#69) are thin glue over the *same* registry the
+The GET routes (`/`, `/next`, `/nodes/{id}`, `/health`) compose
+:class:`web.interface.cards.Card` objects — the Richer Card vocabulary
+(v2.4 §E) — and render them through ``interface.render.render_rich_cards``.
+Derived ``MentorCard`` lists cross into Cards only through the one
+translation seam (``interface.translate.rich_cards``); the old part-to-HTML
+map (:func:`render_cards`) survives solely as the deprecated-compat
+serializer behind :func:`cards_html` for out-of-scope line producers
+(health liveness, report exports) — no route body composes MentorCards
+directly any more.
 
 The write routes (T4, G2#66 + G5#69) are thin glue over the *same* registry the
 CLI dispatches through: a confirmed action builds ``Context(root, args,
@@ -67,6 +64,10 @@ from ..mentor.cards import (
 )
 from ..context import JoinedView, load_context_lenient
 from ..dispatch import Context, dispatch
+from .interface.affordances import intent_label
+from .interface.cards import ActiveViewState, Affordance, Card, view_by_name
+from .interface.render import render_rich_cards
+from .interface.translate import rich_cards as _rich_cards_from_model
 from ..analytics.derive import derive_analytics
 from ..analytics.models import AnalyticsParams
 from ..analytics.policy import limited_data_sentence
@@ -403,15 +404,31 @@ def _output_banners(lines: list[str], *, default_class: str = "advisory") -> str
         parts.append(f'<p class="banner {_esc(css)}">{_esc(banner_text)}</p>')
     return "".join(parts)
 
-def _flash_html(query: dict) -> str:
-    """Flash banners carried across a redirect in the query string."""
+
+def _flash_tuples(query: dict) -> list[tuple[str, str]]:
+    """Flash banners carried across a redirect as (css, text) tuples."""
+    from .interface import banners
+
     text = (query.get("notice") or [""])[0]
     if not text:
-        return ""
+        return []
     kind = (query.get("kind") or ["ok"])[0]
     if kind not in {"ok", "warning", "error"}:
         kind = "ok"
-    return _output_banners(text.splitlines(), default_class=kind)
+    class_map = {"ok": "success", "warning": "warn", "error": "err"}
+    css = class_map.get(kind, "attention")
+    return [
+        (banner_kind or css, banner_text)
+        for banner_kind, banner_text in banners(text.splitlines(), default_class=css)
+    ]
+
+
+def _flash_html(query: dict) -> str:
+    """Flash banners carried across a redirect in the query string."""
+    parts: list[str] = []
+    for css, text in _flash_tuples(query):
+        parts.append(f'<p class="banner {_esc(css)}">{_esc(text)}</p>\n')
+    return "".join(parts)
 
 
 def _redirect_with_notice(location: str, lines: list[str], kind: str) -> Redirect:
@@ -556,7 +573,14 @@ def _render_card_inner(card: MentorCard) -> str:
 
 
 def render_cards(cards: list[MentorCard]) -> str:
-    """The structured cards as one ``<div class="card">`` per card."""
+    """Deprecated-compat serializer: typed parts as one ``<div class="card">``.
+
+    The pre-§E part-to-HTML map. Reachable only through :func:`cards_html`
+    for out-of-scope line producers (health liveness, report exports);
+    route bodies compose Richer Cards and render via
+    ``interface.render.render_rich_cards``. A grep gate in
+    ``tests/web/test_rich_seam.py`` pins this to the two definitions.
+    """
     return "".join(
         f'<div class="card">\n{_render_card_inner(card)}\n</div>\n' for card in cards
     )
@@ -566,8 +590,8 @@ def cards_html(lines: list[str]) -> str:
     """Deprecated compat: legacy lines as cards (health/reports/export only).
 
     Parses ``lines`` via ``mentor.cards.lines_to_cards`` and renders through
-    :func:`render_cards` so out-of-scope line producers share the one HTML
-    pipeline. New code must pass ``MentorCard`` lists to ``render_cards``.
+    the deprecated :func:`render_cards` part map so out-of-scope line
+    producers keep their HTML without a route body composing MentorCards.
     """
     return render_cards(lines_to_cards(lines))
 
@@ -578,12 +602,25 @@ def cards_html(lines: list[str]) -> str:
 # --- Route bodies ---------------------------------------------------------------
 
 
-def _focus_card(view, root, model) -> str:
-    """Today block 1 — the focus card (§A): title, state + reason, one CTA."""
-    from .interface import intent_label
+def _focus_resources(model) -> list[str]:
+    """The focus node's resource lines, off the derivation's typed parts."""
+    resources: list[str] = []
+    section = ""
+    for card in model.cards:
+        for part in card.parts:
+            if isinstance(part, Label):
+                section = part.text.strip().lower()
+                continue
+            if isinstance(part, Sub) and section.startswith("where to learn"):
+                resources.append(part.text)
+    return resources
 
+
+def _focus_card(view, root, model) -> str:
+    """Today block 1 — the focus card (§A), a Richer Card (§E)."""
     if not model.focus_node_id or model.focus_node_id not in view.node_map:
         # No focus: the quiet empty state — one muted pointer, no backlog.
+        # A status card, not a Richer Card: no skill is presented.
         return (
             '<div class="card focus">\n'
             '<div class="kicker">Today</div>\n'
@@ -605,31 +642,41 @@ def _focus_card(view, root, model) -> str:
                 if reason and not reason.endswith("."):
                     reason += "."
                 break
-    # The single primary CTA, from the NextAction fact's intent.
-    if action is not None and action.intent == "start" and state == "available":
-        cta = _start_confirm_form(view, root, focus.id)
-    elif action is not None and action.node_id:
-        target_title = view.titles.get(action.node_id, action.node_id)
-        label = intent_label(action.intent, title=target_title)
-        href = f"/nodes/{_esc(action.node_id)}"
-        cta = (
-            '<div class="actions"><a class="btn primary" href="'
-            + href
-            + '">'
-            + _esc(label)
-            + "</a></div>"
+    if action is None:
+        # Absent fact = no affordance (P4.1): without the fact this is not
+        # a Richer Card — fall back to the quiet status rendering.
+        return (
+            '<div class="card focus">\n'
+            '<div class="kicker">Today</div>\n'
+            f'<p class="lead"><a href="/nodes/{_esc(focus.id)}">{_esc(focus.title)}</a></p>\n'
+            f'<p><span class="pill {_esc(state)}">{_esc(_normalize_pill_label(state))}</span></p>\n'
+            + (f'<p class="big">{_esc(reason)}</p>\n' if reason else "")
+            + "</div>\n"
         )
-    else:
-        cta = ""
-    pill_label = _normalize_pill_label(state)
-    return (
-        '<div class="card focus">\n'
-        '<div class="kicker">Today</div>\n'
-        f'<p class="lead"><a href="/nodes/{_esc(focus.id)}">{_esc(focus.title)}</a></p>\n'
-        f'<p><span class="pill {_esc(_slug(pill_label))}">{_esc(pill_label)}</span></p>\n'
-        + (f'<p class="big">{_esc(reason)}</p>\n' if reason else "")
-        + cta
-        + "</div>\n"
+    affordance = Affordance.from_intent(action.intent, binding=action, title=focus.title)
+    card = Card(
+        state=state,
+        title=focus.title,
+        why=reason or state,
+        resources=_focus_resources(model)
+        or ["No resources are registered for this skill yet."],
+        affordances=(affordance,),
+        kicker="Today",
+        node_id=focus.id,
+    )
+    affordance_html: dict[int, str] | None = None
+    if action.intent == "start" and state == "available":
+        # The one primary CTA: the live write path (the POST target), which
+        # replaces the copy-only affordance rendering.
+        affordance_html = {0: _start_confirm_form(view, root, focus.id)}
+    return render_rich_cards(
+        [card],
+        state=ActiveViewState(
+            view=view_by_name("today"), affordances=(affordance,)
+        ),
+        affordance_html=affordance_html,
+        affordance_mode="link",
+        classes={0: "focus"},
     )
 
 
@@ -816,7 +863,11 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
     header_html = _chrome(root, current_view='next')
 
     breadcrumb = '<div class="breadcrumb"><a href="/">Today</a> &middot; <a href="/next">Next</a></div>\n'
-    return "Next", header_html + breadcrumb + filters + _candidate_cards(model), 200
+    return (
+        "Next",
+        header_html + breadcrumb + filters + _candidate_stack(view, model),
+        200,
+    )
 
 
 def _why_details(rec) -> str:
@@ -841,27 +892,27 @@ def _why_details(rec) -> str:
     )
 
 
-def _candidate_cards(model) -> str:
-    """Candidate cards with a per-card collapsible "Why this?" attached.
+def _candidate_stack(view, model) -> str:
+    """Candidate Richer Cards with the per-card advisory "Why this?" attached.
 
-    Candidate cards are recognized by their ``OPTION`` kicker; the k-th
-    such card receives model.recommendations[k]'s reasoning. Other cards
-    (warning banners, remediation advisories, the locked appendix) pass
-    through untouched.
+    Candidates are the OPTION cards in the derivation's order; the k-th
+    such card receives model.recommendations[k]'s reasoning as its
+    attached facts block. Banner/appendix cards ride the banner channel.
     """
+    cards, banners = _rich_cards_from_model(model.cards, titles=view.titles)
     rec_iter = iter(model.recommendations)
-    html_out = []
-    for card in model.cards:
-        kicker = next(
-            (part.text for part in card.parts if isinstance(part, Kicker)), ""
-        )
-        inner = _render_card_inner(card)
-        if kicker.startswith("OPTION "):
+    extras: dict[int, str] = {}
+    for index, card in enumerate(cards):
+        if (card.kicker or "").strip().upper().startswith("OPTION"):
             rec = next(rec_iter, None)
             if rec is not None:
-                inner += _why_details(rec)
-        html_out.append(f'<div class="card">\n{inner}\n</div>\n')
-    return "".join(html_out)
+                extras[index] = _why_details(rec)
+    return render_rich_cards(
+        cards,
+        banners,
+        state=ActiveViewState(view=view_by_name("next")),
+        extras=extras,
+    )
 
 
 def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, int]:
@@ -885,13 +936,18 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
         f'<a href="/nodes/{_esc(node_id)}">{_esc(title)}</a></div>\n'
     )
     secondary_id = f'<p class="small mut"><code>{_esc(node_id)}</code></p>\n'
+    cards, banners = _rich_cards_from_model(model.cards, titles=view.titles)
     body = (
         header_html
         + _flash_html(query or {})
         + _degraded_banner(view)
         + breadcrumb
         + secondary_id
-        + render_cards(model.cards)
+        + render_rich_cards(
+            cards,
+            banners,
+            state=ActiveViewState(view=view_by_name("node")),
+        )
         + actions
         + drill
     )

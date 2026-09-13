@@ -16,9 +16,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .cards import SublayerError  # re-exported: the one sublayer error type
 
-class SublayerError(Exception):
-    """The sublayer is inconsistent; serve refuses to start."""
+__all__ = ["SublayerError", "validate_structure", "validate_interface"]
 
 
 def validate_structure() -> None:

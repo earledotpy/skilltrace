@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from skilltrace.web import interface
-from skilltrace.web.interface.cards import Card, View, view_by_name
+from skilltrace.web.interface.cards import Affordance, Card, View, view_by_name
 from skilltrace.web.interface.validate import SublayerError
 
 
@@ -101,6 +101,9 @@ def test_card_carries_the_richer_shape():
         title="Apply X",
         why="It unlocks two skills and fits your morning.",
         resources=["Hf Course — https://example.test/"],
+        affordances=(
+            Affordance.from_intent("start", title="Apply X"),
+        ),
     )
     assert card.why  # one human sentence, first-class
     assert card.disclosure is None  # optional facts stay absent by default
@@ -111,10 +114,24 @@ def test_card_disclosure_is_opt_in_not_a_details_default():
         state="active",
         title="Apply X",
         why="You're mid-way through.",
+        resources=["Hf Course — https://example.test/"],
+        affordances=(Affordance.from_intent("submit_evidence", title="Apply X"),),
         disclosure="2 of 3 evidence pieces accepted.",
     )
     assert card.disclosure == "2 of 3 evidence pieces accepted."
     assert View(name="x", route="/x", title="X", group=None).affordances == ()
+
+
+def test_card_refuses_a_non_canonical_state_synonym():
+    # P3.4 at construction: a UI synonym is a refusal, not a normalization.
+    with pytest.raises(SublayerError, match="canonical"):
+        Card(
+            state="Ready to start",
+            title="Apply X",
+            why="It fits.",
+            resources=["Docs — https://example.test/"],
+            affordances=(Affordance.from_intent("start", title="Apply X"),),
+        )
 
 
 # --- serve boot gate (S2) ----------------------------------------------------------

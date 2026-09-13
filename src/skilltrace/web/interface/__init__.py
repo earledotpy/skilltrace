@@ -16,24 +16,33 @@ sublayer refuses to start.
 from __future__ import annotations
 
 from .affordances import COMMAND_AFFORDANCE_LABELS, intent_label
-from .cards import VIEWS, Card, View, view_by_name
+from .cards import CANONICAL_STATES, ActiveViewState, Affordance, VIEWS, Card, SublayerError, View, view_by_name
+from .render import banner_html, render_rich_cards
 from .translate import (
     banners,
     forbidden_in_lines,
     forbidden_matches,
+    rich_cards,
     translate,
     translate_lines,
 )
 
 __all__ = [
+    "CANONICAL_STATES",
     "COMMAND_AFFORDANCE_LABELS",
+    "ActiveViewState",
+    "Affordance",
     "Card",
+    "SublayerError",
     "View",
     "VIEWS",
+    "banner_html",
     "banners",
     "forbidden_in_lines",
     "forbidden_matches",
     "intent_label",
+    "render_rich_cards",
+    "rich_cards",
     "translate",
     "translate_lines",
     "validate_interface",

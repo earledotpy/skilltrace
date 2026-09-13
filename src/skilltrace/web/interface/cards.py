@@ -24,36 +24,113 @@ refuses to start.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, get_args
 
 from ...mentor.cards import NextAction
+
+# The five canonical state words (P3.4) — the only values a rendered Card's
+# ``state`` may carry. UI synonyms are a construction-time refusal, not a
+# render-time normalization.
+CANONICAL_STATES: frozenset[str] = frozenset(
+    {"locked", "available", "active", "passed", "mastered"}
+)
+
+
+class SublayerError(Exception):
+    """The sublayer is inconsistent; serve refuses to start.
+
+    Defined here (the Richer Card's module) so both the declarations and
+    the validators raise the one error type without an import cycle.
+    """
 
 
 @dataclass(frozen=True)
 class Affordance:
     """A rendered affordance: intent + label + optional write binding.
 
-    ``label`` is human copy with ``{title}`` placeholders filled by the
-    composers; ``binding`` is the ``NextAction`` fact the affordance renders
-    from (never its ``command`` string — that is CLI-printed only).
+    ``label`` is human copy filled from the intent's affordance label
+    (:func:`interface.affordances.intent_label`) — **never** derived from a
+    command string. ``binding`` is the ``NextAction`` fact the affordance
+    renders from; its ``command`` field is the CLI's presentation and is
+    carried for the write path only, never rendered.
     """
 
     intent: str
     label: str
     binding: NextAction | None = None
 
+    def __post_init__(self) -> None:
+        from ...mentor.cards import Intent
+
+        if self.intent not in get_args(Intent):
+            raise SublayerError(
+                f"affordance intent {self.intent!r} is outside the closed "
+                "Intent set — grow the contract in mentor.cards, never by "
+                "string-typing"
+            )
+        if not self.label.strip():
+            raise SublayerError(
+                f"affordance intent {self.intent!r} carries no human label"
+            )
+
+    @classmethod
+    def from_intent(
+        cls,
+        intent: str,
+        *,
+        binding: NextAction | None = None,
+        title: str | None = None,
+    ) -> "Affordance":
+        """The affordance for one fact intent — the label derives from the
+        intent only (never from ``binding.command``)."""
+        from .affordances import intent_label
+
+        return cls(
+            intent=intent,
+            label=intent_label(intent, title=title),
+            binding=binding,
+        )
+
 
 @dataclass(frozen=True)
 class Card:
-    """The Richer Card (v2.4 §E) — minimum fields, no second vocabulary."""
+    """The Richer Card (v2.4 §E) — minimum fields, no second vocabulary.
+
+    Minimum fields, enforced at construction (a Card missing any of them
+    is a :class:`SublayerError`, never a degraded render): ``state`` (one
+    of the five canonical words), ``title``, one-line ``why``,
+    ``resources`` (non-empty), and exactly **one** next action expressed
+    as an intent + affordance. ``disclosure`` is the optional one-click
+    facts; ``kicker`` is the card's section opener chrome; ``node_id`` is
+    muted secondary text on detail pages only.
+    """
 
     state: str
     title: str
-    why: str  # one human sentence — never factor names
+    why: str
     resources: list[str] = field(default_factory=list)
     affordances: tuple[Affordance, ...] = ()
-    disclosure: str | None = None  # the optional one-click facts
-    node_id: str | None = None  # muted secondary text on detail only
+    disclosure: str | None = None
+    kicker: str | None = None
+    node_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.state not in CANONICAL_STATES:
+            raise SublayerError(
+                f"card state {self.state!r} is not one of the five canonical "
+                "state words (P3.4): " + ", ".join(sorted(CANONICAL_STATES))
+            )
+        if not self.title.strip():
+            raise SublayerError("card carries no title")
+        if not self.why.strip():
+            raise SublayerError(f"card {self.title!r} carries no one-line why")
+        if not any(line.strip() for line in self.resources):
+            raise SublayerError(f"card {self.title!r} carries no resources")
+        if len(self.affordances) != 1:
+            raise SublayerError(
+                f"card {self.title!r} must carry exactly one next action "
+                f"(intent + affordance); got {len(self.affordances)}"
+            )
 
 
 @dataclass(frozen=True)
