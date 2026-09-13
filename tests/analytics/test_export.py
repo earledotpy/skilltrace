@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,18 @@ from skilltrace import cli
 from skilltrace.events import load_events
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _frozen_now() -> datetime:
+    """The §8.1 frozen 'today' for window-scoped export tests.
+
+    The populated fixture dates its sessions 2026-08-10..12; pinning now at
+    2026-08-28 keeps them 16-18 days inside the default 30-day window. The
+    pin must move whenever the fixture dates move — the window-scoped
+    velocity contract (``velocity`` present in the all-themes JSON) fails
+    loudly otherwise instead of rotting with the wall clock.
+    """
+    return datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -89,6 +102,10 @@ def _seed_populated(tmp_path: Path) -> Path:
     Sessions + work (velocity), open blockers (blockers), a scheduled
     review (reviews); evidence already has spec gaps on the seed repo.
     Used to pin the full exact-field contract (all theme blocks present).
+
+    Coupling: the session/work dates here must stay inside the 30-day
+    window ending at :func:`_frozen_now` — window-scoped tests pin the
+    clock with it, so moving these dates means moving the pin too.
     """
     root = _seed_with_threshold_trips(tmp_path)
     work_doc = {
@@ -370,7 +387,11 @@ class TestJSONExport:
 
     def test_json_top_level_keys_exact(self, tmp_path):
         root = _seed_populated(tmp_path)
-        cli.run(["analytics", "export", "--format", "json"], root=root)
+        cli.run(
+            ["analytics", "export", "--format", "json"],
+            root=root,
+            clock=_frozen_now,
+        )
         payload = _load_json(root)
         assert set(payload.keys()) == _REQUIRED_TOP_KEYS, (
             f"JSON top-level keys mismatch.\n"
@@ -386,7 +407,11 @@ class TestJSONExport:
 
     def test_json_velocity_keys_exact(self, tmp_path):
         root = _seed_populated(tmp_path)
-        cli.run(["analytics", "export", "--format", "json"], root=root)
+        cli.run(
+            ["analytics", "export", "--format", "json"],
+            root=root,
+            clock=_frozen_now,
+        )
         payload = _load_json(root)
         assert set(payload["velocity"].keys()) == _REQUIRED_VELOCITY_KEYS
 
@@ -523,7 +548,11 @@ class TestJSONExport:
 
     def test_json_by_week_items_have_correct_shape(self, tmp_path):
         root = _seed_populated(tmp_path)
-        cli.run(["analytics", "export", "--format", "json"], root=root)
+        cli.run(
+            ["analytics", "export", "--format", "json"],
+            root=root,
+            clock=_frozen_now,
+        )
         payload = _load_json(root)
         for bucket in payload["velocity"]["by_week"]:
             assert "week_start" in bucket
@@ -571,13 +600,11 @@ class TestJSONExport:
 
     def test_json_period_end_follows_injected_clock(self, tmp_path):
         """§8.1: the export window end is the injected today, not the wall clock."""
-        from datetime import datetime, timezone
-
         root = _seed_repo(tmp_path)
         cli.run(
             ["analytics", "export", "--format", "json"],
             root=root,
-            clock=lambda: datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc),
+            clock=_frozen_now,
         )
         payload = _load_json(root)
         assert payload["period"]["end"] == "2026-08-28"
