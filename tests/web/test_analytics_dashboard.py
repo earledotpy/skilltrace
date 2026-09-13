@@ -121,8 +121,8 @@ def test_dashboard_renders_overdue_banner_and_advisory_slot(tmp_path):
     assert "Active blocker spike" in advisory_banners
 
 
-def test_dashboard_collapses_to_one_column_on_mobile():
-    assert "@media(max-width:900px){.analytics-grid{grid-template-columns:1fr}}" in views._STYLE
+def test_dashboard_collapses_to_one_column_at_the_locked_breakpoint():
+    assert "@media(max-width:960px){.analytics-grid{grid-template-columns:1fr}}" in views._STYLE
 
 
 def test_dashboard_shows_limited_data_banner_below_threshold(tmp_path):
