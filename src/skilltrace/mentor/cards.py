@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Literal
 
 
 # --- Typed parts ------------------------------------------------------------
@@ -109,7 +110,49 @@ class Sub:
     text: str
 
 
-CardPart = Banner | Pill | Kicker | Title | Lead | Label | Para | Sub
+# --- NextAction: the structured next-action fact (v2.4 spec §E) -----------------
+#
+# The Mentor seam emits this fact alongside its human copy. Each surface
+# renders its own affordance from it — the CLI prints the command line (you
+# type it), the web renders a button. The fact carries no prose: which action
+# is possible is derived once; how it is presented is per-surface.
+#
+# ``command`` is the CLI-printed action line for this intent — the exact
+# string ``cards_to_lines`` prints under the ``DO THIS NEXT`` kicker (so the
+# terminal output stays byte-identical to the pre-fact Kicker+Sub pair). The
+# web never renders this field: the intent's affordance label renders instead.
+
+Intent = Literal[
+    "start",
+    "submit_evidence",
+    "pass",
+    "schedule_review",
+    "explore",
+]
+
+
+@dataclass(frozen=True)
+class NextAction:
+    """The single next human action, as a structured fact (v2.4 spec §E).
+
+    - ``intent`` — closed Literal set (``start | submit_evidence | pass |
+      schedule_review | explore``); grows only by editing the contract,
+      never by string-typing.
+    - ``node_id`` — the node the action binds to (``None`` when the action
+      has no node to bind).
+    - ``command`` — the CLI command line; present only when the intent has
+      one, **never rendered by the web**.
+    - ``eligible`` — the pass-case eligibility judgment, the only
+      affordance-selection input the renderer needs.
+    """
+
+    intent: Intent
+    node_id: str | None = None
+    command: str | None = None
+    eligible: bool | None = None
+
+
+CardPart = Banner | Pill | Kicker | Title | Lead | Label | Para | Sub | NextAction
 
 
 @dataclass(frozen=True)

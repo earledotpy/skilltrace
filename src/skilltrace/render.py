@@ -15,6 +15,7 @@ from .mentor.cards import (
     Label,
     Lead,
     MentorCard,
+    NextAction,
     Para,
     Pill,
     Sub,
@@ -97,14 +98,24 @@ def section_context(text: str) -> list[str]:
 # per-handler line builders exactly so terminal output does not change.
 
 
-def _part_to_line(part) -> str:
-    """One typed part back to its legacy line (no blank separators)."""
+def _part_to_line(part) -> str | list[str]:
+    """One typed part back to its legacy line(s) (no blank separators).
+
+    ``NextAction`` renders as the exact two-line ``DO THIS NEXT`` pair it
+    replaced (byte-identical to the pre-fact Kicker+Sub shape); every other
+    part renders one line.
+    """
     if isinstance(part, Banner):
         return f"[{part.kind}] {part.text}"
     if isinstance(part, Pill):
         return f"  [{part.label}]"
     if isinstance(part, Sub):
         return f"  {part.text}"
+    if isinstance(part, NextAction):
+        pair = ["DO THIS NEXT"]
+        if part.command is not None:
+            pair.append(f"  {part.command}")
+        return pair
     if isinstance(part, (Kicker, Title, Lead, Label, Para)):
         return part.text
     raise TypeError(f"unknown card part: {part!r}")
@@ -144,7 +155,11 @@ def cards_to_lines(cards: list[MentorCard]) -> list[str]:
         for part in card.parts:
             if _needs_blank(previous_part, part):
                 lines.append("")
-            lines.append(_part_to_line(part))
+            part_lines = _part_to_line(part)
+            if isinstance(part_lines, list):
+                lines.extend(part_lines)
+            else:
+                lines.append(part_lines)
             previous_part = part
         if card.kind is None:
             seen_content = True

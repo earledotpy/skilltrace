@@ -510,10 +510,7 @@ on any fetch failure, and bounded 429-only backoff. A polite sweep is
 pure network reads: it never sets `last_verified`, never clears or writes
 `broken`, and emits no audit event.
 
-## Interface sublayer (v2.4 — locked, not yet built)
-
-<!-- Terms locked by the v2.4 interface-direction map before the sublayer
-     exists. Glossary only; the surfaces that render them land with v2.4. -->
+## Interface sublayer (v2.4)
 
 **Days practiced** — a derived count of the distinct days on which the
 learner logged work, computed from existing execution records (session

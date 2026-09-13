@@ -173,13 +173,19 @@ def _liveness_lines(root: Path) -> tuple[list[str], int]:
 
 @dataclass
 class LayerHealth:
-    """One validate target's roll-up: the exact CLI line plus structured facts."""
+    """One validate target's roll-up: the exact CLI line plus structured facts.
+
+    ``warning_count`` carries this layer's warning count as a structured
+    fact (v2.4 P2.4 — the CLI shows per-layer warning counts, and the web
+    silently discarded them). The CLI line text is unchanged.
+    """
 
     target: str
     counts: str
     ok: bool
     line: str  # the exact line `skilltrace health` prints for this layer
     error_lines: list[str]  # verbatim errors printed beneath it
+    warning_count: int = 0
 
 
 @dataclass
@@ -224,6 +230,7 @@ def health_report(root: Path) -> HealthReport:
                 ok=result.ok,
                 line=line,
                 error_lines=list(error_lines),
+                warning_count=len(result.warnings),
             )
         )
         error_count += len(result.errors)

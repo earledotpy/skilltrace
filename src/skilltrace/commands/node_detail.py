@@ -36,6 +36,7 @@ from ..mentor.cards import (
     Kicker,
     Label,
     MentorCard,
+    NextAction,
     Para,
     Pill,
     Sub,
@@ -53,6 +54,7 @@ from ..mentor.prose import (
     NodeFacts,
     NodeState,
     brief_for,
+    next_action_for,
     resource_lines,
     state_phrase,
 )
@@ -166,6 +168,11 @@ class NodeModel:
     kept so terminal output stays verbatim. The per-node facts ride
     alongside so the web drill-down card consumes them directly
     instead of re-deriving or importing private helpers.
+
+    ``next_action`` is the structured next-action fact (v2.4 spec §E):
+    the "Do this next" section's structured counterpart. The card emits
+    it as a ``NextAction`` part (byte-identical terminal lines); the web
+    renders its own affordance from the fact.
     """
 
     lines: list[str]
@@ -177,6 +184,7 @@ class NodeModel:
     evidence_standing: str
     sections: list[MentorSection]
     cards: list[MentorCard]
+    next_action: NextAction
 
 
 def derive_node_detail(joined, node_id: str) -> NodeModel | None:
@@ -254,6 +262,11 @@ def derive_node_detail(joined, node_id: str) -> NodeModel | None:
     if context_text:
         sections.append(MentorSection(heading="Context", lines=[context_text]))
 
+    # The structured next-action fact rides beside the sections (§E): the
+    # card emits it as a ``NextAction`` part whose serialization is the
+    # byte-identical ``DO THIS NEXT`` pair the Kicker+Sub parts produced.
+    next_action = next_action_for(NodeState(state), facts)
+
     parts: list[CardPart] = [
         Kicker(text=render.section_kicker("This skill")),
         Title(text=node.title),
@@ -270,8 +283,7 @@ def derive_node_detail(joined, node_id: str) -> NodeModel | None:
             parts.append(Label(text="How to proceed"))
             parts.append(Sub(text=section.lines[0]))
         elif section.heading == "Do this next":
-            parts.append(Kicker(text="DO THIS NEXT"))
-            parts.append(Sub(text=section.lines[0]))
+            parts.append(next_action)
         elif section.heading == "Context":
             parts.append(Para(text=section.lines[0]))
 
@@ -290,6 +302,7 @@ def derive_node_detail(joined, node_id: str) -> NodeModel | None:
         evidence_standing=evidence_standing,
         sections=sections,
         cards=cards,
+        next_action=next_action,
     )
 
 

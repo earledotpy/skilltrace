@@ -65,6 +65,14 @@ def _state_of(root: Path, node_id: str) -> str:
     return view.store.state_of(node_id)
 
 
+def _first_locked_node(root: Path) -> str:
+    view = load_context_lenient(root)
+    for node in sorted(view.nodes, key=lambda n: n.id):
+        if view.store.state_of(node.id) == "locked":
+            return node.id
+    raise AssertionError("no locked node in the seed graph")
+
+
 def _events(root: Path) -> list[dict]:
     doc = _read_yaml(root, "execution/events.yaml")
     return doc.get("events") or []
@@ -413,26 +421,64 @@ def test_missing_location_warns_instead_of_crashing(repo):
 # --- Host pages carry the forms; degradation warns but never blocks ----------------
 
 
-def test_home_carries_session_strip_and_top_pick_start(repo):
+def test_home_carries_the_top_pick_start_and_resumable_close(repo):
+    """v2.4 S3: Today = focus CTA + count set; close rides the resumable line."""
     _, body, status = views.home_body(repo, {})
     assert status == 200
-    assert "SESSION STRIP" in body
-    assert 'action="/work"' in body
-    assert 'action="/session/close"' in body
-    assert "START HERE" in body
+    # The page-level start affordance is the focus card's primary CTA.
+    assert 'action="/nodes/' in body and "/start" in body
     assert "progress never moves backward" in body
+    # No session is open on the fresh seed: the resumable line (with its
+    # close affordance) is absent, and the raw strip kicker is retired.
+    assert "SESSION STRIP" not in body
+    assert 'action="/session/close"' not in body
+
+
+def test_home_resumable_line_carries_close_while_a_session_is_open(repo):
+    _write_yaml(
+        repo,
+        "execution/sessions.yaml",
+        {
+            "sessions": [
+                {
+                    "id": "ses.2026-09-10.001",
+                    "status": "open",
+                    "started_at": "2026-09-10T10:00:00+00:00",
+                }
+            ]
+        },
+    )
+    _, body, _ = views.home_body(repo)
+    assert 'action="/session/close"' in body
+    assert "ses.2026-09-10.001" in body
 
 
 def test_node_page_carries_write_actions_and_forms(repo):
+    """Structural omission (P4.1): pass/master links reflect the wall."""
     _, body, _ = views.node_body(repo, NODE, {})
     assert "WRITE ACTIONS" in body
     assert f'action="/nodes/{NODE}/start"' in body
     assert 'action="/work"' in body
-    assert f'href="/nodes/{NODE}/pass"' in body
-    assert f'href="/nodes/{NODE}/master"' in body
-    assert 'action="/work"' in body
     assert f'action="/nodes/{NODE}/blockers"' in body
     assert f'action="/nodes/{NODE}/evidence"' in body
+
+
+def test_pass_and_master_links_are_omitted_on_a_locked_node(repo):
+    _, locked_body, _ = views.node_body(repo, _first_locked_node(repo), {})
+    assert 'href="/nodes/' not in locked_body or "/pass" not in _hrefs(locked_body)
+    assert "/master" not in _hrefs(locked_body)
+
+
+def test_master_link_is_omitted_until_passed(repo):
+    """Master requires passed — on an available node the link is omitted."""
+    _, body, _ = views.node_body(repo, NODE, {})
+    assert "/master" not in _hrefs(body)
+
+
+def _hrefs(body: str) -> str:
+    import re
+
+    return " ".join(re.findall(r'href="([^"]+)"', body))
 
 
 def test_degraded_layers_warn_advisory_but_forms_stay_enabled(repo):

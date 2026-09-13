@@ -75,25 +75,50 @@ def _seed_dashboard_data(tmp_path: Path) -> Path:
     return root
 
 
-def test_dashboard_renders_four_cards_controls_sparklines_and_exports(tmp_path):
-    title, body, status = views.analytics_body(_seed_dashboard_data(tmp_path))
+def test_dashboard_renders_one_theme_per_page_with_theme_control(tmp_path):
+    """v2.4 S5: one theme per page; the theme= control swaps it, plain links."""
+    root = _seed_dashboard_data(tmp_path)
+    title, body, status = views.analytics_body(root)
 
     assert (title, status) == ("Analytics", 200)
-    assert body.count('<details open class="card analytics-card">') == 4
-    assert body.count("<svg") == 4
-    assert "analytics-days" in body
-    assert 'name="group-by"' in body
-    assert body.count('action="/analytics/export"') == 4
+    # One visible theme card, not four stacked charts.
+    assert body.count('<details open class="card analytics-card">') == 1
+    # The velocity theme renders its real multi-point weekly series.
+    assert body.count("<svg") == 1
+    assert 'name="theme"' in body
+    assert "Velocity" in body
+    # Plain-link theme switching reuses the export theme vocabulary.
+    assert "theme=blockers" in body
+    assert "theme=reviews" in body
+    assert "theme=evidence" in body
+    assert body.count('action="/analytics/export"') == 1
     assert "<script" not in body.lower()
 
 
+def test_dashboard_theme_switch_selects_the_named_theme(tmp_path):
+    root = _seed_dashboard_data(tmp_path)
+    _, velocity, _ = views.analytics_body(root, {"theme": ["velocity"]})
+    _, blockers, _ = views.analytics_body(root, {"theme": ["blockers"]})
+
+    assert "Velocity" in velocity
+    assert "Open blockers are counted now" in blockers
+    # Single-point series render no pseudo-sparkline (P2.2).
+    assert "<svg" not in blockers
+
+
+def test_dashboard_unknown_theme_falls_back_to_velocity(tmp_path):
+    root = _seed_dashboard_data(tmp_path)
+    _, body, _ = views.analytics_body(root, {"theme": ["nope"]})
+    assert "Velocity" in body
+
+
 def test_dashboard_renders_overdue_banner_and_advisory_slot(tmp_path):
-    body = views.analytics_body(_seed_dashboard_data(tmp_path))[1]
+    root = _seed_dashboard_data(tmp_path)
+    body = views.analytics_body(root)[1]
 
     assert "Overdue reviews:" in body
-    assert 'id="analytics-advisory"' in body
-    advisory = body.split('id="analytics-advisory">', 1)[1].split("</div>", 1)[0]
-    assert "Active blocker spike" in advisory
+    advisory_banners = body
+    assert "Active blocker spike" in advisory_banners
 
 
 def test_dashboard_collapses_to_one_column_on_mobile():

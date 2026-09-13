@@ -187,38 +187,52 @@ def test_home_renders_today_dashboard(repo):
     title, body, status = views.home_body(repo)
     assert status == 200
     assert title == "Today"
-    assert '<div class="kicker">TODAY</div>' in body
-    # Focus bar links at the top recommendation's node detail.
-    assert 'href="/nodes/' in body
-    # Pressure excerpts are advisory pills, never blockers.
-    assert "STUDY DAY PRESSURE" in body
-    assert "overdue review" in body
-    assert "available" in body and "locked" in body
-    # Health strip rides the home page (the v1.8 + v1.9 seeds carry
-    # advisory gateless-node warnings — 7 ML + 12 agent nodes × 2 warnings
-    # each — so the verdict names them and stays OK).
-    assert "HEALTH STRIP" in body
-    assert 'class="banner ok">health: OK (38 warning(s)).</p>' in body
+    # The P3 card-stack: focus card + count set (+ resumable line only
+    # while a session is open) — ≤ 4 card-level blocks.
+    assert '<div class="card focus">' in body
+    assert '<div class="card counts">' in body
+    assert body.count('<div class="card') <= 4
+    # Exactly one primary CTA; zero tables; no <details> on the primary path.
+    assert body.count('class="btn primary"') + body.count('class="btn"') == 1
+    assert "<table" not in body
+    assert "<details" not in body
+    # Count set: labeled counts + one muted pointer; queue/pressure recede.
+    assert "ready" in body
+    assert "See what to study" in body
+    # Zero-count pills are dropped (§A): the fresh seed has no practiced
+    # days, so no practiced pill may render.
+    assert "practiced" not in body
+    assert "STUDY DAY PRESSURE" not in body  # recedes behind /next
+    assert "60-MINUTE QUEUE" not in body  # recedes behind /next
 
 
 def test_home_renders_fresh_per_request(repo):
+    from skilltrace.commands.today import derive_today
+    from skilltrace.context import load_context_lenient
+
     node_id = _first_node_id(repo)
     _, before, _ = views.home_body(repo)
 
-    _set_state(repo, node_id, "active")
+    # Flip the *focus* node — Today's subject — and the page changes.
+    view = load_context_lenient(repo)
+    focus_id = derive_today(view, repo, minutes=30).focus_node_id
+    assert focus_id is not None
+    _set_state(repo, focus_id, "active")
     _, after_active, _ = views.home_body(repo)
     assert before != after_active
 
-    # A curriculum edit shows on refresh too.
+    # A curriculum edit + a state flip show on refresh too (this node).
     path = repo / "graph" / "nodes" / f"{node_id}.md"
     text = path.read_text(encoding="utf-8")
     path.write_text(text.replace("Summary for ", "Edited summary for "), encoding="utf-8")
+    _set_state(repo, node_id, "active")
     node_page_title, node_html, status = views.node_body(repo, node_id)
     assert status == 200
     assert "In progress" in node_html  # the state flip is visible
 
 
-def test_home_pressure_excerpts_escape_blocker_text(repo):
+def test_home_never_renders_the_raw_backlog(repo):
+    """Pressure excerpts never render on Today (§A: the backlog recedes)."""
     focus = _first_node_id(repo)
     _write_yaml(
         repo,
@@ -229,7 +243,7 @@ def test_home_pressure_excerpts_escape_blocker_text(repo):
                     "id": "blk.01",
                     "node_id": focus,
                     "status": "open",
-                    "description": '<img src=x onerror=alert(1)> stuck',
+                    "description": "stuck on the derivation",
                     "created_at": "2026-08-20T10:00:00+00:00",
                 }
             ]
@@ -237,18 +251,9 @@ def test_home_pressure_excerpts_escape_blocker_text(repo):
     )
     _, body, status = views.home_body(repo)
     assert status == 200
-    assert "1 open blocker" in body
-    assert "<img src=x" not in body
-    assert "&lt;img src=x" in body
+    assert "stuck on the derivation" not in body  # raw backlog never renders
+    assert "blk.01" not in body
 
-
-def test_home_surfaces_unexpected_queue_render_error(repo, monkeypatch):
-    def boom(*args, **kwargs):
-        raise RuntimeError("queue boom")
-
-    monkeypatch.setattr(views, "derive_next", boom)
-    with pytest.raises(RuntimeError, match="queue boom"):
-        views.home_body(repo)
 
 
 # --- GET /next — flags mirror the CLI --------------------------------------------
@@ -311,7 +316,9 @@ def test_node_page_renders_primary_mentor_card(repo):
     assert '<span class="pill ready-to-start">Ready to start</span>' in body
     assert "WHERE TO LEARN" not in body  # Mentor labels stay verbatim, not re-cased
     assert "Where to learn" in body
-    assert "DO THIS NEXT" in body
+    # v2.4: the next action renders as the human affordance from the
+    # NextAction fact (data-intent), not the CLI's "DO THIS NEXT" kicker.
+    assert '<p class="next-action" data-intent="start">Start this session</p>' in body
 
 
 def test_node_page_drill_down_sections(repo):

@@ -32,6 +32,7 @@ from ..mentor.cards import (
     Label,
     Lead,
     MentorCard,
+    NextAction,
     Para,
     Sub,
 )
@@ -41,6 +42,7 @@ from ..dispatch import Command, Context, CommandResult, Kind, Registry
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
 from ..evidence.evidence import ArtifactSpec
 from ..execution.overdue import overdue_reviews, utc_today
+from ..execution.days import days_practiced
 from ..execution.records import Blocker, open_session
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError, SkillNode
@@ -183,8 +185,15 @@ def _focus_action(
     specs: list[ArtifactSpec],
     has_gate: bool,
     records,
-) -> str:
-    """The single 'Do this next' action for the focus skill."""
+) -> "NextAction":
+    """The single 'Do this next' action for the focus skill, as a fact.
+
+    The single producer of Today's next-action fact (v2.4 spec §E): the
+    structured ``NextAction`` carries the intent the web renders its
+    affordance from, while ``command`` holds the exact CLI-printed line
+    so the terminal serialization stays byte-identical to the pre-fact
+    ``DO THIS NEXT`` pair.
+    """
     node_id = focus_node.id
     if focus_state == "active":
         elig = compute_eligibility(
@@ -195,11 +204,37 @@ def _focus_action(
             node_state="active",
         )
         if elig.eligible:
-            return f"Mark {node_id} passed: `skilltrace pass {node_id}`"
-        return f"Submit your next piece of evidence for {node_id}"
+            return NextAction(
+                intent="pass",
+                node_id=node_id,
+                command=f"Mark {node_id} passed: `skilltrace pass {node_id}`",
+                eligible=True,
+            )
+        return NextAction(
+            intent="submit_evidence",
+            node_id=node_id,
+            command=f"Submit your next piece of evidence for {node_id}",
+        )
     if focus_state == "available":
-        return f"Start studying {node_id}: `skilltrace start {node_id}`"
-    return f"Keep working on {node_id}"
+        return NextAction(
+            intent="start",
+            node_id=node_id,
+            command=f"Start studying {node_id}: `skilltrace start {node_id}`",
+        )
+    if focus_state == "passed":
+        # "Keep working on" is not a review-scheduling act — §E reserves
+        # ``schedule_review`` for the actual scheduling affordance; this
+        # plain continue-hint is an explore fact.
+        return NextAction(
+            intent="explore",
+            node_id=node_id,
+            command=f"Keep working on {node_id}",
+        )
+    return NextAction(
+        intent="explore",
+        node_id=node_id,
+        command=f"Keep working on {node_id}",
+    )
 
 
 # --- Command handler ----------------------------------------------------------
@@ -222,6 +257,12 @@ class TodayModel:
     open_blockers: list[Blocker]
     counts: dict[str, int]  # progress-store state -> node count
     cards: list[MentorCard]
+    # The structured next-action fact for the focus (v2.4 §E) — None when
+    # no focus exists; the web renders its affordance from the intent.
+    focus_action: NextAction | None
+    # Days practiced (v2.4 P1.7): distinct days with logged work, derived
+    # from existing execution records — a mirror, never a metronome.
+    days_practiced: int
 
 
 def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
@@ -302,6 +343,12 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
     analytics_bits = _raw_analytics_bits[:2]
 
     # Build the Mentor view as structured cards (one card for the study day).
+    focus_action: NextAction | None = None
+    if focus_node is not None:
+        focus_action = _focus_action(
+            focus_node, focus_state, specs, has_gate, records
+        )
+
     parts: list[CardPart] = [Kicker(text="TODAY")]
     parts.append(
         Lead(
@@ -330,14 +377,7 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
                 )
             )
         )
-        parts.append(Kicker(text="DO THIS NEXT"))
-        parts.append(
-            Sub(
-                text=_focus_action(
-                    focus_node, focus_state, specs, has_gate, records
-                )
-            )
-        )
+        parts.append(focus_action)
 
         other_recs = [r for r in result.recommendations if r.node_id != focus_node.id]
         if other_recs:
@@ -382,6 +422,8 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
         open_blockers=open_blocker_list,
         counts=counts,
         cards=cards,
+        focus_action=focus_action,
+        days_practiced=days_practiced(sessions, session_work),
     )
 
 

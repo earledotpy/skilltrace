@@ -72,10 +72,43 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
                 title, body, status = self._not_found()
                 self._send(page(title, body), status=status)
                 return
-            # No JS jump — redirect to GET /nodes/{id} (escaping handled by _esc on render)
+            # Title-first finder (v2.4 S4): a title match (case-insensitive)
+            # wins, an id match (exact or prefix) follows — the learner
+            # types words, not engine ids.
             from urllib.parse import quote as _quote
 
-            self._redirect(f"/nodes/{_quote(node_id, safe='._-')}")
+            from ..context import load_context_lenient
+
+            resolved: str | None = None
+            try:
+                joined = load_context_lenient(self.server.root)
+            except Exception:
+                joined = None
+            if joined is not None:
+                needle = node_id.lower()
+                by_title = [
+                    node.id
+                    for node in joined.nodes
+                    if node.title.lower() == needle
+                ]
+                by_title_prefix = [
+                    node.id
+                    for node in joined.nodes
+                    if node.title.lower().startswith(needle)
+                ]
+                by_id = [
+                    node.id
+                    for node in joined.nodes
+                    if node.id.lower() == needle
+                    or node.id.lower().startswith(needle)
+                ]
+                for candidates in (by_title, by_title_prefix, by_id):
+                    if candidates:
+                        resolved = sorted(candidates)[0]
+                        break
+            target = resolved or node_id
+            # No JS jump — redirect to GET /nodes/{id} (escaping handled by _esc on render)
+            self._redirect(f"/nodes/{_quote(target, safe='._-')}")
             return
         elif master_confirm is not None:
             title, body, status = master_confirm_body(
