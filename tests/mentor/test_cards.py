@@ -15,6 +15,7 @@ from skilltrace.mentor.cards import (
     Label,
     Lead,
     MentorCard,
+    NextAction,
     Para,
     Pill,
     Sub,
@@ -53,6 +54,78 @@ def test_content_cards_have_no_kind():
     card = MentorCard(parts=[Kicker(text="TODAY"), Para(text="hi")])
     assert card.kind is None
     assert len(card.parts) == 2
+
+
+# --- NextAction: the structured next-action fact (v2.4 S1) ----------------------
+
+
+def test_next_action_is_a_typed_part_with_the_locked_fact_shape():
+    """§E: intent (closed Literal set), node_id, command, eligible — no prose."""
+    action = NextAction(
+        intent="pass",
+        node_id="math.arithmetic.x_01",
+        command="Mark Apply X passed: `skilltrace pass math.arithmetic.x_01`",
+        eligible=True,
+    )
+    assert action.intent == "pass"
+    assert action.node_id == "math.arithmetic.x_01"
+    assert action.eligible is True
+    card = MentorCard(parts=[Kicker(text="TODAY"), action])
+    assert card.parts[1] is action
+
+
+def test_next_action_serializes_byte_identically_to_the_legacy_pair():
+    """`NextAction` replaces the ``DO THIS NEXT`` Kicker+Sub pair one-for-one."""
+    action = NextAction(
+        intent="pass",
+        node_id="x_01",
+        command="Mark Apply X passed: `skilltrace pass x_01`",
+        eligible=True,
+    )
+    legacy = MentorCard(
+        parts=[
+            Sub(text="How to proceed"),
+            Sub(text="evidence line"),
+            Kicker(text="DO THIS NEXT"),
+            Sub(text="Mark Apply X passed: `skilltrace pass x_01`"),
+        ]
+    )
+    replaced = MentorCard(
+        parts=[
+            Sub(text="How to proceed"),
+            Sub(text="evidence line"),
+            action,
+        ]
+    )
+    assert render.cards_to_lines([replaced]) == render.cards_to_lines([legacy])
+
+
+def test_next_action_without_command_still_serializes():
+    action = NextAction(intent="explore", node_id=None, command=None, eligible=None)
+    lines = render.cards_to_lines([MentorCard(parts=[action])])
+    assert lines == ["DO THIS NEXT"]
+
+
+def test_next_action_blank_line_rules_match_the_legacy_pair():
+    card = MentorCard(
+        parts=[
+            Sub(text="evidence line"),
+            NextAction(
+                intent="submit_evidence",
+                node_id="x_01",
+                command="Submit your next piece of evidence for x_01",
+            ),
+            Para(text="Also in range: A, B."),
+        ]
+    )
+    assert render.cards_to_lines([card]) == [
+        "  evidence line",
+        "",
+        "DO THIS NEXT",
+        "  Submit your next piece of evidence for x_01",
+        "",
+        "Also in range: A, B.",
+    ]
 
 
 # --- cards_to_lines: legacy terminal shape -------------------------------------

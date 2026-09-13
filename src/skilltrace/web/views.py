@@ -59,6 +59,7 @@ from ..mentor.cards import (
     Label,
     Lead,
     MentorCard,
+    NextAction,
     Pill,
     Sub,
     Title,
@@ -87,97 +88,146 @@ def _esc(value: object) -> str:
 
 
 _STYLE = """
+  /* v2.4 T1 locked §B design tokens (P5.4): every hex lives in :root; one accent.
+     Muted semantics for exactly the five node states plus attention/warn/err;
+     alias classes collapse to one treatment each (warn, err); no hex outside :root. */
   :root {
-    --bg:#fafaf9; --fg:#1c1917; --mut:#57534e; --border:#e7e5e4; --pill:#f5f5f4;
-    --accent:#0c4a6e; --warn:#fef3c7; --err:#fee2e2; --advisory:#e0f2fe; --ok:#dcfce7;
+    /* §B locked palette (hexes live here only) */
+    --bg:#fbf7f0;          /* cream */
+    --fg:#2b2622;          /* primary text */
+    --muted:#7a6f63;       /* secondary text */
+    --border:#ece2d3;      /* hairlines */
+    --accent:#b0562c;      /* one accent (terracotta) */
+    --warn:#faf0d7;
+    --err:#f6ded4;
+    --ok:#e7f3ec;
+    --advisory:#e7eef5;
+
+    /* private supporting set */
+    --card:#fffdf9;
+    --pill:#f6efe4;
+    --accent-ink:#ffffff;         /* ink on an accent fill (primary CTA) */
+    --accent-soft:#f7e7db;        /* soft accent tint surface */
+
+    /* treatment + node-state inks (foreground/border on the muted fills) */
+    --muted-ink:#7a6f63;
+    --warn-ink:#8a6a2a;
+    --err-ink:#a5533a;
+    --ok-ink:#33694e;
+    --advisory-ink:#3d5f82;
+    --locked-ink:#7a6f63;
+    --available-ink:#33694e;
+    --active-ink:#3d5f82;
+    --passed-ink:#33694e;
+    --mastered-ink:#9b4d26;
+
+    /* §B type scale (P5.1): 16px humanist base, lh ~1.55, display ~2x, 24/14/13.5, measure 70ch */
+    --base:16px;
+    --lh:1.55;
+    --step-display:32px;
+    --step-24:24px;
+    --step-14:14px;
+    --step-135:13.5px;
+    --measure:70ch;
+
+    /* §B font-role split: serif for prose, sans for chrome, mono once (node detail) */
+    --font-serif:Georgia, 'Times New Roman', serif;
+    --font-sans:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono:ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, monospace;
+
+    /* §B spacing (P5.2): card padding band 24-32px; section 40px > intra 14px */
+    --space-section:40px;
+    --space-intra:14px;
+    --card-pad:28px;
+
+    /* §B radius 14 / 11 / 999 px */
+    --radius:14px;
+    --radius-sm:11px;
+    --radius-pill:999px;
+
+    /* §B shell: 1040px with a 720px daily-loop column and one 960px breakpoint */
+    --shell:1040px;
+    --loop:720px;
   }
   *{box-sizing:border-box}
   html,body{width:100%; overflow-x:clip}
-  body{margin:0; font:14px/1.5 ui-sans, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--fg); background:var(--bg);}
-  .wrap{max-width:1100px; margin:0 auto; padding:0 18px;}
-  main.wrap{padding:10px 18px 24px}
-  h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 1.2rem; }
-  table { border-collapse: collapse; width: 100%; }
-  th, td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); }
-  .mut { color: var(--mut); font-size: 0.85rem; }
-  .small{font-size:12px; color:var(--mut); line-height:1.35}
-  .big{font-size:15px; line-height:1.45}
-  ul { padding-left: 1.2rem; }
-  header{position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--border);}
-  header .wrap{max-width:1100px; margin:0 auto; padding:0 18px;}
-  header h1{font-size:18px; font-weight:800; margin:10px 0 2px; line-height:1.2}
-  header .sub{color:var(--mut); font-size:13px; margin-bottom:8px}
-  .nav { font-size: 0.9rem; margin-bottom:0; display:flex; gap:0.9rem; flex-wrap:wrap; padding:6px 0 8px; align-items:center}
-  .nav a { color:var(--accent); text-decoration:none; font-weight:600}
+  body{margin:0; font:var(--base)/var(--lh) var(--font-serif); color:var(--fg); background:var(--bg);}
+  .wrap{max-width:var(--shell); margin:0 auto; padding:0 24px;}
+  main.wrap{padding:var(--space-section) 24px 48px}
+  .daily-loop{max-width:var(--loop)}
+  p{max-width:var(--measure); line-height:var(--lh)}
+  ul{padding-left:1.2rem}
+  h1,h2,h3,h4{font-family:var(--font-sans); line-height:1.2; color:var(--fg)}
+  h1{font-size:var(--step-24); margin:0 0 .4rem}
+  h2{font-size:var(--step-24); margin:var(--space-section) 0 .6rem}
+  .display{font-family:var(--font-sans); font-size:var(--step-display); line-height:1.2; margin:0 0 .4rem} /* Today's opening question only */
+  table{border-collapse:collapse; width:100%}
+  th,td{text-align:left; padding:8px .5rem; border-bottom:1px solid var(--border); font-family:var(--font-sans); font-size:var(--step-14)}
+  code{font-family:var(--font-mono); font-size:.95em}
+  header{position:sticky; top:0; z-index:10; background:var(--card); border-bottom:1px solid var(--border)}
+  header .wrap{max-width:var(--shell); margin:0 auto; padding:0 24px}
+  header h1.brand{font-size:18px; font-weight:800; margin:10px 0 2px; line-height:1.2; font-family:var(--font-sans)}
+  .nav{font-size:.9rem; display:flex; gap:.9rem; flex-wrap:wrap; padding:6px 0 8px; align-items:center; font-family:var(--font-sans)}
+  .nav a{color:var(--accent); text-decoration:none; font-weight:600}
   .nav a:hover{text-decoration:underline}
+  .nav a[aria-current="page"]{border-bottom:2px solid var(--accent); padding-bottom:2px}
   .nav .jump{display:flex; gap:6px; align-items:center; margin-left:auto}
-  .nav .jump input{border:1px solid var(--border); border-radius:8px; padding:4px 8px; font:inherit; font-size:13px; background:#fff; color:var(--fg)}
-  .nav .jump button{border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:8px; padding:4px 10px; font-weight:600; cursor:pointer; font-size:12px}
-  .health-strip{display:flex; gap:6px; flex-wrap:wrap; padding:6px 0 8px; font-size:12px}
-  .health-strip .pill{border:1px solid var(--border); border-radius:999px; padding:3px 10px; background:#fff; font-size:12px}
-  .health-strip .pill.ok{background:var(--ok); border-color:#86efac}
-  .health-strip .pill.broken{background:var(--err); border-color:#fca5a5}
-  .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; margin:10px 0; }
-  .kicker { font-size:11px; letter-spacing:.08em; font-weight:700; color:var(--mut); text-transform:uppercase; margin:0.5rem 0 0.2rem; }
+  .nav .jump input{border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px 8px; font:inherit; font-size:var(--step-135); background:var(--card); color:var(--fg)}
+  .nav .jump button{border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:var(--radius-sm); padding:4px 10px; font-weight:600; cursor:pointer; font-size:var(--step-135)}
+  .health-strip{display:flex; gap:6px; flex-wrap:wrap; padding:6px 0 8px; font-size:var(--step-135)}
+  .health-strip .pill{border:1px solid var(--border); border-radius:var(--radius-pill); padding:3px 10px; background:var(--card); font-size:var(--step-135)}
+  .health-strip .pill.ok{background:var(--ok); border-color:var(--ok-ink)}
+  .health-strip .pill.attention{background:var(--warn); border-color:var(--warn-ink)}
+  .health-strip .pill.broken{background:var(--err); border-color:var(--err-ink)}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:var(--card-pad); margin:var(--space-intra) 0; gap:var(--space-intra)}
+  .kicker{font-family:var(--font-sans); font-size:var(--step-135); letter-spacing:.08em; font-weight:700; color:var(--muted); text-transform:uppercase; margin:.6rem 0 .25rem}
   .kicker:first-child{margin-top:0}
-  .title{font-size:20px; font-weight:700; line-height:1.2; margin:4px 0 4px}
-  .label { font-weight: 600; margin: 0.4rem 0 0.12rem; }
-  .lead { font-weight: 600; font-size: 1.05rem; margin: 0.15rem 0; }
-  .sub { margin: 0.12rem 0 0.12rem 0.9rem; }
-  .pill { display: inline-block; border: 1px solid var(--border); border-radius: 999px;
-          padding: 2px 8px; font-size: 11px; margin: 0.1rem 0.3rem 0.1rem 0; background:var(--pill); font-weight:600}
-  .pill.locked, .pill.broken { border-color: #fca5a5; background: var(--err); }
-  .pill.available, .pill.ready-to-start, .pill.verified { border-color: #86efac; background: var(--ok); }
-  .pill.active, .pill.in-progress, .pill.advisory { border-color: #7dd3fc; background: var(--advisory); }
-  .pill.passed { border-color: #c4b5fd; background: #ede9fe; }
-  .pill.mastered { border-color: #facc15; background: #fef9c3; }
-  .pill.stale { border-color: #fde68a; background: var(--warn); }
-  .banner { padding: 7px 10px; border-radius: 8px; margin: 0.35rem 0; font-size:13px}
-  .banner.advisory { background: var(--advisory); border:1px solid #bae6fd; }
-  .banner.warn, .banner.warning, .banner.stale-note { background: var(--warn); border:1px solid #fde68a; }
-  .banner.err, .banner.error, .banner.fail { background: var(--err); border:1px solid #fca5a5; }
-  .banner.ok { background: var(--ok); border:1px solid #86efac; }
-  .grid-two{display:grid; grid-template-columns:1.2fr .8fr; gap:14px; align-items:start;}
-  .grid-two > *{min-width:0}
-  @media(max-width:900px){.grid-two{grid-template-columns:1fr}}
-  .grid-two .focus-sub{display:grid; grid-template-columns:1fr 1fr; gap:12px}
-  @media(max-width:900px){.grid-two .focus-sub{grid-template-columns:1fr}}
-  .analytics-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
-  @media(max-width:900px){.analytics-grid{grid-template-columns:1fr}}
-  .analytics-card{margin:0}
-  .analytics-card summary{font-size:1.05rem}
-  .analytics-card svg{display:block; margin:8px 0}
-  .analytics-controls{display:flex; gap:12px; flex-wrap:wrap; align-items:end}
-  .analytics-controls .form-row{min-width:10rem}
-  .rail{position:sticky; top:68px; align-self:start}
-  .split{display:grid; grid-template-columns:360px 1fr; gap:14px}
-  @media(max-width:900px){.split{grid-template-columns:1fr} .rail{position:static}}
-  .breadcrumb{font-size:12px; color:var(--mut); margin:6px 0}
-  .breadcrumb a{color:var(--accent)}
-  details { margin: 0.4rem 0; }
-  summary { cursor: pointer; font-weight: 600; }
-  .filters label { margin-right: 0.9rem; }
-  .form-row { margin: 0.38rem 0; }
-  .form-row > label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.12rem; }
-  input[type="text"], input[type="number"], textarea, select {
-    width: 100%; max-width: 34rem; padding: 0.35rem 0.5rem; font: inherit;
-    border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--fg);
-  }
-  textarea { min-height: 3.2rem; }
-  .inline-check { font-weight: 400; font-size: 0.9rem; }
-  .btn { display: inline-block; border: 1px solid #0c4a6e; background: #0c4a6e; color: #fff;
-         border-radius: 8px; padding: 0.35rem 0.75rem; font-weight: 600; cursor: pointer;
-         text-decoration: none; font-size: 0.9rem; }
-  .btn.secondary { background: #fff; color: var(--fg); border-color: var(--border); }
-  .btn.master, .modal.permanent { border-color: #7c3aed; }
-  .btn.master { background: #7c3aed; color: #fff; }
-  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.4rem 0; }
-  .modal { border: 2px solid #0c4a6e; border-radius: 12px; padding: 14px 16px; margin: 10px auto; background:#fff; max-width:860px; box-shadow:0 8px 32px rgba(0,0,0,.08)}
-  a{color:var(--accent); text-decoration:none}
-  a:hover{text-decoration:underline}
-  .list{list-style:none; padding:0; margin:6px 0}
-  .list li{border:1px solid var(--border); border-radius:12px; padding:10px; background:#fff; margin-bottom:6px}
- """
+  .title{font-family:var(--font-sans); font-size:var(--step-24); font-weight:700; line-height:1.2; margin:4px 0}
+  .label{font-family:var(--font-sans); font-weight:600; margin:.4rem 0 .12rem}
+  .lead{font-weight:600; font-size:var(--step-14); margin:.15rem 0; font-family:var(--font-serif)}
+  .next-action{margin:.6rem 0 .1rem; font-weight:600; font-family:var(--font-sans)}
+  .mut{color:var(--muted); font-size:var(--step-135)}
+  .small{font-size:var(--step-135); color:var(--muted); line-height:1.45}
+  .big{font-size:var(--step-14); line-height:1.5}
+  .count{margin-right:.9rem}
+  .count strong{font-size:var(--step-24); font-family:var(--font-sans)}
+  .resumable .inline{display:inline-block; margin-left:.6rem}
+  .theme-nav{margin:.6rem 0}
+  .pill{display:inline-block; border:1px solid var(--border); border-radius:var(--radius-pill); padding:2px 10px; font-size:var(--step-14); margin:.1rem .3rem .1rem 0; background:var(--pill); font-weight:600; font-family:var(--font-sans); color:var(--fg)}
+  /* muted semantics: exactly the five node states + attention/warn/err */
+  .pill.locked{background:var(--card); border-color:var(--locked-ink); color:var(--locked-ink)}
+  .pill.available{background:var(--ok); border-color:var(--available-ink); color:var(--available-ink)}
+  .pill.active{background:var(--advisory); border-color:var(--active-ink); color:var(--active-ink)}
+  .pill.passed{background:var(--ok); border-color:var(--passed-ink); color:var(--passed-ink)}
+  .pill.mastered{background:var(--accent-soft); border-color:var(--accent); color:var(--mastered-ink)}
+  .pill.attention{background:var(--warn); border-color:var(--warn-ink); color:var(--warn-ink)}
+  .pill.warn{background:var(--warn); border-color:var(--warn-ink); color:var(--warn-ink)}
+  .pill.err{background:var(--err); border-color:var(--err-ink); color:var(--err-ink)}
+  /* legacy alias classes collapse to the canonical treatments above */
+  .pill.ready-to-start{background:var(--ok); border-color:var(--available-ink); color:var(--available-ink)}
+  .pill.in-progress{background:var(--advisory); border-color:var(--active-ink); color:var(--active-ink)}
+  .pill.verified{background:var(--ok); border-color:var(--ok-ink); color:var(--ok-ink)}
+  .pill.broken{background:var(--err); border-color:var(--err-ink); color:var(--err-ink)}
+  .pill.stale{background:var(--warn); border-color:var(--warn-ink); color:var(--warn-ink)}
+  .banner{padding:10px 14px; border-radius:var(--radius-sm); margin:.4rem 0; font-size:var(--step-14); font-family:var(--font-sans); line-height:1.5}
+  .banner.advisory, .banner.attention{background:var(--advisory); border:1px solid var(--advisory-ink)}
+  .banner.ok{background:var(--ok); border:1px solid var(--ok-ink); animation:settle .6s ease-out}
+  .banner.warn{background:var(--warn); border:1px solid var(--warn-ink)}
+  .banner.err{background:var(--err); border:1px solid var(--err-ink)}
+  /* legacy banner aliases collapse to the canonical, one treatment each */
+  .banner.warning{background:var(--warn); border:1px solid var(--warn-ink)}
+  .banner.error{background:var(--err); border:1px solid var(--err-ink)}
+  .banner.fail{background:var(--err); border:1px solid var(--err-ink)}
+  .banner.success{background:var(--ok); border:1px solid var(--ok-ink); animation:settle .6s ease-out}
+  @keyframes settle{from{opacity:.35} to{opacity:1}}
+  .btn{display:inline-block; border:1px solid var(--border); background:var(--card); color:var(--fg); border-radius:var(--radius); padding:8px 16px; font-weight:600; cursor:pointer; font-family:var(--font-sans); font-size:var(--step-14); text-decoration:none}
+  .btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .btn.master{background:var(--err); color:var(--err-ink); border-color:var(--err-ink)}
+  .btn.secondary{background:var(--bg); border-color:var(--border); color:var(--accent)}
+  .analytics-grid{display:grid; grid-template-columns:1fr 1fr; gap:var(--space-intra)}
+  /* the single locked breakpoint (desktop-only; P5.4: the 900px rules collapse to one) */
+  @media(max-width:960px){.analytics-grid{grid-template-columns:1fr}}
+"""
 
 
 def page(title: str, body: str) -> str:
@@ -205,29 +255,76 @@ def page(title: str, body: str) -> str:
     )
 
 
-_NAV = (
-    '<header>'
-    '<div class="wrap">'
-    '<nav class="nav" aria-label="primary">'
-    '<a href="/">Today</a>'
-    '<a href="/next">Next</a>'
-    '<a href="/health">Health</a>'
-    '<a href="/analytics">Analytics</a>'
-    '<form class="jump" method="get" action="/nodes/jump">'
-    '<input type="text" name="node_id" placeholder="skill id — e.g. data.pandas.dataframe_basics_01" aria-label="jump to skill" size="32">'
-    '<button type="submit">Go</button>'
-    '</form>'
-    '</nav>'
-    '<div class="health-strip" aria-label="health" data-health-placeholder></div>'
-    '</div>'
-    '</header>\n'
-)
 
 
-def _error_body(message: str) -> str:
-    header_html = _NAV.replace(
-        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
-        '<div class="health-strip" aria-label="health"></div>',
+def _nav_html(current_view: str = "", health=None) -> str:
+    """The shared chrome header (v2.4 S2): two nav groups + health strip.
+
+    ``current_view`` is the *view identity* (ADR 0007) — ``aria-current``
+    derives from the declared interface ``VIEWS`` table (the seam), never
+    from URL string-matching in the page bodies. The health strip renders
+    per-layer pills with an attention state from the structured
+    ``HealthReport`` (warning counts ride the P2.4 seam).
+    """
+    from .interface import VIEWS
+
+    links: list[str] = []
+    for group in ("daily", "diagnostics"):
+        for view in VIEWS.values():
+            if view.group != group or "{" in view.route:
+                continue  # parameterized routes are not nav links
+            current_attr = ' aria-current="page"' if view.name == current_view else ""
+            links.append(
+                f'<a href="{_esc(view.route)}"{current_attr}>{_esc(view.title)}</a>'
+            )
+    pills = ""
+    if health is not None:
+        pills = "".join(
+            '<span class="pill '
+            + ("broken" if not layer.ok else ("attention" if layer.warning_count else "ok"))
+            + '">'
+            + _esc(layer.target)
+            + (
+                f": {_esc(layer.warning_count)} warn"
+                if layer.ok and layer.warning_count
+                else ": OK" if layer.ok else ": FAILED"
+            )
+            + "</span>"
+            for layer in health.layers
+        )
+    return (
+        "<header>"
+        '<div class="wrap">'
+        '<h1 class="brand">SkillTrace</h1>'
+        '<nav class="nav" aria-label="primary">'
+        + "".join(links)
+        + '<form class="jump" method="get" action="/nodes/jump">'
+        '<input type="text" name="node_id" placeholder="jump to a skill - title or id" aria-label="jump to skill" size="32">'
+        '<button type="submit">Go</button>'
+        "</form>"
+        "</nav>"
+        f'<div class="health-strip" aria-label="health">{pills}</div>'
+        "</div>"
+        "</header>\n"
+    )
+
+
+def _chrome(root, current_view: str = "") -> str:
+    """The full chrome header with live health pills, fresh per request."""
+    return _nav_html(current_view, health=health_report(Path(root)))
+
+
+def _error_body(message: str, root=None) -> str:
+    """The shared error body (v2.4 §B): full chrome when the context loads.
+
+    When the repo root is unavailable (or truth files are unreadable) the
+    shell falls back to a chrome-less minimal page rather than faulting
+    itself — the learner who typed a bad URL most needs the way back in.
+    """
+    header_html = (
+        _chrome(root)
+        if root is not None
+        else "<header><div class=\"wrap\"><h1 class=\"brand\">SkillTrace</h1></div></header>\n"
     )
     return (
         f'{header_html}<p class="banner error">{_esc(message)}</p>'
@@ -235,10 +332,10 @@ def _error_body(message: str) -> str:
     )
 
 
-def _status_page(status: int, message: str) -> tuple[str, int]:
+def _status_page(status: int, message: str, root=None) -> tuple[str, int]:
     if status == 404:
-        return _error_body(message), 404
-    return _error_body(message), status
+        return _error_body(message, root), 404
+    return _error_body(message, root), status
 
 
 def _fresh_join(root) -> tuple[JoinedView | None, tuple[str, int] | None]:
@@ -251,7 +348,7 @@ def _fresh_join(root) -> tuple[JoinedView | None, tuple[str, int] | None]:
         return load_context_lenient(root), None
     except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
         body = _error_body(
-            f"The Skill graph or progress store failed to load: {exc}"
+            f"The Skill graph or progress store failed to load: {exc}", root
         )
         return None, (body, 500)
 
@@ -289,29 +386,22 @@ def _dispatch_web(root, command_name: str, **arg_fields) -> tuple[int, list[str]
 
 
 def _output_banners(lines: list[str], *, default_class: str = "advisory") -> str:
-    """Captured handler output verbatim, escaped, as banners.
+    """Captured handler output as banners — through the P3.1 translation seam.
 
-    ``[error]``/``[warning]`` prefixes keep their canonical banner classes;
-    any other line (a refusal headline, a success note, an advisory) renders
-    under ``default_class`` — nothing is rewritten, only escaped.
+    Every line flows through the interface sublayer's forbidden-vocabulary
+    translation (no surface bypasses it): CLI voice is rewritten as the
+    human act, and the CLI banner kinds map onto the sublayer's semantic
+    classes (the alias classes never reach a page). Escaping stays total.
     """
-    parts: list[str] = []
-    for line in lines:
-        stripped = line.strip()
-        if not stripped:
-            continue
-        if stripped.startswith("[error] "):
-            parts.append(
-                f'<p class="banner error">{_esc(stripped[len("[error] "):])}</p>'
-            )
-        elif stripped.startswith("[warning] "):
-            parts.append(
-                f'<p class="banner warning">{_esc(stripped[len("[warning] "):])}</p>'
-            )
-        else:
-            parts.append(f'<p class="banner {_esc(default_class)}">{_esc(stripped)}</p>')
-    return "".join(parts)
+    from .interface import banners
 
+    class_map = {"ok": "success", "warning": "warn", "error": "err"}
+    kind = class_map.get(default_class, "attention")
+    parts: list[str] = []
+    for banner_kind, banner_text in banners(lines, default_class=kind):
+        css = banner_kind or kind
+        parts.append(f'<p class="banner {_esc(css)}">{_esc(banner_text)}</p>')
+    return "".join(parts)
 
 def _flash_html(query: dict) -> str:
     """Flash banners carried across a redirect in the query string."""
@@ -364,9 +454,9 @@ def _degraded_banner(view: JoinedView) -> str:
     names = ", ".join(sorted(set(view.degraded)))
     return (
         '<p class="banner advisory">Optional layer(s) failed to load and read '
-        f"as empty ({_esc(names)}) — forms stay enabled and a domain refusal "
-        'remains the truth. Run <code>skilltrace validate</code> / '
-        "<code>skilltrace health</code> for the roll-up.</p>"
+        f"as empty ({_esc(names)}) — forms stay enabled and a refusal on "
+        "click remains the truth. The validation roll-up and the health "
+        "page carry the detail.</p>"
     )
 
 
@@ -390,7 +480,7 @@ def _finish_write(
         return stay_renderer(_output_banners(lines))
     if exit_code == 2:
         return _redirect_with_notice(next_url, lines, "warning")
-    lines = [*lines, "Operational failure — run `skilltrace validate` for the roll-up."]
+    lines = [*lines, "Operational failure — the validation roll-up carries the detail."]
     return _redirect_with_notice(next_url, lines, "error")
 
 
@@ -417,6 +507,17 @@ def _render_part(part) -> str:
         return f'<p class="label">{_esc(part.text)}</p>'
     if isinstance(part, Sub):
         return f'<div class="sub">{_esc(part.text)}</div>'
+    if isinstance(part, NextAction):
+        # The web affordance mapping (v2.4 S1): the fact's intent renders as
+        # a human affordance — never its ``command`` string (that is the
+        # CLI's presentation; P3.1 bans it from every page string).
+        from .interface import intent_label
+
+        label = intent_label(part.intent)
+        return (
+            f'<p class="next-action" data-intent="{_esc(part.intent)}">'
+            f"{_esc(label)}</p>"
+        )
     return f"<p>{_esc(part.text)}</p>"  # Para (and any future plain part)
 
 
@@ -444,109 +545,129 @@ def cards_html(lines: list[str]) -> str:
 # --- Shared cards ---------------------------------------------------------------
 
 
-def _pressure_card(model, view: JoinedView) -> str:
-    """Pressure excerpts: overdue reviews, open blockers, availability counts.
+# --- Route bodies ---------------------------------------------------------------
 
-    Advisory by construction — excerpts warn and link, they never gate.
+
+def _focus_card(view, root, model) -> str:
+    """Today block 1 — the focus card (§A): title, state + reason, one CTA."""
+    from .interface import intent_label
+
+    if not model.focus_node_id or model.focus_node_id not in view.node_map:
+        # No focus: the quiet empty state — one muted pointer, no backlog.
+        return (
+            '<div class="card focus">\n'
+            '<div class="kicker">TODAY</div>\n'
+            '<p class="lead">Nothing is queued for today.</p>\n'
+            '<p class="mut">Sync your readiness or explore what to study '
+            'from <a href="/next">Next</a>.</p>\n'
+            "</div>\n"
+        )
+    focus = view.node_map[model.focus_node_id]
+    state = view.store.state_of(focus.id)
+    action = model.focus_action
+    # The plain-language reason: the study-day brief's first sentence (the
+    # raw factor list never renders on Today).
+    reason = ""
+    if model.cards:
+        for part in model.cards[0].parts:
+            if isinstance(part, Lead):
+                reason = part.text.split(". ")[0].strip()
+                if reason and not reason.endswith("."):
+                    reason += "."
+                break
+    # The single primary CTA, from the NextAction fact's intent.
+    if action is not None and action.intent == "start" and state == "available":
+        cta = _start_confirm_form(view, root, focus.id)
+    elif action is not None and action.node_id:
+        label = intent_label(action.intent)
+        href = f"/nodes/{_esc(action.node_id)}"
+        cta = (
+            '<div class="actions"><a class="btn primary" href="'
+            + href
+            + '">'
+            + _esc(label)
+            + "</a></div>"
+        )
+    else:
+        cta = ""
+    pill_label = {
+        "locked": "Locked",
+        "available": "Ready to start",
+        "active": "In progress",
+        "passed": "Passed",
+        "mastered": "Mastered",
+    }.get(state, state)
+    return (
+        '<div class="card focus">\n'
+        '<div class="kicker">TODAY</div>\n'
+        f'<p class="lead"><a href="/nodes/{_esc(focus.id)}">{_esc(focus.title)}</a></p>\n'
+        f'<p><span class="pill {_esc(_slug(pill_label))}">{_esc(pill_label)}</span></p>\n'
+        + (f'<p class="big">{_esc(reason)}</p>\n' if reason else "")
+        + cta
+        + "</div>\n"
+    )
+
+
+def _count_set_card(view, model) -> str:
+    """Today block 2 — the count set: ready / reviews waiting / days practiced.
+
+    Labeled counts plus one muted pointer; zero-count pills are dropped;
+    the raw backlog never renders (§A).
     """
     counts = model.counts
-    pills = [
-        f'<span class="pill">{len(model.overdue)} overdue review'
-        f'{"s" if len(model.overdue) != 1 else ""}</span>',
-        f'<span class="pill">{len(model.open_blockers)} open blocker'
-        f'{"s" if len(model.open_blockers) != 1 else ""}</span>',
-        f'<span class="pill">{counts.get("available", 0)} available'
-        f' &middot; {counts.get("locked", 0)} locked</span>',
-    ]
-
-    def _node_link(node_id: str) -> str:
-        title = view.titles.get(node_id, node_id)
-        return f'<a href="/nodes/{_esc(node_id)}">{_esc(title)}</a>'
-
-    lists = ""
-    if model.overdue:
-        items = "".join(
-            f"<li>{_node_link(r.node_id)} — due {_esc(str(r.scheduled_for)[:10])}</li>"
-            for r in model.overdue
+    items: list[str] = []
+    ready = counts.get("available", 0)
+    if ready:
+        items.append(f'<span class="count"><strong>{ready}</strong> ready</span>')
+    waiting = len(model.overdue)
+    if waiting:
+        items.append(
+            f'<span class="count"><strong>{waiting}</strong> review'
+            f'{"s" if waiting != 1 else ""} waiting</span>'
         )
-        lists += f'<div class="kicker">OVERDUE REVIEWS</div><ul>{items}</ul>'
-    if model.open_blockers:
-        items = "".join(
-            "<li>"
-            f"{_node_link(b.node_id)} — {_esc(b.description)} "
-            + _resolve_blocker_form(b.id)
-            + "</li>"
-            for b in model.open_blockers
+    days = model.days_practiced
+    if days:
+        items.append(
+            f'<span class="count"><strong>{days}</strong> day'
+            f'{"s" if days != 1 else ""} practiced</span>'
         )
-        lists += f'<div class="kicker">OPEN BLOCKERS</div><ul>{items}</ul>'
-
-    return (
-        '<div class="card">\n'
-        '<div class="kicker">STUDY DAY PRESSURE — ADVISORY, NEVER BLOCKS</div>\n'
-        f'<p>{"".join(pills)}</p>\n'
-        f"{lists}\n</div>\n"
+    counts_html = (
+        " ".join(items) if items else '<span class="count mut">Nothing waiting</span>'
     )
-
-
-def _health_strip_card(root, report=None) -> str:
-    report = report or health_report(Path(root))
-    pills = "".join(
-        f'<span class="pill {"verified" if layer.ok else "broken"}">'
-        f"{_esc(layer.target)}: {'OK' if layer.ok else 'FAILED'}</span>"
-        for layer in report.layers
-    )
-    verdict_class = "ok" if report.error_count == 0 else "fail"
     return (
-        '<div class="card">\n'
-        '<div class="kicker">HEALTH STRIP</div>\n'
-        f"<p>{pills}"
-        f'<a href="/health">Full roll-up &rarr;</a></p>\n'
-        f'<p class="banner {verdict_class}">{_esc(report.verdict())}</p>\n'
+        '<div class="card counts">\n'
+        f"<p>{counts_html}</p>\n"
+        '<p class="mut"><a href="/next">See what to study &rarr;</a></p>\n'
         "</div>\n"
     )
 
 
-def _header_health_html(root, report=None) -> str:
-    """Compact pills for the sticky header health strip (B viewport)."""
-    report = report or health_report(Path(root))
-    pills = "".join(
-        f'<span class="pill {"ok" if layer.ok else "broken"}">'
-        f"{_esc(layer.target)}: {'OK' if layer.ok else 'FAILED'}</span>"
-        for layer in report.layers
-    )
-    # Keep the header strip compact — layers plus link, counts live in pressure card.
-    return pills + '<a href="/health" style="margin-left:8px">Full roll-up &rarr;</a>'
-
-
-def _queue_list_html(model, view: JoinedView) -> str:
-    """Rec queue list below the grid — mirrors `derive_next` 60-min recommendations."""
-    items = ""
-    for rec in model.recommendations:
-        node = view.node_map.get(rec.node_id)
-        title = _esc(node.title if node else rec.node_id)
-        state = view.store.state_of(rec.node_id)
-        slug = _slug(state)
-        items += (
-            f'<li><a href="/nodes/{_esc(rec.node_id)}">{title}</a> '
-            f'<span class="pill {slug}">{_esc(state)}</span>'
-            f'<br><span class="small">{_esc(rec.reason[:140])}</span></li>'
-        )
-    if not items:
-        items = '<li class="mut">No recommendations for 60 min — try <a href="/next">Next</a>.</li>'
+def _resumable_active_line(view, root) -> str:
+    """Today block 3 — the resumable-active line, only while a session is open."""
+    del root
+    current = open_session(view.sessions)
+    if current is None:
+        return ""
+    started = _esc(str(current.started_at)[:16].replace("T", " "))
     return (
-        '<div class="card">\n'
-        '<div class="kicker">OTHER GOOD CHOICES — 60-MINUTE QUEUE</div>\n'
-        f'<ul class="list">{items}</ul>\n'
-        '<p class="small">Live from <code>skilltrace next --minutes 60</code> — mirrors <code>derive_next</code>.</p>\n'
-        '</div>\n'
+        '<div class="card resumable">\n'
+        f"<p>Session <code>{_esc(current.id)}</code> open since {started}.</p>\n"
+        '<form class="inline" method="post" action="/session/close">'
+        '<input type="hidden" name="next" value="/">'
+        '<button type="submit" class="btn secondary">Close session</button>'
+        "</form>\n"
+        "</div>\n"
     )
-
-
-# --- Route bodies ---------------------------------------------------------------
 
 
 def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
-    """GET `/` — the today dashboard (B grid — 1.2fr focus + 0.8fr pressure).
+    """GET `/` — Today as the P3 card-stack (v2.4 §A).
+
+    Three card-level blocks (≤ 4): the focus card (the one primary CTA),
+    the count set (ready / reviews waiting / days practiced), and the
+    resumable-active line while a session is open. Queue and pressure
+    recede behind the ``/next`` stop; zero tables; no ``<details>`` on the
+    primary path; the raw backlog never renders.
 
     Returns ``(page_title, body_html, http_status)``.
     """
@@ -556,58 +677,17 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
 
     model = derive_today(view, Path(root), minutes=30)
 
-    focus_bar = ""
-    if model.focus_node_id and model.focus_node_id in view.node_map:
-        focus = view.node_map[model.focus_node_id]
-        focus_bar = (
-            f'<p class="mut">Focus: '
-            f'<a href="/nodes/{_esc(focus.id)}">{_esc(focus.title)}</a></p>'
-        )
-
-    # Sticky header health+nav — live pills, jump form, 1100px wrap.
-    health = health_report(Path(root))
-    header_health = _header_health_html(root, health)
-    header_html = _NAV.replace(
-        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
-        f'<div class="health-strip" aria-label="health">{header_health}</div>',
-    )
-
-    # Grid-two: left 1.2fr focus + right 0.8fr rail pressure.
-    left_html = (
-        render_cards(model.cards)
-        + _start_confirm_card(view, root, model.focus_node_id)
-        + _session_strip_card(view, root)
-    )
-    right_html = (
-        '<div class="rail">\n'
-        + _pressure_card(model, view)
-        + _health_strip_card(root, health)
-        + '\n</div>\n'
-    )
-    grid_html = (
-        '<div class="grid-two">\n'
-        '<div>\n' + left_html + '\n</div>\n'
-        + right_html
-        + '\n</div>\n'
-    )
-
-    # Rec queue below grid — mirrors CLI `next --minutes 60`.
-    queue_model = derive_next(view, Path(root), minutes=60, limit=5)
-    queue_html = _queue_list_html(queue_model, view)
-
-    breadcrumb = '<div class="breadcrumb"><a href="/">Today</a></div>\n'
+    header_html = _chrome(root, current_view="today")
 
     body = (
         header_html
         + _flash_html(query or {})
         + _degraded_banner(view)
-        + focus_bar
-        + breadcrumb
-        + grid_html
-        + queue_html
+        + _focus_card(view, root, model)
+        + _count_set_card(view, model)
+        + _resumable_active_line(view, root)
     )
     return "Today", body, 200
-
 
 def _template_select(templates: set[str], empty_label: str) -> str:
     options = "".join(f'<option value="{_esc(t)}">{_esc(t)}</option>' for t in sorted(templates))
@@ -651,18 +731,6 @@ def _start_confirm_form(view: JoinedView, root, node_id: str) -> str:
     )
 
 
-def _start_confirm_card(view: JoinedView, root, focus_node_id: str | None) -> str:
-    if not focus_node_id or focus_node_id not in view.node_map:
-        return ""
-    title = _esc(view.titles.get(focus_node_id, focus_node_id))
-    return (
-        '<div class="card">\n'
-        '<div class="kicker">START HERE — TODAY\'S TOP PICK (LIGHTWEIGHT CONFIRM)</div>\n'
-        f"<p><a href=\"/nodes/{_esc(focus_node_id)}\">{title}</a></p>\n"
-        f"{_start_confirm_form(view, root, focus_node_id)}\n</div>\n"
-    )
-
-
 def _work_form_fields() -> str:
     return (
         '<div class="form-row"><label>Notes</label>'
@@ -672,52 +740,6 @@ def _work_form_fields() -> str:
         '<div class="form-row inline-check">'
         '<label><input type="checkbox" name="blocked" value="1"> ended stuck '
         "(blocked requires notes)</label></div>"
-    )
-
-
-def _session_strip_card(view: JoinedView, root) -> str:
-    """The home session strip (G5): work log + honest-end close for the open day."""
-    current = open_session(view.sessions)
-    close_form = (
-        "<details><summary>Forgot to close?</summary>"
-        '<form method="post" action="/session/close">'
-        '<input type="hidden" name="next" value="/">'
-        '<div class="form-row"><label>Honest end (ISO timestamp, optional — '
-        'e.g. 2026-08-24T13:45+00:00)</label>'
-        '<input type="text" name="end"></div>'
-        '<button type="submit" class="btn secondary">Close session</button>'
-        "</form><p class=\"mut\">Without it the session closes now.</p></details>"
-    )
-    if current is not None:
-        template = (
-            f' <span class="pill">{_esc(current.template)}</span>'
-            if current.template
-            else ""
-        )
-        header = (
-            f"<p>Open session <code>{_esc(current.id)}</code> — started "
-            f"<code>{_esc(str(current.started_at)[:19])}</code>{template}</p>"
-        )
-    else:
-        header = (
-            '<p class="mut">No session is open — start one below; closing '
-            "without one is refused by the domain.</p>"
-        )
-    work_form = (
-        "<details><summary>Log work</summary>"
-        '<form method="post" action="/work">'
-        '<input type="hidden" name="next" value="/">'
-        '<div class="form-row"><label>Node id</label>'
-        '<input type="text" name="node_id" required placeholder="e.g. math.algebra.variables_expressions_01"></div>'
-        f"{_work_form_fields()}"
-        '<button type="submit" class="btn secondary">Add work item</button>'
-        "</form><p class=\"mut\">Verbatim CLI fields — "
-        "<code>work &lt;node_id&gt; [--blocked] [--notes] [--minutes]</code>.</p></details>"
-    )
-    return (
-        '<div class="card">\n'
-        '<div class="kicker">SESSION STRIP</div>\n'
-        f"{header}\n{work_form}\n{close_form}\n</div>\n"
     )
 
 
@@ -736,7 +758,7 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
     minutes = _parse_int(query, "minutes", 60)
     limit = _parse_int(query, "limit", 5)
     if minutes is None or limit is None:
-        body, status = _status_page(400, "minutes and limit must be integers.")
+        body, status = _status_page(400, "minutes and limit must be integers.", root)
         return "Next", body, status
     locked_values = query.get("locked", [""])
     show_locked = locked_values[0].lower() in {"1", "true", "on", "yes"} if locked_values else False
@@ -752,24 +774,22 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
     checked = " checked" if show_locked else ""
     toggle_params = f"minutes={minutes}&amp;limit={limit}" + ("" if show_locked else "&amp;locked=1")
     toggle_label = "Hide locked" if show_locked else "Show locked"
+    # Human controls (v2.4 S4): the session window and option count phrased
+    # as questions, with the CLI mirror noted once, muted.
     filters = (
         '<div class="card">\n'
         '<form class="filters" method="get" action="/next">'
-        f'<label>minutes <input type="number" name="minutes" value="{minutes}" min="1" size="4"></label>'
-        f'<label>limit <input type="number" name="limit" value="{limit}" min="1" size="3"></label>'
+        f'<label>Minutes you have <input type="number" name="minutes" value="{minutes}" min="1" size="4"></label>'
+        f'<label>How many options <input type="number" name="limit" value="{limit}" min="1" size="3"></label>'
         f'<label><input type="checkbox" name="locked" value="1"{checked}> show locked</label>'
         '<button type="submit">Apply</button>'
         "</form>\n"
-        f'<p class="mut"><a href="/next?{toggle_params}">{toggle_label}</a> '
-        '(mirrors <code>next --minutes --limit --show-locked</code>)</p>\n'
+        f'<p class="mut"><a href="/next?{toggle_params}">{toggle_label}</a></p>\n'
         "</div>\n"
     )
 
-    header_health = _header_health_html(root, health_report(Path(root)))
-    header_html = _NAV.replace(
-        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
-        f'<div class="health-strip" aria-label="health">{header_health}</div>',
-    )
+    header_html = _chrome(root, current_view='next')
+
     breadcrumb = '<div class="breadcrumb"><a href="/">Today</a> &middot; <a href="/next">Next</a></div>\n'
     return "Next", header_html + breadcrumb + filters + _candidate_cards(model), 200
 
@@ -827,17 +847,14 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
 
     model = derive_node_detail(view, node_id)
     if model is None:
-        body, status = _status_page(404, f"Unknown node {node_id}.")
+        body, status = _status_page(404, f"Unknown node {node_id}.", root)
         return "Not found", body, status
 
     actions = _node_actions_card(root, view, node_id)
     drill = _drill_down_card(node_id, view, Path(root), model)
     title = view.node_map[node_id].title
-    header_health = _header_health_html(root, health_report(Path(root)))
-    header_html = _NAV.replace(
-        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
-        f'<div class="health-strip" aria-label="health">{header_health}</div>',
-    )
+    header_html = _chrome(root, current_view='node')
+
     breadcrumb = (
         f'<div class="breadcrumb"><a href="/">Today</a> &middot; '
         f'<a href="/nodes/{_esc(node_id)}">{_esc(node_id)}</a></div>\n'
@@ -870,16 +887,29 @@ def _resolve_blocker_form(blocker_id: str, next_url: str = "/") -> str:
 def _evidence_submit_form(root, view: JoinedView, node_id: str) -> str:
     """Evidence submit (G5) — verbatim CLI fields, judged at submission.
 
-    Spec select auto-resolves when the node has exactly one spec; accept/
-    reject radios render only on manual-gate nodes (an objective gate's exit
-    code is the verdict); the supersede flow hides behind an advanced toggle.
+    The no-op form is *omitted* (v2.4 S4): a node with no artifact spec or
+    no gate renders the explanation only — a form the domain would always
+    refuse never renders. Spec select auto-resolves when the node has
+    exactly one spec; accept/reject radios render only on manual-gate
+    nodes; the supersede flow hides behind an advanced toggle.
     """
     specs = view.specs_by_node.get(node_id, [])
     gate = view.gates_by_node.get(node_id)
 
     if not specs:
-        spec_field = '<p class="mut">No artifact spec — the domain refuses any submission.</p>'
-    elif len(specs) == 1:
+        return (
+            "<details><summary>Submit evidence</summary>"
+            '<p class="mut">No artifact spec is defined for this skill — '
+            "evidence cannot be recorded here.</p></details>"
+        )
+    if gate is None:
+        return (
+            "<details><summary>Submit evidence</summary>"
+            '<p class="mut">No validation gate is defined for this skill — '
+            "evidence cannot be recorded here.</p></details>"
+        )
+
+    if len(specs) == 1:
         spec_field = f'<input type="hidden" name="spec" value="{_esc(specs[0].id)}">'
     else:
         options = "".join(
@@ -890,9 +920,7 @@ def _evidence_submit_form(root, view: JoinedView, node_id: str) -> str:
             f'<select name="spec">{options}</select></div>'
         )
 
-    if gate is None:
-        verdict_field = '<p class="mut">No gate — the domain refuses any submission.</p>'
-    elif gate.command:
+    if gate.command:
         verdict_field = (
             f'<p class="mut">Objective gate — running it decides the verdict '
             f"({_esc(gate.command)}).</p>"
@@ -940,9 +968,14 @@ def _evidence_submit_form(root, view: JoinedView, node_id: str) -> str:
         "superseding, never edited.</p></details>"
     )
 
-
 def _node_actions_card(root, view: JoinedView, node_id: str) -> str:
-    """Node-detail write surface (G5): pass/master modals + daily-write forms."""
+    """Node-detail write surface (G5): pass/master modals + daily-write forms.
+
+    Structural omission per ADR 0007 §Validation (Amendment 2026-09-11) +
+    P4.1: pass on a ``locked`` node and master on a node that is not
+    ``passed`` are *omitted* — absent markup, never rendered-then-refused
+    and never pre-disabled. Judgment eligibility stays live elsewhere.
+    """
     blockers = [
         b for b in view.blockers if b.node_id == node_id and b.status == "open"
     ]
@@ -954,16 +987,27 @@ def _node_actions_card(root, view: JoinedView, node_id: str) -> str:
         for b in blockers
     )
     blocker_section = (
-        f'<ul>{blocker_forms}</ul>' if blocker_forms else '<p class="mut">No open blockers.</p>'
+        f'<ul>{blocker_forms}</ul>'
+        if blocker_forms
+        else '<p class="mut">No open blockers.</p>'
     )
+    state = view.store.state_of(node_id)
+    actions = ""
+    if state != "locked":  # structural wall: pass on locked is omitted
+        actions += (
+            f'<a class="btn" href="/nodes/{_esc(node_id)}/pass">Pass&hellip;</a>'
+        )
+    if state == "passed":  # structural wall: master requires passed
+        actions += (
+            f'<a class="btn master" href="/nodes/{_esc(node_id)}/master">'
+            "Master&hellip;</a>"
+        )
+    actions_html = f'<div class="actions">{actions}</div>' if actions else ""
     return (
         '<div class="card">\n'
-        '<div class="kicker">WRITE ACTIONS — SAME REGISTRY, SAME EVENTS AS THE CLI</div>\n'
-        '<div class="actions">'
-        f'<a class="btn" href="/nodes/{_esc(node_id)}/pass">Pass&hellip;</a>'
-        f'<a class="btn master" href="/nodes/{_esc(node_id)}/master">Master&hellip;</a>'
-        "</div>\n"
-        "<details open><summary>Start studying</summary>"
+        '<div class="kicker">WRITE ACTIONS</div>\n'
+        + actions_html
+        + "\n<details open><summary>Start studying</summary>"
         f"{_start_confirm_form(view, root, node_id)}\n</details>\n"
         "<details><summary>Log work</summary>"
         '<form method="post" action="/work">'
@@ -983,7 +1027,6 @@ def _node_actions_card(root, view: JoinedView, node_id: str) -> str:
         f"{blocker_section}</details>\n"
         "</div>\n"
     )
-
 
 _STATUS_PILL_CLASSES = {
     VerificationStatus.BROKEN.value: "broken",
@@ -1124,15 +1167,30 @@ def _drill_down_card(
 
 
 def health_body(root) -> tuple[str, str, int]:
-    """GET `/health` — the five validators plus liveness, read-only."""
+    """GET `/health` - the five validators plus liveness, read-only.
+
+    The roll-up carries the per-layer warning counts as a column (v2.4
+    P2.4 - the structured facts the health seam now reports), so a layer
+    that is OK *with attention* is visible without opening the validator.
+    """
     report = health_report(Path(root))
 
     rows = [
         [
             _esc(layer.target),
             _esc(layer.counts),
-            f'<span class="pill {"verified" if layer.ok else "broken"}">'
-            f"{'OK' if layer.ok else 'FAILED'}</span>",
+            '<span class="pill '
+            + ("verified" if layer.ok else "broken")
+            + ">"
+            + ("OK" if layer.ok else "FAILED")
+            + "</span>",
+            (
+                f'<span class="pill attention">{_esc(layer.warning_count)} warning'
+                + ('s' if layer.warning_count != 1 else '')
+                + "</span>"
+                if layer.warning_count
+                else '<span class="mut">-</span>'
+            ),
         ]
         for layer in report.layers
     ]
@@ -1143,29 +1201,25 @@ def health_body(root) -> tuple[str, str, int]:
     )
     verdict_class = "ok" if report.error_count == 0 else "fail"
 
-    header_health = _header_health_html(root)
-    header_html = _NAV.replace(
-        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
-        f'<div class="health-strip" aria-label="health">{header_health}</div>',
+    header_html = _chrome(root, current_view="health")
+
+    breadcrumb = (
+        "<div class=\"breadcrumb\"><a href=\"/\">Today</a> &middot; "
+        "<a href=\"/health\">Health</a></div>\n"
     )
-    breadcrumb = '<div class="breadcrumb"><a href="/">Today</a> &middot; <a href="/health">Health</a></div>\n'
     body = (
         header_html
         + breadcrumb
         + '<div class="card">\n'
-        + '<div class="kicker">HEALTH ROLL-UP — FIVE VALIDATORS + LIVENESS</div>\n'
-        + _table(["Layer", "Counts", "Status"], rows)
+        + '<div class="kicker">HEALTH ROLL-UP</div>\n'
+        + _table(["Layer", "Counts", "Status", "Warnings"], rows)
         + error_banners
         + cards_html(report.liveness_lines)
         + f'<p class="banner {verdict_class}">{_esc(report.verdict())}</p>\n'
-        + '<p class="mut">Read fresh from the truth files at request time — '
+        + '<p class="mut">Read fresh from the truth files at request time - '
         "CLI edits appear on refresh.</p>\n</div>\n"
     )
     return "Health", body, 200
-
-
-# --- Analytics dashboard (G5) ---------------------------------------------------
-
 
 def _analytics_view(root: Path, query: dict) -> tuple[object | None, tuple[str, str, int] | None]:
     view, failure = _fresh_join(root)
@@ -1177,14 +1231,14 @@ def _analytics_view(root: Path, query: dict) -> tuple[object | None, tuple[str, 
     try:
         days = int(raw_days)
     except (TypeError, ValueError):
-        body, status = _status_page(400, "Analytics days must be a positive integer.")
+        body, status = _status_page(400, "Analytics days must be a positive integer.", root)
         return None, ("Bad request", body, status)
     if days <= 0:
-        body, status = _status_page(400, "Analytics days must be a positive integer.")
+        body, status = _status_page(400, "Analytics days must be a positive integer.", root)
         return None, ("Bad request", body, status)
     group_by = (query.get("group-by") or [policy.default_group_by])[0]
     if group_by not in {"prefix", "track"}:
-        body, status = _status_page(400, "Analytics group-by must be prefix or track.")
+        body, status = _status_page(400, "Analytics group-by must be prefix or track.", root)
         return None, ("Bad request", body, status)
     min_sessions = policy.min_sessions_for_full_data
     # T6: the window/group/filter bundle is one value for every theme.
@@ -1229,11 +1283,23 @@ def _analytics_card(
 
 
 def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
-    """GET `/analytics` — four read-only analytics themes."""
+    """GET `/analytics` - one read-only analytics theme per page (v2.4 S5).
+
+    The ``theme`` query parameter selects the visible theme (default
+    ``velocity``); the others are one plain-link away - a page shows one
+    theme's chart, not four stacked charts. Charts are static inline SVG
+    through the ``analytics/sparkline.py`` seam, real multi-point series
+    only (P2.2 bans pseudo-sparklines: a single-point series renders no
+    sparkline, just the labeled summary).
+    """
     query = query or {}
     model, failure = _analytics_view(Path(root), query)
     if model is None:
         return failure
+
+    theme = (query.get("theme") or ["velocity"])[0]
+    if theme not in {"velocity", "blockers", "reviews", "evidence"}:
+        theme = "velocity"
 
     warnings = analytics_warnings(Path(root), model)
     overdue = (
@@ -1247,7 +1313,7 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         sentence = limited_data_sentence(
             model.min_sessions_for_full_data, model.window_days
         )
-        limited = f'<p class="banner advisory">[advisory] {_esc(sentence)}</p>'
+        limited = f'<p class="banner advisory">{_esc(sentence)}</p>'
     days = model.window_days
     group_by = model.group_by
     options = "".join(
@@ -1255,19 +1321,22 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         for n, label in ((7, "Last 7 days"), (30, "Last 30 days"), (90, "Last 90 days"))
     )
     controls = (
-        '<div class="card analytics-controls"><form id="analytics-filter" method="get" action="/analytics">'
-        '<div class="form-row"><label for="analytics-days">'
+        '<div class="card analytics-controls"><form method="get" action="/analytics">'
+        '<div class="form-row"><label>'
         "Date range</label>"
-        f'<select id="analytics-days" name="days">{options}'
+        f'<select name="days">{options}'
         f'<option value="{days}" {"selected" if days not in (7, 30, 90) else ""}>Policy default ({days}d)</option>'
         f'</select><input type="hidden" name="group-by" value="{_esc(group_by)}">'
+        f'<input type="hidden" name="theme" value="{_esc(theme)}">'
         '<button class="btn secondary" type="submit">Apply</button></div></form>'
         '<div class="form-row"><label>Group by</label>'
-        f'<a class="btn {"secondary" if group_by == "track" else ""}" href="/analytics?days={days}&amp;group-by=prefix">Prefix</a> '
-        f'<a class="btn {"secondary" if group_by == "prefix" else ""}" href="/analytics?days={days}&amp;group-by=track">Track</a></div>'
+        f'<a class="btn {"secondary" if group_by == "track" else ""}" href="/analytics?days={days}&amp;group-by=prefix&amp;theme={theme}">Prefix</a> '
+        f'<a class="btn {"secondary" if group_by == "prefix" else ""}" href="/analytics?days={days}&amp;group-by=track&amp;theme={theme}">Track</a></div>'
         '</div>'
     )
-    advisory = "".join(f'<p class="banner advisory">{_esc(warning)}</p>' for warning in warnings)
+    advisory = "".join(
+        f'<p class="banner advisory">{_esc(warning)}</p>' for warning in warnings
+    )
 
     velocity = model.velocity
     velocity_detail = _table(
@@ -1289,42 +1358,65 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         ["Node", "Group", "State", "Gap"],
         [[_esc(row.node_id), _esc(row.group), _esc(row.state), "yes" if row.gap else "no"] for row in evidence.rows],
     ) if evidence.rows else '<p class="mut">No nodes with artifact specs.</p>'
-    cards = (
-        _analytics_card("Velocity", f"{velocity.sessions_in_window} sessions, "
-                        f"{velocity.total_minutes} minutes",
-                        "Sessions and work items started in the selected window, bucketed by week.",
-                        sparkline_svg(
-                            [(week.label, week.session_count) for week in velocity.weeks]
-                        ), velocity_detail, model, "velocity")
-        + _analytics_card("Blockers", f"{blockers.open_count} open, "
-                        f"{blockers.resolved_in_window} resolved",
-                        "Open blockers are counted now; resolved blockers are counted when resolved in the window.",
-                        sparkline_svg(
-                            [("open", blockers.open_count)]
-                        ), blocker_detail, model, "blockers")
-        + _analytics_card("Reviews", f"{reviews.completed_in_window} completed, "
-                        f"{reviews.overdue_count} overdue",
-                        "Completion rate is completed reviews divided by completed plus scheduled reviews.",
-                        sparkline_svg(
-                            [("completed", reviews.completed_in_window)]
-                        ), review_detail, model, "reviews")
-        + _analytics_card("Evidence", f"{evidence.nodes_with_gaps} nodes with gaps, "
-                        f"{evidence.coverage_rate * 100:.0f}% coverage",
-                        "Coverage is the share of nodes with artifact specs that have no required-spec gap.",
-                        sparkline_svg(
-                            [("accepted", sum(row.accepted_count for row in evidence.rows))]
-                        ), evidence_detail, model, "evidence")
+
+    # Static charts: real multi-point series only (P2.2). A theme whose
+    # series has a single point (blockers/reviews/evidence summaries)
+    # renders the labeled summary without a pseudo-sparkline.
+    velocity_svg = sparkline_svg(
+        [(week.label, week.session_count) for week in velocity.weeks]
     )
-    header_html = _NAV.replace(
-        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
-        '<div class="health-strip" aria-label="health"></div>',
+
+    themes = {
+        "velocity": (
+            "Velocity",
+            f"{velocity.sessions_in_window} sessions, {velocity.total_minutes} minutes",
+            "Sessions and work items started in the selected window, bucketed by week.",
+            velocity_svg,
+            velocity_detail,
+        ),
+        "blockers": (
+            "Blockers",
+            f"{blockers.open_count} open, {blockers.resolved_in_window} resolved",
+            "Open blockers are counted now; resolved blockers are counted when resolved in the window.",
+            "",
+            blocker_detail,
+        ),
+        "reviews": (
+            "Reviews",
+            f"{reviews.completed_in_window} completed, {reviews.overdue_count} overdue",
+            "Completion rate is completed reviews divided by completed plus scheduled reviews.",
+            "",
+            review_detail,
+        ),
+        "evidence": (
+            "Evidence",
+            f"{evidence.nodes_with_gaps} nodes with gaps, {evidence.coverage_rate * 100:.0f}% coverage",
+            "Coverage is the share of nodes with artifact specs that have no required-spec gap.",
+            "",
+            evidence_detail,
+        ),
+    }
+    title, summary, derivation, svg, detail = themes[theme]
+    theme_links = " ".join(
+        '<a class="btn ' + ('' if name == theme else 'secondary') + '" '
+        + 'href="/analytics?days={d}&amp;group-by={g}&amp;theme={t}">{label}</a>'.format(
+            d=days, g=group_by, t=name, label=_esc(label)
+        )
+        for name, (label, *_rest) in themes.items()
     )
+    cards = _analytics_card(title, summary, derivation, svg, detail, model, theme)
     body = (
-        header_html + _flash_html(query) + overdue + limited + controls
-        + f'<div id="analytics-advisory">{advisory}</div>'
+        _chrome(root, current_view="analytics")
+        + _flash_html(query)
+        + overdue
+        + limited
+        + advisory
+        + controls
+        + f'<div class="theme-nav">{theme_links}</div>'
         + f'<div class="analytics-grid">{cards}</div>'
     )
     return "Analytics", body, 200
+
 
 
 # --- Confirmation modals (G2#66) — server-fresh facts, domain refusal is truth --
@@ -1336,6 +1428,7 @@ def _modal_shell(
     heading: str,
     inner: str,
     extra_html: str = "",
+    root=None,
 ) -> tuple[str, str, int]:
     node = view.node_map[node_id]
     state = view.store.state_of(node_id)
@@ -1347,10 +1440,8 @@ def _modal_shell(
         f"{inner}"
         "</div>"
     )
-    header_html = _NAV.replace(
-        '<div class="health-strip" aria-label="health" data-health-placeholder></div>',
-        '<div class="health-strip" aria-label="health"></div>',
-    )
+    header_html = _chrome(root)
+
     body = header_html + _degraded_banner(view) + extra_html + modal
     return node.title, body, 200
 
@@ -1367,7 +1458,7 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
     if view is None:
         return "Error", failure[0], failure[1]
     if node_id not in view.node_map:
-        body, status = _status_page(404, f"Unknown node {node_id}.")
+        body, status = _status_page(404, f"Unknown node {node_id}.", root)
         return "Not found", body, status
 
     state = view.store.state_of(node_id)
@@ -1452,7 +1543,7 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
         '<p class="mut">Buttons stay enabled by design — if these facts are stale, the '
         "domain refuses on click and that refusal is the truth.</p>"
     )
-    return _modal_shell(view, node_id, "Confirm pass", inner, extra_html)
+    return _modal_shell(view, node_id, "Confirm pass", inner, extra_html, root)
 
 
 def master_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int]:
@@ -1461,7 +1552,7 @@ def master_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int
     if view is None:
         return "Error", failure[0], failure[1]
     if node_id not in view.node_map:
-        body, status = _status_page(404, f"Unknown node {node_id}.")
+        body, status = _status_page(404, f"Unknown node {node_id}.", root)
         return "Not found", body, status
 
     state = view.store.state_of(node_id)
@@ -1513,7 +1604,7 @@ def master_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int
         + f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
         "</div>"
     )
-    return _modal_shell(view, node_id, "Step 1 — Mastery facts", inner, extra_html)
+    return _modal_shell(view, node_id, "Step 1 — Mastery facts", inner, extra_html, root)
 
 
 def master_confirm_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int]:
@@ -1522,7 +1613,7 @@ def master_confirm_body(root, node_id: str, extra_html: str = "") -> tuple[str, 
     if view is None:
         return "Error", failure[0], failure[1]
     if node_id not in view.node_map:
-        body, status = _status_page(404, f"Unknown node {node_id}.")
+        body, status = _status_page(404, f"Unknown node {node_id}.", root)
         return "Not found", body, status
 
     inner = (
@@ -1538,7 +1629,7 @@ def master_confirm_body(root, node_id: str, extra_html: str = "") -> tuple[str, 
         f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/master">Back</a>'
         "</div></form>"
     )
-    return _modal_shell(view, node_id, "Step 2 — This is permanent", inner, extra_html)
+    return _modal_shell(view, node_id, "Step 2 — This is permanent", inner, extra_html, root)
 
 
 # --- POST handlers — thin glue over dispatch, exit-code mapped -------------------

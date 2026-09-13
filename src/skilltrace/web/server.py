@@ -58,6 +58,21 @@ def make_server(root: Path, port: int) -> tuple[SkillTraceServer | None, str]:
 
 def serve(ctx: Context) -> CommandResult:
     """Run until Ctrl+C. The root was resolved once by the CLI before dispatch."""
+    # The sublayer binding check (v2.4 S2): serve refuses to start against an
+    # inconsistent interface sublayer — a dead write path or an unaffordable
+    # affordance is a boot failure, not a runtime surprise. The registry is
+    # imported here (not at module level): commands/__init__ lazily loads this
+    # package while the cli module is still building its registry.
+    from ..cli import REGISTRY
+    from .interface import validate_interface
+
+    problems = validate_interface(REGISTRY)
+    if problems:
+        print("serve: interface sublayer is inconsistent — refusing to start.")
+        for problem in problems:
+            print(f"  - {problem}")
+        return CommandResult(exit_code=1)
+
     server, failure = make_server(Path(ctx.root), ctx.args.port)
     if server is None:
         print(failure)

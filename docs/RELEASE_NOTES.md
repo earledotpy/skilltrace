@@ -1,6 +1,23 @@
 # Release Notes
 
-All releases and historical milestone records for SkillTrace. For future direction, see [`docs/POST_V1_ROADMAP.md`](POST_V1_ROADMAP.md) (shipped v1.6–v2.0) and [`docs/POST_V2_ROADMAP.md`](POST_V2_ROADMAP.md) (shipped v2.1–v2.3; next slot v2.4).
+All releases and historical milestone records for SkillTrace. For future direction, see [`docs/POST_V1_ROADMAP.md`](POST_V1_ROADMAP.md) (shipped v1.6–v2.0) and [`docs/POST_V2_ROADMAP.md`](POST_V2_ROADMAP.md) (shipped v2.1–v2.4).
+
+---
+
+## v2.4.0 (released)
+
+Preference-driven, de-CLI-flavoured interface sublayer (map #208; spec [`docs/spec-v2.4-interface-sublayer.md`](spec-v2.4-interface-sublayer.md)). The page layer reads out through the ADR 0007 sublayer (`src/skilltrace/web/interface/`) and nothing else; the CLI's terminal output is byte-identical. Verified on the merged tree: full suite green (modulo the three pre-existing `tests/analytics/test_export.py` JSON-key failures), CLI byte-identity captured on `today`/`next`/`node` against the pre-change seed.
+
+### Features
+- **Interface seam (S1):** the `NextAction` typed fact on the canonical `MentorCard` (`mentor.cards`), derived per state by `mentor.prose.next_action_for` with `today._focus_action` as Today's single producer; CLI serialization byte-identical; the web renders the intent's affordance and never the command string. Days-practiced derivation (`execution/days.py`: distinct days from `sessions.started_at` ∪ `work.created_at`); per-layer warning counts on `LayerHealth` (P2.4).
+- **Sublayer scaffold + chrome (S2):** View / Card / Command / Active-view-state objects over the live dispatcher registry; structure validated at import and bindings validated at serve boot (an inconsistent sublayer refuses to start); two nav groups with seam-sourced `aria-current`; health pill strip with attention state; §B design tokens (every hex in `:root`, one accent, two density registers, font-role split), the four 900px rules collapsed to one breakpoint.
+- **Today card-stack (S3):** the P3 shape — focus card (title, state + plain-language reason, the single primary CTA), the count set (ready / reviews waiting / days practiced; zero-count pills dropped), and the resumable-active line while a session is open. ≤ 4 card-level blocks, zero tables, no `<details>` on the primary path; queue and pressure recede behind `/next`.
+- **Next / node / finder (S4):** human filter controls on `/next`; the no-op evidence form omitted (a node with no spec or no gate renders the explanation, never a refused-by-construction form); title-first jump finder.
+- **Health / analytics / safety (S5):** per-layer warning column on `/health`; one analytics theme per page via `theme=` with plain-link switching; single-point pseudo-sparklines dropped (P2.2); pass/master structurally omitted on locked/not-passed nodes (P4.1); captured flash/refusal copy flows through the P3.1 forbidden-vocabulary translation module no surface bypasses (CLI banner kinds map to semantic classes; the banned-vocabulary detector is testable).
+
+### Decisions Recorded
+- The interaction posture is tier 0 (JavaScript budget 0): **no ADR 0008** — it stays reserved-and-unused; ADR 0006 stands unamended (G-JS). The no-`<script>` gate is release-tested.
+- The route surface restructures downward only (G-RouteSurface); the frozen view table lives in `web/interface/cards.py`, validated against the live registry at boot.
 
 ---
 

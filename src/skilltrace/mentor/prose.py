@@ -125,6 +125,88 @@ def brief_for(state: NodeState, facts: NodeFacts, perspective: Perspective) -> l
     ]
 
 
+def next_action_for(state: NodeState, facts: NodeFacts) -> "NextAction":
+    """Return the structured next-action fact for one node (v2.4 spec §E).
+
+    Colocated with the state dispatch above: each branch mirrors the
+    matching ``_brief_*`` "Do this next" line *exactly* (the CLI-printed
+    command line rides in ``command`` so the terminal output stays
+    byte-identical), while ``intent``/``node_id``/``eligible`` carry the
+    structured fact surfaces render their own affordances from. The web
+    never renders ``command`` and never re-derives which action is
+    possible — it reads this fact.
+    """
+    from .cards import NextAction
+
+    node = facts.node
+    if state is NodeState.LOCKED:
+        # A structural wall: no action affordance exists (the pass-case
+        # per P4.1 is omitted, not rendered-then-refused). The unlock
+        # path stays human copy; the web composes its link from the
+        # node's unmet-prerequisite facts.
+        if facts.unsatisfied_prereqs:
+            first_id, _ = facts.unsatisfied_prereqs[0]
+            first_title = facts.titles.get(first_id, first_id)
+            return NextAction(
+                intent="explore",
+                node_id=None,
+                command=f"Work on {first_title} first -- that's the unlock path",
+            )
+        return NextAction(
+            intent="explore",
+            node_id=None,
+            command="Run `skilltrace sync` to refresh readiness",
+        )
+    if state is NodeState.AVAILABLE:
+        return NextAction(
+            intent="start",
+            node_id=node.id,
+            command=f"Start studying {node.title}",
+        )
+    if state is NodeState.ACTIVE:
+        from ..evidence.eligibility import compute_eligibility
+
+        elig = compute_eligibility(
+            node.id,
+            [s for s in facts.specs if s.node_id == node.id],
+            has_gate=facts.has_gate,
+            records=facts.records,
+            node_state="active",
+        )
+        if elig.eligible:
+            return NextAction(
+                intent="pass",
+                node_id=node.id,
+                command=f"Mark {node.title} passed: `skilltrace pass {node.id}`",
+                eligible=True,
+            )
+        return NextAction(
+            intent="submit_evidence",
+            node_id=node.id,
+            command=f"Submit your next piece of evidence for {node.title}",
+        )
+    if state is NodeState.PASSED:
+        return NextAction(
+            intent="schedule_review",
+            node_id=node.id,
+            command=(
+                f"Schedule a review: `skilltrace review schedule {node.id}"
+                f" --date <YYYY-MM-DD>`"
+            ),
+        )
+    if state is NodeState.MASTERED:
+        return NextAction(
+            intent="explore",
+            node_id=node.id,
+            command="Nothing further needed -- explore what this skill unlocks",
+        )
+    return NextAction(
+        intent="explore",
+        node_id=node.id,
+        command=f"Check the status of {node.title}",
+    )
+
+
 def resource_lines(resources) -> list[str]:
     """The canonical resource-line formatter.
 

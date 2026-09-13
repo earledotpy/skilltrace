@@ -74,6 +74,19 @@ verification note.
   `test_cli.py` registry gap fixed in the same change); spec:
   [`docs/spec-v2.3-polite-sweep.md`](./spec-v2.3-polite-sweep.md).
 
+- **v2.4.0** — Preference-driven, de-CLI-flavoured interface sublayer
+  (map [#208](https://github.com/earledotpy/skilltrace/issues/208)):
+  the ADR 0007 sublayer (`src/skilltrace/web/interface/`) — View/Card/
+  Command/Active-view-state over the live dispatcher registry, import-time
+  + serve-boot validation — plus the P3 card-stack Today, the `NextAction`
+  typed fact with the days-practiced mirror, human controls, one analytics
+  theme per page, structural omission for walled actions, and the P3.1
+  forbidden-vocabulary translation seam; tier-0 zero-JS throughout
+  (no ADR 0008; the no-`<script>` gate is release-tested); verified on the
+  merged tree (web + interface suites green, CLI byte-identity captured on
+  `today`/`next`/`node`); spec:
+  [`docs/spec-v2.4-interface-sublayer.md`](./spec-v2.4-interface-sublayer.md).
+
 ## Version slots
 
 The slot table, output of G-Slots
