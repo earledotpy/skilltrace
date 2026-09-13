@@ -65,7 +65,7 @@
 
   **Response contract.** Every POST → `303 See Other` + flash notice, refusals included; **no 4xx ever leaves a write** (a 4xx error page re-submits on refresh — unacceptable on a `pass`/`master` route). Refusal copy is human, `kind ∈ {ok, warning, error}`, rendered through `src/skilltrace/render.py`'s `[warning]`/`[error]` classes. The unknown-route fallthrough and unknown-node-id render the **same shared error body** as every other error (full chrome — header, nav, empty health strip), because the learner who typed a bad URL most needs the affordance back into the loop; when the context cannot be loaded at all, the shell falls back to a chrome-less minimal page rather than faulting itself.
 
-  All server-rendered HTML, standard form POSTs, redirect-after-POST, zero JavaScript — this table is the tier-0 posture, and the JavaScript-budget decision (ADR 0008, G-JS) remains open and unclaimed by it. No audit-log view, no delete affordance in Tier 1.
+  All server-rendered HTML, standard form POSTs, redirect-after-POST, zero JavaScript — this table is the tier-0 posture, and it is locked: the v2.4 interaction posture sets the JavaScript budget to 0 (no ADR 0008 \u2014 0008 stays reserved-and-unused; ADR 0006 unamended), and the interface sublayer emits no `<script>`, a grep-able gate. No audit-log view, no delete affordance in Tier 1.
 
   **Not a route (deliberate).** Each absence is a decision with a warrant and, where one exists, the trigger that re-opens it — recorded rather than silently dropped, since an unwritten gap is indistinguishable from an oversight:
 
