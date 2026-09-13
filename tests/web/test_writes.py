@@ -223,7 +223,7 @@ def test_master_step_one_shows_mastery_facts(repo):
     title, body, status = views.master_body(repo, NODE)
     assert status == 200
     assert "Step 1" in body
-    assert "MASTERY FACTS" in body
+    assert "Mastery facts" in body
     assert "Review spacing policy" in body
 
 
@@ -450,13 +450,14 @@ def test_home_resumable_line_carries_close_while_a_session_is_open(repo):
     )
     _, body, _ = views.home_body(repo)
     assert 'action="/session/close"' in body
-    assert "ses.2026-09-10.001" in body
+    assert "Session open since" in body
+    assert "ses.2026-09-10.001" not in body
 
 
 def test_node_page_carries_write_actions_and_forms(repo):
     """Structural omission (P4.1): pass/master links reflect the wall."""
     _, body, _ = views.node_body(repo, NODE, {})
-    assert "WRITE ACTIONS" in body
+    assert "Write actions" in body
     assert f'action="/nodes/{NODE}/start"' in body
     assert 'action="/work"' in body
     assert f'action="/nodes/{NODE}/blockers"' in body

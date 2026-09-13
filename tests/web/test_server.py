@@ -188,7 +188,7 @@ def test_index_route_renders_today_dashboard(running_server):
     server, _ = running_server
     status, _, body = _get(f"http://127.0.0.1:{server.server_port}/")
     assert status == 200
-    assert "TODAY" in body  # the canonical Mentor kicker
+    assert "Today" in body  # sentence-case kicker (P3.6, T2 #233)
     assert 'href="/nodes/' in body  # focus card links at the node detail
 
 
@@ -233,8 +233,8 @@ def test_node_route_serves_detail_and_unknown_is_404(running_server):
     node_id = sorted(view.nodes, key=lambda n: n.id)[0].id
     status, _, body = _get(f"http://127.0.0.1:{server.server_port}/nodes/{node_id}")
     assert status == 200
-    assert "THIS SKILL" in body  # canonical Mentor kicker
-    assert "DRILL-DOWN" in body
+    assert "This skill" in body  # sentence-case kicker (P3.6, T2 #233)
+    assert "Drill-down" in body
     status, _, _ = _get(f"http://127.0.0.1:{server.server_port}/nodes/no.such_node_99")
     assert status == 404
 
@@ -270,7 +270,7 @@ def test_routes_render_fresh_after_state_edit_over_http(running_server):
     )
     _, _, after = _get(f"{base}/nodes/{node_id}")
     assert before != after  # no cache — the edit is live on refresh
-    assert '<span class="pill in-progress">In progress</span>' in after
+    assert '<span class="pill active">Active</span>' in after  # canonical word (P3.4, T2 #233)
 
 
 # --- Escaping discipline and error-message honesty ---------------------------

@@ -180,7 +180,7 @@ _STYLE = """
   .health-strip .pill.attention{background:var(--warn); border-color:var(--warn-ink)}
   .health-strip .pill.broken{background:var(--err); border-color:var(--err-ink)}
   .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:var(--card-pad); margin:var(--space-intra) 0; gap:var(--space-intra)}
-  .kicker{font-family:var(--font-sans); font-size:var(--step-135); letter-spacing:.08em; font-weight:700; color:var(--muted); text-transform:uppercase; margin:.6rem 0 .25rem}
+  .kicker{font-family:var(--font-sans); font-size:var(--step-135); font-weight:700; color:var(--muted); margin:.6rem 0 .25rem}
   .kicker:first-child{margin-top:0}
   .title{font-family:var(--font-sans); font-size:var(--step-24); font-weight:700; line-height:1.2; margin:4px 0}
   .label{font-family:var(--font-sans); font-weight:600; margin:.4rem 0 .12rem}
@@ -491,16 +491,43 @@ def _slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
 
 
+def _sentence_case(text: str) -> str:
+    text = text.strip()
+    if not text:
+        return ""
+    if text.isupper():
+        lowered = text.lower()
+        return lowered[0].upper() + lowered[1:]
+    return text
+
+
+_CANONICAL_STATE_LABELS = {
+    "locked": "Locked",
+    "available": "Available",
+    "active": "Active",
+    "passed": "Passed",
+    "mastered": "Mastered",
+    "ready to start": "Available",
+    "in progress": "Active",
+}
+
+
+def _normalize_pill_label(label: str) -> str:
+    lowered = label.strip().lower()
+    return _CANONICAL_STATE_LABELS.get(lowered, label)
+
+
 def _render_part(part) -> str:
     """One typed card part to HTML — the single card-type-to-CSS-class map."""
     if isinstance(part, Banner):
         return f'<p class="banner {_esc(part.kind)}">{_esc(part.text)}</p>'
     if isinstance(part, Pill):
+        norm_label = _normalize_pill_label(part.label)
         return (
-            f'<span class="pill {_esc(_slug(part.label))}">{_esc(part.label)}</span>'
+            f'<span class="pill {_esc(_slug(norm_label))}">{_esc(norm_label)}</span>'
         )
     if isinstance(part, Kicker):
-        return f'<div class="kicker">{_esc(part.text)}</div>'
+        return f'<div class="kicker">{_esc(_sentence_case(part.text))}</div>'
     if isinstance(part, (Title, Lead)):
         return f'<p class="lead">{_esc(part.text)}</p>'
     if isinstance(part, Label):
@@ -513,7 +540,10 @@ def _render_part(part) -> str:
         # CLI's presentation; P3.1 bans it from every page string).
         from .interface import intent_label
 
-        label = intent_label(part.intent)
+        title = None
+        if part.command and part.intent == "pass" and " passed" in part.command:
+            title = part.command.split(" passed")[0].removeprefix("Mark ").strip()
+        label = intent_label(part.intent, title=title)
         return (
             f'<p class="next-action" data-intent="{_esc(part.intent)}">'
             f"{_esc(label)}</p>"
@@ -556,7 +586,7 @@ def _focus_card(view, root, model) -> str:
         # No focus: the quiet empty state — one muted pointer, no backlog.
         return (
             '<div class="card focus">\n'
-            '<div class="kicker">TODAY</div>\n'
+            '<div class="kicker">Today</div>\n'
             '<p class="lead">Nothing is queued for today.</p>\n'
             '<p class="mut">Sync your readiness or explore what to study '
             'from <a href="/next">Next</a>.</p>\n'
@@ -579,7 +609,8 @@ def _focus_card(view, root, model) -> str:
     if action is not None and action.intent == "start" and state == "available":
         cta = _start_confirm_form(view, root, focus.id)
     elif action is not None and action.node_id:
-        label = intent_label(action.intent)
+        target_title = view.titles.get(action.node_id, action.node_id)
+        label = intent_label(action.intent, title=target_title)
         href = f"/nodes/{_esc(action.node_id)}"
         cta = (
             '<div class="actions"><a class="btn primary" href="'
@@ -590,16 +621,10 @@ def _focus_card(view, root, model) -> str:
         )
     else:
         cta = ""
-    pill_label = {
-        "locked": "Locked",
-        "available": "Ready to start",
-        "active": "In progress",
-        "passed": "Passed",
-        "mastered": "Mastered",
-    }.get(state, state)
+    pill_label = _normalize_pill_label(state)
     return (
         '<div class="card focus">\n'
-        '<div class="kicker">TODAY</div>\n'
+        '<div class="kicker">Today</div>\n'
         f'<p class="lead"><a href="/nodes/{_esc(focus.id)}">{_esc(focus.title)}</a></p>\n'
         f'<p><span class="pill {_esc(_slug(pill_label))}">{_esc(pill_label)}</span></p>\n'
         + (f'<p class="big">{_esc(reason)}</p>\n' if reason else "")
@@ -651,7 +676,7 @@ def _resumable_active_line(view, root) -> str:
     started = _esc(str(current.started_at)[:16].replace("T", " "))
     return (
         '<div class="card resumable">\n'
-        f"<p>Session <code>{_esc(current.id)}</code> open since {started}.</p>\n"
+        f"<p>Session open since {started}.</p>\n"
         '<form class="inline" method="post" action="/session/close">'
         '<input type="hidden" name="next" value="/">'
         '<button type="submit" class="btn secondary">Close session</button>'
@@ -700,8 +725,7 @@ def _start_confirm_form(view: JoinedView, root, node_id: str) -> str:
     """The lightweight single-click start confirm (G5) — never a heavyweight modal.
 
     Copy states the forward-only permanence; locked reason and an already-open
-    session stay visible as advisory text while the button stays enabled — the
-    domain refuses a second session or a locked node verbatim on click.
+    session stay visible as advisory text while the button stays enabled.
     """
     title = view.titles.get(node_id, node_id)
     state = view.store.state_of(node_id)
@@ -710,13 +734,14 @@ def _start_confirm_form(view: JoinedView, root, node_id: str) -> str:
     if state == "locked":
         advisory = (
             '<p class="mut">Currently locked (unsatisfied hard prerequisite) — '
-            "the domain refuses until it unlocks.</p>"
+            "satisfy prerequisites before starting.</p>"
         )
     elif open_now is not None:
         advisory = (
-            f'<p class="mut">Session <code>{_esc(open_now.id)}</code> is open — '
-            "the domain refuses a second; close it first.</p>"
+            '<p class="mut">A session is already open — '
+            "close it before starting another.</p>"
         )
+    button_label = "Start this session"
     return (
         '<div class="form-row"><label>Session template</label>'
         f"{_template_select(view.policy.session_templates, '(none)')}</div>"
@@ -724,7 +749,7 @@ def _start_confirm_form(view: JoinedView, root, node_id: str) -> str:
         '<div class="actions">'
         f'<form method="post" action="/nodes/{_esc(node_id)}/start">'
         f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
-        '<button type="submit" class="btn">Start studying</button></form>'
+        f'<button type="submit" class="btn">{_esc(button_label)}</button></form>'
         '<span class="mut">marks this skill '
         "<strong>active</strong> — progress never moves backward.</span>"
         "</div>"
@@ -857,13 +882,15 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
 
     breadcrumb = (
         f'<div class="breadcrumb"><a href="/">Today</a> &middot; '
-        f'<a href="/nodes/{_esc(node_id)}">{_esc(node_id)}</a></div>\n'
+        f'<a href="/nodes/{_esc(node_id)}">{_esc(title)}</a></div>\n'
     )
+    secondary_id = f'<p class="small mut"><code>{_esc(node_id)}</code></p>\n'
     body = (
         header_html
         + _flash_html(query or {})
         + _degraded_banner(view)
         + breadcrumb
+        + secondary_id
         + render_cards(model.cards)
         + actions
         + drill
@@ -879,8 +906,7 @@ def _resolve_blocker_form(blocker_id: str, next_url: str = "/") -> str:
         f'<input type="hidden" name="next" value="{_esc(next_url)}">'
         '<div class="form-row"><label>Resolution summary</label>'
         '<input type="text" name="summary" required></div>'
-        '<button type="submit" class="btn secondary">Resolve '
-        f"{_esc(blocker_id)}</button></form></details>"
+        '<button type="submit" class="btn secondary">Clear blocker</button></form></details>'
     )
 
 
@@ -963,7 +989,7 @@ def _evidence_submit_form(root, view: JoinedView, node_id: str) -> str:
         f"{supersedes_field}"
         '<button type="submit" class="btn secondary">Submit evidence</button>'
         "</form>"
-        '<p class="mut">Acceptance freezes at submission (ADR 0003) — the gate '
+        '<p class="mut">Acceptance freezes at submission — the gate '
         "verdict renders loudly; records are immutable and corrected by "
         "superseding, never edited.</p></details>"
     )
@@ -981,7 +1007,7 @@ def _node_actions_card(root, view: JoinedView, node_id: str) -> str:
     ]
     node_url = f"/nodes/{node_id}"
     blocker_forms = "".join(
-        f"<li><code>{_esc(b.id)}</code> — {_esc(b.description)} "
+        f"<li>{_esc(b.description)} "
         + _resolve_blocker_form(b.id, node_url)
         + "</li>"
         for b in blockers
@@ -991,23 +1017,27 @@ def _node_actions_card(root, view: JoinedView, node_id: str) -> str:
         if blocker_forms
         else '<p class="mut">No open blockers.</p>'
     )
+    title = view.titles.get(node_id, node_id)
     state = view.store.state_of(node_id)
+    open_now = open_session(view.sessions)
     actions = ""
     if state != "locked":  # structural wall: pass on locked is omitted
         actions += (
-            f'<a class="btn" href="/nodes/{_esc(node_id)}/pass">Pass&hellip;</a>'
+            f'<a class="btn" href="/nodes/{_esc(node_id)}/pass">'
+            f"Mark {_esc(title)} passed&hellip;</a>"
         )
     if state == "passed":  # structural wall: master requires passed
         actions += (
             f'<a class="btn master" href="/nodes/{_esc(node_id)}/master">'
-            "Master&hellip;</a>"
+            f"Mark {_esc(title)} mastered&hellip;</a>"
         )
     actions_html = f'<div class="actions">{actions}</div>' if actions else ""
+    start_label = "Start this session"
     return (
         '<div class="card">\n'
-        '<div class="kicker">WRITE ACTIONS</div>\n'
+        '<div class="kicker">Write actions</div>\n'
         + actions_html
-        + "\n<details open><summary>Start studying</summary>"
+        + f"\n<details open><summary>{_esc(start_label)}</summary>"
         f"{_start_confirm_form(view, root, node_id)}\n</details>\n"
         "<details><summary>Log work</summary>"
         '<form method="post" action="/work">'
@@ -1118,7 +1148,7 @@ def _drill_down_card(
     def section(label: str, inner: str) -> str:
         return f"<details>\n<summary>{label}</summary>\n{inner}\n</details>\n"
 
-    parts = ['<div class="card">\n<div class="kicker">DRILL-DOWN — READ-ONLY FACTS</div>\n']
+    parts = ['<div class="card">\n<div class="kicker">Drill-down — read-only facts</div>\n']
     parts.append(
         section(
             "Evidence",
@@ -1211,13 +1241,13 @@ def health_body(root) -> tuple[str, str, int]:
         header_html
         + breadcrumb
         + '<div class="card">\n'
-        + '<div class="kicker">HEALTH ROLL-UP</div>\n'
+        + '<div class="kicker">Health roll-up</div>\n'
         + _table(["Layer", "Counts", "Status", "Warnings"], rows)
         + error_banners
         + cards_html(report.liveness_lines)
         + f'<p class="banner {verdict_class}">{_esc(report.verdict())}</p>\n'
-        + '<p class="mut">Read fresh from the truth files at request time - '
-        "CLI edits appear on refresh.</p>\n</div>\n"
+        + '<p class="mut">Read fresh from the truth files at request time — '
+        "updates appear on refresh.</p>\n</div>\n"
     )
     return "Health", body, 200
 
@@ -1435,8 +1465,8 @@ def _modal_shell(
     modal = (
         f'<div class="modal">'
         f"<h2>{heading}</h2>"
-        f'<p class="mut">{_esc(node_id)} &middot; '
-        f'state <span class="pill {_esc(state)}">{_esc(state)}</span></p>'
+        f'<p class="mut">{_esc(node.title)} &middot; '
+        f'<span class="pill {_esc(_slug(state))}">{_esc(_normalize_pill_label(state))}</span></p>'
         f"{inner}"
         "</div>"
     )
@@ -1475,8 +1505,7 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
         authority_line = "No validation gate — no authority can accept its evidence."
     elif gate.command:
         authority_line = (
-            "objective — runs "
-            f"<code>{_esc(gate.command)}</code>; its exit code was the verdict."
+            "objective — automated verification confirms evidence."
         )
     else:
         authority_line = f"{_esc(gate.authority)} — learner-stated verdict at submission."
@@ -1522,26 +1551,23 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
         )
     else:
         review_note = (
-            '<p class="banner advisory">No auto-schedule configured — reviews stay manual '
-            "(<code>review schedule</code>).</p>"
+            '<p class="banner advisory">No auto-schedule configured — reviews stay manual.</p>'
         )
 
+    node_title = view.node_map[node_id].title
     inner = (
         f"<p>Gate: {authority_line}</p>"
         f"{spec_table}"
         "<p><strong>Eligibility</strong></p>"
         f"{verdict_html}"
         f"{not_backed}"
-        '<p class="mut">Confirming asserts <code>passed</code> forward-only through the '
-        "same guarded writer as the CLI (one audit event, source web).</p>"
+        '<p class="mut">Confirming marks this skill passed. Progress never moves backward.</p>'
         f"{review_note}"
         f'<form method="post" action="/nodes/{_esc(node_id)}/pass">'
         '<div class="actions">'
-        '<button type="submit" class="btn">Confirm pass — explicit learner command</button>'
+        f'<button type="submit" class="btn">Mark {_esc(node_title)} passed</button>'
         f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
         "</div></form>"
-        '<p class="mut">Buttons stay enabled by design — if these facts are stale, the '
-        "domain refuses on click and that refusal is the truth.</p>"
     )
     return _modal_shell(view, node_id, "Confirm pass", inner, extra_html, root)
 
@@ -1592,12 +1618,12 @@ def master_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int
     )
 
     inner = (
-        "<div class=\"kicker\">MASTERY FACTS</div>"
+        "<div class=\"kicker\">Mastery facts</div>"
         + _table(["Fact", "Value"], fact_rows)
         + "<p><strong>Eligibility</strong></p>"
         + verdict_html
         + '<p class="mut">Mastery requires a passed node with accepted evidence and '
-        "satisfactory spaced review (<code>policy/mastery_promotion.yaml</code>).</p>"
+        "satisfactory spaced review.</p>"
         + '<div class="actions">'
         + f'<a class="btn master" href="/nodes/{_esc(node_id)}/master/confirm">'
         "Continue to permanent confirm &rarr;</a>"
@@ -1616,16 +1642,15 @@ def master_confirm_body(root, node_id: str, extra_html: str = "") -> tuple[str, 
         body, status = _status_page(404, f"Unknown node {node_id}.", root)
         return "Not found", body, status
 
+    node_title = view.node_map[node_id].title
     inner = (
         '<p class="banner warning"><strong>This is permanent.</strong> Mastered never '
         "demotes — a later unsatisfactory review creates pressure, but the state never "
         "moves backward. Confirm only if you intend this skill to remain mastered "
         "forever.</p>"
-        '<p class="mut">Same registry nest-dispatch as the CLI '
-        "(one audit event, source web).</p>"
         f'<form method="post" action="/nodes/{_esc(node_id)}/master/confirm">'
         '<div class="actions">'
-        '<button type="submit" class="btn master">Confirm master — permanent</button>'
+        f'<button type="submit" class="btn master">Mark {_esc(node_title)} mastered</button>'
         f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/master">Back</a>'
         "</div></form>"
     )
