@@ -1352,7 +1352,7 @@ def health_body(root) -> tuple[str, str, int]:
             _esc(layer.counts),
             '<span class="pill '
             + ("verified" if layer.ok else "broken")
-            + ">"
+            + '">'
             + ("OK" if layer.ok else "FAILED")
             + "</span>",
             (

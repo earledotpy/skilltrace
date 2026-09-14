@@ -210,6 +210,24 @@ def test_unified_full_chrome_error_body(repo):
         assert "Something went wrong" in html
 
 
+def test_no_unterminated_class_attribute_anywhere(repo):
+    """Every rendered page's `class` attributes are closed (markup hygiene)."""
+    node_id = _first_node_id(repo, state="available")
+    pages = {
+        "home": views.home_body(repo)[1],
+        "next": views.next_body(repo, {})[1],
+        "next locked": views.next_body(repo, {"locked": ["1"]})[1],
+        "node": views.node_body(repo, node_id)[1],
+        "health": views.health_body(repo)[1],
+        "analytics": views.analytics_body(repo, {})[1],
+        "pass": views.pass_modal_body(repo, node_id)[1],
+        "404": views._status_page(404, "Unknown node x.", repo)[0],
+    }
+    pattern = re.compile(r'class="[^">]*>')
+    for name, html in pages.items():
+        assert not pattern.search(html), f"{name}: unterminated class attribute"
+
+
 def test_no_script_anywhere(repo):
     node_id = _first_node_id(repo, state="available")
     bodies = [
