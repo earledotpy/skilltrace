@@ -95,7 +95,8 @@ def _first_node_id(root: Path, *, state: str | None = None) -> str:
 
 def test_kicker_parts_become_kicker_divs():
     html = views.render_cards([MentorCard(parts=[Kicker(text="DO THIS NEXT")])])
-    assert '<div class="kicker">DO THIS NEXT</div>' in html
+    # P3.6: _sentence_case normalises ALL-CAPS kickers → sentence case.
+    assert '<div class="kicker">Do this next</div>' in html
 
 
 def test_banner_parts_become_banner_classes_and_escape():
@@ -109,7 +110,8 @@ def test_pill_parts_become_pill_spans_with_slug_class():
     html = views.render_cards(
         [MentorCard(parts=[Pill(label="Ready to start")])]
     )
-    assert '<span class="pill ready-to-start">Ready to start</span>' in html
+    # P3.4: _normalize_pill_label maps 'Ready to start' → 'Available' (canonical).
+    assert '<span class="pill available">Available</span>' in html
 
 
 def test_sub_parts_become_sub_divs():
@@ -228,7 +230,7 @@ def test_home_renders_fresh_per_request(repo):
     _set_state(repo, node_id, "active")
     node_page_title, node_html, status = views.node_body(repo, node_id)
     assert status == 200
-    assert "In progress" in node_html  # the state flip is visible
+    assert "Active" in node_html  # the state flip is visible (canonical word, P3.4)
 
 
 def test_home_never_renders_the_raw_backlog(repo):
@@ -263,14 +265,14 @@ def test_next_defaults_mirror_cli_flags(repo):
     _, body, status = views.next_body(repo, {})
     assert status == 200
     assert "60-min session" in body  # CLI default --minutes 60
-    kickers = [line for line in body.splitlines() if ">OPTION " in line]
+    kickers = [line for line in body.splitlines() if ">Option " in line]  # P3.6: sentence-case
     assert len(kickers) <= 5  # CLI default --limit 5
 
 
 def test_next_minutes_and_limit_flags_apply(repo):
     _, body, _ = views.next_body(repo, {"minutes": ["90"], "limit": ["2"]})
     assert "90-min session" in body
-    assert len([line for line in body.splitlines() if ">OPTION " in line]) <= 2
+    assert len([line for line in body.splitlines() if ">Option " in line]) <= 2  # P3.6
 
 
 def test_next_bad_int_returns_400(repo):
@@ -298,7 +300,7 @@ def test_next_toggle_link_flips_show_locked(repo):
 
 def test_next_why_this_collapsible_is_advisory_only(repo):
     _, body, _ = views.next_body(repo, {})
-    options = len([line for line in body.splitlines() if ">OPTION " in line])
+    options = len([line for line in body.splitlines() if ">Option " in line])  # P3.6: sentence-case
     assert body.count("<details>") == options  # one collapsible per card
     assert body.count("Why this?") == options
     assert "never block a human-initiated action" in body
@@ -312,8 +314,10 @@ def test_node_page_renders_primary_mentor_card(repo):
     title, body, status = views.node_body(repo, node_id)
     assert status == 200
     assert title != ""  # the page title is the node title
-    assert '<div class="kicker">THIS SKILL</div>' in body
-    assert '<span class="pill ready-to-start">Ready to start</span>' in body
+    # P3.6: ALL-CAPS kicker → sentence case ("THIS SKILL" → "This skill").
+    assert '<div class="kicker">This skill</div>' in body
+    # P3.4: canonical state word — 'Available', not the synonym 'Ready to start'.
+    assert '<span class="pill available">Available</span>' in body
     assert "WHERE TO LEARN" not in body  # Mentor labels stay verbatim, not re-cased
     assert "Where to learn" in body
     # v2.4: the next action renders as the human affordance from the
@@ -324,7 +328,7 @@ def test_node_page_renders_primary_mentor_card(repo):
 def test_node_page_drill_down_sections(repo):
     node_id = _first_node_id(repo)
     _, body, _ = views.node_body(repo, node_id)
-    assert "DRILL-DOWN" in body
+    assert "Drill-down" in body  # P3.6: sentence-case kicker
     assert "<details>" in body
     assert "Evidence" in body
     assert "Resources" in body

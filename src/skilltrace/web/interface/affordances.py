@@ -24,8 +24,8 @@ from __future__ import annotations
 # affordance vocabulary (the web never renders the CLI command string).
 FACT_AFFORDANCE_LABELS: dict[str, str] = {
     "start": "Start this session",
-    "submit_evidence": "Record your next piece of evidence",
-    "pass": "Mark this passed",
+    "submit_evidence": "Submit your next piece of evidence",
+    "pass": "Mark {title} passed",
     "schedule_review": "Schedule a review",
     "explore": "Explore what this unlocks",
 }
@@ -34,7 +34,7 @@ FACT_AFFORDANCE_LABELS: dict[str, str] = {
 # write paths a view's forms nest-dispatch; validated at serve boot).
 COMMAND_AFFORDANCE_LABELS: dict[str, str] = {
     "start": "Start this session",
-    "evidence submit": "Record evidence",
+    "evidence submit": "Submit your next piece of evidence",
     "pass": "Mark {title} passed",
     "master": "Mark {title} mastered",
     "work": "Record this work session",
@@ -56,23 +56,29 @@ COMMAND_AFFORDANCE_LABELS: dict[str, str] = {
 }
 
 
-def intent_label(intent: str) -> str:
+def intent_label(intent: str, title: str | None = None) -> str:
     """The human affordance for one ``NextAction`` intent (fact vocabulary)."""
     try:
-        return FACT_AFFORDANCE_LABELS[intent]
+        raw = FACT_AFFORDANCE_LABELS[intent]
     except KeyError as exc:  # pragma: no cover - defensive
         raise KeyError(
             f"no human affordance label for fact intent {intent!r} — add one "
             "to interface.affordances.FACT_AFFORDANCE_LABELS"
         ) from exc
+    if "{title}" in raw:
+        return raw.format(title=title) if title else raw.replace("{title}", "this").strip()
+    return raw
 
 
-def command_label(command: str) -> str:
+def command_label(command: str, title: str | None = None) -> str:
     """The human affordance for one registered dispatcher command."""
     try:
-        return COMMAND_AFFORDANCE_LABELS[command]
+        raw = COMMAND_AFFORDANCE_LABELS[command]
     except KeyError as exc:  # pragma: no cover - defensive
         raise KeyError(
             f"no human affordance label for command {command!r} — add one "
             "to interface.affordances.COMMAND_AFFORDANCE_LABELS"
         ) from exc
+    if "{title}" in raw:
+        return raw.format(title=title) if title else raw.replace("{title}", "this").strip()
+    return raw

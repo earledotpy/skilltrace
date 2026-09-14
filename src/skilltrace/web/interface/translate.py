@@ -218,3 +218,152 @@ def forbidden_in_lines(lines: list[str]) -> list[str]:
             if label not in found:
                 found.append(label)
     return found
+
+
+# --- The Richer Card translation seam (v2.4 §E) ---------------------------------
+#
+# Derivations produce ``MentorCard`` parts (the engine seam shared with the
+# CLI); page bodies render ``interface.cards.Card`` objects through
+# ``interface.render``. This translator is the one door between them: typed
+# parts map onto the Richer Card's first-class fields, banner/appendix cards
+# ride the banner channel, and a content card with no next-action fact gets
+# **no affordance** (P4.1) — it is never re-derived from prose.
+
+
+_DISPLAY_TO_STATE: dict[str, str] = {
+    "locked": "locked",
+    "available": "available",
+    "active": "active",
+    "passed": "passed",
+    "mastered": "mastered",
+    "ready to start": "available",
+    "in progress": "active",
+}
+
+
+def _titlefy(text: str, titles: dict[str, str]) -> str:
+    """Raw node ids in engine copy → the human title (P3.2 titles-not-ids)."""
+    for node_id in sorted(titles, key=len, reverse=True):
+        if node_id and node_id in text:
+            text = text.replace(node_id, titles[node_id])
+    return text
+
+
+def rich_cards(
+    model_cards,
+    *,
+    titles: dict[str, str] | None = None,
+    default_state: str | None = None,
+) -> tuple[list, list[tuple[str, str]]]:
+    """Derived ``MentorCard`` lists → ``(cards, banner_tuples)``.
+
+    Content cards carrying the Richer Card's minimum facts translate to
+    :class:`interface.cards.Card` objects; banner/appendix cards (and any
+    content card missing the minimum — e.g. the empty state) ride the
+    banner channel with P3.1-cleaned, titlefied text.
+    """
+    from ...mentor.cards import Banner, Kicker, NextAction, Para, Pill, Sub, Title
+    from .cards import Affordance, Card
+
+    titles = titles or {}
+    cards: list = []
+    banner_tuples: list[tuple[str, str]] = []
+    for model_card in model_cards:
+        parts = model_card.parts
+        if model_card.kind is not None or (
+            len(parts) == 1 and isinstance(parts[0], Banner)
+        ):
+            kind = model_card.kind or parts[0].kind  # type: ignore[union-attr]
+            text = " ".join(_part_text(p) for p in parts).strip()
+            banner_tuples.append((kind, translate(_titlefy(text, titles))))
+            continue
+        card = _rich_content_card(parts, titles, default_state)
+        if card is None:
+            text = " ".join(_part_text(p) for p in parts).strip()
+            banner_tuples.append(("advisory", translate(_titlefy(text, titles))))
+        else:
+            cards.append(card)
+    return cards, banner_tuples
+
+
+def _part_text(part) -> str:
+    from ...mentor.cards import NextAction
+
+    if isinstance(part, NextAction):
+        return part.command or ""
+    return getattr(part, "text", getattr(part, "label", ""))
+
+
+def _rich_content_card(parts, titles: dict[str, str], default_state: str | None):
+    """One content ``MentorCard`` → a Richer ``Card`` (or ``None``)."""
+    from ...mentor.cards import Kicker, Label, NextAction, Para, Pill, Sub, Title
+    from ...mentor.prose import NodeState, state_phrase
+    from .cards import Affordance, Card
+
+    state: str | None = None
+    title: str | None = None
+    why: str | None = None
+    kicker: str | None = None
+    affordance = None
+    node_id: str | None = None
+    resources: list[str] = []
+    disclosure: list[str] = []
+    section: str | None = None  # the Label currently being read
+
+    for part in parts:
+        if isinstance(part, Pill):
+            state = _DISPLAY_TO_STATE.get(part.label.strip().lower())
+            continue
+        if isinstance(part, Title):
+            title = part.text
+            continue
+        if isinstance(part, Kicker):
+            if part.text.strip().upper() == "DO THIS NEXT":
+                continue  # the action's chrome — the affordance replaces it
+            if kicker is None:
+                kicker = part.text
+            continue
+        if isinstance(part, NextAction):
+            affordance = Affordance.from_intent(
+                part.intent, binding=part, title=title
+            )
+            node_id = part.node_id
+            continue
+        if isinstance(part, (Label,)):
+            section = part.text.strip().lower()
+            if section.startswith("where to learn"):
+                section = "resources"
+            elif section.startswith("how to proceed"):
+                section = "proceed"
+            else:
+                section = "other"
+            continue
+        text = getattr(part, "text", "")
+        if not text.strip():
+            continue
+        if section == "resources":
+            resources.append(text)
+        elif section == "proceed":
+            disclosure.append(text)
+        elif why is None and isinstance(part, (Sub, Para)):
+            why = text
+        else:
+            disclosure.append(text)
+
+    if not title or affordance is None or state is None:
+        return None  # not a Richer Card — banner channel (P4.1: no derived facts)
+
+    if why is None:
+        why = state_phrase(NodeState(state))
+    if not resources:
+        resources = ["No resources are registered for this skill yet."]
+    return Card(
+        state=state,
+        title=title,
+        why=why,
+        resources=resources,
+        affordances=(affordance,),
+        disclosure=" ".join(disclosure) or None,
+        kicker=kicker,
+        node_id=node_id,
+    )
