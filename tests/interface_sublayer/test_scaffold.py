@@ -49,6 +49,45 @@ def test_view_by_name_raises_on_unknown_names():
         view_by_name("no-such-view")
 
 
+def test_frozen_routes_match_the_normative_table():
+    from skilltrace.web.interface.validate import FROZEN_ROUTES
+
+    assert FROZEN_ROUTES == {
+        "today": "/",
+        "next": "/next",
+        "finder": "/nodes/jump",
+        "node": "/nodes/{id}",
+        "node pass": "/nodes/{id}/pass",
+        "node master": "/nodes/{id}/master",
+        "master-confirm": "/nodes/{id}/master/confirm",
+        "health": "/health",
+        "analytics": "/analytics",
+    }
+    for name, route in FROZEN_ROUTES.items():
+        assert interface.VIEWS[name].route == route
+
+
+def test_validate_interface_reports_route_drift(monkeypatch):
+    from dataclasses import replace
+
+    from skilltrace.cli import REGISTRY
+    from skilltrace.web.interface import cards as cards_mod
+
+    drifted = replace(cards_mod.VIEWS["today"], route="/today")
+    monkeypatch.setitem(cards_mod.VIEWS, "today", drifted)
+    problems = interface.validate_interface(REGISTRY)
+    assert any("frozen" in problem for problem in problems)
+
+
+def test_validate_interface_reports_a_missing_frozen_view(monkeypatch):
+    from skilltrace.cli import REGISTRY
+    from skilltrace.web.interface import cards as cards_mod
+
+    monkeypatch.delitem(cards_mod.VIEWS, "master-confirm")
+    problems = interface.validate_interface(REGISTRY)
+    assert any("master-confirm" in problem for problem in problems)
+
+
 # --- validation: import time + serve boot ----------------------------------------
 
 
