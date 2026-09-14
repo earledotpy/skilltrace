@@ -415,7 +415,7 @@ def test_missing_location_warns_instead_of_crashing(repo):
     assert isinstance(result, Redirect)
     notice, kind = _notice_of(result)
     assert kind == "warning"
-    assert "location is required" in notice
+    assert "artifact location" in notice
 
 
 # --- Host pages carry the forms; degradation warns but never blocks ----------------
@@ -489,7 +489,7 @@ def test_degraded_layers_warn_advisory_but_forms_stay_enabled(repo):
     _, body, status = views.node_body(repo, NODE, {})
     assert status == 200
     assert "failed to load" in body
-    assert "forms stay enabled" in body
+    assert "still works" in body  # advisory only — no P3.1 engine voice (T2/T4)
     assert f'action="/nodes/{NODE}/start"' in body
 
 

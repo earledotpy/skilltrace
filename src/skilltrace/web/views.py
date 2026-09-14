@@ -14,10 +14,10 @@ The write routes (T4, G2#66 + G5#69) are thin glue over the *same* registry the
 CLI dispatches through: a confirmed action builds ``Context(root, args,
 source="web")`` and calls ``dispatch(REGISTRY.get(name), ctx)`` in-process —
 no second write path, sole-caller invariant intact. Handler stdout is captured
-and rendered verbatim (escaped); ``CommandResult.exit_code`` is the contract:
+and rendered (escaped); ``CommandResult.exit_code`` is the contract:
 ``0`` redirects after POST with an ok flash, ``2`` re-renders the modal (or
-flashes back to the host page) with the refusal verbatim, ``1`` redirects with
-a banner suggesting ``skilltrace validate``. Heavyweight confirmation stays
+flashes back to the host page) with the refusal inline, ``1`` redirects with
+a banner pointing at the health roll-up for the detail. Heavyweight confirmation stays
 exclusive to ``pass``/``master``; every other daily write is a plain form.
 Buttons are never pre-disabled by derived preconditions — the domain's refusal
 on click is the truth (G2), so a stale modal can never assert what eligibility
@@ -169,6 +169,7 @@ _STYLE = """
   header .wrap{max-width:var(--shell); margin:0 auto; padding:0 24px}
   header h1.brand{font-size:18px; font-weight:800; margin:10px 0 2px; line-height:1.2; font-family:var(--font-sans)}
   .nav{font-size:.9rem; display:flex; gap:.9rem; flex-wrap:wrap; padding:6px 0 8px; align-items:center; font-family:var(--font-sans)}
+  .nav.periodic{border-top:1px solid var(--border); padding-top:8px}
   .nav a{color:var(--accent); text-decoration:none; font-weight:600}
   .nav a:hover{text-decoration:underline}
   .nav a[aria-current="page"]{border-bottom:2px solid var(--accent); padding-bottom:2px}
@@ -192,8 +193,8 @@ _STYLE = """
   .big{font-size:var(--step-14); line-height:1.5}
   .count{margin-right:.9rem}
   .count strong{font-size:var(--step-24); font-family:var(--font-sans)}
+  .display{font-size:var(--step-display); font-family:var(--font-serif); font-weight:600; line-height:1.2; margin:.4rem 0 .8rem}
   .resumable .inline{display:inline-block; margin-left:.6rem}
-  .theme-nav{margin:.6rem 0}
   .pill{display:inline-block; border:1px solid var(--border); border-radius:var(--radius-pill); padding:2px 10px; font-size:var(--step-14); margin:.1rem .3rem .1rem 0; background:var(--pill); font-weight:600; font-family:var(--font-sans); color:var(--fg)}
   /* muted semantics: exactly the five node states + attention/warn/err */
   .pill.locked{background:var(--card); border-color:var(--locked-ink); color:var(--locked-ink)}
@@ -259,48 +260,57 @@ def page(title: str, body: str) -> str:
 
 
 def _nav_html(current_view: str = "", health=None) -> str:
-    """The shared chrome header (v2.4 S2): two nav groups + health strip.
+    """The shared chrome header (v2.4 S2+T4): two nav groups + health pill.
 
     ``current_view`` is the *view identity* (ADR 0007) — ``aria-current``
     derives from the declared interface ``VIEWS`` table (the seam), never
-    from URL string-matching in the page bodies. The health strip renders
-    per-layer pills with an attention state from the structured
+    from URL string-matching in the page bodies. Health is not a nav stop
+    (T4 §H): the chrome carries a header pill strip plus a muted
+    ``Full roll-up`` pointer to the one roll-up page. The health strip
+    renders an ambient headline plus one attention pill from the structured
     ``HealthReport`` (warning counts ride the P2.4 seam).
     """
     from .interface import VIEWS
 
-    links: list[str] = []
-    for group in ("daily", "diagnostics"):
-        for view in VIEWS.values():
-            if view.group != group or "{" in view.route:
-                continue  # parameterized routes are not nav links
-            current_attr = ' aria-current="page"' if view.name == current_view else ""
-            links.append(
-                f'<a href="{_esc(view.route)}"{current_attr}>{_esc(view.title)}</a>'
-            )
+    # Both nav groups read from the declared seam in one pass: the group, the
+    # route and the current-view marker all come from ``VIEWS`` — never from
+    # string-matching the request path (ADR 0007 active-view).
+    groups: dict[str, list[str]] = {"daily": [], "periodic": []}
+    for view in VIEWS.values():
+        if view.group is None or "{" in view.route:
+            continue  # non-nav pages and parameterized routes carry no link
+        current_attr = ' aria-current="page"' if view.name == current_view else ""
+        groups[view.group].append(
+            f'<a href="{_esc(view.route)}"{current_attr}>{_esc(view.title)}</a>'
+        )
     pills = ""
     if health is not None:
-        pills = "".join(
-            '<span class="pill '
-            + ("broken" if not layer.ok else ("attention" if layer.warning_count else "ok"))
-            + '">'
-            + _esc(layer.target)
-            + (
-                f": {_esc(layer.warning_count)} warn"
-                if layer.ok and layer.warning_count
-                else ": OK" if layer.ok else ": FAILED"
+        warnings = sum(layer.warning_count for layer in health.layers if layer.ok)
+        failed = [layer for layer in health.layers if not layer.ok]
+        if failed:
+            pills = (
+                '<span class="pill attention">Needs attention — '
+                f"{len(failed)} layer{'s' if len(failed) != 1 else ''} failing</span>"
             )
-            + "</span>"
-            for layer in health.layers
-        )
+        elif warnings:
+            pills = (
+                '<span class="pill attention">Needs attention — '
+                f"{warnings} warning{'s' if warnings != 1 else ''}</span>"
+            )
+        else:
+            pills = '<span class="mut">Everything looks good.</span>'
+        pills += ' <a class="mut" href="/health">Full roll-up</a>'
     return (
         "<header>"
         '<div class="wrap">'
         '<h1 class="brand">SkillTrace</h1>'
-        '<nav class="nav" aria-label="primary">'
-        + "".join(links)
+        '<nav class="nav daily" aria-label="Daily loop">'
+        + "".join(groups["daily"])
+        + "</nav>"
+        '<nav class="nav periodic" aria-label="Periodic">'
+        + "".join(groups["periodic"])
         + '<form class="jump" method="get" action="/nodes/jump">'
-        '<input type="text" name="node_id" placeholder="jump to a skill - title or id" aria-label="jump to skill" size="32">'
+        '<input type="text" name="node_id" placeholder="Jump to a skill" aria-label="jump to skill" size="32">'
         '<button type="submit">Go</button>'
         "</form>"
         "</nav>"
@@ -316,7 +326,7 @@ def _chrome(root, current_view: str = "") -> str:
 
 
 def _error_body(message: str, root=None) -> str:
-    """The shared error body (v2.4 §B): full chrome when the context loads.
+    """The one unified full-chrome error body (T4 §H): 404 and 500 share it.
 
     When the repo root is unavailable (or truth files are unreadable) the
     shell falls back to a chrome-less minimal page rather than faulting
@@ -328,8 +338,11 @@ def _error_body(message: str, root=None) -> str:
         else "<header><div class=\"wrap\"><h1 class=\"brand\">SkillTrace</h1></div></header>\n"
     )
     return (
-        f'{header_html}<p class="banner error">{_esc(message)}</p>'
-        '<p><a href="/">Back to Today</a></p>'
+        f'{header_html}<div class="card">\n'
+        '<div class="kicker">Something went wrong</div>\n'
+        f'<p class="big">{_esc(message)}</p>\n'
+        '<p><a href="/">Back to Today</a></p>\n'
+        "</div>\n"
     )
 
 
@@ -337,6 +350,12 @@ def _status_page(status: int, message: str, root=None) -> tuple[str, int]:
     if status == 404:
         return _error_body(message, root), 404
     return _error_body(message, root), status
+
+
+def not_found_body(root=None) -> tuple[str, str, int]:
+    """The one unified full-chrome 404 (T4 §H) — the router's only miss body."""
+    body, status = _status_page(404, "That page doesn't exist.", root)
+    return "Not found", body, status
 
 
 def _fresh_join(root) -> tuple[JoinedView | None, tuple[str, int] | None]:
@@ -465,15 +484,14 @@ def _int_field(form: dict, key: str) -> tuple[int | None, str | None]:
 
 
 def _degraded_banner(view: JoinedView) -> str:
-    """Advisory notice when lenient layers degraded — forms stay enabled."""
+    """Advisory notice when lenient layers degraded — reads as empty only."""
     if not view.degraded:
         return ""
     names = ", ".join(sorted(set(view.degraded)))
     return (
-        '<p class="banner advisory">Optional layer(s) failed to load and read '
-        f"as empty ({_esc(names)}) — forms stay enabled and a refusal on "
-        "click remains the truth. The validation roll-up and the health "
-        "page carry the detail.</p>"
+        '<p class="banner advisory">Some supporting details failed to load and read '
+        f"as empty ({_esc(names)}) — everything you can do here still works, and a "
+        "refusal on click remains the truth. The health roll-up carries the detail.</p>"
     )
 
 
@@ -487,9 +505,9 @@ def _finish_write(
     """Map a dispatched write's exit code per G2#66.
 
     ``0`` → redirect-after-POST with an ok flash; ``2`` → the modal re-renders
-    with the refusal verbatim inline when a ``stay_renderer`` is given, else a
+    with the refusal inline when a ``stay_renderer`` is given, else a
     warning flash back on the host page; ``1`` → dismiss with an error flash
-    suggesting ``skilltrace validate``.
+    pointing at the health roll-up for the detail.
     """
     if exit_code == 0:
         return _redirect_with_notice(next_url, lines, "ok")
@@ -497,7 +515,7 @@ def _finish_write(
         return stay_renderer(_output_banners(lines))
     if exit_code == 2:
         return _redirect_with_notice(next_url, lines, "warning")
-    lines = [*lines, "Operational failure — the validation roll-up carries the detail."]
+    lines = [*lines, "Something went wrong — the health roll-up carries the detail."]
     return _redirect_with_notice(next_url, lines, "error")
 
 
@@ -616,12 +634,17 @@ def _focus_resources(model) -> list[str]:
     return resources
 
 
-def _focus_card(view, root, model) -> str:
-    """Today block 1 — the focus card (§A), a Richer Card (§E)."""
+def _focus_card(view, model) -> str:
+    """Today block 1 — the focus card (§A), a Richer Card (§E).
+
+    The page's display heading (``.display``, T4 §H) opens the page once,
+    above the card — the focus title itself is never a second ``h1``.
+    """
     if not model.focus_node_id or model.focus_node_id not in view.node_map:
         # No focus: the quiet empty state — one muted pointer, no backlog.
         # A status card, not a Richer Card: no skill is presented.
         return (
+            '<p class="display">What is today about?</p>\n'
             '<div class="card focus">\n'
             '<div class="kicker">Today</div>\n'
             '<p class="lead">Nothing is queued for today.</p>\n'
@@ -646,6 +669,7 @@ def _focus_card(view, root, model) -> str:
         # Absent fact = no affordance (P4.1): without the fact this is not
         # a Richer Card — fall back to the quiet status rendering.
         return (
+            '<p class="display">What is today about?</p>\n'
             '<div class="card focus">\n'
             '<div class="kicker">Today</div>\n'
             f'<p class="lead"><a href="/nodes/{_esc(focus.id)}">{_esc(focus.title)}</a></p>\n'
@@ -668,19 +692,22 @@ def _focus_card(view, root, model) -> str:
     if action.intent == "start" and state == "available":
         # The one primary CTA: the live write path (the POST target), which
         # replaces the copy-only affordance rendering.
-        affordance_html = {0: _start_confirm_form(view, root, focus.id)}
-    return render_rich_cards(
-        [card],
-        state=ActiveViewState(
-            view=view_by_name("today"), affordances=(affordance,)
-        ),
-        affordance_html=affordance_html,
-        affordance_mode="link",
-        classes={0: "focus"},
+        affordance_html = {0: _start_confirm_form(view, focus.id)}
+    return (
+        '<p class="display">What is today about?</p>\n'
+        + render_rich_cards(
+            [card],
+            state=ActiveViewState(
+                view=view_by_name("today"), affordances=(affordance,)
+            ),
+            affordance_html=affordance_html,
+            affordance_mode="link",
+            classes={0: "focus"},
+        )
     )
 
 
-def _count_set_card(view, model) -> str:
+def _count_set_card(model) -> str:
     """Today block 2 — the count set: ready / reviews waiting / days practiced.
 
     Labeled counts plus one muted pointer; zero-count pills are dropped;
@@ -714,9 +741,8 @@ def _count_set_card(view, model) -> str:
     )
 
 
-def _resumable_active_line(view, root) -> str:
+def _resumable_active_line(view) -> str:
     """Today block 3 — the resumable-active line, only while a session is open."""
-    del root
     current = open_session(view.sessions)
     if current is None:
         return ""
@@ -755,11 +781,12 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
         header_html
         + _flash_html(query or {})
         + _degraded_banner(view)
-        + _focus_card(view, root, model)
-        + _count_set_card(view, model)
-        + _resumable_active_line(view, root)
+        + _focus_card(view, model)
+        + _count_set_card(model)
+        + _resumable_active_line(view)
     )
     return "Today", body, 200
+
 
 def _template_select(templates: set[str], empty_label: str) -> str:
     options = "".join(f'<option value="{_esc(t)}">{_esc(t)}</option>' for t in sorted(templates))
@@ -768,13 +795,12 @@ def _template_select(templates: set[str], empty_label: str) -> str:
     )
 
 
-def _start_confirm_form(view: JoinedView, root, node_id: str) -> str:
+def _start_confirm_form(view: JoinedView, node_id: str) -> str:
     """The lightweight single-click start confirm (G5) — never a heavyweight modal.
 
     Copy states the forward-only permanence; locked reason and an already-open
     session stay visible as advisory text while the button stays enabled.
     """
-    title = view.titles.get(node_id, node_id)
     state = view.store.state_of(node_id)
     open_now = open_session(view.sessions)
     advisory = ""
@@ -796,7 +822,7 @@ def _start_confirm_form(view: JoinedView, root, node_id: str) -> str:
         '<div class="actions">'
         f'<form method="post" action="/nodes/{_esc(node_id)}/start">'
         f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
-        f'<button type="submit" class="btn">{_esc(button_label)}</button></form>'
+        f'<button type="submit" class="btn primary">{_esc(button_label)}</button></form>'
         '<span class="mut">marks this skill '
         "<strong>active</strong> — progress never moves backward.</span>"
         "</div>"
@@ -826,67 +852,104 @@ def _parse_int(query: dict, key: str, default: int) -> int | None:
 
 
 def next_body(root, query: dict) -> tuple[str, str, int]:
-    """GET `/next?minutes=&limit=&locked=` — mirrors the CLI flags."""
+    """GET `/next` — grouped action-verb affordances, honestly controlled (T4 §H).
+
+    Honest controls (session window, option count, and a show-locked
+    disclosure) replace the CLI mirror: flag names never render. ``Why
+    this?`` is one human sentence plus an optional disclosure — ranker
+    internals (scores, weights, leverage counts) stay hidden. A
+    ``Not ready yet — and why`` card replaces the show-locked id dump;
+    candidate titles are links (via the Card seam's ``node_id``).
+    """
     minutes = _parse_int(query, "minutes", 60)
     limit = _parse_int(query, "limit", 5)
     if minutes is None or limit is None:
-        body, status = _status_page(400, "minutes and limit must be integers.", root)
+        body, status = _status_page(400, "Minutes and options must be numbers.", root)
         return "Next", body, status
-    locked_values = query.get("locked", [""])
-    show_locked = locked_values[0].lower() in {"1", "true", "on", "yes"} if locked_values else False
 
     view, failure = _fresh_join(root)
     if view is None:
         return "Error", failure[0], failure[1]
 
+    # T4 §H: the locked half is the "Not ready yet — and why" card rather
+    # than a flag, so the derivation always carries the locked candidates
+    # (its own id-dump appendix is dropped in ``_candidate_stack``).
     model = derive_next(
-        view, Path(root), minutes=minutes, limit=limit, show_locked=show_locked
+        view, Path(root), minutes=minutes, limit=limit, show_locked=True
     )
 
-    checked = " checked" if show_locked else ""
-    toggle_params = f"minutes={minutes}&amp;limit={limit}" + ("" if show_locked else "&amp;locked=1")
-    toggle_label = "Hide locked" if show_locked else "Show locked"
-    # Human controls (v2.4 S4): the session window and option count phrased
-    # as questions, with the CLI mirror noted once, muted.
+    # Honest controls: the session window and option count phrased as
+    # questions; the locked half is one disclosure card, never a flag name.
     filters = (
         '<div class="card">\n'
         '<form class="filters" method="get" action="/next">'
-        f'<label>Minutes you have <input type="number" name="minutes" value="{minutes}" min="1" size="4"></label>'
-        f'<label>How many options <input type="number" name="limit" value="{limit}" min="1" size="3"></label>'
-        f'<label><input type="checkbox" name="locked" value="1"{checked}> show locked</label>'
-        '<button type="submit">Apply</button>'
+        f'<label>How much time do you have <input type="number" name="minutes" value="{minutes}" min="1" size="4"></label>'
+        f'<label>How many ideas do you want <input type="number" name="limit" value="{limit}" min="1" size="3"></label>'
+        '<button type="submit">Update ideas</button>'
         "</form>\n"
-        f'<p class="mut"><a href="/next?{toggle_params}">{toggle_label}</a></p>\n'
         "</div>\n"
     )
 
+    locked_section = _not_ready_card(model, view)
+
     header_html = _chrome(root, current_view='next')
 
-    breadcrumb = '<div class="breadcrumb"><a href="/">Today</a> &middot; <a href="/next">Next</a></div>\n'
     return (
         "Next",
-        header_html + breadcrumb + filters + _candidate_stack(view, model),
+        header_html + filters + _candidate_stack(view, model) + locked_section,
         200,
     )
 
 
-def _why_details(rec) -> str:
-    facts = "".join(
-        f"<li>{_esc(label)}: {_esc(value)}</li>"
-        for label, value in (
-            ("score", rec.score),
-            ("track weight", f"{rec.track} = {rec.track_weight:g}"),
-            ("downstream leverage", f"{rec.leverage} unlock(s)"),
-            ("fits session", "yes" if rec.fits_session else "no"),
-            ("already active", "yes" if rec.is_active else "no"),
-            ("remediation boost", "active" if rec.remediation_boosted else "none"),
-            ("open blocker penalty", "applied" if rec.open_blocked else "none"),
+def _not_ready_card(model, view) -> str:
+    """The ``Not ready yet — and why`` card (T4 §H): titles + reasons, no ids."""
+    if not model.locked:
+        return (
+            '<div class="card">\n'
+            '<div class="kicker">Not ready yet — and why</div>\n'
+            "<p>Everything in reach is already listed above.</p>\n"
+            "</div>\n"
         )
+    return (
+        '<div class="card">\n'
+        '<div class="kicker">Not ready yet — and why</div>\n'
+        f"{_not_ready_list(model, view)}\n"
+        "</div>\n"
     )
+
+
+def _not_ready_list(model, view) -> str:
+    """The locked rows: titles + states in human words, never raw ids.
+
+    The derivation's own ``LockedCandidate.reason`` carries node ids and a
+    CLI-voice hint, so the web composes the reason from the structured
+    ``unsatisfied`` pairs instead (P3.1/P3.2).
+    """
+    rows = []
+    for cand in model.locked:
+        title = view.titles.get(cand.node_id) or "Another skill"
+        if cand.unsatisfied:
+            waiting = ", ".join(
+                f"{view.titles.get(pid) or 'an earlier skill'} ({state})"
+                for pid, state in cand.unsatisfied
+            )
+            reason = f"waiting on {waiting}"
+        else:
+            reason = "its readiness looks out of date — sync your readiness"
+        rows.append(f"<li><strong>{_esc(title)}</strong> — {_esc(reason)}</li>")
+    return f"<ul>{''.join(rows)}</ul>"
+
+
+def _why_details(rec) -> str:
+    """``Why this?`` — one human sentence plus an optional disclosure (T4 §H).
+
+    Ranker internals (scores, weights, leverage counts, session-fit flags)
+    never render: the candidate cards already carry the one-line why, and
+    the advisory note is the only disclosure.
+    """
     return (
         "<details>\n<summary>Why this?</summary>\n"
         f'<div class="sub">{_esc(rec.reason)}</div>\n'
-        f"<ul>{facts}</ul>\n"
         '<p class="mut">Advisory reasoning — policies reorder recommendations; '
         "they never block a human-initiated action.</p>\n</details>\n"
     )
@@ -897,9 +960,12 @@ def _candidate_stack(view, model) -> str:
 
     Candidates are the OPTION cards in the derivation's order; the k-th
     such card receives model.recommendations[k]'s reasoning as its
-    attached facts block. Banner/appendix cards ride the banner channel.
+    attached facts block. Banner/appendix cards ride the banner channel —
+    except the derivation's ``locked`` appendix, whose id dump is replaced
+    by the page's own ``Not ready yet — and why`` card (T4 §H, P3.2).
     """
     cards, banners = _rich_cards_from_model(model.cards, titles=view.titles)
+    banners = [(kind, text) for kind, text in banners if kind != "locked"]
     rec_iter = iter(model.recommendations)
     extras: dict[int, str] = {}
     for index, card in enumerate(cards):
@@ -916,7 +982,13 @@ def _candidate_stack(view, model) -> str:
 
 
 def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, int]:
-    """GET `/nodes/{id}` — primary Mentor card, write actions, drill-downs."""
+    """GET `/nodes/{id}` — brief-first, state-aware collapse (T4 §H).
+
+    Pass requirements are stated once; the no-op evidence form is omitted;
+    the one permitted raw id renders as small muted secondary text, and the
+    page carries the single mono use. Nothing is marked current on node
+    pages (T4 §H): the chrome renders with no active view.
+    """
     view, failure = _fresh_join(root)
     if view is None:
         return "Error", failure[0], failure[1]
@@ -926,22 +998,17 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
         body, status = _status_page(404, f"Unknown node {node_id}.", root)
         return "Not found", body, status
 
-    actions = _node_actions_card(root, view, node_id)
+    actions = _node_actions_card(view, node_id)
     drill = _drill_down_card(node_id, view, Path(root), model)
     title = view.node_map[node_id].title
-    header_html = _chrome(root, current_view='node')
+    header_html = _chrome(root)
 
-    breadcrumb = (
-        f'<div class="breadcrumb"><a href="/">Today</a> &middot; '
-        f'<a href="/nodes/{_esc(node_id)}">{_esc(title)}</a></div>\n'
-    )
-    secondary_id = f'<p class="small mut"><code>{_esc(node_id)}</code></p>\n'
+    secondary_id = f'<p class="small mut">{_esc(node_id)}</p>\n'
     cards, banners = _rich_cards_from_model(model.cards, titles=view.titles)
     body = (
         header_html
         + _flash_html(query or {})
         + _degraded_banner(view)
-        + breadcrumb
         + secondary_id
         + render_rich_cards(
             cards,
@@ -966,8 +1033,8 @@ def _resolve_blocker_form(blocker_id: str, next_url: str = "/") -> str:
     )
 
 
-def _evidence_submit_form(root, view: JoinedView, node_id: str) -> str:
-    """Evidence submit (G5) — verbatim CLI fields, judged at submission.
+def _evidence_submit_form(view: JoinedView, node_id: str) -> str:
+    """Evidence submit (G5) — the CLI's fields, judged at submission.
 
     The no-op form is *omitted* (v2.4 S4): a node with no artifact spec or
     no gate renders the explanation only — a form the domain would always
@@ -995,7 +1062,7 @@ def _evidence_submit_form(root, view: JoinedView, node_id: str) -> str:
         spec_field = f'<input type="hidden" name="spec" value="{_esc(specs[0].id)}">'
     else:
         options = "".join(
-            f'<option value="{_esc(s.id)}">{_esc(s.id)}</option>' for s in specs
+            f'<option value="{_esc(s.id)}">{_esc(s.title or s.id)}</option>' for s in specs
         )
         spec_field = (
             '<div class="form-row"><label>Artifact spec</label>'
@@ -1004,8 +1071,7 @@ def _evidence_submit_form(root, view: JoinedView, node_id: str) -> str:
 
     if gate.command:
         verdict_field = (
-            f'<p class="mut">Objective gate — running it decides the verdict '
-            f"({_esc(gate.command)}).</p>"
+            '<p class="mut">Objective gate — running it decides the verdict.</p>'
         )
     else:
         verdict_field = (
@@ -1023,7 +1089,7 @@ def _evidence_submit_form(root, view: JoinedView, node_id: str) -> str:
         datalist = f'<datalist id="records-{_esc(node_id)}">{options}</datalist>'
     supersedes_field = (
         "<details><summary>Advanced: correct an earlier record</summary>"
-        '<div class="form-row"><label>Supersedes (record id)</label>'
+        '<div class="form-row"><label>Supersedes</label>'
         f'<input type="text" name="supersedes" list="records-{_esc(node_id)}">{datalist}</div>'
         '<div class="form-row"><label>Reason (required with supersedes)</label>'
         '<input type="text" name="reason"></div>'
@@ -1050,7 +1116,8 @@ def _evidence_submit_form(root, view: JoinedView, node_id: str) -> str:
         "superseding, never edited.</p></details>"
     )
 
-def _node_actions_card(root, view: JoinedView, node_id: str) -> str:
+
+def _node_actions_card(view: JoinedView, node_id: str) -> str:
     """Node-detail write surface (G5): pass/master modals + daily-write forms.
 
     Structural omission per ADR 0007 §Validation (Amendment 2026-09-11) +
@@ -1058,24 +1125,27 @@ def _node_actions_card(root, view: JoinedView, node_id: str) -> str:
     ``passed`` are *omitted* — absent markup, never rendered-then-refused
     and never pre-disabled. Judgment eligibility stays live elsewhere.
     """
-    blockers = [
+    open_blockers = [
         b for b in view.blockers if b.node_id == node_id and b.status == "open"
     ]
     node_url = f"/nodes/{node_id}"
-    blocker_forms = "".join(
-        f"<li>{_esc(b.description)} "
-        + _resolve_blocker_form(b.id, node_url)
-        + "</li>"
-        for b in blockers
-    )
+    # The resolve write path stays reachable per affordance: the blocker id
+    # rides only in the form's POST action (a write path, never visible
+    # copy), beside the human description.
     blocker_section = (
-        f'<ul>{blocker_forms}</ul>'
-        if blocker_forms
+        "<ul>"
+        + "".join(
+            f"<li>{_esc(b.description)} "
+            + _resolve_blocker_form(b.id, node_url)
+            + "</li>"
+            for b in open_blockers
+        )
+        + "</ul>"
+        if open_blockers
         else '<p class="mut">No open blockers.</p>'
     )
     title = view.titles.get(node_id, node_id)
     state = view.store.state_of(node_id)
-    open_now = open_session(view.sessions)
     actions = ""
     if state != "locked":  # structural wall: pass on locked is omitted
         actions += (
@@ -1094,7 +1164,7 @@ def _node_actions_card(root, view: JoinedView, node_id: str) -> str:
         '<div class="kicker">Write actions</div>\n'
         + actions_html
         + f"\n<details open><summary>{_esc(start_label)}</summary>"
-        f"{_start_confirm_form(view, root, node_id)}\n</details>\n"
+        f"{_start_confirm_form(view, node_id)}\n</details>\n"
         "<details><summary>Log work</summary>"
         '<form method="post" action="/work">'
         f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
@@ -1108,7 +1178,7 @@ def _node_actions_card(root, view: JoinedView, node_id: str) -> str:
         '<div class="form-row"><label>Description (the obstacle)</label>'
         '<input type="text" name="description" required></div>'
         '<button type="submit" class="btn secondary">Create blocker</button></form></details>\n'
-        f"{_evidence_submit_form(root, view, node_id)}\n"
+        f"{_evidence_submit_form(view, node_id)}\n"
         "<details><summary>Open blockers on this skill</summary>"
         f"{blocker_section}</details>\n"
         "</div>\n"
@@ -1253,13 +1323,28 @@ def _drill_down_card(
 
 
 def health_body(root) -> tuple[str, str, int]:
-    """GET `/health` - the five validators plus liveness, read-only.
+    """GET `/health` — the ambient roll-up (T4 §H).
 
-    The roll-up carries the per-layer warning counts as a column (v2.4
-    P2.4 - the structured facts the health seam now reports), so a layer
-    that is OK *with attention* is visible without opening the validator.
+    An ambient headline plus one attention pill when anything needs it;
+    per-layer warning counts ride the P2.4 seam; not a nav stop (health
+    reaches only through the header pill strip + ``Full roll-up``).
     """
     report = health_report(Path(root))
+
+    warnings = sum(layer.warning_count for layer in report.layers if layer.ok)
+    failed = [layer for layer in report.layers if not layer.ok]
+    if failed:
+        headline = (
+            '<p class="big">Needs attention — '
+            f"{len(failed)} layer{'s' if len(failed) != 1 else ''} failing.</p>\n"
+        )
+    elif warnings:
+        headline = (
+            '<p class="big">Needs attention — '
+            f"{warnings} warning{'s' if warnings != 1 else ''}.</p>\n"
+        )
+    else:
+        headline = '<p class="big">Everything looks good.</p>\n'
 
     rows = [
         [
@@ -1267,7 +1352,7 @@ def health_body(root) -> tuple[str, str, int]:
             _esc(layer.counts),
             '<span class="pill '
             + ("verified" if layer.ok else "broken")
-            + ">"
+            + '">'
             + ("OK" if layer.ok else "FAILED")
             + "</span>",
             (
@@ -1287,17 +1372,13 @@ def health_body(root) -> tuple[str, str, int]:
     )
     verdict_class = "ok" if report.error_count == 0 else "fail"
 
-    header_html = _chrome(root, current_view="health")
+    header_html = _chrome(root)
 
-    breadcrumb = (
-        "<div class=\"breadcrumb\"><a href=\"/\">Today</a> &middot; "
-        "<a href=\"/health\">Health</a></div>\n"
-    )
     body = (
         header_html
-        + breadcrumb
         + '<div class="card">\n'
         + '<div class="kicker">Health roll-up</div>\n'
+        + headline
         + _table(["Layer", "Counts", "Status", "Warnings"], rows)
         + error_banners
         + cards_html(report.liveness_lines)
@@ -1360,11 +1441,13 @@ def _analytics_export_form(days: int, group_by: str, theme: str) -> str:
 def _analytics_card(
     title: str, summary: str, derivation: str, svg: str, detail: str, view, theme: str
 ) -> str:
+    """One theme's page (T4 §H): a plain card; tables collapsed (P2.2)."""
     return (
-        f'<details open class="card analytics-card"><summary>{_esc(title)}</summary>'
-        f'<p class="big">{_esc(summary)}</p><p class="mut">{_esc(derivation)}</p>{svg}{detail}'
+        f'<div class="card analytics-card"><p class="lead">{_esc(title)}</p>'
+        f'<p class="big">{_esc(summary)}</p><p class="mut">{_esc(derivation)}</p>{svg}'
+        f"<details><summary>Details</summary>{detail}</details>"
         f"{_analytics_export_form(view.window_days, view.group_by, theme)}"
-        "</details>"
+        "</div>"
     )
 
 
@@ -1484,8 +1567,7 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
     }
     title, summary, derivation, svg, detail = themes[theme]
     theme_links = " ".join(
-        '<a class="btn ' + ('' if name == theme else 'secondary') + '" '
-        + 'href="/analytics?days={d}&amp;group-by={g}&amp;theme={t}">{label}</a>'.format(
+        '<a href="/analytics?days={d}&amp;group-by={g}&amp;theme={t}">{label}</a>'.format(
             d=days, g=group_by, t=name, label=_esc(label)
         )
         for name, (label, *_rest) in themes.items()
@@ -1498,7 +1580,7 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         + limited
         + advisory
         + controls
-        + f'<div class="theme-nav">{theme_links}</div>'
+        + f'<nav class="nav" aria-label="Themes">{theme_links}</nav>'
         + f'<div class="analytics-grid">{cards}</div>'
     )
     return "Analytics", body, 200
@@ -1516,19 +1598,33 @@ def _modal_shell(
     extra_html: str = "",
     root=None,
 ) -> tuple[str, str, int]:
+    """The page-level safety panel enclosing a pass/master modal body (T4 §H).
+
+    Safety color rides the card's border via the locked tokens: pass
+    ``--accent``, master step 1 ``--warn``, step 2 ``--err`` — the old
+    unstyled ``.modal`` divergence is gone (T1 deleted the rule without a
+    replacement); panels render as cards. No literal survives outside
+    ``:root`` (the T1 spec-value gate).
+    """
     node = view.node_map[node_id]
     state = view.store.state_of(node_id)
+    tone = (
+        "warn"
+        if heading.startswith("Step 1")
+        else "err" if heading.startswith("Step 2") else "accent"
+    )
     modal = (
-        f'<div class="modal">'
-        f"<h2>{heading}</h2>"
-        f'<p class="mut">{_esc(node.title)} &middot; '
-        f'<span class="pill {_esc(_slug(state))}">{_esc(_normalize_pill_label(state))}</span></p>'
+        '<div class="card safety" '
+        f'style="border-left:4px solid var(--{tone})">'
+        f'<div class="kicker">{_esc(heading)}</div>'
+        f'<p class="lead">{_esc(node.title)}</p>'
+        f'<p><span class="pill {_esc(_slug(state))}">{_esc(_normalize_pill_label(state))}</span></p>'
         f"{inner}"
         "</div>"
     )
     header_html = _chrome(root)
 
-    body = header_html + _degraded_banner(view) + extra_html + modal
+    body = header_html + _degraded_banner(view) + modal + extra_html
     return node.title, body, 200
 
 
@@ -1591,8 +1687,8 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
     not_backed = ""
     if eligibility.passed_but_not_backed:
         not_backed = (
-            '<p class="banner warning">passed_but_not_backed — this asserted pass is no '
-            "longer backed by live evidence; it stands regardless, never demotes.</p>"
+            '<p class="banner warning">Already passed but no longer backed by live '
+            "evidence — the pass stands regardless, never demotes.</p>"
         )
 
     cadence = view.policy.cadence
@@ -1617,7 +1713,8 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
         "<p><strong>Eligibility</strong></p>"
         f"{verdict_html}"
         f"{not_backed}"
-        '<p class="mut">Confirming marks this skill passed. Progress never moves backward.</p>'
+        "<p>This marks the skill passed. Reviews are scheduled after pass "
+        "per the review cadence.</p>"
         f"{review_note}"
         f'<form method="post" action="/nodes/{_esc(node_id)}/pass">'
         '<div class="actions">'
@@ -1791,7 +1888,7 @@ def post_evidence(root, node_id: str, form: dict):
     if not location:
         return _redirect_with_notice(
             next_url,
-            ["evidence submit: an artifact location is required."],
+            ["Recording evidence needs the artifact location."],
             "warning",
         )
     verdict = _field(form, "verdict")
@@ -1820,15 +1917,15 @@ def post_analytics_export(root, form: dict):
         days = int(raw_days) if raw_days else None
     except ValueError:
         return _redirect_with_notice(
-            "/analytics", ["analytics export: days must be an integer."], "warning"
+            "/analytics", ["The review window must be a number of days."], "warning"
         )
     if theme not in {"all", "velocity", "blockers", "reviews", "evidence"}:
         return _redirect_with_notice(
-            "/analytics", ["analytics export: unknown theme."], "warning"
+            "/analytics", ["That theme is not available."], "warning"
         )
     if fmt not in {"md", "html", "json"} or group_by not in {"prefix", "track"}:
         return _redirect_with_notice(
-            "/analytics", ["analytics export: invalid format or grouping."], "warning"
+            "/analytics", ["That export shape is not available."], "warning"
         )
     exit_code, lines = _dispatch_web(
         root,

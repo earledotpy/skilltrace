@@ -140,4 +140,8 @@ def test_sa6_no_new_top_level_view_beyond_the_frozen_table():
         "analytics",
         "node pass",
         "node master",
+        # The declared acceptance step (T4 §H): the frozen §C route table
+        # already carries it, so this declares an existing route — no new
+        # top-level surface is added.
+        "master-confirm",
     }

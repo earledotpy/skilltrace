@@ -81,8 +81,10 @@ def test_dashboard_renders_one_theme_per_page_with_theme_control(tmp_path):
     title, body, status = views.analytics_body(root)
 
     assert (title, status) == ("Analytics", 200)
-    # One visible theme card, not four stacked charts.
-    assert body.count('<details open class="card analytics-card">') == 1
+    # One visible theme card, not four stacked charts (T4 §H: a plain card;
+    # the table detail sits collapsed behind one Details).
+    assert body.count('<div class="card analytics-card">') == 1
+    assert body.count("<details>") == 1
     # The velocity theme renders its real multi-point weekly series.
     assert body.count("<svg") == 1
     assert 'name="theme"' in body

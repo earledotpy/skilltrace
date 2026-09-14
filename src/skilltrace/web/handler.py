@@ -7,8 +7,8 @@ and editor edits appear on refresh. Routes per the G3#67 table plus the T4
 write routes (G2#66 modals, G5#69 daily writes): reads are GET-only; writes
 are standard form POSTs that nest-dispatch through the registry in-process and
 answer with redirect-after-POST (303) on success, a re-rendered modal with the
-refusal verbatim on a domain refusal (exit 2), or an error flash suggesting
-``skilltrace validate`` on operational failure (exit 1). Escaping discipline
+refusal inline on a domain refusal (exit 2), or an error flash pointing at the
+health roll-up for the detail on operational failure (exit 1). Escaping discipline
 is owned by the view layer's card renderer (every interpolated value passes
 through ``_esc``). There is no static-file routing at all; styling is the one
 inline ``<style>`` block. ``data/*`` exports are never read.
@@ -20,6 +20,7 @@ import re
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, unquote
 
+from . import views
 from .views import (
     Redirect,
     health_body,
@@ -192,11 +193,8 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
         return path[len("/nodes/"):]
 
     def _not_found(self) -> tuple[str, str, int]:
-        return (
-            "Not found",
-            '<p>Unknown route. Try <a href="/">Today</a>.</p>',
-            404,
-        )
+        """Every non-route answers with the one unified error body (T4 §H)."""
+        return views.not_found_body(self.server.root)
 
     def _send(self, html_text: str, *, status: int = 200) -> None:
         payload = html_text.encode("utf-8")

@@ -135,12 +135,18 @@ class Card:
 
 @dataclass(frozen=True)
 class View:
-    """A declared page: frozen route, title, affordance set, nav group."""
+    """A declared page: frozen route, title, affordance set, nav group.
+
+    ``group`` is one of the two §C/§H nav groups — ``daily`` (the daily
+    loop) or ``periodic`` (the separated retrospective stop) — or ``None``
+    for pages that are not nav stops (node detail, the finder, health,
+    the pass/master panels).
+    """
 
     name: str
     route: str
     title: str
-    group: Literal["daily", "diagnostics"] | None
+    group: Literal["daily", "periodic"] | None
     affordances: tuple[str, ...] = ()
 
 
@@ -148,6 +154,11 @@ class View:
 # Each view's ``affordances`` name the registered dispatcher commands its
 # page's write paths nest-dispatch — validated at serve boot (a dead write
 # path refuses to start).
+#
+# Groups are the two §C/§H nav groups: ``daily`` (the daily loop) and
+# ``periodic`` (the separated retrospective stop). Health carries ``None`` —
+# it is not a nav stop (T4 §H): the chrome reaches it only through the
+# header pill strip + ``Full roll-up`` pointer.
 VIEWS: dict[str, View] = {
     view.name: view
     for view in (
@@ -165,10 +176,10 @@ VIEWS: dict[str, View] = {
             name="health",
             route="/health",
             title="Health",
-            group="diagnostics",
+            group=None,
             affordances=("sync",),
         ),
-        View(name="analytics", route="/analytics", title="Analytics", group="diagnostics"),
+        View(name="analytics", route="/analytics", title="Analytics", group="periodic"),
         View(
             name="node pass",
             route="/nodes/{id}/pass",
@@ -180,6 +191,13 @@ VIEWS: dict[str, View] = {
             name="node master",
             route="/nodes/{id}/master",
             title="Mark mastered",
+            group=None,
+            affordances=("master",),
+        ),
+        View(
+            name="master-confirm",
+            route="/nodes/{id}/master/confirm",
+            title="Confirm mastery",
             group=None,
             affordances=("master",),
         ),
