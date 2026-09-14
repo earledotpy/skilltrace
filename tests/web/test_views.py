@@ -264,14 +264,16 @@ def test_home_never_renders_the_raw_backlog(repo):
 def test_next_defaults_mirror_cli_flags(repo):
     _, body, status = views.next_body(repo, {})
     assert status == 200
-    assert "60-min session" in body  # CLI default --minutes 60
+    assert "How much time do you have" in body  # honest control, no flag name
+    assert "How many ideas do you want" in body
     kickers = [line for line in body.splitlines() if ">Option " in line]  # P3.6: sentence-case
     assert len(kickers) <= 5  # CLI default --limit 5
 
 
 def test_next_minutes_and_limit_flags_apply(repo):
     _, body, _ = views.next_body(repo, {"minutes": ["90"], "limit": ["2"]})
-    assert "90-min session" in body
+    assert 'value="90"' in body
+    assert 'value="2"' in body
     assert len([line for line in body.splitlines() if ">Option " in line]) <= 2  # P3.6
 
 
@@ -282,20 +284,23 @@ def test_next_bad_int_returns_400(repo):
 
 
 def test_next_show_locked_appends_locked_appendix(repo):
+    # T4 §H: the locked half is always one disclosure card — titles plus
+    # reasons, never an id dump; the empty state says so outright.
     _, without_locked, _ = views.next_body(repo, {})
     _, with_locked, _ = views.next_body(repo, {"locked": ["1"]})
-    assert "Locked (" not in without_locked
-    assert "Locked (" in with_locked  # shipped seed graph has locked nodes
-    # Each locked line names its unsatisfied hard prerequisites ("blocked by:")
-    # or says readiness is stale — never a silent lock.
-    assert "blocked by:" in with_locked
+    assert "Not ready yet" in without_locked
+    assert "Not ready yet" in with_locked  # shipped seed graph has locked nodes
+    # Each locked row names its unlock path in human words — never an id dump.
+    assert "waiting on" in with_locked
 
 
 def test_next_toggle_link_flips_show_locked(repo):
+    # T4 §H: the locked half is a card, never a flag name — the same card
+    # renders with and without the query param.
     _, off_body, _ = views.next_body(repo, {})
-    assert "/next?minutes=60&amp;limit=5&amp;locked=1" in off_body
     _, on_body, _ = views.next_body(repo, {"locked": ["1"], "minutes": ["30"]})
-    assert "/next?minutes=30&amp;limit=5" in on_body
+    assert "Not ready yet" in off_body
+    assert "Not ready yet" in on_body
 
 
 def test_next_why_this_collapsible_is_advisory_only(repo):
@@ -396,6 +401,8 @@ def test_health_page_rolls_up_validators_and_liveness(repo):
     assert "health:" in body  # verdict line
     assert "states: available=" in body  # progress-store liveness line
     assert "verified=" in body  # resource verification liveness line
+    # T4 §H: the ambient headline opens the roll-up.
+    assert "Everything looks good." in body or "Needs attention" in body
 
 
 def test_health_page_reports_layer_errors_honestly(repo):

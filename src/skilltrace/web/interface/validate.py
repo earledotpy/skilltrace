@@ -42,7 +42,7 @@ def validate_structure() -> None:
             )
 
     for view in VIEWS.values():
-        if view.group is not None and view.group not in ("daily", "diagnostics"):
+        if view.group is not None and view.group not in ("daily", "periodic"):
             raise SublayerError(
                 f"view {view.name!r} names unknown nav group {view.group!r}"
             )

@@ -196,6 +196,8 @@ def test_unknown_route_is_404(running_server):
     server, _ = running_server
     status, _, body = _get(f"http://127.0.0.1:{server.server_port}/nope")
     assert status == 404
+    assert "Something went wrong" in body  # unified error body (T4 §H)
+    assert "Back to Today" in body
 
 
 def test_requests_touch_no_data_dir(running_server):
@@ -212,11 +214,11 @@ def test_next_route_mirrors_flags_over_http(running_server):
     server, _ = running_server
     base = f"http://127.0.0.1:{server.server_port}"
     _, _, default_body = _get(f"{base}/next")
-    assert "60-min session" in default_body
+    assert "How much time do you have" in default_body  # honest control (T4 §H)
     _, _, limited = _get(f"{base}/next?minutes=90&limit=2")
-    assert "90-min session" in limited
+    assert 'value="90"' in limited
     _, _, locked = _get(f"{base}/next?locked=1")
-    assert "Locked (" in locked
+    assert "Not ready yet" in locked  # the card, never the id dump (T4 §H)
 
 
 def test_next_route_bad_query_param_is_400(running_server):

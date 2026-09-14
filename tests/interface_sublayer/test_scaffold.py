@@ -24,12 +24,13 @@ def test_every_declared_view_has_route_title_and_group():
     for view in interface.VIEWS.values():
         assert view.route.startswith("/")
         assert view.title
-        assert view.group in ("daily", "diagnostics", None)
+        assert view.group in ("daily", "periodic", None)
 
 
 def test_no_new_top_level_view_beyond_the_frozen_table():
     # G-RouteSurface: downward-only restructure. The declared top-level set
-    # is the Tier-1 surface minus retired entries plus the finder re-place.
+    # is the Tier-1 surface minus retired entries plus the finder re-place
+    # plus the master-confirm acceptance step (T4 §H).
     assert set(interface.VIEWS) == {
         "today",
         "next",
@@ -39,6 +40,7 @@ def test_no_new_top_level_view_beyond_the_frozen_table():
         "analytics",
         "node pass",
         "node master",
+        "master-confirm",
     }
 
 
