@@ -107,9 +107,10 @@ def test_pass_modal_renders_server_fresh_facts(repo):
     title, body, status = views.pass_modal_body(repo, NODE)
     assert status == 200
     assert title != ""
-    assert NODE in body
-    assert SPEC in body  # per-required-spec breakdown present
+    # T5 §F: confirmation copy uses the human title; raw spec ids never render.
     assert "Confirm pass" in body
+    assert "safety-accent" in body
+    assert SPEC not in body
     assert 'method="post"' in body
     # No pre-disabled state — the button is always clickable.
     assert "disabled" not in body.split('type="submit"')[0].rsplit("<button", 1)[-1]
@@ -136,14 +137,19 @@ def test_pass_round_trip_writes_forward_only_with_web_source(repo):
     assert events[0]["args"]["source"] == "web"
 
 
-def test_pass_refusal_stays_in_modal_verbatim_and_writes_nothing(repo):
+def test_pass_refusal_redirects_to_step_with_warning_and_writes_nothing(repo):
+    """T5 §D1: every POST → 303 — refusals flash back to the pass step."""
+    from skilltrace.web.interface import forbidden_matches
+
     _set_state(repo, NODE, "available")  # no evidence — ineligible
     result = views.post_pass(repo, NODE, _form())
-    assert not isinstance(result, Redirect)
-    title, body, status = result
-    assert status == 200  # modal stays open
-    assert "is not pass-eligible" in body
-    assert "nothing passed" in body
+    assert isinstance(result, Redirect)
+    assert result.location.startswith(f"/nodes/{NODE}/pass?")
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+    assert notice
+    assert forbidden_matches(notice) == []
+    assert "--" not in notice and "exit code" not in notice.lower()
     assert _state_of(repo, NODE) == "available"
     assert _events(repo) == []
 
@@ -155,41 +161,41 @@ def test_locked_node_refusal_names_the_hard_boundary(repo):
         if load_context_lenient(repo).store.state_of(n.id) == "locked"
     )
     result = views.post_pass(repo, node_id, _form())
-    _, body, status = result
-    assert status == 200
-    assert "locked" in body
-    assert "no hard-prerequisite override" in body
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+    assert "locked" in notice
+    assert "no hard-prerequisite override" in notice
 
 
 def test_stale_modal_cannot_assert_what_eligibility_no_longer_supports(repo):
     _set_state(repo, NODE, "available")
     _make_eligible(repo)
     _, before, _ = views.pass_modal_body(repo, NODE)
-    assert "currently holds" in before
+    assert "ready to mark as passed" in before
 
     # The world moves under the open modal: two of three records vanish.
     _make_eligible(repo, count=2)
     result = views.post_pass(repo, NODE, _form())
-    _, body, _ = result
-    assert "below minimum" in body  # refusal rendered verbatim inline
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+    assert "below minimum" in notice  # refusal flashes back to the step
     assert _state_of(repo, NODE) == "available"
     assert _events(repo) == []
 
 
-def test_web_refusal_matches_cli_output_verbatim(repo):
-    from skilltrace.cli import run as cli_run
-    from contextlib import redirect_stdout
-    from io import StringIO
+def test_web_refusal_is_translated_not_verbatim_cli(repo):
+    """T5 P3.5: refusals are translated human copy — no CLI voice in the flash."""
+    from skilltrace.web.interface import forbidden_matches
 
-    buffer = StringIO()
-    with redirect_stdout(buffer):
-        cli_run(["pass", NODE], root=repo)
-    cli_lines = [line for line in buffer.getvalue().splitlines() if line.strip()]
-
-    _, web_lines = views._dispatch_web(repo, "pass", node_id=NODE)
-    assert [line.strip() for line in web_lines if line.strip()] == [
-        line.strip() for line in cli_lines if line.strip()
-    ]
+    result = views.post_pass(repo, NODE, _form())
+    assert isinstance(result, Redirect)
+    notice, _ = _notice_of(result)
+    assert notice
+    assert forbidden_matches(notice) == []
+    assert "skilltrace" not in notice.lower()
+    assert "exit code" not in notice.lower()
 
 
 # --- Master flow: two steps, friction matches irreversibility ----------------------
@@ -224,16 +230,19 @@ def test_master_step_one_shows_mastery_facts(repo):
     assert status == 200
     assert "Step 1" in body
     assert "Mastery facts" in body
-    assert "Review spacing policy" in body
+    assert "safety-warn" in body
+    assert "Review spacing" in body
 
 
 def test_master_requires_two_posts_and_refuses_in_step_two(repo):
+    """T5 §D1+P4.4: master refusal is a 303 back to the confirm step."""
     _set_state(repo, NODE, "available")
     result = views.post_master_confirm(repo, NODE, _form())
-    _, body, status = result
-    assert status == 200  # confirm step re-renders with the refusal
-    assert "mastery" in body.lower()
-    assert "never moves backward" in body or "not mastery-eligible" in body
+    assert isinstance(result, Redirect)
+    assert result.location.startswith(f"/nodes/{NODE}/master/confirm?")
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+    assert "mastery" in notice.lower()
     assert _state_of(repo, NODE) == "available"
 
 
@@ -288,14 +297,16 @@ def test_second_start_refuses_with_single_open_session_copy(repo):
     assert len(sessions) == 1
 
 
-def test_work_blocked_requires_notes_verbatim(repo):
+def test_work_blocked_requires_notes_translated(repo):
+    """T5 P3.5: the blocked-work refusal names the requirement with no flags."""
     _set_state(repo, NODE, "available")
     views.post_start(repo, NODE, _form())
     result = views.post_work(
         repo, _form(node_id=NODE, blocked="1", minutes="", next="/")
     )
     notice = parse_qs(result.location.partition("?")[2])["notice"][0]
-    assert "blocked work requires --notes" in notice
+    assert "blocked work requires" in notice
+    assert "--notes" not in notice
 
     ok = views.post_work(
         repo, _form(node_id=NODE, blocked="1", notes="stuck on X", minutes="25")
@@ -578,12 +589,13 @@ def test_http_pass_flow_redirects_refreshes_and_audits_web(running_server):
     assert events[0]["args"]["source"] == "web"
 
 
-def test_http_refusal_keeps_modal_open_without_an_event(running_server):
+def test_http_refusal_redirects_to_step_without_an_event(running_server):
+    """T5 §D1: HTTP refusal is a 303 back to the acceptance step, no event."""
     server, root = running_server
     base = f"http://127.0.0.1:{server.server_port}"
     other = "math.algebra.variables_expressions_01"  # no evidence submitted
 
-    status, _, body = _http_post(base + f"/nodes/{other}/pass", {})
-    assert status == 200
-    assert "is not pass-eligible" in body
+    status, location, _ = _http_post(base + f"/nodes/{other}/pass", {})
+    assert status == 303
+    assert location.startswith(f"/nodes/{other}/pass?")
     assert _events(root) == []

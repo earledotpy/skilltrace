@@ -10,23 +10,24 @@ serializer behind :func:`cards_html` for out-of-scope line producers
 (health liveness, report exports) — no route body composes MentorCards
 directly any more.
 
-The write routes (T4, G2#66 + G5#69) are thin glue over the *same* registry the
+The write routes (T4+T5, G2#66 + G5#69) are thin glue over the *same* registry the
 CLI dispatches through: a confirmed action builds ``Context(root, args,
 source="web")`` and calls ``dispatch(REGISTRY.get(name), ctx)`` in-process —
 no second write path, sole-caller invariant intact. Handler stdout is captured
-and rendered (escaped); ``CommandResult.exit_code`` is the contract:
-``0`` redirects after POST with an ok flash, ``2`` re-renders the modal (or
-flashes back to the host page) with the refusal inline, ``1`` redirects with
-a banner pointing at the health roll-up for the detail. Heavyweight confirmation stays
-exclusive to ``pass``/``master``; every other daily write is a plain form.
-Buttons are never pre-disabled by derived preconditions — the domain's refusal
+and rendered through the one P3.1 translation module; ``CommandResult.exit_code``
+is the contract: every POST → 303 + translated flash (``0`` ok, ``2`` domain
+refusal as a warning flash, ``1`` operational failure as an error flash
+pointing at /health). Pass/master refusals flash back to their own acceptance
+step; every other write flashes back to the host page. Heavyweight confirmation stays
+exclusive to ``pass``/``master`` (P4.3); every other daily write is a plain
+single-step form. Buttons are never pre-disabled by derived preconditions — the domain's refusal
 on click is the truth (G2), so a stale modal can never assert what eligibility
 no longer supports.
 
-Information architecture: P1 variant **A — Mentor-first linear** (decision on
-issue #72). One column of reading-order cards; pressure excerpts and the
-health strip follow the focus card instead of competing with it; drill-downs
-are native ``<details>`` elements, so no JavaScript anywhere. Reads go through
+Information architecture: v2.4 card-stack + sublayer (spec-v2.4 §A–§H). One column of
+reading-order cards; the Today focus card carries the one primary CTA, pressure
+excerpts and the health strip follow instead of competing; drill-downs
+are native ``<details>`` elements off the primary path, so no JavaScript anywhere. Reads go through
 the lenient ``JoinedView`` fresh per request.
 """
 
@@ -226,6 +227,15 @@ _STYLE = """
   .btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
   .btn.master{background:var(--err); color:var(--err-ink); border-color:var(--err-ink)}
   .btn.secondary{background:var(--bg); border-color:var(--border); color:var(--accent)}
+  /* §B + §F page-level safety panel (T5): bordered panel inside the one
+     nav-carrying shell — server-fresh, no overlay (no dialog, no popover,
+     no backdrop). Border tokens: pass → --accent, master step 1 → --warn,
+     master step 2 → --err; panel padding at the locked card band. */
+  .safety{padding:var(--card-pad)}
+  .safety-accent{border-left:4px solid var(--accent)}
+  .safety-warn{border-left:4px solid var(--warn)}
+  .safety-err{border-left:4px solid var(--err)}
+  .flash-dismiss{font-size:var(--step-135); margin-left:.6rem}
   .analytics-grid{display:grid; grid-template-columns:1fr 1fr; gap:var(--space-intra)}
   /* the single locked breakpoint (desktop-only; P5.4: the 900px rules collapse to one) */
   @media(max-width:960px){.analytics-grid{grid-template-columns:1fr}}
@@ -442,17 +452,46 @@ def _flash_tuples(query: dict) -> list[tuple[str, str]]:
     ]
 
 
-def _flash_html(query: dict) -> str:
-    """Flash banners carried across a redirect in the query string."""
+def _linkify_health(escaped_text: str) -> str:
+    """Point operational failures at /health (P3.5) — the one link in a flash."""
+    return escaped_text.replace("/health", '<a href="/health">/health</a>')
+
+
+def _flash_html(query: dict, dismiss_path: str = "/") -> str:
+    """Flash banners carried across a redirect in the query string (T5 §F+P3.5).
+
+    Every banner is translated human copy from the one translation module
+    (fixed at its source, never redacted at the address bar). Dismissal is
+    a plain link to the path without the query string; operational failures
+    point at /health.
+    """
     parts: list[str] = []
     for css, text in _flash_tuples(query):
-        parts.append(f'<p class="banner {_esc(css)}">{_esc(text)}</p>\n')
+        banner = _linkify_health(_esc(text))
+        parts.append(f'<p class="banner {_esc(css)}">{banner}</p>\n')
+    if parts:
+        parts.append(
+            f'<p class="flash-dismiss"><a href="{_esc(dismiss_path)}">Dismiss</a></p>\n'
+        )
     return "".join(parts)
 
 
 def _redirect_with_notice(location: str, lines: list[str], kind: str) -> Redirect:
-    """PRG redirect carrying the captured output as a flash notice."""
-    notice = "\n".join(line for line in lines if line.strip())
+    """PRG redirect carrying translated human copy as the flash notice (T5 P3.5+D2).
+
+    The URL is a copy surface: copy is fixed at its source by the one
+    translation module (no flags, command names, exit classes, paths,
+    record ids or ADR numbers) and never redacted at the address bar.
+    Banner-kind tags ride the ``kind`` param, never the notice text.
+    """
+    from .interface import translate_lines
+
+    clean: list[str] = []
+    for line in translate_lines(lines):
+        line = re.sub(r"^\[(?:error|warning|advisory)\]\s*", "", line).strip()
+        if line:
+            clean.append(line)
+    notice = "\n".join(clean)
     params = urlencode({"notice": notice, "kind": kind})
     separator = "&" if "?" in location else "?"
     return Redirect(location=f"{location}{separator}{params}")
@@ -500,22 +539,21 @@ def _finish_write(
     lines: list[str],
     exit_code: int,
     *,
-    stay_renderer=None,
-) -> Redirect | tuple[str, str, int]:
-    """Map a dispatched write's exit code per G2#66.
+    refusal_url: str | None = None,
+) -> Redirect:
+    """Map a dispatched write's exit code per the locked T5 contract (§D1+S5).
 
-    ``0`` → redirect-after-POST with an ok flash; ``2`` → the modal re-renders
-    with the refusal inline when a ``stay_renderer`` is given, else a
-    warning flash back on the host page; ``1`` → dismiss with an error flash
-    pointing at the health roll-up for the detail.
+    Every POST → 303 See Other + translated flash; no 4xx ever leaves a
+    write. ``0`` → ok flash to ``next_url``; ``2`` (domain refusal) →
+    warning flash to ``refusal_url`` (the acceptance step for pass/master,
+    else ``next_url``); ``1`` (operational failure) → error flash to
+    ``next_url`` pointing at /health for the detail.
     """
     if exit_code == 0:
         return _redirect_with_notice(next_url, lines, "ok")
-    if exit_code == 2 and stay_renderer is not None:
-        return stay_renderer(_output_banners(lines))
     if exit_code == 2:
-        return _redirect_with_notice(next_url, lines, "warning")
-    lines = [*lines, "Something went wrong — the health roll-up carries the detail."]
+        return _redirect_with_notice(refusal_url or next_url, lines, "warning")
+    lines = [*lines, "Something went wrong — see /health for the detail."]
     return _redirect_with_notice(next_url, lines, "error")
 
 
@@ -779,7 +817,7 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
 
     body = (
         header_html
-        + _flash_html(query or {})
+        + _flash_html(query or {}, "/")
         + _degraded_banner(view)
         + _focus_card(view, model)
         + _count_set_card(model)
@@ -896,7 +934,11 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
 
     return (
         "Next",
-        header_html + filters + _candidate_stack(view, model) + locked_section,
+        header_html
+        + _flash_html(query, "/next")
+        + filters
+        + _candidate_stack(view, model)
+        + locked_section,
         200,
     )
 
@@ -1007,7 +1049,7 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
     cards, banners = _rich_cards_from_model(model.cards, titles=view.titles)
     body = (
         header_html
-        + _flash_html(query or {})
+        + _flash_html(query or {}, f"/nodes/{node_id}")
         + _degraded_banner(view)
         + secondary_id
         + render_rich_cards(
@@ -1575,7 +1617,7 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
     cards = _analytics_card(title, summary, derivation, svg, detail, model, theme)
     body = (
         _chrome(root, current_view="analytics")
-        + _flash_html(query)
+        + _flash_html(query, "/analytics")
         + overdue
         + limited
         + advisory
@@ -1595,27 +1637,34 @@ def _modal_shell(
     node_id: str,
     heading: str,
     inner: str,
-    extra_html: str = "",
+    query: dict | None = None,
     root=None,
 ) -> tuple[str, str, int]:
-    """The page-level safety panel enclosing a pass/master modal body (T4 §H).
+    """The page-level safety panel enclosing a pass/master body (T5 §B+§F).
 
     Safety color rides the card's border via the locked tokens: pass
     ``--accent``, master step 1 ``--warn``, step 2 ``--err`` — the old
-    unstyled ``.modal`` divergence is gone (T1 deleted the rule without a
-    replacement); panels render as cards. No literal survives outside
-    ``:root`` (the T1 spec-value gate).
+    unstyled ``.modal`` divergence is gone; panels render as cards with
+    panel padding at the locked card band. No overlay: no dialog, no
+    popover, no backdrop. Server-fresh per request; writes are 303+flash-only.
     """
     node = view.node_map[node_id]
     state = view.store.state_of(node_id)
-    tone = (
-        "warn"
+    safety_class = (
+        "safety-warn"
         if heading.startswith("Step 1")
-        else "err" if heading.startswith("Step 2") else "accent"
+        else "safety-err" if heading.startswith("Step 2") else "safety-accent"
     )
+    dismiss_path = f"/nodes/{node_id}"
+    if heading.startswith("Step 1"):
+        dismiss_path = f"/nodes/{node_id}/master"
+    elif heading.startswith("Step 2"):
+        dismiss_path = f"/nodes/{node_id}/master/confirm"
+    elif heading.startswith("Confirm pass"):
+        dismiss_path = f"/nodes/{node_id}/pass"
     modal = (
-        '<div class="card safety" '
-        f'style="border-left:4px solid var(--{tone})">'
+        '<div class="card safety '
+        f'{safety_class}">'
         f'<div class="kicker">{_esc(heading)}</div>'
         f'<p class="lead">{_esc(node.title)}</p>'
         f'<p><span class="pill {_esc(_slug(state))}">{_esc(_normalize_pill_label(state))}</span></p>'
@@ -1624,17 +1673,25 @@ def _modal_shell(
     )
     header_html = _chrome(root)
 
-    body = header_html + _degraded_banner(view) + modal + extra_html
+    body = (
+        header_html
+        + _flash_html(query or {}, dismiss_path)
+        + _degraded_banner(view)
+        + modal
+    )
     return node.title, body, 200
 
 
-def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int]:
-    """GET/POST `/nodes/{id}/pass` — the pass confirmation modal (G2).
+def pass_modal_body(
+    root, node_id: str, query: dict | None = None
+) -> tuple[str, str, int]:
+    """GET `/nodes/{id}/pass` — the pass confirmation panel (T5 §B+§F).
 
     Every render recomputes eligibility from a fresh lenient join; nothing is
-    pre-disabled. Confirming POSTs and re-runs ``plan_pass`` inside the
-    handler against freshly loaded truth, so a stale modal can never assert
-    what eligibility no longer supports.
+    pre-disabled. Confirming POSTs and re-runs the guarded write against
+    freshly loaded truth, so a stale panel can never assert what eligibility
+    no longer supports. Copy states what changes, its side effects, and no
+    engine internals (specs by human title, never raw spec ids).
     """
     view, failure = _fresh_join(root)
     if view is None:
@@ -1654,17 +1711,18 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
 
     gate = view.gates_by_node.get(node_id)
     if gate is None:
-        authority_line = "No validation gate — no authority can accept its evidence."
+        authority_line = "No checking method is set up — evidence cannot count here yet."
     elif gate.command:
-        authority_line = (
-            "objective — automated verification confirms evidence."
-        )
+        authority_line = "Checked automatically — verification confirms your evidence."
     else:
-        authority_line = f"{_esc(gate.authority)} — learner-stated verdict at submission."
+        authority_line = "Checked by you — you state the verdict when you submit."
 
+    titles_by_spec = {
+        s.id: (s.title or s.id) for s in view.specs_by_node.get(node_id, [])
+    }
     spec_rows = [
         [
-            _esc(s.spec_id),
+            _esc(titles_by_spec.get(s.spec_id, s.spec_id)),
             _esc(s.minimum_count),
             _esc(s.accepted_count),
             "met" if s.met else "below minimum",
@@ -1672,13 +1730,13 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
         for s in eligibility.specs
     ]
     spec_table = (
-        _table(["Required spec", "Minimum", "Live accepted", "Standing"], spec_rows)
+        _table(["What you show", "Minimum", "Live accepted", "Standing"], spec_rows)
         if spec_rows
-        else '<p class="mut">No required artifact spec.</p>'
+        else '<p class="mut">No required proof is defined for this skill.</p>'
     )
 
     verdict_html = _output_banners(
-        ["Pass eligibility currently holds on this fresh read."]
+        ["This skill is ready to mark as passed, on this fresh read."]
         if eligibility.eligible
         else list(eligibility.reasons),
         default_class="ok" if eligibility.eligible else "warning",
@@ -1688,33 +1746,31 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
     if eligibility.passed_but_not_backed:
         not_backed = (
             '<p class="banner warning">Already passed but no longer backed by live '
-            "evidence — the pass stands regardless, never demotes.</p>"
+            "proof — the pass stands regardless, never moves backward.</p>"
         )
 
     cadence = view.policy.cadence
     if cadence.schedule_reviews_after_pass and cadence.intervals:
-        schedule = ", ".join(
-            f"{interval.label} (+{interval.days_after_pass}d)"
-            for interval in cadence.intervals
-        )
+        days = ", ".join(str(interval.days_after_pass) for interval in cadence.intervals)
         review_note = (
-            f'<p class="banner advisory">Confirming schedules {len(cadence.intervals)} review(s) '
-            f"per cadence policy: {_esc(schedule)}.</p>"
+            '<p class="banner advisory">Marking as passed schedules '
+            f"reviews for {days} days after the pass.</p>"
         )
     else:
         review_note = (
-            '<p class="banner advisory">No auto-schedule configured — reviews stay manual.</p>'
+            '<p class="banner advisory">No reviews are scheduled automatically — '
+            "reviews stay manual.</p>"
         )
 
     node_title = view.node_map[node_id].title
     inner = (
-        f"<p>Gate: {authority_line}</p>"
+        f"<p>How this is checked: {authority_line}</p>"
         f"{spec_table}"
         "<p><strong>Eligibility</strong></p>"
         f"{verdict_html}"
         f"{not_backed}"
-        "<p>This marks the skill passed. Reviews are scheduled after pass "
-        "per the review cadence.</p>"
+        "<p>Marking as passed records this skill as passed. "
+        "Passed never moves backward.</p>"
         f"{review_note}"
         f'<form method="post" action="/nodes/{_esc(node_id)}/pass">'
         '<div class="actions">'
@@ -1722,18 +1778,15 @@ def pass_modal_body(root, node_id: str, extra_html: str = "") -> tuple[str, str,
         f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
         "</div></form>"
     )
-    return _modal_shell(view, node_id, "Confirm pass", inner, extra_html, root)
+    return _modal_shell(view, node_id, "Confirm pass", inner, query, root)
 
 
-def master_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int]:
-    """GET `/nodes/{id}/master` — step 1 of 2: mastery facts."""
-    view, failure = _fresh_join(root)
-    if view is None:
-        return "Error", failure[0], failure[1]
-    if node_id not in view.node_map:
-        body, status = _status_page(404, f"Unknown node {node_id}.", root)
-        return "Not found", body, status
+def _mastery_facts_html(view: JoinedView, node_id: str) -> tuple[str, str]:
+    """Fresh mastery facts table + eligibility banners, shared by both steps (T5 §F).
 
+    Recomputed from a fresh join on every render — step 2 re-renders the
+    node and facts freshly rather than trusting step 1's read (P4.4).
+    """
     state = view.store.state_of(node_id)
     values = view.policy.mastery
     passed_at = passed_at_of(view.store, node_id)
@@ -1750,44 +1803,89 @@ def master_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int
         live_accepted_count(view.records, s.id)
         for s in view.specs_by_node.get(node_id, [])
     )
-
     fact_rows = [
         ["Passed on", _esc(str(passed_at)[:10]) if passed_at else "—"],
         [
-            "Accepted live evidence",
+            "Live proof accepted",
             f"{accepted_total} of {values.min_accepted_evidence} required",
         ],
         [
-            "Review spacing policy",
+            "Review spacing",
             f"a satisfactory completed review at least "
             f"{values.min_days_pass_to_review} day(s) after the pass",
         ],
     ]
     verdict_html = _output_banners(
-        ["Mastery eligibility holds — proceed to the permanent confirm."]
+        ["This skill is ready for the permanent confirm, on this fresh read."]
         if mastery.eligible
         else list(mastery.reasons),
         default_class="ok" if mastery.eligible else "warning",
     )
+    return _table(["Fact", "Value"], fact_rows), verdict_html
+
+
+def master_body(
+    root, node_id: str, query: dict | None = None
+) -> tuple[str, str, int]:
+    """GET `/nodes/{id}/master` — step 1 of 2: mastery facts (T5 §B+§F+P4.1)."""
+    view, failure = _fresh_join(root)
+    if view is None:
+        return "Error", failure[0], failure[1]
+    if node_id not in view.node_map:
+        body, status = _status_page(404, f"Unknown node {node_id}.", root)
+        return "Not found", body, status
+
+    state = view.store.state_of(node_id)
+    facts_table, verdict_html = _mastery_facts_html(view, node_id)
+
+    if state == "locked" or state != "passed":
+        # P4.1 structural omission: Continue is omitted on a structural wall —
+        # locked, or anything that is not passed — and the wall is shown with
+        # its unmet prerequisites in plain words.
+        if state == "locked":
+            wall_note = (
+                '<p class="mut">Continue is unavailable — this skill is locked '
+                "until its prerequisites are passed.</p>"
+            )
+        else:
+            wall_note = (
+                '<p class="mut">Continue is unavailable — mastery needs '
+                "a passed skill first.</p>"
+            )
+        actions = (
+            '<div class="actions">'
+            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
+            "</div>"
+        )
+    else:
+        # Judgment eligibility stays live with advisory text beside the action.
+        wall_note = (
+            '<p class="mut">Mastery needs a passed skill with accepted proof '
+            "and a satisfactory spaced review.</p>"
+        )
+        actions = (
+            '<div class="actions">'
+            + f'<a class="btn master" href="/nodes/{_esc(node_id)}/master/confirm">'
+            "Continue to permanent confirm &rarr;</a>"
+            + f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
+            "</div>"
+        )
 
     inner = (
-        "<div class=\"kicker\">Mastery facts</div>"
-        + _table(["Fact", "Value"], fact_rows)
+        '<div class="kicker">Mastery facts</div>'
+        + facts_table
         + "<p><strong>Eligibility</strong></p>"
         + verdict_html
-        + '<p class="mut">Mastery requires a passed node with accepted evidence and '
-        "satisfactory spaced review.</p>"
-        + '<div class="actions">'
-        + f'<a class="btn master" href="/nodes/{_esc(node_id)}/master/confirm">'
-        "Continue to permanent confirm &rarr;</a>"
-        + f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
-        "</div>"
+        + wall_note
+        + actions
     )
-    return _modal_shell(view, node_id, "Step 1 — Mastery facts", inner, extra_html, root)
+    return _modal_shell(view, node_id, "Step 1 — Mastery facts", inner, query, root)
 
 
-def master_confirm_body(root, node_id: str, extra_html: str = "") -> tuple[str, str, int]:
-    """GET/POST `/nodes/{id}/master/confirm` — step 2 of 2: permanence."""
+def master_confirm_body(
+    root, node_id: str, query: dict | None = None
+) -> tuple[str, str, int]:
+    """GET `/nodes/{id}/master/confirm` — step 2 of 2: permanence (T5 §B+§F+P4.4)."""
     view, failure = _fresh_join(root)
     if view is None:
         return "Error", failure[0], failure[1]
@@ -1796,9 +1894,14 @@ def master_confirm_body(root, node_id: str, extra_html: str = "") -> tuple[str, 
         return "Not found", body, status
 
     node_title = view.node_map[node_id].title
+    facts_table, verdict_html = _mastery_facts_html(view, node_id)
     inner = (
-        '<p class="banner warning"><strong>This is permanent.</strong> Mastered never '
-        "demotes — a later unsatisfactory review creates pressure, but the state never "
+        '<div class="kicker">Mastery facts — checked again just now</div>'
+        + facts_table
+        + verdict_html
+        + '<p class="banner warning"><strong>This is permanent.</strong> '
+        "Mastered never moves backward — this is permanent. "
+        "A later unsatisfactory review creates pressure, but the state never "
         "moves backward. Confirm only if you intend this skill to remain mastered "
         "forever.</p>"
         f'<form method="post" action="/nodes/{_esc(node_id)}/master/confirm">'
@@ -1807,29 +1910,32 @@ def master_confirm_body(root, node_id: str, extra_html: str = "") -> tuple[str, 
         f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/master">Back</a>'
         "</div></form>"
     )
-    return _modal_shell(view, node_id, "Step 2 — This is permanent", inner, extra_html, root)
+    return _modal_shell(view, node_id, "Step 2 — This is permanent", inner, query, root)
 
 
 # --- POST handlers — thin glue over dispatch, exit-code mapped -------------------
 
 
 def post_pass(root, node_id: str, form: dict):
+    """POST `/nodes/{id}/pass` — always 303 (T5 §D1): ok to the node page,
+    refusal back to the pass step as a warning flash, failure with /health."""
     exit_code, lines = _dispatch_web(root, "pass", node_id=node_id)
     return _finish_write(
         f"/nodes/{node_id}",
         lines,
         exit_code,
-        stay_renderer=lambda extra: pass_modal_body(root, node_id, extra_html=extra),
+        refusal_url=f"/nodes/{node_id}/pass",
     )
 
 
 def post_master_confirm(root, node_id: str, form: dict):
+    """POST `/nodes/{id}/master/confirm` — always 303 (T5 §D1+P4.4)."""
     exit_code, lines = _dispatch_web(root, "master", node_id=node_id)
     return _finish_write(
         f"/nodes/{node_id}",
         lines,
         exit_code,
-        stay_renderer=lambda extra: master_confirm_body(root, node_id, extra_html=extra),
+        refusal_url=f"/nodes/{node_id}/master/confirm",
     )
 
 
