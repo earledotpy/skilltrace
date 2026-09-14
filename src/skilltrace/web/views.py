@@ -320,7 +320,7 @@ def _nav_html(current_view: str = "", health=None) -> str:
         '<nav class="nav periodic" aria-label="Periodic">'
         + "".join(groups["periodic"])
         + '<form class="jump" method="get" action="/nodes/jump">'
-        '<input type="text" name="node_id" placeholder="Jump to a skill" aria-label="jump to skill" size="32">'
+        '<input type="text" name="node_id" placeholder="Jump to a skill" aria-label="jump to skill" title="Type a skill name or id to jump straight to its page" size="32">'
         '<button type="submit">Go</button>'
         "</form>"
         "</nav>"
@@ -855,7 +855,8 @@ def _start_confirm_form(view: JoinedView, node_id: str) -> str:
     button_label = "Start this session"
     return (
         '<div class="form-row"><label>Session template</label>'
-        f"{_template_select(view.policy.session_templates, '(none)')}</div>"
+        f"{_template_select(view.policy.session_templates, '(none)')}"
+        '<p class="small mut">A preset session shape — (none) starts a blank session.</p></div>'
         f"{advisory}"
         '<div class="actions">'
         f'<form method="post" action="/nodes/{_esc(node_id)}/start">'
@@ -870,9 +871,11 @@ def _start_confirm_form(view: JoinedView, node_id: str) -> str:
 def _work_form_fields() -> str:
     return (
         '<div class="form-row"><label>Notes</label>'
-        '<textarea name="notes"></textarea></div>'
+        '<textarea name="notes"></textarea>'
+        '<p class="small mut">What you did — shown in history and the week view.</p></div>'
         '<div class="form-row"><label>Minutes '
-        '<input type="number" name="minutes" min="1" style="max-width:7rem"></label></div>'
+        '<input type="number" name="minutes" min="1" style="max-width:7rem"></label>'
+        '<p class="small mut">How long you worked, in minutes.</p></div>'
         '<div class="form-row inline-check">'
         '<label><input type="checkbox" name="blocked" value="1"> ended stuck '
         "(blocked requires notes)</label></div>"
@@ -1070,7 +1073,8 @@ def _resolve_blocker_form(blocker_id: str, next_url: str = "/") -> str:
         f'<form method="post" action="/blockers/{_esc(blocker_id)}/resolve">'
         f'<input type="hidden" name="next" value="{_esc(next_url)}">'
         '<div class="form-row"><label>Resolution summary</label>'
-        '<input type="text" name="summary" required></div>'
+        '<input type="text" name="summary" required>'
+        '<p class="small mut">What unblocked you — one line for the record.</p></div>'
         '<button type="submit" class="btn secondary">Clear blocker</button></form></details>'
     )
 
@@ -1108,7 +1112,8 @@ def _evidence_submit_form(view: JoinedView, node_id: str) -> str:
         )
         spec_field = (
             '<div class="form-row"><label>Artifact spec</label>'
-            f'<select name="spec">{options}</select></div>'
+            f'<select name="spec">{options}</select>'
+            '<p class="small mut">Which artifact definition this proof satisfies.</p></div>'
         )
 
     if gate.command:
@@ -1121,7 +1126,8 @@ def _evidence_submit_form(view: JoinedView, node_id: str) -> str:
             '<span class="inline-check">'
             '<label><input type="radio" name="verdict" value="accept"> accept</label> '
             '<label><input type="radio" name="verdict" value="reject"> reject</label>'
-            "</span></div>"
+            "</span>"
+            '<p class="small mut">Your judgment on this proof — accept moves it forward.</p></div>'
         )
 
     record_ids = [r.id for r in view.records if r.artifact_spec_id in {s.id for s in specs}]
@@ -1132,9 +1138,11 @@ def _evidence_submit_form(view: JoinedView, node_id: str) -> str:
     supersedes_field = (
         "<details><summary>Advanced: correct an earlier record</summary>"
         '<div class="form-row"><label>Supersedes</label>'
-        f'<input type="text" name="supersedes" list="records-{_esc(node_id)}">{datalist}</div>'
+        f'<input type="text" name="supersedes" list="records-{_esc(node_id)}">{datalist}'
+        '<p class="small mut">Id of the record this corrects — records are never edited.</p></div>'
         '<div class="form-row"><label>Reason (required with supersedes)</label>'
-        '<input type="text" name="reason"></div>'
+        '<input type="text" name="reason">'
+        '<p class="small mut">Why the earlier record is being replaced.</p></div>'
         "</details>"
     )
 
@@ -1145,10 +1153,12 @@ def _evidence_submit_form(view: JoinedView, node_id: str) -> str:
         + '/evidence">'
         f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
         '<div class="form-row"><label>Location (repo-relative path or URL)</label>'
-        '<input type="text" name="location" required></div>'
+        '<input type="text" name="location" required>'
+        '<p class="small mut">Where the proof lives.</p></div>'
         f"{spec_field}"
         '<div class="form-row"><label>Note (optional)</label>'
-        '<input type="text" name="note"></div>'
+        '<input type="text" name="note">'
+        '<p class="small mut">Context a reviewer needs to judge this proof.</p></div>'
         f"{verdict_field}"
         f"{supersedes_field}"
         '<button type="submit" class="btn secondary">Submit evidence</button>'
@@ -1218,7 +1228,8 @@ def _node_actions_card(view: JoinedView, node_id: str) -> str:
         + '/blockers">'
         f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
         '<div class="form-row"><label>Description (the obstacle)</label>'
-        '<input type="text" name="description" required></div>'
+        '<input type="text" name="description" required>'
+        '<p class="small mut">One concrete obstacle — what is stopping you?</p></div>'
         '<button type="submit" class="btn secondary">Create blocker</button></form></details>\n'
         f"{_evidence_submit_form(view, node_id)}\n"
         "<details><summary>Open blockers on this skill</summary>"
@@ -1539,8 +1550,10 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         f'<option value="{days}" {"selected" if days not in (7, 30, 90) else ""}>Policy default ({days}d)</option>'
         f'</select><input type="hidden" name="group-by" value="{_esc(group_by)}">'
         f'<input type="hidden" name="theme" value="{_esc(theme)}">'
+        '<p class="small mut">Which window the charts cover.</p>'
         '<button class="btn secondary" type="submit">Apply</button></div></form>'
         '<div class="form-row"><label>Group by</label>'
+        '<p class="small mut">How sessions are bucketed in the charts.</p>'
         f'<a class="btn {"secondary" if group_by == "track" else ""}" href="/analytics?days={days}&amp;group-by=prefix&amp;theme={theme}">Prefix</a> '
         f'<a class="btn {"secondary" if group_by == "prefix" else ""}" href="/analytics?days={days}&amp;group-by=track&amp;theme={theme}">Track</a></div>'
         '</div>'

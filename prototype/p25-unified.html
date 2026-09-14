@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE — P25 Unified — THROWAWAY</title>
+<!-- prototype/p25-unified.html — THROWAWAY decision aid for P-Unified (#246), wayfinder map #243.
+     Not production code. Single inline <style>, no build step, no dependencies (ADR 0006 discipline).
+     Question: the maximalist single-page home — focus, queue, pressure, graph context (the spine),
+     and the week-shaped plan all visible on one page. Does the whole thing stay coherent, and at
+     what density?
+     Live-engine grounding (checked 2026-09-14: `skilltrace next --minutes 30`, `skilltrace health`,
+     graph/state.yaml, graph/edges.yaml, node frontmatter titles): focus is
+     agents.concepts.agent_fundamentals_01 ("Explain what an AI agent is and how tools extend an LLM",
+     available root, opens 10 downstream, 60-120 min, Hf Agents Course). Queue options 2-5 with live
+     unlock counts 8 / 6 / 5 / 5. Store: 100 nodes, available=49, locked=51; 0 sessions, 0 work items,
+     0 blockers, 0 remediation actions, 0 reviews (so week + history + pressure are honestly empty).
+     Track mix (graph/state.yaml): math 33 (17 avail/16 locked), data 17 (6/11), programming 14 (10/4),
+     agents 12 (2/10), ml 7 (2/5), tooling 6 (5/1), consolidation 4 (4/0), communication 3 (3/0),
+     portfolio 4 (0/4).
+     R1 bento caveat under test: exactly one .cta on the page — the hero's. Every bento card uses
+     plain links only, and the hero is double-weight (spans the grid, larger type + padding) so the
+     continue affordance is never one card among six.
+     Density: the DENSER register — 20px card padding / 28px section gap (graph-dense band). Reconsider's
+     graph band was 32/48; the locked §B band is 24-32 / 40 (§B invariant: section gap > intra-card gap
+     12-16 holds here: 28 > 14). Intra-card gap 14px, prose measure <=70ch. If G-Preferences keeps §B,
+     this page must shed ~2 cards or return to 32/48; the verdict below says which.
+     Tokens: §B cream + terracotta, fixed inputs — hex literals ONLY in the :root token block (P5.4).
+     Tier-0 discipline: zero design-claim JS; no <script> at all in this file.
+     Interactions that WANT JS (marked, not built): browse-card filtering, week-strip paging,
+     queue-row expansion, spine-chain expansion — all degrade to plain links. Feeds G-JS (#249).
+-->
+<style>
+  :root {
+    --bg:#fbf7f0; --fg:#2b2622; --muted:#7a6f63; --border:#ece2d3; --card:#fffdf9;
+    --accent:#b0562c; --accent-ink:#fff8f3; --accent-soft:#f7e7dc;
+    --ok:#e7f3ec; --warn:#faf0d7; --err:#f6ded4;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; color:var(--fg); background:var(--bg); font:16px/1.55 Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Segoe UI', system-ui, sans-serif}
+  h1,h2,h3{font-weight:600; line-height:1.2; margin:0}
+  .throwaway-banner{background:#422006; color:#ffedd5; text-align:center; padding:5px 10px; font:12px/1.4 'Segoe UI',system-ui,sans-serif}
+  .throwaway-banner code{color:#ffe4c4}
+  header{background:var(--card); border-bottom:1px solid var(--border)}
+  .wrap{max-width:1120px; margin:0 auto; padding:0 28px}
+  .topline{display:flex; align-items:baseline; gap:20px; padding:18px 0 0}
+  .topline .brand{font-size:19px; font-weight:700}
+  nav{display:flex; gap:22px; align-items:center; margin-left:auto}
+  nav a{color:var(--muted); text-decoration:none; font-size:15px; padding:6px 2px; border-bottom:2px solid transparent}
+  nav a.here{color:var(--fg); font-weight:700; border-bottom-color:var(--accent)}
+  nav .group{border-left:1px solid var(--border); padding-left:22px}
+  .jump{margin-left:14px}
+  .jump input{border:1px solid var(--border); border-radius:10px; padding:7px 12px; font:inherit; font-size:14px; width:210px; background:var(--bg); color:var(--fg)}
+  .healthline{display:flex; gap:16px; align-items:center; padding:8px 0 12px; font-size:14px; color:var(--muted)}
+  .healthline .calm::before{content:"✓"; color:var(--accent); margin-right:7px; font-weight:700}
+  .healthline a{color:var(--accent)}
+  main.wrap{padding:28px 28px 120px}
+  section{margin:0 0 28px}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px}
+  .heading{font-size:13.5px; font-weight:600; color:var(--muted); margin:0 0 8px; letter-spacing:.02em}
+  .pills{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .pill{border-radius:999px; padding:4px 13px; font-size:13.5px; font-weight:600}
+  .pill.available{background:var(--accent-soft); color:var(--fg)}
+  .pill.locked{background:var(--warn)}
+  .why{color:var(--muted); font-size:15px; margin:8px 0 0; max-width:70ch}
+  p{margin:8px 0}
+  /* THE HERO: double-weight by construction — full grid span, larger type, deeper padding,
+     the page's only .cta at 1.25x. This is the R1-caveat answer in markup. */
+  .hero{padding:28px; border-left:5px solid var(--accent)}
+  .hero .display{font-size:30px; margin:6px 0 10px}
+  .cta{display:inline-block; background:var(--accent); color:var(--accent-ink); border-radius:11px; padding:15px 30px; font-size:18px; font-weight:700; text-decoration:none}
+  .cta:hover{filter:brightness(1.05)}
+  /* BENTO: the maximalist grid. Cards are uniform 20px; hierarchy comes from span + type scale,
+     never from competing buttons (no .cta in here — links only). */
+  .bento{display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:20px}
+  .bento h2{font-size:19px; margin:0 0 4px}
+  .bento .qrow{border-top:1px solid var(--border); padding:10px 0 0; margin:10px 0 0}
+  .bento .qrow:first-of-type{border-top:0}
+  .bento a{color:var(--accent)}
+  .plain{color:var(--accent); font-size:14.5px; text-decoration:none}
+  .weekstrip{display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-top:10px}
+  .day{border:1px solid var(--border); border-radius:10px; padding:8px 6px; text-align:center; font-size:12.5px; color:var(--muted)}
+  .day b{display:block; font-size:13px; color:var(--fg)}
+  .day.today{border:1.5px solid var(--accent)}
+  .mini{font-size:14px; color:var(--muted)}
+  .browsetable{width:100%; border-collapse:collapse; font-size:14px; margin-top:8px}
+  .browsetable th{text-align:left; color:var(--muted); font-weight:600; font-size:12.5px; padding:4px 6px 4px 0; border-bottom:1px solid var(--border)}
+  .browsetable td{padding:4px 6px 4px 0; border-bottom:1px solid var(--border)}
+  .browsetable tr:last-child td{border-bottom:0}
+  details{margin:8px 0 0}
+  summary{cursor:pointer; font-size:14.5px; color:var(--muted); font-weight:600}
+  summary:hover{color:var(--fg)}
+  details .inner{margin:8px 0 0; max-width:70ch}
+  .density-note{font-size:13.5px; color:var(--muted); border-top:1px solid var(--border); padding-top:14px; max-width:70ch}
+</style>
+</head>
+<body>
+<div class="throwaway-banner">PROTOTYPE — throwaway decision aid for <code>P-Unified (#246)</code>, wayfinder map <code>#243</code>. Not production code.</div>
+<header>
+  <div class="wrap topline">
+    <span class="brand">SkillTrace</span>
+    <nav>
+      <a href="#" class="here">Today</a>
+      <a href="#">Next</a>
+      <span class="group"><a href="#">Analytics</a></span>
+      <span class="jump"><input type="text" placeholder="Find a skill by name…"></span>
+    </nav>
+  </div>
+  <div class="wrap healthline">
+    <span class="calm">Everything looks good</span>
+    <a href="#">Full roll-up →</a>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ==================== HERO: today's focus (dominant, named once) ====================
+     The page's ONE name-carrier and ONE action. Named once: the title lives here; the spine
+     below drops to pronoun ("your focus") so the bento never re-names it. Zero sessions in the
+     store, so the CTA is state-honest "Start studying", not "Continue" (P-GraphSpine finding). -->
+<section aria-label="Today's focus">
+  <div class="card hero">
+    <div class="pills">
+      <span class="pill available">available</span>
+      <span class="why" style="margin:0">Nothing is holding this back — every prerequisite is behind you.</span>
+    </div>
+    <h1 class="display">Explain what an AI agent is and how tools extend an LLM</h1>
+    <p class="why">Top pick for a 30-minute session, and it opens the most beyond it — 10 downstream skills across framework, protocol, and deploy tracks. Estimated effort 60–120 min. Where to learn: Hf Agents Course.</p>
+    <div style="margin-top:20px">
+      <a class="cta" href="#">Start studying</a>
+    </div>
+    <details>
+      <summary>Why this one today</summary>
+      <div class="inner">
+        <p>It scores highest overall for a 30-minute session, sits in the foundational track, and passing it opens 10 downstream skills — more than any other option. Reviews are clear; nothing overdue stands in the way.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ==================== BENTO: everything else, links only ==================== -->
+<section aria-label="Everything else">
+  <div class="bento">
+
+    <!-- QUEUE: options 2-5, ranked, with unlock counts. Link rows only — no buttons. -->
+    <div class="card">
+      <p class="heading">The queue</p>
+      <h2>What comes after</h2>
+      <div class="qrow">
+        <b>Use basic Pandas DataFrame operations</b>
+        <p class="mini">Second of 5 · opens 8 skills · 60–180 min</p>
+      </div>
+      <div class="qrow">
+        <b>Define and call Python functions</b>
+        <p class="mini">Third of 5 · opens 6 skills · 60–180 min</p>
+      </div>
+      <div class="qrow">
+        <b>Query rows and columns with SELECT</b>
+        <p class="mini">Fourth of 5 · opens 5 skills · 20–45 min</p>
+      </div>
+      <div class="qrow">
+        <b>Use variables and expressions in Python</b>
+        <p class="mini">Fifth of 5 · opens 5 skills · 30–90 min</p>
+      </div>
+      <!-- WANTS-JS (not built): expanding a queue row to its brief in place wants fetch-refresh;
+           degrades to the /next stop, which already renders these five. -->
+      <p style="margin:12px 0 0"><a class="plain" href="#">Rank the full 49 →</a></p>
+    </div>
+
+    <!-- PRESSURE: reviews due, blockers, overdue — honestly zero, so one calm line + dropped pills. -->
+    <div class="card">
+      <p class="heading">Pressure</p>
+      <h2>Nothing is due</h2>
+      <p class="why">No reviews falling due, no blockers, nothing overdue. P1.3 drops every zero-count pill, so there is nothing to count — just the calm line.</p>
+      <p class="mini">Reviews due: none · Blockers: none · Overdue: none</p>
+      <p style="margin:12px 0 0"><a class="plain" href="#">How reviews work →</a></p>
+    </div>
+
+    <!-- SPINE: graph context for the focus. Pronoun-headed (the hero carries the name);
+         the chain shows what the focus opens, not a graph dump. -->
+    <div class="card">
+      <p class="heading">Graph context</p>
+      <h2>What your focus opens</h2>
+      <div class="pills" style="margin-top:8px">
+        <span class="pill available" style="font-size:12.5px; border:1.5px solid var(--accent)">your focus · available</span>
+        <span style="color:var(--muted)">→</span>
+        <span class="pill locked" style="font-size:12.5px">Build a first CodeAgent with smolagents</span>
+        <span style="color:var(--muted)">→</span>
+        <span class="pill locked" style="font-size:12.5px">Orchestrate a stateful graph with LangGraph</span>
+        <span style="color:var(--muted)">→</span>
+        <span class="pill locked" style="font-size:12.5px">+ 8 more</span>
+      </div>
+      <details>
+        <summary>What unlocks what from here</summary>
+        <div class="inner">
+          <p>Passing your focus opens 10 skills — framework builds (smolagents, LangGraph, MS Agent Framework, OpenAI Agents SDK, PydanticAI), protocol work (MCP server), data (LlamaIndex RAG), optimisation (DSPy), and deploy (FastAPI, Docker). The full 10-skill fan-out never dumps here; the rest lives behind this disclosure.</p>
+        </div>
+      </details>
+      <!-- WANTS-JS (not built): expanding the chain in place wants fetch-refresh; degrades to links. -->
+      <p style="margin:12px 0 0"><a class="plain" href="#">Walk the pathway →</a></p>
+    </div>
+
+    <!-- WEEK: the week-shaped plan, Mon 14 – Sun 20 Sep 2026. Blank days rendered honestly;
+         no owed framing (a missed day is absent, never a break — P1.4/P1.7). -->
+    <div class="card">
+      <p class="heading">The week</p>
+      <h2>Mon 14 – Sun 20 Sep</h2>
+      <div class="weekstrip">
+        <div class="day today"><b>Mon 14</b>blank</div>
+        <div class="day"><b>Tue 15</b>—</div>
+        <div class="day"><b>Wed 16</b>—</div>
+        <div class="day"><b>Thu 17</b>—</div>
+        <div class="day"><b>Fri 18</b>—</div>
+        <div class="day"><b>Sat 19</b>—</div>
+        <div class="day"><b>Sun 20</b>—</div>
+      </div>
+      <p class="why">Nothing logged yet — today is blank, and that's fine. No reviews fall due this week (0 reviews in the store).</p>
+      <!-- WANTS-JS (not built): paging to other weeks wants fetch-refresh; degrades to links. -->
+      <p style="margin:12px 0 0"><a class="plain" href="#">See the log →</a></p>
+    </div>
+
+    <!-- SESSION HISTORY: the user-friendly surface for "how much did I study, and what did I do".
+         Empty-state honest: describes the fields that WILL appear, never a YAML dump. -->
+    <div class="card">
+      <p class="heading">Session history</p>
+      <h2>No sessions yet</h2>
+      <p class="why">Sessions are stored (execution/sessions.yaml + session_work.yaml) — there is just nothing to show. When you study, each entry lands here as a readable line, not a file dump:</p>
+      <p class="mini">e.g. “Tue 15 Sep · 32 min · 2 items · <i>Define and call Python functions</i> — notes you left”</p>
+      <p class="mini">Date · duration (minutes + item count) · node titles · your notes.</p>
+      <p style="margin:12px 0 0"><a class="plain" href="#">Start your first session →</a></p>
+    </div>
+
+    <!-- BROWSE: friendlier than the long flat list — groupable by track, filterable by state.
+         Tier-0: a static grouped table; filtering is a JS-want in the comment. -->
+    <div class="card">
+      <p class="heading">Browse what's open</p>
+      <h2>49 ready, 51 locked</h2>
+      <!-- WANTS-JS (not built): live filter-by-track / filter-by-state wants a fetch-refresh input;
+           degrades to anchor links per track. Tier-0 shows the grouped counts, not the 100-row dump. -->
+      <table class="browsetable">
+        <tr><th>Track</th><th>Ready</th><th>Locked</th></tr>
+        <tr><td>Math</td><td>17</td><td>16</td></tr>
+        <tr><td>Data</td><td>6</td><td>11</td></tr>
+        <tr><td>Programming</td><td>10</td><td>4</td></tr>
+        <tr><td>Agents</td><td>2</td><td>10</td></tr>
+        <tr><td>ML</td><td>2</td><td>5</td></tr>
+        <tr><td>Tooling</td><td>5</td><td>1</td></tr>
+        <tr><td>Consolidation</td><td>4</td><td>0</td></tr>
+        <tr><td>Communication</td><td>3</td><td>0</td></tr>
+        <tr><td>Portfolio</td><td>0</td><td>4</td></tr>
+      </table>
+      <p style="margin:12px 0 0"><a class="plain" href="#">Open the full list →</a></p>
+    </div>
+
+  </div>
+</section>
+
+<section aria-label="Density record">
+  <p class="density-note"><b>Density record (for G-Preferences #247):</b> this page uses the denser register — 20px card padding / 28px section gap / 14px intra-card gap / 20px bento gutters, prose ≤70ch. Alternatives weighed: reconsider graph band 32/48 (airier, but the six-card bento scrolls ~1.5 screens); locked §B band 24–32/40 (this page sits just under it). Bento gutters (20px) &lt; section gap (28px) preserves “section gap &gt; intra-card gap”. Verdict: the dense band is what makes six cards cohere — see the resolution comment on #246 for the coherence verdict.</p>
+</section>
+
+</main>
+</body>
+</html>

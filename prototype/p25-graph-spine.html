@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE — P25 GraphSpine — THROWAWAY</title>
+<!-- prototype/p25-graph-spine.html — THROWAWAY decision aid for P-GraphSpine (#245), wayfinder map #243.
+     Not production code. Single inline <style>, no build step, no dependencies (ADR 0006 discipline).
+     Question: reconsider's graph-first home, rebuilt against the live engine's data shapes with the
+     P2-Reconsider scorecard (#222) P1.1 fix applied — does it hold up as the home IA this time?
+     Content per prototype/p24-reconsider.html's ?v=graph: pathway summaries + current-spine chain +
+     focus viewport card + count set. The fix: the viewport card drops to pronoun form and the spine
+     carries the name (named three times -> named twice: pathway card + spine chip).
+     Live-engine grounding (skilltrace next --minutes 30 --limit 5; skilltrace health; graph/edges.yaml;
+     node frontmatter titles — checked 2026-09-14): focus is agents.concepts.agent_fundamentals_01
+     (the top pick, available as a root node with no prerequisites), opens 10 downstream skills, 60-120 min effort, resource Hf Agents Course.
+     Store state: 100 nodes, available=49, locked=51, 0 sessions, 0 work items, 0 blockers, 0 reviews.
+     Tier-0 discipline: zero design-claim JS; no <script> at all in this file.
+     Interactions that WANT JS (marked, not built): expand-a-pathway-to-full-chain wants fetch-refresh
+     and degrades to plain links; the "what does each open" disclosure wants the same. Feeds G-JS (#249).
+     Density: reconsider's graph band — 32px card padding / 48px section gap. Denser alternative noted:
+     graph-dense's 20px/28px band; the locked §B band is 24-32px / 40px (spec-v2.4-interface-sublayer §B).
+     Tokens: §B cream + terracotta, fixed inputs — hex literals ONLY in the :root token block (P5.4).
+-->
+<style>
+  :root {
+    --bg:#fbf7f0; --fg:#2b2622; --muted:#7a6f63; --border:#ece2d3; --card:#fffdf9;
+    --accent:#b0562c; --accent-ink:#fff8f3; --accent-soft:#f7e7dc;
+    --ok:#e7f3ec; --warn:#faf0d7; --err:#f6ded4; --advisory:#e7eef5;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; color:var(--fg); background:var(--bg); font:16px/1.55 Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Segoe UI', system-ui, sans-serif}
+  h1,h2,h3{font-weight:600; line-height:1.2; margin:0}
+  .throwaway-banner{background:#422006; color:#ffedd5; text-align:center; padding:5px 10px; font:12px/1.4 'Segoe UI',system-ui,sans-serif}
+  .throwaway-banner code{color:#ffe4c4}
+  header{background:var(--card); border-bottom:1px solid var(--border)}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 28px}
+  .topline{display:flex; align-items:baseline; gap:20px; padding:20px 0 0}
+  .topline .brand{font-size:19px; font-weight:700}
+  nav{display:flex; gap:22px; align-items:center; margin-left:auto}
+  nav a{color:var(--muted); text-decoration:none; font-size:15px; padding:6px 2px; border-bottom:2px solid transparent}
+  nav a.here{color:var(--fg); font-weight:700; border-bottom-color:var(--accent)}
+  nav .group{border-left:1px solid var(--border); padding-left:22px}
+  .jump{margin-left:14px}
+  .jump input{border:1px solid var(--border); border-radius:10px; padding:7px 12px; font:inherit; font-size:14px; width:210px; background:var(--bg); color:var(--fg)}
+  .healthline{display:flex; gap:16px; align-items:center; padding:10px 0 14px; font-size:14px; color:var(--muted)}
+  .healthline .calm::before{content:"✓"; color:var(--accent); margin-right:7px; font-weight:700}
+  .healthline a{color:var(--accent)}
+  main.wrap{padding:44px 28px 120px}
+  section{margin:0 0 48px}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:32px}
+  .heading{font-size:13.5px; font-weight:600; color:var(--muted); margin:0 0 10px; letter-spacing:.02em}
+  .pills{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .pill{border-radius:999px; padding:4px 13px; font-size:13.5px; font-weight:600}
+  .pill.available{background:var(--accent-soft); color:var(--fg)}
+  .pill.locked{background:var(--warn)}
+  .pill.active{background:var(--ok)}
+  .pill.passed{background:transparent; border:1px solid var(--border); color:var(--muted)}
+  .why{color:var(--muted); font-size:15px; margin:10px 0 0; max-width:68ch}
+  .measure{max-width:70ch}
+  p{margin:10px 0}
+  .display{font-size:32px; margin:6px 0 14px}
+  .node-title{font-size:24px; margin:8px 0 4px}
+  .cta{display:inline-block; background:var(--accent); color:var(--accent-ink); border-radius:11px; padding:12px 22px; font-size:16px; font-weight:600; text-decoration:none}
+  .cta:hover{filter:brightness(1.05)}
+  .countset{display:flex; gap:26px; flex-wrap:wrap; align-items:center; color:var(--muted); font-size:15px}
+  .countset b{color:var(--fg); font-weight:600}
+  .pointer{margin-top:12px}
+  .pointer a{color:var(--accent)}
+  .row{border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin-bottom:12px; background:var(--card)}
+  details{margin:10px 0 0}
+  summary{cursor:pointer; font-size:14.5px; color:var(--muted); font-weight:600}
+  summary:hover{color:var(--fg)}
+  details .inner{margin:10px 0 0; max-width:70ch}
+  details .inner p{margin:6px 0}
+</style>
+</head>
+<body>
+<div class="throwaway-banner">PROTOTYPE — throwaway decision aid for <code>P-GraphSpine (#245)</code>, wayfinder map <code>#243</code>. Not production code.</div>
+<header>
+  <div class="wrap topline">
+    <span class="brand">SkillTrace</span>
+    <nav>
+      <a href="#" class="here">Today</a>
+      <a href="#">Next</a>
+      <span class="group"><a href="#">Analytics</a></span>
+      <span class="jump"><input type="text" placeholder="Find a skill by name…"></span>
+    </nav>
+  </div>
+  <div class="wrap healthline">
+    <span class="calm">Everything looks good</span>
+    <a href="#">Full roll-up →</a>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ==================== YOUR MAP ====================
+     Pathway summaries: how the 100-node graph stays legible — one card per pathway, never a raw dump.
+     Unlock counts are live-engine facts (skilltrace next: 10 / 8 / 6 downstream respectively). -->
+<section aria-label="Your map">
+  <p class="heading">Your map</p>
+  <h1 class="display">Where are you in the graph today?</h1>
+
+  <div class="pills" style="gap:12px; align-items:stretch">
+    <div class="card" style="flex:1; min-width:180px; padding:18px 20px">
+      <b>Agent concepts</b>
+      <p class="why" style="margin:6px 0 0">You are here — <b>Explain what an AI agent is and how tools extend an LLM</b> is your top pick.</p>
+      <p style="margin:8px 0 0; font-size:14px; color:var(--muted)">Passing it opens 10 skills across framework, protocol, and deploy tracks</p>
+      <p style="margin:8px 0 0"><span class="pill available" style="font-size:12.5px">you are here</span></p>
+    </div>
+    <div class="card" style="flex:1; min-width:180px; padding:18px 20px">
+      <b>Data foundations</b>
+      <p class="why" style="margin:6px 0 0">The next pathway over — <b>Use basic Pandas DataFrame operations</b> is ready when you are.</p>
+      <p style="margin:8px 0 0; font-size:14px; color:var(--muted)">Passing it opens 8 skills, including filtering, grouping, and joins</p>
+      <p style="margin:8px 0 0"><a href="#" style="color:var(--accent); font-size:14px; text-decoration:none">See what's open →</a></p>
+    </div>
+    <div class="card" style="flex:1; min-width:180px; padding:18px 20px">
+      <b>Programming foundations</b>
+      <p class="why" style="margin:6px 0 0">Short and foundational — <b>Define and call Python functions</b> fits a fast session.</p>
+      <p style="margin:8px 0 0; font-size:14px; color:var(--muted)">Passing it opens 6 skills further down the track</p>
+      <p style="margin:8px 0 0"><a href="#" style="color:var(--accent); font-size:14px; text-decoration:none">See the pathway →</a></p>
+    </div>
+  </div>
+
+  <!-- the current spine: the focus as a viewport onto the map. The spine carries the NAME —
+       this is the P1.1 fix's other half. Only the relevant slice renders: where you stand, what
+       it opens. The full 10-skill fan-out is never dumped; the rest hides behind one disclosure.
+       WANTS-JS (not built): expanding the chain in place wants fetch-refresh; degrades to links. -->
+  <div class="card" style="margin-top:20px">
+    <div class="heading">The spine of Agent concepts</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
+      <span class="pill available" style="font-size:13px; border:1.5px solid var(--accent)">Explain what an AI agent is and how tools extend an LLM · you are here</span>
+      <span style="color:var(--muted)">→</span>
+      <span class="pill locked" style="font-size:13px">Build a first CodeAgent with smolagents and one custom tool</span>
+      <span style="color:var(--muted)">→</span>
+      <span class="pill locked" style="font-size:13px">Orchestrate a stateful graph with LangGraph and persistence</span>
+      <span style="color:var(--muted)">→</span>
+      <span class="pill locked" style="font-size:13px">+ 8 more beyond these</span>
+      <a href="#" style="color:var(--accent); font-size:14px; margin-left:8px">What does each open? →</a>
+    </div>
+    <details>
+      <summary>What unlocks what from here</summary>
+      <div class="inner">
+        <p>Passing the skill above opens 10 skills — framework skills like the smolagents and LangGraph builds, protocol skills like exposing a tool through an MCP server, and deploy skills for serving and containerising agents. Nothing is waiting on you beyond this one skill.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ==================== TODAY'S FOCUS — the pronoun viewport card ====================
+     THE P1.1 FIX UNDER TEST: this card never names the focus. No title heading, no titled CTA —
+     the spine chip above carries the name, once. The card is pure pronoun: where you stand, why
+     this one, one action. (Deliberate departure from locked P1.1's `Start <title>` / `Continue
+     <title>` CTA wording — that departure IS the experiment G-Preferences (#247) will rule on.)
+     Copy is honest to the live store: no session is open (0 sessions), so the CTA says Start,
+     not Continue; the reason line says "every prerequisite is behind you" because the focus is a
+     root node with zero prerequisites (graph/edges.yaml). One focus, one action: one .cta on page. -->
+<section aria-label="Today's focus">
+  <div class="card">
+    <div class="pills">
+      <span class="pill available">available</span>
+      <span class="why" style="margin:0">Nothing is holding this back — every prerequisite is behind you.</span>
+    </div>
+    <h2 class="node-title">Start with the one that opens the most</h2>
+    <p class="why measure">Best fit for a 30-minute session, and it opens the most beyond it. Nothing is blocked behind it.</p>
+    <div style="margin-top:24px">
+      <a class="cta" href="#">Start studying</a>
+    </div>
+    <details>
+      <summary>Why this one today</summary>
+      <div class="inner">
+        <p>It scores highest overall for a 30-minute session, sits in the foundational track, and passing it opens 10 downstream skills — more than any other option. Your reviews are clear, and you have no overdue work in the way.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- the bounded day at the zero state: reviews due 0, blockers 0, in progress 0, days practiced 0 —
+       P1.3 drops every zero-count pill, so the count set is honestly EMPTY and says so (a missed day
+       is simply absent, never a break — P1.7). The one muted pointer carries the live count: 49 ready. -->
+  <div class="countset" style="margin-top:20px">
+    <span>Nothing logged yet — today is blank, and that's fine.</span>
+  </div>
+  <p class="pointer"><a href="#">49 more ready when you are →</a></p>
+</section>
+
+</main>
+</body>
+</html>

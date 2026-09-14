@@ -1,4 +1,4 @@
-"""v2.4 design-direction release gate (map #231, T6).
+"""v2.4 design-direction release gate (map #231, T6; amended by map #243, G-Spec #250).
 
 Asserts the spec's literal values from docs/spec-v2.4-interface-sublayer.md §B
 plus the §C/§E/§G copy gates — at release level, against the served
@@ -13,13 +13,17 @@ values* that are acceptance clauses of the map:
 
 - DD1 — the nine locked §B palette hexes live in `:root`.
 - DD2 — no hex literal outside `:root` (P5.4, fully tokenised, one accent).
-- DD3 — 16px base type scale, card padding in the 24–32px band, 1040px shell
-  with the 720px daily-loop column and the single 960px breakpoint.
+- DD3 — two density registers: airy daily band (24–32px card pad, 40px section
+  gap, 720px loop column, 960px breakpoint) and **dense diagnostics band
+  (20px card pad / 28px section gap / 14px intra-card gap / 20px bento gutters,
+  1120px shell for rich home)**; 16px base type scale.
 - DD4 — no `text-transform:uppercase` heading treatment anywhere in the
   served stylesheet (P3.6 — the ALL-CAPS kicker register is killed).
 - DD5 — the five canonical state words are the sublayer's only card states
   (P3.4) and the banned UI synonyms never appear in served copy paths.
-- DD6 — the sublayer emits no `<script>` (tier-0, JS budget = 0; G-JS).
+- DD6 — **per-route budget gate**: narrow tier 1 (one inline vanilla `<script>`
+  on `/analytics` for chart hover/focus tooltips only); all other routes
+  emit no `<script>`; ADR 0008 written; ADR 0006 unamended.
 """
 
 from __future__ import annotations
@@ -75,19 +79,27 @@ def test_dd2_no_hex_outside_root():
     )
 
 
-# --- DD3 — type scale, spacing band, shell --------------------------------------
+# --- DD3 — type scale, spacing bands, shells ------------------------------------
 
-
-def test_dd3_type_scale_spacing_shell():
+def test_dd3_type_scale_spacing_shells():
+    # Airy daily register (non-home daily surfaces)
     assert "--base:16px" in views._STYLE
     m = re.search(r"--card-pad:\s*([0-9.]+)px", views._STYLE)
     assert m, "--card-pad not declared"
+    # Airy band: card padding 24-32px
     assert 24 <= float(m.group(1)) <= 32
     assert "--shell:1040px" in views._STYLE
     assert "--loop:720px" in views._STYLE
     assert "max-width:var(--shell)" in views._STYLE
     assert "@media(max-width:960px)" in views._STYLE
     assert views._STYLE.count("@media(") == 1
+    # Dense diagnostics register (rich home, /health detail, /analytics tables, node drill-down)
+    # These are locked literal values for the dense band
+    assert "--card-pad-dense:20px" in views._STYLE
+    assert "--section-gap-dense:28px" in views._STYLE
+    assert "--intra-gap-dense:14px" in views._STYLE
+    assert "--bento-gutter-dense:20px" in views._STYLE
+    assert "--shell-rich:1120px" in views._STYLE
 
 
 # --- DD4 — no uppercase heading treatment ----------------------------------------
@@ -117,15 +129,27 @@ def test_dd5_canonical_state_words_and_no_synonyms():
         assert f".pill.{state}" in views._STYLE, f"missing pill treatment: {state}"
 
 
-# --- DD6 — no <script> ------------------------------------------------------------
+# --- DD6 — per-route budget gate (narrow tier 1) ----------------------------------
 
 
-def test_dd6_sublayer_emits_no_script():
+def test_dd6_per_route_budget_gate():
+    # /analytics is the ONLY route permitted to emit an inline <script> (for chart hover/focus tooltips)
+    # All other routes must emit no <script>
+    analytics_script_count = 0
+    other_routes_script_count = 0
     for path in sorted((SRC / "web").rglob("*.py")):
         text = path.read_text(encoding="utf-8")
         code = re.sub(r'"""(?!").*?"""', "", text, flags=re.DOTALL)
         code = "\n".join(
             line for line in code.splitlines() if not line.strip().startswith("#")
         )
-        assert not re.search(r"<script\b", code, re.IGNORECASE), path
+        if re.search(r"<script\b", code, re.IGNORECASE):
+            if "analytics" in str(path):
+                analytics_script_count += 1
+            else:
+                other_routes_script_count += 1
+    # Exactly one route (/analytics) may have a script, and only for the granted interaction
+    assert analytics_script_count >= 1, "analytics route must have the granted tier-1 script for chart tooltips"
+    assert other_routes_script_count == 0, f"non-analytics routes must emit no <script>, found {other_routes_script_count}"
+    # The base stylesheet must not contain <script>
     assert "<script" not in views._STYLE
