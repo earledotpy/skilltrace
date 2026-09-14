@@ -1,4 +1,4 @@
-"""Request routing for the local serve shell (Tier-1 slices T2/T3/T4).
+"""Request routing for the local serve shell (Tier-1 slices T2/T3/T4+T5).
 
 The router is deliberately thin glue (ADR 0006): method + path dispatch, with
 the page bodies living in ``views.py``. Every read reloads truth fresh —
@@ -6,9 +6,9 @@ the page bodies living in ``views.py``. Every read reloads truth fresh —
 and editor edits appear on refresh. Routes per the G3#67 table plus the T4
 write routes (G2#66 modals, G5#69 daily writes): reads are GET-only; writes
 are standard form POSTs that nest-dispatch through the registry in-process and
-answer with redirect-after-POST (303) on success, a re-rendered modal with the
-refusal inline on a domain refusal (exit 2), or an error flash pointing at the
-health roll-up for the detail on operational failure (exit 1). Escaping discipline
+answer 303 + translated flash in every case (ok, refusal as a warning flash
+back to the acceptance step, operational failure as an error flash pointing
+at the health roll-up). Escaping discipline
 is owned by the view layer's card renderer (every interpolated value passes
 through ``_esc``). There is no static-file routing at all; styling is the one
 inline ``<style>`` block. ``data/*`` exports are never read.
@@ -113,15 +113,15 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
             return
         elif master_confirm is not None:
             title, body, status = master_confirm_body(
-                self.server.root, unquote(master_confirm.group(1))
+                self.server.root, unquote(master_confirm.group(1)), query
             )
         elif master_step is not None:
             title, body, status = master_body(
-                self.server.root, unquote(master_step.group(1))
+                self.server.root, unquote(master_step.group(1)), query
             )
         elif pass_modal is not None:
             title, body, status = pass_modal_body(
-                self.server.root, unquote(pass_modal.group(1))
+                self.server.root, unquote(pass_modal.group(1)), query
             )
         elif path.startswith("/nodes/"):
             node_id = unquote(self._node_id_from_detail(path))
