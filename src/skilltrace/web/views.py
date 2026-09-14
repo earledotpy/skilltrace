@@ -246,7 +246,7 @@ def page(title: str, body: str) -> str:
     """Wrap a body in the single shared layout (one inline style block)."""
     # Bodies start with a sticky <header> (via _NAV). Lift it outside the
     # main wrap so its background spans the full viewport width while its
-    # inner .wrap stays 1100px — same shell as prototype/p1b-polish.html.
+    # inner .wrap stays 1040px — same shell as the locked §B tokens.
     header = ""
     main = body
     stripped = body.lstrip()

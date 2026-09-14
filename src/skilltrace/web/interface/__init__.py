@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from .affordances import COMMAND_AFFORDANCE_LABELS, intent_label
 from .cards import CANONICAL_STATES, ActiveViewState, Affordance, VIEWS, Card, SublayerError, View, view_by_name
+from .validate import FROZEN_ROUTES
 from .render import banner_html, render_rich_cards
 from .translate import (
     banners,
@@ -33,6 +34,7 @@ __all__ = [
     "ActiveViewState",
     "Affordance",
     "Card",
+    "FROZEN_ROUTES",
     "SublayerError",
     "View",
     "VIEWS",
