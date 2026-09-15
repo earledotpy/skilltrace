@@ -180,16 +180,19 @@ _STYLE = """
   code{font-family:var(--font-mono); font-size:.95em}
   header{position:sticky; top:0; z-index:10; background:var(--card); border-bottom:1px solid var(--border)}
   header .wrap{max-width:var(--shell); margin:0 auto; padding:0 24px}
-  header h1.brand{font-size:18px; font-weight:800; margin:10px 0 2px; line-height:1.2; font-family:var(--font-sans)}
-  .nav{font-size:.9rem; display:flex; gap:.9rem; flex-wrap:wrap; padding:6px 0 8px; align-items:center; font-family:var(--font-sans)}
+  header h1.brand{font-size:19px; font-weight:700; margin:18px 0 0; line-height:1.2; font-family:var(--font-sans)}
+  .nav{font-size:15px; display:flex; gap:22px; flex-wrap:wrap; padding:6px 0 8px; align-items:center; font-family:var(--font-sans)}
   .nav.periodic{border-top:1px solid var(--border); padding-top:8px}
-  .nav a{color:var(--accent); text-decoration:none; font-weight:600}
+  .nav a{color:var(--muted); text-decoration:none; font-weight:400; font-size:15px; padding:6px 2px; border-bottom:2px solid transparent}
   .nav a:hover{text-decoration:underline}
-  .nav a[aria-current="page"]{border-bottom:2px solid var(--accent); padding-bottom:2px}
+  .nav a[aria-current="page"]{color:var(--fg); font-weight:700; border-bottom-color:var(--accent); padding-bottom:2px}
   .nav .jump{display:flex; gap:6px; align-items:center; margin-left:auto}
   .nav .jump input{border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px 8px; font:inherit; font-size:var(--step-135); background:var(--card); color:var(--fg)}
   .nav .jump button{border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:var(--radius-sm); padding:4px 10px; font-weight:600; cursor:pointer; font-size:var(--step-135)}
-  .health-strip{display:flex; gap:6px; flex-wrap:wrap; padding:6px 0 8px; font-size:var(--step-135)}
+  .health-strip{display:flex; gap:16px; flex-wrap:wrap; padding:8px 0 12px; font-size:var(--step-14); align-items:center; font-family:var(--font-sans)}
+  .health-strip .calm::before{content:"✓"; color:var(--accent); margin-right:7px; font-weight:700}
+  .health-strip .health-rollup{color:var(--accent); text-decoration:none; font-size:var(--step-14)}
+  .health-strip .health-rollup:hover{text-decoration:underline}
   .health-strip .pill{border:1px solid var(--border); border-radius:var(--radius-pill); padding:3px 10px; background:var(--card); font-size:var(--step-135)}
   .health-strip .pill.ok{background:var(--ok); border-color:var(--ok-ink)}
   .health-strip .pill.attention{background:var(--warn); border-color:var(--warn-ink)}
@@ -341,8 +344,8 @@ def _nav_html(current_view: str = "", health=None) -> str:
                 f"{warnings} warning{'s' if warnings != 1 else ''}</span>"
             )
         else:
-            pills = '<span class="mut">Everything looks good.</span>'
-        pills += ' <a class="mut" href="/health">Full roll-up</a>'
+            pills = '<span class="mut calm">Everything looks good.</span>'
+        pills += ' <a class="health-rollup" href="/health">Full roll-up →</a>'
     return (
         "<header>"
         '<div class="wrap">'
