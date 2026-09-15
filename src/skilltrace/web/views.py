@@ -1378,6 +1378,71 @@ def _candidate_stack(view, model) -> str:
     )
 
 
+def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
+    """GET `/nodes/jump` with no param — the title-first finder list (v2.4 S4).
+
+    Server-rendered, titles are links (href carries the id, label the
+    title), each row carries its single-line node description
+    (``SkillNode.summary``), grouped by track (the G-Health #251 handoff
+    triaged in G-Spec #250 as in-table content — no route change).
+    Nothing is marked current on the finder (header form only).
+    """
+    view, failure = _fresh_join(root)
+    if view is None:
+        return "Error", failure[0], failure[1]
+
+    needle = ""
+    if query:
+        raw = query.get("q") or query.get("node_id") or [""]
+        needle = (raw[0] if raw else "").strip().lower()
+
+    nodes = sorted(view.nodes, key=lambda n: (n.title or "").lower())
+    if needle:
+        nodes = [
+            n
+            for n in nodes
+            if needle in (n.title or "").lower() or needle in n.id.lower()
+        ]
+
+    by_track: dict[str, list] = {}
+    for node in nodes:
+        track = (node.track or "other").strip() or "other"
+        by_track.setdefault(track, []).append(node)
+
+    parts = [
+        '<div class="card">\n',
+        '<div class="kicker">Find a skill</div>\n',
+        '<form class="finder" method="get" action="/nodes/jump">'
+        f'<label>Search by title <input type="text" name="q" value="{_esc(query.get("q", [""])[0] if query and query.get("q") else "")}" placeholder="Type a skill name" aria-label="search skills by title" size="32"></label>'
+        '<button type="submit">Search</button>'
+        "</form>\n",
+        "</div>\n",
+    ]
+    if not nodes:
+        parts.append(
+            '<div class="card">\n<p class="mut">No skills match that search.</p>\n</div>\n'
+        )
+    for track in sorted(by_track):
+        rows = "".join(
+            f'<li><a href="/nodes/{_esc(node.id)}">{_esc(node.title)}</a>'
+            + (f' — <span class="mut">{_esc((node.summary or "").splitlines()[0][:160])}</span>' if (node.summary or "").strip() else "")
+            + "</li>"
+            for node in sorted(by_track[track], key=lambda n: (n.title or "").lower())
+        )
+        parts.append(
+            '<div class="card">\n'
+            f'<div class="kicker">{_esc(track)}</div>\n'
+            f"<ul>{rows}</ul>\n"
+            "</div>\n"
+        )
+    header_html = _chrome(root)
+    return (
+        "Find a skill",
+        header_html + _flash_html(query or {}, "/nodes/jump") + "".join(parts),
+        200,
+    )
+
+
 def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, int]:
     """GET `/nodes/{id}` — brief-first, state-aware collapse (T4 §H).
 
@@ -1444,17 +1509,9 @@ def _evidence_submit_form(view: JoinedView, node_id: str) -> str:
     gate = view.gates_by_node.get(node_id)
 
     if not specs:
-        return (
-            "<details><summary>Submit evidence</summary>"
-            '<p class="mut">No artifact spec is defined for this skill — '
-            "evidence cannot be recorded here.</p></details>"
-        )
+        return ""
     if gate is None:
-        return (
-            "<details><summary>Submit evidence</summary>"
-            '<p class="mut">No validation gate is defined for this skill — '
-            "evidence cannot be recorded here.</p></details>"
-        )
+        return ""
 
     if len(specs) == 1:
         spec_field = f'<input type="hidden" name="spec" value="{_esc(specs[0].id)}">'
