@@ -228,7 +228,9 @@ def test_no_unterminated_class_attribute_anywhere(repo):
         assert not pattern.search(html), f"{name}: unterminated class attribute"
 
 
-def test_no_script_anywhere(repo):
+def test_no_script_anywhere_until_s5(repo):
+    # Per-route budget held so far (ADR 0008): no route emits <script> until
+    # S5 grants the single /analytics tooltip script (DD6 goes green in S5).
     node_id = _first_node_id(repo, state="available")
     bodies = [
         views.home_body(repo)[1],

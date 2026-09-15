@@ -142,14 +142,25 @@ _STYLE = """
     --space-intra:14px;
     --card-pad:28px;
 
+    /* §B dense diagnostics register (rich home, /health detail, /analytics
+       tables, node drill-down): 20px card pad / 28px section gap /
+       14px intra-card gap / 20px bento gutters; 28 > 14 preserves
+       section-gap > intra-card-gap (amended P5.2, G-Spec #250). */
+    --card-pad-dense:20px;
+    --section-gap-dense:28px;
+    --intra-gap-dense:14px;
+    --bento-gutter-dense:20px;
+
     /* §B radius 14 / 11 / 999 px */
     --radius:14px;
     --radius-sm:11px;
     --radius-pill:999px;
 
-    /* §B shell: 1040px with a 720px daily-loop column and one 960px breakpoint */
+    /* §B shell: 1040px with a 720px daily-loop column and one 960px breakpoint;
+       the rich home uses a 1120px bento shell (amended §B, G-Spec #250) */
     --shell:1040px;
     --loop:720px;
+    --shell-rich:1120px;
   }
   *{box-sizing:border-box}
   html,body{width:100%; overflow-x:clip}

@@ -43,6 +43,11 @@ SUPPORTING_TOKENS = {
     "--space-section",
     "--space-intra",
     "--card-pad",
+    "--card-pad-dense",
+    "--section-gap-dense",
+    "--intra-gap-dense",
+    "--bento-gutter-dense",
+    "--shell-rich",
     "--radius",
     "--radius-sm",
     "--radius-pill",
@@ -78,6 +83,16 @@ def test_no_hex_literal_outside_root():
 def test_supporting_token_set_is_declared():
     for token in SUPPORTING_TOKENS:
         assert f"{token}:" in views._STYLE, f"missing supporting token {token}"
+
+
+def test_dense_register_literals_are_locked():
+    # Amended §B dense diagnostics band (G-Spec #250): the literal values
+    # DD3 asserts at release level, pinned here at the surface seam too.
+    assert "--card-pad-dense:20px" in views._STYLE
+    assert "--section-gap-dense:28px" in views._STYLE
+    assert "--intra-gap-dense:14px" in views._STYLE
+    assert "--bento-gutter-dense:20px" in views._STYLE
+    assert "--shell-rich:1120px" in views._STYLE
 
 
 def test_type_scale_tokens():

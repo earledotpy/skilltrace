@@ -1,9 +1,10 @@
-"""S2 sublayer scaffold + chrome tests (v2.4 spec §I).
+"""S2 sublayer scaffold + chrome tests (amended spec §I, map #252).
 
 Covers the S2 deliverables: the View / Card / Command / Active-view-state
 objects over the live dispatcher registry (ADR 0007), import-time +
-request-time validation (serve refuses to start on inconsistency), and the
-grep-able no-``<script>`` gate over the served pages.
+request-time validation (serve refuses to start on inconsistency), the §B
+dense diagnostics register, and the per-route budget held so far (no
+`<script>` on any served page until S5 grants the /analytics one, ADR 0008).
 """
 
 from __future__ import annotations
@@ -210,11 +211,16 @@ def test_serve_refuses_to_start_on_an_inconsistent_sublayer(monkeypatch, tmp_pat
     assert result.exit_code == 1
 
 
-# --- the grep-able no-<script> gate (G-JS, D2) --------------------------------------
+# --- the per-route budget gate (amended G-JS, ADR 0008) --------------------------
 
 
-def test_served_pages_emit_no_script_tags():
-    """The interaction posture is tier 0: no `<script>` in any served page."""
+def test_served_pages_emit_no_script_tags_until_s5():
+    """The per-route budget holds so far: no `<script>` on any served page.
+
+    Narrow tier 1 grants exactly one inline vanilla script on /analytics for
+    chart hover/focus tooltips (ADR 0008) — but that script lands in S5, so
+    at S2 every served page still emits none (DD6 goes green in S5).
+    """
     import re
 
     from skilltrace.web import views
