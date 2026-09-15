@@ -189,18 +189,9 @@ def test_home_renders_today_dashboard(repo):
     title, body, status = views.home_body(repo)
     assert status == 200
     assert title == "Today"
-    # The P3 card-stack: focus card + count set (+ resumable line only
-    # while a session is open) — ≤ 4 card-level blocks.
-    assert '<div class="card focus">' in body
-    assert '<div class="card counts">' in body
-    assert body.count('<div class="card') <= 4
-    # Exactly one primary CTA; zero tables; no <details> on the primary path.
-    assert body.count('class="btn primary"') + body.count('class="btn"') == 1
-    assert "<table" not in body
-    assert "<details" not in body
-    # Count set: labeled counts + one muted pointer; queue/pressure recede.
-    assert "ready" in body
-    assert "See what to study" in body
+    # The unified single-page home (S3, amended §A): one hero + six-card bento.
+    assert '<div class="hero">' in body
+    assert body.count('<div class="bento-card ') == 6
     # Zero-count pills are dropped (§A): the fresh seed has no practiced
     # days, so no practiced pill may render.
     assert "practiced" not in body

@@ -2,7 +2,8 @@
 
 Asserts the locked section-H treatment on the live routes now that the
 section-B tokens (T1), the de-CLI copy register (T2) and the Richer Card
-seam (T3) are in place: Today card-stack, Next affordances, node collapse,
+seam (T3) are in place: the unified single-page home (amended §A — hero +
+six-card bento, map #252), Next affordances, node collapse,
 health ambient register, analytics one-theme page, chrome groups, and the
 unified error body. ``pytest`` green; no ``<script>``.
 """
@@ -63,15 +64,18 @@ def test_today_display_heading_present_only_on_today(repo):
         assert '<p class="display">' not in html, name
 
 
-def test_today_zero_tables_no_details_bounded_cards_one_cta(repo):
+def test_rich_home_blocks_one_cta_and_one_table(repo):
+    # Amended P5.3 (G-Preferences #247): rich-home cap ≤8 blocks, one CTA,
+    # ≤1 grouped-count table; disclosures stay off the primary path.
     _, body, _ = views.home_body(repo)
-    assert "<table" not in body
-    assert "<details" not in body
-    assert body.count('<div class="card') <= 4
+    assert body.count("<table") <= 1
     assert body.count('class="btn primary"') == 1
+    assert "<details" not in body
+    blocks = body.count('<div class="hero">') + body.count('<div class="bento-card ')
+    assert blocks <= 8
 
 
-def test_today_focus_named_once_and_pronoun_cta(repo):
+def test_today_focus_named_once_with_pronoun_cta(repo):
     from skilltrace.commands.today import derive_today
 
     view = load_context_lenient(repo)
@@ -79,21 +83,22 @@ def test_today_focus_named_once_and_pronoun_cta(repo):
     assert model.focus_node_id, "seed carries a focus for the Today sweep"
     title = view.node_map[model.focus_node_id].title
     _, body, _ = views.home_body(repo)
-    # Exactly one card-level block presents the focus (the card-stack shape:
-    # no competing queue/pressure block repeats it).
-    blocks = body.split('<div class="card')[1:]
-    assert sum(1 for block in blocks if title in block) == 1
-    # The single primary CTA speaks in pronoun form (§E/T2 label).
-    assert "Start this session" in body
-    assert "Start studying" not in body
+    # P1.1a as amended: the focus title appears once as a heading, plus at
+    # most one locator repetition (the spine); the CTA is the pronoun form.
+    assert body.count('<p class="display">') == 1
+    assert body.count(title) <= 2
+    assert "Start studying" in body
+    assert f"Start studying {title}" not in body  # never `Start <title>`
+    assert "Start this session" not in body
 
 
-def test_today_counts_drop_zero_pills_and_hide_the_backlog(repo):
+def test_today_drops_zero_counts_and_the_raw_backlog(repo):
     _, body, _ = views.home_body(repo)
-    section = body.split('<div class="card counts">', 1)[1].split("</div>", 1)[0]
-    assert "0 reviews" not in section
+    assert "0 reviews" not in body  # zero-count pills dropped (P1.3)
     assert "backlog lineup" not in body
-    assert "What is today about?" in body
+    # Amended P1.2: ranked preview rows are permitted; the raw flat dump is not.
+    assert body.count('class="queue-row"') <= 4
+    assert "What is today about?" not in body  # the hero names the focus itself
 
 
 def test_today_resumable_line_only_while_a_session_is_open(repo):
