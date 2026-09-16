@@ -11,6 +11,7 @@ _write_yaml helper, in-process cli.run, load_events read-only assertion.
 from __future__ import annotations
 
 import shutil
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,7 @@ import yaml
 
 from skilltrace import cli
 from skilltrace.events import load_events
+from skilltrace.execution.overdue import utc_today
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -38,30 +40,39 @@ def _write_yaml(root: Path, relpath: str, doc: dict) -> None:
 
 
 def _seed_with_sessions(tmp_path: Path) -> Path:
-    """Seed repo with enough sessions to clear the min_sessions_for_full_data=3 threshold."""
+    """Seed repo with enough sessions to clear the min_sessions_for_full_data=3 threshold.
+
+    Session dates float relative to today (8/5/2 days ago) so all three stay
+    inside the default 30-day window whenever the suite runs — hardcoded
+    calendar dates rot out of the window and flip the Limited-data advisory.
+    """
     root = _seed_repo(tmp_path)
+    today = utc_today()
+    days_ago = (8, 5, 2)
+    dates = [today - timedelta(days=n) for n in days_ago]
     sessions_doc = {
         "sessions": [
-            {"id": "ses.2026-08-15.001", "status": "completed",
-             "started_at": "2026-08-15T10:00:00Z", "ended_at": "2026-08-15T11:00:00Z"},
-            {"id": "ses.2026-08-20.001", "status": "completed",
-             "started_at": "2026-08-20T10:00:00Z", "ended_at": "2026-08-20T11:00:00Z"},
-            {"id": "ses.2026-08-25.001", "status": "completed",
-             "started_at": "2026-08-25T10:00:00Z", "ended_at": "2026-08-25T11:30:00Z"},
+            {"id": f"ses.{day.isoformat()}.001", "status": "completed",
+             "started_at": f"{day.isoformat()}T10:00:00Z",
+             "ended_at": f"{day.isoformat()}T11:00:00Z" if i < 2
+             else f"{day.isoformat()}T11:30:00Z"}
+            for i, day in enumerate(dates)
         ]
     }
     _write_yaml(root, "execution/sessions.yaml", sessions_doc)
+    node_ids = (
+        "math.arithmetic.order_operations_01",
+        "math.algebra.variables_expressions_01",
+        "programming.python.environment_01",
+    )
     work_doc = {
         "session_work": [
-            {"id": "wrk.001", "session_id": "ses.2026-08-15.001",
-             "node_id": "math.arithmetic.order_operations_01",
-             "created_at": "2026-08-15T10:30:00Z", "minutes": 30},
-            {"id": "wrk.002", "session_id": "ses.2026-08-20.001",
-             "node_id": "math.algebra.variables_expressions_01",
-             "created_at": "2026-08-20T10:30:00Z", "minutes": 45},
-            {"id": "wrk.003", "session_id": "ses.2026-08-25.001",
-             "node_id": "programming.python.environment_01",
-             "created_at": "2026-08-25T10:30:00Z", "minutes": 60},
+            {"id": f"wrk.{i + 1:03d}", "session_id": f"ses.{day.isoformat()}.001",
+             "node_id": node_id,
+             "created_at": f"{day.isoformat()}T10:30:00Z",
+             "minutes": minutes}
+            for i, (day, node_id, minutes) in enumerate(
+                zip(dates, node_ids, (30, 45, 60)))
         ]
     }
     _write_yaml(root, "execution/session_work.yaml", work_doc)

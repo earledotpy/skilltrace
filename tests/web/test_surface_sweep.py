@@ -182,7 +182,10 @@ def test_analytics_theme_switch_is_server_rendered_links(repo):
     assert body.count('<div class="card analytics-card">') == 1
     assert "theme=blockers" in body
     assert "theme=velocity" in body  # the segmented control is plain links
-    assert "<script" not in body.lower()
+    # Per-route budget (ADR 0008): at most the one granted tooltip script,
+    # coupled to the real multi-point chart.
+    assert len(re.findall(r"<script\b", body, re.IGNORECASE)) <= 1
+    assert ("<script" in body.lower()) == ('data-tip="' in body)
     # The theme's tables/rows live collapsed behind the one disclosure.
     assert "<details>" in body
     assert "<details open" not in body
@@ -203,6 +206,50 @@ def test_chrome_brand_two_nav_groups_and_seam_current(repo):
     assert 'aria-label="Periodic"' in nav
     assert 'href="/health"' not in nav
     assert nav.count('aria-current="page"') == 1
+
+
+def test_seam_current_exactly_once_where_nav_stop_zero_elsewhere(repo):
+    # P-A11yShell (map 258): the seam marks exactly one nav link on nav-stop
+    # views (today/next/analytics) and none on node, finder, or health —
+    # never on the finder form, the health strip, or a flash line.
+    node_id = _first_node_id(repo, state="available")
+    one = {
+        "home": views.home_body(repo)[1],
+        "next": views.next_body(repo, {})[1],
+        "analytics": views.analytics_body(repo, {})[1],
+    }
+    zero = {
+        "node": views.node_body(repo, node_id)[1],
+        "finder": views.finder_body(repo, {})[1],
+        "health": views.health_body(repo)[1],
+    }
+    for name, html in one.items():
+        assert _nav(html).count('aria-current="page"') == 1, name
+    for name, html in zero.items():
+        assert 'aria-current="page"' not in _nav(html), name
+        assert 'aria-current="page"' not in _header(html), name
+    for name, html in {**one, **zero}.items():
+        assert 'aria-current="page"' not in views._flash_html(
+            {"notice": ["x"], "kind": ["ok"]}, "/"
+        ), name
+
+
+def test_shell_skip_link_focus_ring_and_main_target(repo):
+    # P-A11yShell (map 258): one :focus-visible accent rule, a skip link as
+    # the first body element targeting main, on every surface via page().
+    assert views._STYLE.count(":focus-visible{") == 1
+    assert "outline:2px solid var(--accent)" in views._STYLE
+    html = views.page("t", "<header></header><p>x</p>")
+    assert html.index('class="skip" href="#content"') < html.index("<header>")
+    assert '<main class="wrap" id="content">' in html
+    for name, body in (
+        ("home", views.home_body(repo)[1]),
+        ("next", views.next_body(repo, {})[1]),
+        ("health", views.health_body(repo)[1]),
+    ):
+        full = views.page("t", body)
+        assert full.count('class="skip" href="#content"') == 1, name
+        assert '<main class="wrap" id="content">' in full, name
 
 
 def test_unified_full_chrome_error_body(repo):
@@ -233,19 +280,24 @@ def test_no_unterminated_class_attribute_anywhere(repo):
         assert not pattern.search(html), f"{name}: unterminated class attribute"
 
 
-def test_no_script_anywhere_until_s5(repo):
-    # Per-route budget held so far (ADR 0008): no route emits <script> until
-    # S5 grants the single /analytics tooltip script (DD6 goes green in S5).
+def test_per_route_script_budget_analytics_velocity_only(repo):
+    # Per-route budget (ADR 0008, landed): home/next/node/health emit no
+    # script; the /analytics velocity chart carries exactly the one granted
+    # tooltip script (DD6 goes green with the grant implemented).
     node_id = _first_node_id(repo, state="available")
-    bodies = [
+    plain = [
         views.home_body(repo)[1],
         views.next_body(repo, {})[1],
         views.node_body(repo, node_id)[1],
         views.health_body(repo)[1],
-        views.analytics_body(repo, {})[1],
     ]
-    for html in bodies:
+    for html in plain:
         assert "<script" not in html.lower()
+    _, velocity, _ = views.analytics_body(repo, {"theme": ["velocity"]})
+    assert len(re.findall(r"<script\b", velocity, re.IGNORECASE)) == 1
+    for theme in ("blockers", "reviews", "evidence"):
+        _, body, _ = views.analytics_body(repo, {"theme": [theme]})
+        assert "<script" not in body.lower(), theme
 
 
 def test_frozen_route_table_gains_master_confirm_and_periodic_group():

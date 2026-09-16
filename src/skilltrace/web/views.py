@@ -74,6 +74,7 @@ from ..analytics.derive import derive_analytics
 from ..analytics.models import AnalyticsParams
 from ..analytics.policy import limited_data_sentence
 from ..analytics.sparkline import sparkline_svg
+from .analytics_tooltip import tooltip_script
 from ..evidence.eligibility import compute_eligibility, live_accepted_count
 from ..execution.overdue import parse_date, utc_today
 from ..execution.records import open_session
@@ -186,6 +187,13 @@ _STYLE = """
   .nav a{color:var(--muted); text-decoration:none; font-weight:400; font-size:15px; padding:6px 2px; border-bottom:2px solid transparent}
   .nav a:hover{text-decoration:underline}
   .nav a[aria-current="page"]{color:var(--fg); font-weight:700; border-bottom-color:var(--accent); padding-bottom:2px}
+  /* P-A11yShell (map 258): one keyboard-only focus ring on the accent token
+     plus the skip link's offscreen parking — :focus-visible leaves
+     mouse/touch appearance untouched; the skip reveal rides plain :focus
+     so this stays the single :focus-visible rule in the shell. */
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .skip{position:absolute; left:-9999px; top:0; background:var(--card); color:var(--fg); padding:8px 16px; z-index:20; font-family:var(--font-sans); font-size:var(--step-14); font-weight:600; border:1px solid var(--accent); border-radius:var(--radius-sm)}
+  .skip:focus{left:8px; top:8px}
   .nav .jump{display:flex; gap:6px; align-items:center; margin-left:auto}
   .nav .jump input{border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px 8px; font:inherit; font-size:var(--step-135); background:var(--card); color:var(--fg)}
   .nav .jump button{border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:var(--radius-sm); padding:4px 10px; font-weight:600; cursor:pointer; font-size:var(--step-135)}
@@ -252,6 +260,10 @@ _STYLE = """
   .safety-err{border-left:4px solid var(--err)}
   .flash-dismiss{font-size:var(--step-135); margin-left:.6rem}
   .analytics-grid{display:grid; grid-template-columns:1fr 1fr; gap:var(--space-intra)}
+  /* Tier-1 narrow tooltip (ADR 0008): the one granted script's floating
+     label. Tokens only (no hex outside :root); absent script means this
+     rule never matches and the static SVG stands alone. */
+  .chart-tip{position:absolute; z-index:30; background:var(--fg); color:var(--bg); padding:4px 8px; border-radius:var(--radius-sm); font-size:var(--step-135); pointer-events:none; max-width:16rem}
   /* §A unified single-page home (S3, map 252): the hero + six-card bento at
      the dense register. The rich shell is 1120px (amended §B); bento gutters
      20px; section gap 28px > intra-card gap 14px; the hero is double-weight
@@ -259,11 +271,19 @@ _STYLE = """
      carries the page's only CTA — every bento card is links-only. */
   main.wrap:has(.home-rich){max-width:var(--shell-rich)}
   .bento{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:var(--section-gap-dense) var(--bento-gutter-dense)}
-  .hero{grid-column:1/-1; background:var(--card); border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:var(--radius); padding:var(--card-pad); margin:0}
+  .hero{grid-column:1/-1; background:var(--card); border:1px solid var(--border); border-left:5px solid var(--accent); border-radius:var(--radius); padding:var(--card-pad); margin:0}
   .hero .display{font-size:30px}
   .hero .actions{margin-top:var(--intra-gap-dense)}
+  /* H5-shape (map 258): the hero CTA renders at the contract 1.25x scale
+     (18px, 15x30px) — hero-scoped so the bento stays links-only and every
+     other .btn keeps the locked §B register. Radius stays --radius. */
+  .hero .btn.primary{font-size:18px; padding:15px 30px}
   .bento-card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:var(--card-pad-dense); margin:0}
   .bento-card .kicker{margin:0 0 var(--intra-gap-dense)}
+  /* B8 (map 258): every bento card carries kicker + h2 — the contract's
+     19px heading under the 13.5px muted kicker. Scoped to the bento so the
+     global h2 (step-24, section margins) is untouched elsewhere. */
+  .bento-card h2{font-size:19px; margin:0 0 4px}
   .bento-card a{color:var(--accent); text-decoration:none; font-weight:600}
   .bento-card a:hover{text-decoration:underline}
   .bento-card .actions{margin-top:var(--intra-gap-dense)}
@@ -273,13 +293,30 @@ _STYLE = """
   .weekstrip .day b{display:block; font-size:var(--step-135)}
   .weekstrip .day.today{border-color:var(--accent); background:var(--accent-soft)}
   .browsetable th,.browsetable td{padding:4px .5rem}
+  /* P-DenseTrust (map 258): tabular counts ledger — one font-feature switch
+     on the locked system stacks; no webfont, no token change. */
+  .count strong,.health-strip .pill,th,td,.weekstrip,.queue-row,.spine-row{font-variant-numeric:tabular-nums}
+  /* P-DenseTrust (map 258): sticky headers on dense-register tables only
+     (health / analytics / node drill-down via table.dense); airy daily
+     surfaces (hero, topline, bento browse) carry no dense table. */
+  table.dense thead th{position:sticky; top:0; background:var(--card); z-index:1}
+  /* P-DenseTrust (map 258): honor reduced motion on the one animation — the
+     earned settle banner degrades to an instant state change. */
+  @media(prefers-reduced-motion:reduce){.banner.ok,.banner.success{animation:none}}
   /* the single locked breakpoint (desktop-only; P5.4: the 900px rules collapse to one) */
   @media(max-width:960px){.analytics-grid{grid-template-columns:1fr}}
 """
 
 
 def page(title: str, body: str) -> str:
-    """Wrap a body in the single shared layout (one inline style block)."""
+    """Wrap a body in the single shared layout (one inline style block).
+
+    The shared shell carries the one-line live-trust footer (P-DenseTrust,
+    map 258): live pages read fresh from the truth files on every load —
+    the disposable export snapshot carries its own "snapshot, not live"
+    counterpart instead. Wording is P3.1-clean (no command names, flags,
+    ids, or paths) and reuses the locked muted register — no new tokens.
+    """
     # Bodies start with a sticky <header> (via _NAV). Lift it outside the
     # main wrap so its background spans the full viewport width while its
     # inner .wrap stays 1040px — same shell as the locked §B tokens.
@@ -298,8 +335,10 @@ def page(title: str, body: str) -> str:
         '<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n'
         f"<title>{_esc(title)} — SkillTrace</title>\n"
         f"<style>{_STYLE}</style>\n</head>\n<body>\n"
+        '<a class="skip" href="#content">Skip to content</a>\n'
         f"{header}"
-        f'<main class="wrap">\n<h1>{_esc(title)}</h1>\n{main}\n</main>\n</body>\n</html>\n'
+        f'<main class="wrap" id="content">\n<h1>{_esc(title)}</h1>\n{main}\n</main>\n'
+        '<footer class="wrap small mut">Local only \u00b7 served from your files \u00b7 fresh on every load.</footer>\n</body>\n</html>\n'
     )
 
 
@@ -855,10 +894,30 @@ def _queue_card(view: JoinedView, model, next_model) -> str:
     return (
         '<div class="bento-card queue">\n'
         '<p class="kicker">Queue</p>\n'
+        "<h2>What comes after</h2>\n"
         + listing
         + '<p class="mut"><a href="/next">See the full ranking &rarr;</a></p>\n'
         "</div>\n"
     )
+
+
+def _handoff(verb: str, title: str | None = None) -> str:
+    """Locked honest handoff (G-StudyDayHandoffs #263, applied T-HandoffCopy #266).
+
+    One slotted sentence, muted plain copy, omittable by the caller. P3.1-clean
+    by construction: no command names, flags, ids, or paths; the far side is
+    always 'your terminal', never the bare word 'CLI'.
+    """
+    if title:
+        sentence = (
+            f"{verb} for {title} continues in your terminal "
+            "\u2014 ask there for the exact form."
+        )
+    else:
+        sentence = (
+            f"{verb} continues in your terminal \u2014 ask there for the exact form."
+        )
+    return f'<p class="mut">{_esc(sentence)}</p>\n'
 
 
 def _pressure_card(view: JoinedView, model) -> str:
@@ -874,6 +933,7 @@ def _pressure_card(view: JoinedView, model) -> str:
         return (
             '<div class="bento-card pressure">\n'
             "<p class=\"kicker\">Pressure</p>\n"
+            "<h2>Nothing is due</h2>\n"
             "<p>Nothing is waiting — no reviews due, no open blockers.</p>\n"
             "</div>\n"
         )
@@ -900,11 +960,16 @@ def _pressure_card(view: JoinedView, model) -> str:
     links = ""
     if linked:
         links = "<p class=\"mut\">On " + ", ".join(linked) + ".</p>\n"
+    handoff = ""
+    if overdue:
+        handoff = _handoff("Catching up reviews")
     return (
         '<div class="bento-card pressure">\n'
         "<p class=\"kicker\">Pressure</p>\n"
+        "<h2>What's waiting</h2>\n"
         f"<p>Waiting quietly: {_esc(', '.join(bits))}.</p>\n"
         + links
+        + handoff
         + "</div>\n"
     )
 
@@ -957,7 +1022,8 @@ def _spine_card(view: JoinedView, model) -> str:
                 kids.append(edge.target)
     parts = [
         '<div class="bento-card spine">\n',
-        "<p class=\"kicker\">What your focus opens</p>\n",
+        "<p class=\"kicker\">Graph context</p>\n",
+        "<h2>What your focus opens</h2>\n",
     ]
     if not kids:
         parts.append(
@@ -990,6 +1056,11 @@ def _week_card(view: JoinedView, model) -> str:
     """
     today = utc_today()
     monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
+    week_range = (
+        f"{_WEEKDAY_NAMES[monday.weekday()]} {_date_label(monday)} - "
+        f"{_WEEKDAY_NAMES[sunday.weekday()]} {_date_label(sunday)}"
+    )
     days = [monday + timedelta(days=offset) for offset in range(7)]
     minutes_by_day: dict = {}
     for work in view.work:
@@ -1007,6 +1078,7 @@ def _week_card(view: JoinedView, model) -> str:
     parts = [
         '<div class="bento-card week">\n',
         "<p class=\"kicker\">The week</p>\n",
+        f"<h2>{_esc(week_range)}</h2>\n",
         '<div class="weekstrip">\n',
         "".join(cells),
         "\n</div>\n",
@@ -1053,7 +1125,7 @@ def _history_card(view: JoinedView) -> str:
         return (
             '<div class="bento-card history">\n'
             "<p class=\"kicker\">Session history</p>\n"
-            "<p>No sessions yet.</p>\n"
+            "<h2>No sessions yet</h2>\n"
             '<p class="mut">When you study, each entry lands here as a readable '
             "line — the date, the time you spent, and what you worked on.</p>\n"
             "</div>\n"
@@ -1092,6 +1164,7 @@ def _history_card(view: JoinedView) -> str:
     return (
         '<div class="bento-card history">\n'
         "<p class=\"kicker\">Session history</p>\n"
+        "<h2>Recent sessions</h2>\n"
         + "".join(lines)
         + more
         + '<p class="mut"><a href="/analytics">See the full log &rarr;</a></p>\n'
@@ -1129,7 +1202,7 @@ def _browse_card(view: JoinedView, model) -> str:
     return (
         '<div class="bento-card browse">\n'
         "<p class=\"kicker\">Browse what is open</p>\n"
-        f'<p class="big">{ready_total} ready, {locked_total} locked</p>\n'
+        f"<h2>{ready_total} ready, {locked_total} locked</h2>\n"
         '<table class="browsetable">'
         "<tr><th>Track</th><th>Ready</th><th>Locked</th></tr>"
         + rows
@@ -1659,7 +1732,7 @@ _STATUS_PILL_CLASSES = {
 def _table(headers: list[str], rows: list[list[str]]) -> str:
     head = "".join(f"<th>{h}</th>" for h in headers)
     body = "".join("<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>" for row in rows)
-    return f"<table><tr>{head}</tr>{body}</table>"
+    return f'<table class="dense"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
 
 
 def _drill_down_card(
@@ -1739,26 +1812,35 @@ def _drill_down_card(
     def section(label: str, inner: str) -> str:
         return f"<details>\n<summary>{label}</summary>\n{inner}\n</details>\n"
 
+    node_title = view.titles.get(node_id, node_id)
     parts = ['<div class="card">\n<div class="kicker">Drill-down — read-only facts</div>\n']
+    attempt_handoff = (
+        _handoff("Recording a practice attempt", node_title) if attempt_rows else ""
+    )
     parts.append(
         section(
             "Evidence",
             f"<p>{_esc(drilldown.gate_line)}</p>"
             + (_table(["Spec", "Kind", "Requirement", "Minimum", "Live accepted"], evidence_rows) if evidence_rows else '<p class="mut">No artifact specs.</p>')
             + (_table(["Record", "Verdict", "Standing", "Location"], record_rows) if record_rows else "")
-            + (_table(["Attempt", "Outcome", "Date"], attempt_rows) if attempt_rows else ""),
+            + (_table(["Attempt", "Outcome", "Date"], attempt_rows) if attempt_rows else "")
+            + attempt_handoff,
         )
     )
+    resource_handoff = ""
+    if any(status in ("broken", "stale") for (_, _, status) in drilldown.resource_rows):
+        resource_handoff = _handoff("Checking a resource", node_title)
     parts.append(
         section(
             "Resources",
-            _table(["Resource", "Where", "Verification"], resource_rows)
+            (_table(["Resource", "Where", "Verification"], resource_rows)
             if resource_rows
-            else '<p class="mut">(no resources linked to this skill)</p>',
+            else '<p class="mut">(no resources linked to this skill)</p>')
+            + resource_handoff,
         )
     )
     if review_rows:
-        parts.append(section("Reviews", _table(["Review", "Status", "Scheduled", "Outcome"], review_rows)))
+        parts.append(section("Reviews", _table(["Review", "Status", "Scheduled", "Outcome"], review_rows) + _handoff("Scheduling or completing a review", node_title)))
     execution_inner = ""
     if work_rows:
         execution_inner += _table(["Session", "Minutes", "Notes"], work_rows)
@@ -1766,6 +1848,7 @@ def _drill_down_card(
         execution_inner += _table(["Blocker", "Status", "Description"], blocker_rows)
     if remediation_rows:
         execution_inner += _table(["Remediation", "Status", "Description"], remediation_rows)
+        execution_inner += _handoff("Recording or completing remediation", node_title)
     if execution_inner:
         parts.append(section("Sessions, blockers, remediation", execution_inner))
     graph_inner = ""
@@ -1997,9 +2080,14 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
 
     # Static charts: real multi-point series only (P2.2). A theme whose
     # series has a single point (blockers/reviews/evidence summaries)
-    # renders the labeled summary without a pseudo-sparkline.
+    # renders the labeled summary without a pseudo-sparkline. The velocity
+    # chart is the one surface carrying the granted tier-1 tooltip upgrade
+    # (ADR 0008): focusable per-point markers plus the single inline
+    # tooltip script, tier-0-complete without it via native titles.
+    velocity_weeks = [(week.label, week.session_count) for week in velocity.weeks]
+    velocity_interactive = len(velocity_weeks) >= 2
     velocity_svg = sparkline_svg(
-        [(week.label, week.session_count) for week in velocity.weeks]
+        velocity_weeks, with_points=velocity_interactive
     )
 
     themes = {
@@ -2040,6 +2128,10 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         for name, (label, *_rest) in themes.items()
     )
     cards = _analytics_card(title, summary, derivation, svg, detail, model, theme)
+    # The granted tooltip upgrade rides the velocity chart only: a real
+    # multi-point series on this route. Every other theme and route renders
+    # no executable markup (per-route budget, ADR 0008).
+    tooltip = tooltip_script() if (theme == "velocity" and velocity_interactive) else ""
     body = (
         _chrome(root, current_view="analytics")
         + _flash_html(query, "/analytics")
@@ -2049,6 +2141,7 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         + controls
         + f'<nav class="nav" aria-label="Themes">{theme_links}</nav>'
         + f'<div class="analytics-grid">{cards}</div>'
+        + tooltip
     )
     return "Analytics", body, 200
 

@@ -58,6 +58,31 @@ def banner_html(kind: str, text: str) -> str:
     return f'<p class="banner {_esc(css)}">{_esc(text)}</p>\n'
 
 
+def _handoff_line(verb: str, title: str | None = None) -> str:
+    """Locked honest handoff (G-StudyDayHandoffs #263, applied T-HandoffCopy #266).
+
+    One slotted sentence, muted plain copy, omittable by the caller (rendered
+    only where the caller places it — targeted dead-ends, never ambient).
+    P3.1-clean by construction: no command names, flags, ids, or paths; the
+    far side is always 'your terminal', never the bare word 'CLI'.
+    """
+    if title:
+        sentence = (
+            f"{verb} for {title} continues in your terminal "
+            "\u2014 ask there for the exact form."
+        )
+    else:
+        sentence = (
+            f"{verb} continues in your terminal \u2014 ask there for the exact form."
+        )
+    return f'<p class="mut">{_esc(sentence)}</p>\n'
+
+
+def _schedule_review_handoff(title: str) -> str:
+    """Passed-node Do-this-next handoff: schedule_review stays human copy only."""
+    return _handoff_line("Scheduling a review", title)
+
+
 def render_rich_cards(
     cards: list[Card],
     banners: list[tuple[str, str]] | None = None,
@@ -132,6 +157,8 @@ def _card_html(
                 f'<p class="next-action" data-intent="{_esc(affordance.intent)}">'
                 f"{_esc(affordance.label)}</p>\n"
             )
+            if affordance.intent == "schedule_review":
+                lines.append(_schedule_review_handoff(card.title))
     if card.disclosure:
         # The optional one-click facts render inline — the collapsible
         # budget stays with the page's own advisory details (P5.3).

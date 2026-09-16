@@ -92,7 +92,13 @@ def test_dd3_type_scale_spacing_shells():
     assert "--loop:720px" in views._STYLE
     assert "max-width:var(--shell)" in views._STYLE
     assert "@media(max-width:960px)" in views._STYLE
-    assert views._STYLE.count("@media(") == 1
+    # One layout breakpoint plus the locked P-DenseTrust accessibility guard
+    # (map #258): the reduced-motion query is not a second breakpoint — the
+    # web layer's own gate (tests/web/test_style_tokens.py) pins this same
+    # pair, so the release gate mirrors it rather than re-locking tier-0.
+    assert views._STYLE.count("@media(max-width:") == 1
+    assert "@media(prefers-reduced-motion:reduce)" in views._STYLE
+    assert views._STYLE.count("@media(") == 2
     # Dense diagnostics register (rich home, /health detail, /analytics tables, node drill-down)
     # These are locked literal values for the dense band
     assert "--card-pad-dense:20px" in views._STYLE
