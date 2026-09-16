@@ -68,6 +68,7 @@ from ..context import JoinedView, load_context_lenient
 from ..dispatch import Context, dispatch
 from .interface.affordances import intent_label
 from .interface.cards import ActiveViewState, Affordance, Card, view_by_name
+from .interface.handoff import handoff_html
 from .interface.render import render_rich_cards
 from .interface.translate import rich_cards as _rich_cards_from_model
 from ..analytics.derive import derive_analytics
@@ -941,12 +942,16 @@ def _pressure_card(view: JoinedView, model) -> str:
     links = ""
     if linked:
         links = "<p class=\"mut\">On " + ", ".join(linked) + ".</p>\n"
+    handoff = ""
+    if overdue:
+        handoff = handoff_html("Catching up reviews")
     return (
         '<div class="bento-card pressure">\n'
         "<p class=\"kicker\">Pressure</p>\n"
         "<h2>What's waiting</h2>\n"
         f"<p>Waiting quietly: {_esc(', '.join(bits))}.</p>\n"
         + links
+        + handoff
         + "</div>\n"
     )
 
@@ -1790,25 +1795,34 @@ def _drill_down_card(
         return f"<details>\n<summary>{label}</summary>\n{inner}\n</details>\n"
 
     parts = ['<div class="card">\n<div class="kicker">Drill-down — read-only facts</div>\n']
+    node_title = view.titles.get(node_id, node_id)
+    attempt_handoff = (
+        handoff_html("Recording a practice attempt", node_title) if attempt_rows else ""
+    )
     parts.append(
         section(
             "Evidence",
             f"<p>{_esc(drilldown.gate_line)}</p>"
             + (_table(["Spec", "Kind", "Requirement", "Minimum", "Live accepted"], evidence_rows) if evidence_rows else '<p class="mut">No artifact specs.</p>')
             + (_table(["Record", "Verdict", "Standing", "Location"], record_rows) if record_rows else "")
-            + (_table(["Attempt", "Outcome", "Date"], attempt_rows) if attempt_rows else ""),
+            + (_table(["Attempt", "Outcome", "Date"], attempt_rows) if attempt_rows else "")
+            + attempt_handoff,
         )
     )
+    resource_handoff = ""
+    if any(status in ("broken", "stale") for (_, _, status) in drilldown.resource_rows):
+        resource_handoff = handoff_html("Checking a resource", node_title)
     parts.append(
         section(
             "Resources",
-            _table(["Resource", "Where", "Verification"], resource_rows)
+            (_table(["Resource", "Where", "Verification"], resource_rows)
             if resource_rows
-            else '<p class="mut">(no resources linked to this skill)</p>',
+            else '<p class="mut">(no resources linked to this skill)</p>')
+            + resource_handoff,
         )
     )
     if review_rows:
-        parts.append(section("Reviews", _table(["Review", "Status", "Scheduled", "Outcome"], review_rows)))
+        parts.append(section("Reviews", _table(["Review", "Status", "Scheduled", "Outcome"], review_rows) + handoff_html("Scheduling or completing a review", node_title)))
     execution_inner = ""
     if work_rows:
         execution_inner += _table(["Session", "Minutes", "Notes"], work_rows)
@@ -1816,6 +1830,7 @@ def _drill_down_card(
         execution_inner += _table(["Blocker", "Status", "Description"], blocker_rows)
     if remediation_rows:
         execution_inner += _table(["Remediation", "Status", "Description"], remediation_rows)
+        execution_inner += handoff_html("Recording or completing remediation", node_title)
     if execution_inner:
         parts.append(section("Sessions, blockers, remediation", execution_inner))
     graph_inner = ""

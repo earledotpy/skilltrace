@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from .affordances import COMMAND_AFFORDANCE_LABELS, intent_label
 from .cards import CANONICAL_STATES, ActiveViewState, Affordance, VIEWS, Card, SublayerError, View, view_by_name
+from .handoff import handoff_html
 from .validate import FROZEN_ROUTES
 from .render import banner_html, render_rich_cards
 from .translate import (
@@ -42,6 +43,7 @@ __all__ = [
     "banners",
     "forbidden_in_lines",
     "forbidden_matches",
+    "handoff_html",
     "intent_label",
     "render_rich_cards",
     "rich_cards",
