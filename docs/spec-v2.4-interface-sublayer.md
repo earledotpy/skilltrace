@@ -106,7 +106,7 @@ Plus the private supporting set `--card` / `--pill` / `--accent-ink` / `--accent
 
 **Font-role split.** serif for prose, sans for chrome, mono used **once** (for the one permitted raw identifier on node detail — §E).
 
-**Shell.** 1040px with a **720px daily-loop column** and **one 960px breakpoint** (desktop-only; P5.5 decided here by G-Direction). The rich home uses a **1120px max-width** for the bento grid.
+**Shell.** 1040px with a **720px daily-loop column** and **one 960px breakpoint** (desktop-only; P5.5 decided here by G-Direction). One accessibility `@media(prefers-reduced-motion:reduce)` guard is permitted alongside it (P-DenseTrust, map #258) — it is not a second layout breakpoint. The rich home uses a **1120px max-width** for the bento grid.
 
 **Modal treatment.** The refined **page-level safety panel** — a bordered panel rendered inside the one nav-carrying shell (server-fresh, 303+flash-only writes, **no overlay**): routine `pass` confirm → `--accent` border; master **step 1** (facts) → `--warn` border; master **step 2** (permanent) → `--err` border, two-step structure preserved (P4.4); panel padding at the locked card band; no `<dialog>`, no popover, no backdrop.
 
@@ -193,7 +193,7 @@ The **normative route table lives in `docs/spec-tier1-serve.md` §C**, not in th
 
 ### D2. Interaction posture — **tier 1, narrow and capped** (G-JS #249)
 
-Locked: **one inline vanilla `<script>`, no build step, no dependencies.** ADR 0006's hard parts retained: zero added deps, files-are-truth fresh reads per request, server-validated mutations (the client is never trusted). **Graceful degradation is the contract**: script absent means the tier-0 form with no loss of function. **ADR 0008 written** (`docs/adr/0008-inline-progressive-enhancement-posture.md`, claims the reserved slot): narrow tier-1 shape, the single granted class, degradation contract, mutation safety, per-route budget gate. **ADR 0006 stands unamended** (stdlib-only shell). The grep-able no-`<script>` gate (DD6) is replaced with a per-route budget gate — owned by G-Spec.
+Locked: **one inline vanilla `<script>`, no build step, no dependencies.** ADR 0006's hard parts retained: zero added deps, files-are-truth fresh reads per request, server-validated mutations (the client is never trusted). **Graceful degradation is the contract**: script absent means the tier-0 form with no loss of function. **ADR 0008 written** (`docs/adr/0008-inline-progressive-enhancement-posture.md`, claims the reserved slot): narrow tier-1 shape, the single granted class, degradation contract, mutation safety, per-route budget gate. **ADR 0006 stands unamended** (stdlib-only shell). The grep-able no-`<script>` gate (DD6) is replaced with a per-route budget gate — owned by G-Spec. The single granted tooltip script is owned by that DD6 gate; the SA1 no-`<script>` gate scopes to the interface sublayer.
 
 **Per-interaction grants (each with its prototype warrant from G-JS #249):**
 
