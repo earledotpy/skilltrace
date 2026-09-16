@@ -181,16 +181,26 @@ _STYLE = """
   code{font-family:var(--font-mono); font-size:.95em}
   header{position:sticky; top:0; z-index:10; background:var(--card); border-bottom:1px solid var(--border)}
   header .wrap{max-width:var(--shell); margin:0 auto; padding:0 24px}
-  header h1.brand{font-size:18px; font-weight:800; margin:10px 0 2px; line-height:1.2; font-family:var(--font-sans)}
-  .nav{font-size:.9rem; display:flex; gap:.9rem; flex-wrap:wrap; padding:6px 0 8px; align-items:center; font-family:var(--font-sans)}
+  header h1.brand{font-size:19px; font-weight:700; margin:18px 0 0; line-height:1.2; font-family:var(--font-sans)}
+  .nav{font-size:15px; display:flex; gap:22px; flex-wrap:wrap; padding:6px 0 8px; align-items:center; font-family:var(--font-sans)}
   .nav.periodic{border-top:1px solid var(--border); padding-top:8px}
-  .nav a{color:var(--accent); text-decoration:none; font-weight:600}
+  .nav a{color:var(--muted); text-decoration:none; font-weight:400; font-size:15px; padding:6px 2px; border-bottom:2px solid transparent}
   .nav a:hover{text-decoration:underline}
-  .nav a[aria-current="page"]{border-bottom:2px solid var(--accent); padding-bottom:2px}
+  .nav a[aria-current="page"]{color:var(--fg); font-weight:700; border-bottom-color:var(--accent); padding-bottom:2px}
+  /* P-A11yShell (map 258): one keyboard-only focus ring on the accent token
+     plus the skip link's offscreen parking — :focus-visible leaves
+     mouse/touch appearance untouched; the skip reveal rides plain :focus
+     so this stays the single :focus-visible rule in the shell. */
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .skip{position:absolute; left:-9999px; top:0; background:var(--card); color:var(--fg); padding:8px 16px; z-index:20; font-family:var(--font-sans); font-size:var(--step-14); font-weight:600; border:1px solid var(--accent); border-radius:var(--radius-sm)}
+  .skip:focus{left:8px; top:8px}
   .nav .jump{display:flex; gap:6px; align-items:center; margin-left:auto}
   .nav .jump input{border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px 8px; font:inherit; font-size:var(--step-135); background:var(--card); color:var(--fg)}
   .nav .jump button{border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:var(--radius-sm); padding:4px 10px; font-weight:600; cursor:pointer; font-size:var(--step-135)}
-  .health-strip{display:flex; gap:6px; flex-wrap:wrap; padding:6px 0 8px; font-size:var(--step-135)}
+  .health-strip{display:flex; gap:16px; flex-wrap:wrap; padding:8px 0 12px; font-size:var(--step-14); align-items:center; font-family:var(--font-sans)}
+  .health-strip .calm::before{content:"✓"; color:var(--accent); margin-right:7px; font-weight:700}
+  .health-strip .health-rollup{color:var(--accent); text-decoration:none; font-size:var(--step-14)}
+  .health-strip .health-rollup:hover{text-decoration:underline}
   .health-strip .pill{border:1px solid var(--border); border-radius:var(--radius-pill); padding:3px 10px; background:var(--card); font-size:var(--step-135)}
   .health-strip .pill.ok{background:var(--ok); border-color:var(--ok-ink)}
   .health-strip .pill.attention{background:var(--warn); border-color:var(--warn-ink)}
@@ -261,11 +271,19 @@ _STYLE = """
      carries the page's only CTA — every bento card is links-only. */
   main.wrap:has(.home-rich){max-width:var(--shell-rich)}
   .bento{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:var(--section-gap-dense) var(--bento-gutter-dense)}
-  .hero{grid-column:1/-1; background:var(--card); border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:var(--radius); padding:var(--card-pad); margin:0}
+  .hero{grid-column:1/-1; background:var(--card); border:1px solid var(--border); border-left:5px solid var(--accent); border-radius:var(--radius); padding:var(--card-pad); margin:0}
   .hero .display{font-size:30px}
   .hero .actions{margin-top:var(--intra-gap-dense)}
+  /* H5-shape (map 258): the hero CTA renders at the contract 1.25x scale
+     (18px, 15x30px) — hero-scoped so the bento stays links-only and every
+     other .btn keeps the locked §B register. Radius stays --radius. */
+  .hero .btn.primary{font-size:18px; padding:15px 30px}
   .bento-card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:var(--card-pad-dense); margin:0}
   .bento-card .kicker{margin:0 0 var(--intra-gap-dense)}
+  /* B8 (map 258): every bento card carries kicker + h2 — the contract's
+     19px heading under the 13.5px muted kicker. Scoped to the bento so the
+     global h2 (step-24, section margins) is untouched elsewhere. */
+  .bento-card h2{font-size:19px; margin:0 0 4px}
   .bento-card a{color:var(--accent); text-decoration:none; font-weight:600}
   .bento-card a:hover{text-decoration:underline}
   .bento-card .actions{margin-top:var(--intra-gap-dense)}
@@ -275,13 +293,30 @@ _STYLE = """
   .weekstrip .day b{display:block; font-size:var(--step-135)}
   .weekstrip .day.today{border-color:var(--accent); background:var(--accent-soft)}
   .browsetable th,.browsetable td{padding:4px .5rem}
+  /* P-DenseTrust (map 258): tabular counts ledger — one font-feature switch
+     on the locked system stacks; no webfont, no token change. */
+  .count strong,.health-strip .pill,th,td,.weekstrip,.queue-row,.spine-row{font-variant-numeric:tabular-nums}
+  /* P-DenseTrust (map 258): sticky headers on dense-register tables only
+     (health / analytics / node drill-down via table.dense); airy daily
+     surfaces (hero, topline, bento browse) carry no dense table. */
+  table.dense thead th{position:sticky; top:0; background:var(--card); z-index:1}
+  /* P-DenseTrust (map 258): honor reduced motion on the one animation — the
+     earned settle banner degrades to an instant state change. */
+  @media(prefers-reduced-motion:reduce){.banner.ok,.banner.success{animation:none}}
   /* the single locked breakpoint (desktop-only; P5.4: the 900px rules collapse to one) */
   @media(max-width:960px){.analytics-grid{grid-template-columns:1fr}}
 """
 
 
 def page(title: str, body: str) -> str:
-    """Wrap a body in the single shared layout (one inline style block)."""
+    """Wrap a body in the single shared layout (one inline style block).
+
+    The shared shell carries the one-line live-trust footer (P-DenseTrust,
+    map 258): live pages read fresh from the truth files on every load —
+    the disposable export snapshot carries its own "snapshot, not live"
+    counterpart instead. Wording is P3.1-clean (no command names, flags,
+    ids, or paths) and reuses the locked muted register — no new tokens.
+    """
     # Bodies start with a sticky <header> (via _NAV). Lift it outside the
     # main wrap so its background spans the full viewport width while its
     # inner .wrap stays 1040px — same shell as the locked §B tokens.
@@ -300,8 +335,10 @@ def page(title: str, body: str) -> str:
         '<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n'
         f"<title>{_esc(title)} — SkillTrace</title>\n"
         f"<style>{_STYLE}</style>\n</head>\n<body>\n"
+        '<a class="skip" href="#content">Skip to content</a>\n'
         f"{header}"
-        f'<main class="wrap">\n<h1>{_esc(title)}</h1>\n{main}\n</main>\n</body>\n</html>\n'
+        f'<main class="wrap" id="content">\n<h1>{_esc(title)}</h1>\n{main}\n</main>\n'
+        '<footer class="wrap small mut">Local only \u00b7 served from your files \u00b7 fresh on every load.</footer>\n</body>\n</html>\n'
     )
 
 
@@ -346,8 +383,8 @@ def _nav_html(current_view: str = "", health=None) -> str:
                 f"{warnings} warning{'s' if warnings != 1 else ''}</span>"
             )
         else:
-            pills = '<span class="mut">Everything looks good.</span>'
-        pills += ' <a class="mut" href="/health">Full roll-up</a>'
+            pills = '<span class="mut calm">Everything looks good.</span>'
+        pills += ' <a class="health-rollup" href="/health">Full roll-up →</a>'
     return (
         "<header>"
         '<div class="wrap">'
@@ -857,6 +894,7 @@ def _queue_card(view: JoinedView, model, next_model) -> str:
     return (
         '<div class="bento-card queue">\n'
         '<p class="kicker">Queue</p>\n'
+        "<h2>What comes after</h2>\n"
         + listing
         + '<p class="mut"><a href="/next">See the full ranking &rarr;</a></p>\n'
         "</div>\n"
@@ -876,6 +914,7 @@ def _pressure_card(view: JoinedView, model) -> str:
         return (
             '<div class="bento-card pressure">\n'
             "<p class=\"kicker\">Pressure</p>\n"
+            "<h2>Nothing is due</h2>\n"
             "<p>Nothing is waiting — no reviews due, no open blockers.</p>\n"
             "</div>\n"
         )
@@ -905,6 +944,7 @@ def _pressure_card(view: JoinedView, model) -> str:
     return (
         '<div class="bento-card pressure">\n'
         "<p class=\"kicker\">Pressure</p>\n"
+        "<h2>What's waiting</h2>\n"
         f"<p>Waiting quietly: {_esc(', '.join(bits))}.</p>\n"
         + links
         + "</div>\n"
@@ -959,7 +999,8 @@ def _spine_card(view: JoinedView, model) -> str:
                 kids.append(edge.target)
     parts = [
         '<div class="bento-card spine">\n',
-        "<p class=\"kicker\">What your focus opens</p>\n",
+        "<p class=\"kicker\">Graph context</p>\n",
+        "<h2>What your focus opens</h2>\n",
     ]
     if not kids:
         parts.append(
@@ -992,6 +1033,11 @@ def _week_card(view: JoinedView, model) -> str:
     """
     today = utc_today()
     monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
+    week_range = (
+        f"{_WEEKDAY_NAMES[monday.weekday()]} {_date_label(monday)} - "
+        f"{_WEEKDAY_NAMES[sunday.weekday()]} {_date_label(sunday)}"
+    )
     days = [monday + timedelta(days=offset) for offset in range(7)]
     minutes_by_day: dict = {}
     for work in view.work:
@@ -1009,6 +1055,7 @@ def _week_card(view: JoinedView, model) -> str:
     parts = [
         '<div class="bento-card week">\n',
         "<p class=\"kicker\">The week</p>\n",
+        f"<h2>{_esc(week_range)}</h2>\n",
         '<div class="weekstrip">\n',
         "".join(cells),
         "\n</div>\n",
@@ -1055,7 +1102,7 @@ def _history_card(view: JoinedView) -> str:
         return (
             '<div class="bento-card history">\n'
             "<p class=\"kicker\">Session history</p>\n"
-            "<p>No sessions yet.</p>\n"
+            "<h2>No sessions yet</h2>\n"
             '<p class="mut">When you study, each entry lands here as a readable '
             "line — the date, the time you spent, and what you worked on.</p>\n"
             "</div>\n"
@@ -1094,6 +1141,7 @@ def _history_card(view: JoinedView) -> str:
     return (
         '<div class="bento-card history">\n'
         "<p class=\"kicker\">Session history</p>\n"
+        "<h2>Recent sessions</h2>\n"
         + "".join(lines)
         + more
         + '<p class="mut"><a href="/analytics">See the full log &rarr;</a></p>\n'
@@ -1131,7 +1179,7 @@ def _browse_card(view: JoinedView, model) -> str:
     return (
         '<div class="bento-card browse">\n'
         "<p class=\"kicker\">Browse what is open</p>\n"
-        f'<p class="big">{ready_total} ready, {locked_total} locked</p>\n'
+        f"<h2>{ready_total} ready, {locked_total} locked</h2>\n"
         '<table class="browsetable">'
         "<tr><th>Track</th><th>Ready</th><th>Locked</th></tr>"
         + rows
@@ -1661,7 +1709,7 @@ _STATUS_PILL_CLASSES = {
 def _table(headers: list[str], rows: list[list[str]]) -> str:
     head = "".join(f"<th>{h}</th>" for h in headers)
     body = "".join("<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>" for row in rows)
-    return f"<table><tr>{head}</tr>{body}</table>"
+    return f'<table class="dense"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
 
 
 def _drill_down_card(

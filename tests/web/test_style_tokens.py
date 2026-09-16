@@ -118,7 +118,11 @@ def test_shell_and_daily_loop_column():
 
 def test_single_locked_breakpoint_and_no_legacy_css():
     assert "@media(max-width:960px){.analytics-grid{grid-template-columns:1fr}}" in views._STYLE
-    assert views._STYLE.count("@media(") == 1
+    # One locked breakpoint plus the P-DenseTrust reduced-motion guard (map 258):
+    # the guard is not a breakpoint — it kills the one settle animation.
+    assert views._STYLE.count("@media(max-width:") == 1
+    assert "@media(prefers-reduced-motion:reduce)" in views._STYLE
+    assert views._STYLE.count("@media(") == 2
     assert ".sub {" not in views._STYLE
     # The legacy --mut token is gone; only the locked --muted remains.
     assert not re.search(r"--mut(?!ed)\b", views._STYLE)

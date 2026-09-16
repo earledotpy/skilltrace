@@ -106,7 +106,7 @@ Plus the private supporting set `--card` / `--pill` / `--accent-ink` / `--accent
 
 **Font-role split.** serif for prose, sans for chrome, mono used **once** (for the one permitted raw identifier on node detail — §E).
 
-**Shell.** 1040px with a **720px daily-loop column** and **one 960px breakpoint** (desktop-only; P5.5 decided here by G-Direction). The rich home uses a **1120px max-width** for the bento grid.
+**Shell.** 1040px with a **720px daily-loop column** and **one 960px breakpoint** (desktop-only; P5.5 decided here by G-Direction). One accessibility `@media(prefers-reduced-motion:reduce)` guard is permitted alongside it (P-DenseTrust, map #258) — it is not a second layout breakpoint. The rich home uses a **1120px max-width** for the bento grid.
 
 **Modal treatment.** The refined **page-level safety panel** — a bordered panel rendered inside the one nav-carrying shell (server-fresh, 303+flash-only writes, **no overlay**): routine `pass` confirm → `--accent` border; master **step 1** (facts) → `--warn` border; master **step 2** (permanent) → `--err` border, two-step structure preserved (P4.4); panel padding at the locked card band; no `<dialog>`, no popover, no backdrop.
 
