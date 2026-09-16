@@ -193,7 +193,7 @@ The **normative route table lives in `docs/spec-tier1-serve.md` §C**, not in th
 
 ### D2. Interaction posture — **tier 1, narrow and capped** (G-JS #249)
 
-Locked: **one inline vanilla `<script>`, no build step, no dependencies.** ADR 0006's hard parts retained: zero added deps, files-are-truth fresh reads per request, server-validated mutations (the client is never trusted). **Graceful degradation is the contract**: script absent means the tier-0 form with no loss of function. **ADR 0008 written** (`docs/adr/0008-inline-progressive-enhancement-posture.md`, claims the reserved slot): narrow tier-1 shape, the single granted class, degradation contract, mutation safety, per-route budget gate. **ADR 0006 stands unamended** (stdlib-only shell). The grep-able no-`<script>` gate (DD6) is replaced with a per-route budget gate — owned by G-Spec.
+Locked: **one inline vanilla `<script>`, no build step, no dependencies.** ADR 0006's hard parts retained: zero added deps, files-are-truth fresh reads per request, server-validated mutations (the client is never trusted). **Graceful degradation is the contract**: script absent means the tier-0 form with no loss of function. **ADR 0008 written** (`docs/adr/0008-inline-progressive-enhancement-posture.md`, claims the reserved slot): narrow tier-1 shape, the single granted class, degradation contract, mutation safety, per-route budget gate. **ADR 0006 stands unamended** (stdlib-only shell). The grep-able no-`<script>` gate (DD6) is replaced with a per-route budget gate — owned by G-Spec. The single granted tooltip script is owned by that DD6 gate; the SA1 no-`<script>` gate scopes to the interface sublayer.
 
 **Per-interaction grants (each with its prototype warrant from G-JS #249):**
 

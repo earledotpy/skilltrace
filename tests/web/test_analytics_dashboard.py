@@ -94,7 +94,12 @@ def test_dashboard_renders_one_theme_per_page_with_theme_control(tmp_path):
     assert "theme=reviews" in body
     assert "theme=evidence" in body
     assert body.count('action="/analytics/export"') == 1
-    assert "<script" not in body.lower()
+    # Per-route budget (ADR 0008): at most the one granted tooltip script,
+    # and only coupled to a real multi-point chart (markers carry data-tip).
+    import re
+
+    assert len(re.findall(r"<script\b", body, re.IGNORECASE)) <= 1
+    assert ("<script" in body.lower()) == ('data-tip="' in body)
 
 
 def test_dashboard_theme_switch_selects_the_named_theme(tmp_path):

@@ -214,24 +214,33 @@ def test_serve_refuses_to_start_on_an_inconsistent_sublayer(monkeypatch, tmp_pat
 # --- the per-route budget gate (amended G-JS, ADR 0008) --------------------------
 
 
-def test_served_pages_emit_no_script_tags_until_s5():
-    """The per-route budget holds so far: no `<script>` on any served page.
+def test_per_route_script_budget_analytics_velocity_only():
+    """The per-route budget (ADR 0008, narrow tier 1): exactly one inline
+    vanilla script, on the /analytics velocity chart only.
 
-    Narrow tier 1 grants exactly one inline vanilla script on /analytics for
-    chart hover/focus tooltips (ADR 0008) — but that script lands in S5, so
-    at S2 every served page still emits none (DD6 goes green in S5).
+    S5 landed the granted chart hover/focus tooltip script, so the interim
+    "no script anywhere" assertion graduates: home/next/health carry none,
+    non-velocity themes carry none, and the velocity theme carries exactly
+    one. Tier-0 degradation (static SVG with native titles) is asserted in
+    tests/web/test_analytics_tooltip.py.
     """
     import re
 
     from skilltrace.web import views
 
     repo = Path(__file__).resolve().parents[2]
-    pages = [
+    plain_pages = [
         views.home_body(repo),
         views.next_body(repo, {}),
         views.health_body(repo),
-        views.analytics_body(repo, {}),
     ]
-    for title, body, _status in pages:
+    for title, body, _status in plain_pages:
         assert not re.search(r"<script\b", body, re.IGNORECASE), title
+    _, velocity, _ = views.analytics_body(repo, {"theme": ["velocity"]})
+    assert len(re.findall(r"<script\b", velocity, re.IGNORECASE)) == 1, (
+        "velocity theme must carry exactly the granted tooltip script"
+    )
+    for theme in ("blockers", "reviews", "evidence"):
+        _, body, _ = views.analytics_body(repo, {"theme": [theme]})
+        assert not re.search(r"<script\b", body, re.IGNORECASE), theme
 

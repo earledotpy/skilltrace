@@ -6,7 +6,9 @@ already unit-tested in tests/interface_sublayer/ and tests/web/; this file
 proves the *engine rules* that are acceptance clauses of the slot:
 
 - SA1 — the interface sublayer emits no ``<script>`` anywhere (the
-  grep-able tier-0 gate, G-JS).
+  grep-able tier-0 gate, G-JS). The page layer's single granted analytics
+  tooltip script (ADR 0008, narrow tier 1) is owned by the DD6 per-route
+  budget gate, not by SA1.
 - SA2 — the sublayer owns no write path: its modules never import
   ``graph.state``'s guarded writer and never call ``write_asserted``; the
   only browser mutation path is the page layer's nest-dispatch.
@@ -45,9 +47,9 @@ def _code_text(path: Path) -> str:
     return "\n".join(lines)
 
 
-def test_sa1_no_script_tag_anywhere_in_the_web_package():
+def test_sa1_no_script_tag_in_the_interface_sublayer():
     offenders: list[str] = []
-    for path in _py_sources(SRC / "web"):
+    for path in _py_sources(SUBLAYER):
         if re.search(r"<script\b", _code_text(path), re.IGNORECASE):
             offenders.append(str(path))
     assert not offenders, offenders

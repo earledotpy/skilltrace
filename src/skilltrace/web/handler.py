@@ -23,6 +23,7 @@ from urllib.parse import parse_qs, unquote
 from . import views
 from .views import (
     Redirect,
+    finder_body,
     health_body,
     home_body,
     analytics_body,
@@ -70,7 +71,7 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
         elif path == "/nodes/jump":
             node_id = (query.get("node_id") or [""])[0].strip()
             if not node_id:
-                title, body, status = self._not_found()
+                title, body, status = finder_body(self.server.root, query)
                 self._send(page(title, body), status=status)
                 return
             # Title-first finder (v2.4 S4): a title match (case-insensitive)
