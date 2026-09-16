@@ -182,7 +182,10 @@ def test_analytics_theme_switch_is_server_rendered_links(repo):
     assert body.count('<div class="card analytics-card">') == 1
     assert "theme=blockers" in body
     assert "theme=velocity" in body  # the segmented control is plain links
-    assert "<script" not in body.lower()
+    # Per-route budget (ADR 0008): at most the one granted tooltip script,
+    # coupled to the real multi-point chart.
+    assert len(re.findall(r"<script\b", body, re.IGNORECASE)) <= 1
+    assert ("<script" in body.lower()) == ('data-tip="' in body)
     # The theme's tables/rows live collapsed behind the one disclosure.
     assert "<details>" in body
     assert "<details open" not in body
@@ -233,19 +236,24 @@ def test_no_unterminated_class_attribute_anywhere(repo):
         assert not pattern.search(html), f"{name}: unterminated class attribute"
 
 
-def test_no_script_anywhere_until_s5(repo):
-    # Per-route budget held so far (ADR 0008): no route emits <script> until
-    # S5 grants the single /analytics tooltip script (DD6 goes green in S5).
+def test_per_route_script_budget_analytics_velocity_only(repo):
+    # Per-route budget (ADR 0008, landed): home/next/node/health emit no
+    # script; the /analytics velocity chart carries exactly the one granted
+    # tooltip script (DD6 goes green with the grant implemented).
     node_id = _first_node_id(repo, state="available")
-    bodies = [
+    plain = [
         views.home_body(repo)[1],
         views.next_body(repo, {})[1],
         views.node_body(repo, node_id)[1],
         views.health_body(repo)[1],
-        views.analytics_body(repo, {})[1],
     ]
-    for html in bodies:
+    for html in plain:
         assert "<script" not in html.lower()
+    _, velocity, _ = views.analytics_body(repo, {"theme": ["velocity"]})
+    assert len(re.findall(r"<script\b", velocity, re.IGNORECASE)) == 1
+    for theme in ("blockers", "reviews", "evidence"):
+        _, body, _ = views.analytics_body(repo, {"theme": [theme]})
+        assert "<script" not in body.lower(), theme
 
 
 def test_frozen_route_table_gains_master_confirm_and_periodic_group():
