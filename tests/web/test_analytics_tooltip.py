@@ -97,3 +97,22 @@ def test_seam_markers_opt_in_and_single_point_refused():
     # Defaults keep every existing caller byte-identical.
     plain = sparkline_svg([("a", 1), ("b", 3)])
     assert "<circle" not in plain and "<title>" not in plain
+
+
+def test_each_dashboard_theme_proves_the_marker_rule(tmp_path):
+    """P2.2 per-theme lock (#272): velocity multi-point renders markers plus
+    the granted script; every non-velocity theme renders no svg, no markers,
+    and no script — so the one-theme view can never silently regrow a fake
+    sparkline on an untested theme."""
+    root = _seed_multipoint_weeks(tmp_path)
+    _, velocity, _ = views.analytics_body(root, {"theme": ["velocity"]})
+    assert velocity.count("<circle") >= 2
+    assert velocity.count("<title>") >= 2
+    assert 'data-tip="' in velocity
+    assert len(re.findall(r"<script\b", velocity, re.IGNORECASE)) == 1
+    for theme in ("blockers", "reviews", "evidence"):
+        _, body, _ = views.analytics_body(root, {"theme": [theme]})
+        assert "<svg" not in body, theme
+        assert "<circle" not in body, theme
+        assert "data-tip=" not in body, theme
+        assert "<script" not in body.lower(), theme

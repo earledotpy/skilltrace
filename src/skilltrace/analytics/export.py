@@ -295,7 +295,15 @@ def _render_html(
     themes = {theme} if theme != "all" else {"velocity", "blockers", "reviews", "evidence"}
 
     # ---- Velocity -----------------------------------------------------------
-    spark_v = sparkline_svg([(w.label, w.session_count) for w in v.weeks])
+    # P2.2 (#272): the dashboard's marker policy, minus the script upgrade —
+    # a real multi-point trend renders tier-0 markers (native titles, full
+    # function with script absent); a single-point series never does. The
+    # export stays zero-script on every theme; the data-tip hook rides along
+    # inertly via the shared seam.
+    spark_v = sparkline_svg(
+        [(w.label, w.session_count) for w in v.weeks],
+        with_points=len(v.weeks) >= 2,
+    )
     vel_rows_html = ""
     if v.group_rows:
         col = grouping_label(view.group_by)
