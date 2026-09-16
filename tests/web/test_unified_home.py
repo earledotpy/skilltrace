@@ -362,9 +362,14 @@ def test_home_uses_the_locked_dense_register():
     # border, 30px display heading.
     assert ".hero{grid-column:1/-1" in style
     hero_rule = re.search(r"\.hero\{[^}]*\}", style).group(0)
-    assert "border-left:4px solid var(--accent)" in hero_rule
+    assert "border-left:5px solid var(--accent)" in hero_rule  # H1 (map 258)
     assert "padding:var(--card-pad)" in hero_rule  # 28px
     assert ".hero .display{font-size:30px}" in style
+    # H5-shape (map 258): the hero CTA at the contract 1.25x scale, scoped so
+    # the bento stays links-only.
+    assert ".hero .btn.primary{font-size:18px; padding:15px 30px}" in style
+    # B8 (map 258): the contract's 19px bento heading, bento-scoped.
+    assert ".bento-card h2{font-size:19px; margin:0 0 4px}" in style
     # Bento cards sit at the dense 20px pad with the 14px intra-card rhythm.
     assert "padding:var(--card-pad-dense)" in style
     assert "var(--intra-gap-dense)" in style
@@ -372,6 +377,27 @@ def test_home_uses_the_locked_dense_register():
     section = int(re.search(r"--section-gap-dense:(\d+)px", style).group(1))
     intra = int(re.search(r"--intra-gap-dense:(\d+)px", style).group(1))
     assert section > intra
+
+
+# --- B8 (map 258): every bento card carries kicker + h2 ---------------------------
+
+
+def test_every_bento_card_carries_kicker_plus_h2(repo):
+    body = _home(repo)
+    for name in ("queue", "pressure", "spine", "week", "history", "browse"):
+        section = _block(body, f'<div class="bento-card {name}">')
+        assert '<p class="kicker">' in section, name
+        assert "<h2>" in section, name
+    assert body.count("<h2>") == 6  # one per card, none elsewhere on home
+    queue = _block(body, '<div class="bento-card queue">')
+    assert "<h2>What comes after</h2>" in queue
+    spine = _block(body, '<div class="bento-card spine">')
+    assert "<h2>What your focus opens</h2>" in spine
+    browse = _block(body, '<div class="bento-card browse">')
+    view = load_context_lenient(repo)
+    available = sum(1 for n in view.nodes if view.store.state_of(n.id) == "available")
+    locked = sum(1 for n in view.nodes if view.store.state_of(n.id) == "locked")
+    assert f"<h2>{available} ready, {locked} locked</h2>" in browse
 
 
 # --- Celebration: CSS-only keyframe at real events only ------------------------------

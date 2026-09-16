@@ -225,6 +225,9 @@ class TestMarkdownExport:
         assert "<div" not in content
         assert "<span" not in content
         assert "<table" not in content
+        # P2.2 (#272): pseudo-sparklines stay cut on the markdown surface too.
+        assert "<svg" not in content
+        assert "<circle" not in content
 
     def test_md_output_flag_writes_to_custom_path(self, tmp_path):
         root = _seed_repo(tmp_path)
@@ -313,6 +316,103 @@ class TestHTMLExport:
         assert "<h2>Blockers</h2>" in content
         assert "<h2>Reviews</h2>" in content
         assert "<h2>Evidence</h2>" in content
+
+
+# ---------------------------------------------------------------------------
+# HTML: P2.2 per-theme marker rule (#272)
+# ---------------------------------------------------------------------------
+
+_EXPORT_THEMES = ("all", "velocity", "blockers", "reviews", "evidence")
+
+
+def _seed_multipoint_velocity(tmp_path: Path) -> Path:
+    """Seed repo whose velocity weeks hold real sessions in distinct weeks.
+
+    Three sessions 20/9/2 days ago always land in three distinct ISO weeks
+    (7+ days apart), so the velocity series is a real multi-point trend with
+    actual data — not just all-zero window buckets.
+    """
+    from skilltrace.execution.overdue import utc_today
+    from datetime import timedelta
+
+    root = _seed_repo(tmp_path)
+    days = [utc_today() - timedelta(days=n) for n in (20, 9, 2)]
+    _write_yaml(
+        root,
+        "execution/sessions.yaml",
+        {
+            "sessions": [
+                {
+                    "id": f"ses.{day.isoformat()}.001",
+                    "status": "completed",
+                    "started_at": f"{day.isoformat()}T10:00:00Z",
+                    "ended_at": f"{day.isoformat()}T11:00:00Z",
+                }
+                for day in days
+            ]
+        },
+    )
+    return root
+
+
+def _export_html(root: Path, theme: str) -> str:
+    args = ["analytics", "export", "--format", "html"]
+    if theme != "all":
+        args += ["--theme", theme]
+    rc = cli.run(args, root=root)
+    assert rc == 0
+    name = "analytics-report.html" if theme == "all" else f"analytics-report-{theme}.html"
+    return (root / "data" / name).read_text(encoding="utf-8")
+
+
+class TestHTMLMarkerRule:
+    """P2.2 per-theme marker rule on the export surface (#272).
+
+    Static-SVG-only posture: the export carries zero script bytes on every
+    theme, so velocity markers here are tier-0 (native ``<title>`` tooltips,
+    full function with script absent). A real multi-point velocity trend
+    renders markers; every single-point pseudo-series (blockers, reviews,
+    evidence) renders none — pseudo-sparklines stay cut marker-wise on
+    themes the dashboard never exercises.
+    """
+
+    @pytest.mark.parametrize("theme", _EXPORT_THEMES)
+    def test_html_export_carries_zero_script_on_every_theme(self, tmp_path, theme):
+        content = _export_html(_seed_multipoint_velocity(tmp_path), theme)
+        assert "<script" not in content.lower()
+
+    @pytest.mark.parametrize("theme", _EXPORT_THEMES)
+    def test_html_export_bare_seed_carries_zero_script_on_every_theme(self, tmp_path, theme):
+        content = _export_html(_seed_repo(tmp_path), theme)
+        assert "<script" not in content.lower()
+
+    @pytest.mark.parametrize("theme", ("all", "velocity"))
+    def test_html_export_multipoint_velocity_renders_markers(self, tmp_path, theme):
+        content = _export_html(_seed_multipoint_velocity(tmp_path), theme)
+        assert content.count("<circle") >= 2
+        assert content.count("<title>") >= 2
+        assert 'data-tip="' in content
+
+    @pytest.mark.parametrize("theme", ("blockers", "reviews", "evidence"))
+    def test_html_export_pseudo_series_renders_no_markers(self, tmp_path, theme):
+        content = _export_html(_seed_multipoint_velocity(tmp_path), theme)
+        assert "<svg" in content
+        assert "<circle" not in content
+        assert "data-tip=" not in content
+
+    def test_html_export_all_theme_renders_no_pseudo_markers(self, tmp_path):
+        """The all-themes page embeds the single-point pseudo-series for the
+        other themes: none of them may carry markers."""
+        content = _export_html(_seed_multipoint_velocity(tmp_path), "all")
+        assert content.count("<svg") >= 4
+        # Only the velocity chart's markers exist; blockers/reviews/evidence
+        # sections render their pseudo-series marker-free.
+        assert 'data-tip="' in content
+        for heading in ("<h2>Blockers</h2>", "<h2>Reviews</h2>", "<h2>Evidence</h2>"):
+            section = content.split(heading, 1)[1]
+            section = section.split("<h2>", 1)[0]
+            assert "<circle" not in section, heading
+            assert "data-tip=" not in section, heading
 
 
 # ---------------------------------------------------------------------------

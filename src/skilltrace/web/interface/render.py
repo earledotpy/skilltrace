@@ -14,6 +14,7 @@ import html
 import re
 
 from .cards import ActiveViewState, Card
+from .handoff import handoff_html
 
 # One banner kind map: the CLI's banner kinds (warning / error / advisory /
 # locked appendix) collapse onto the sublayer's semantic classes — the alias
@@ -132,6 +133,8 @@ def _card_html(
                 f'<p class="next-action" data-intent="{_esc(affordance.intent)}">'
                 f"{_esc(affordance.label)}</p>\n"
             )
+            if affordance.intent == "schedule_review":
+                lines.append(handoff_html("Scheduling a review", card.title))
     if card.disclosure:
         # The optional one-click facts render inline — the collapsible
         # budget stays with the page's own advisory details (P5.3).
