@@ -7,7 +7,7 @@
 > **Contact posture:** no maintainer was contacted; no message, issue, e-mail, or DM was sent to any upstream project. Nothing here commits SkillTrace to any plugin or protocol.
 > **Verification posture:** every external claim is a primary source read on **2026-09-16** (repo READMEs, ADRs, changelogs, developer docs, GitHub code search); every local claim cites the current tree (`main` = `58756d2`) or a named research branch. Claims public sources cannot settle are marked **human-only**.
 
-**Amendment (2026-09-16, post-resolution learner input).** Gate 0 (§8.1) is answered: **the learner does not use a PKM**, and PKM tooling came to their attention only through this research cycle. Consequences: the PKM items (PKM-2, PKM-3, PKM-4) have **no learner demand** — the demand branch of their re-open trigger is empirically nil rather than merely untripped — and the §8 outreach calls lose their demand-side justification (they stay available as *sizing* inputs). MC-1 and MC-2 are **unaffected**: neither requires a PKM. Verdict-level consequences (whether the PKM items move from *deferred with a named trigger* to *rejected with warrant*) belong to the roadmap write or its own decision ticket, not here.
+**Amendment (2026-09-16, post-resolution learner input).** Gate 0 (§8.1) is answered: **the learner does not use a PKM**, and PKM tooling came to their attention only through this research cycle. Consequences: the PKM items (PKM-2, PKM-3, PKM-4) have **no learner demand** — the demand branch of their re-open trigger is empirically nil rather than merely untripped — and the §8 outreach calls lose their demand-side justification (they stay available as *sizing* inputs). MC-1 and MC-2 are **unaffected**: neither requires a PKM. The verdict-level question this raised was put to the learner and **settled on 2026-09-16: the deferral stands** — PKM-2/PKM-3/PKM-4 keep their named triggers, with nil learner demand recorded as the deferral's caveat rather than as a warrant for rejection, and no decision ticket is opened.
 
 ## 1. TL;DR
 
@@ -231,7 +231,7 @@ Consequences, stated plainly:
 - **The demand branch of the Tier 3 trigger is empirically nil, not merely untripped.** For PKM-2/PKM-3/PKM-4 this is the *strongest* of their named triggers failing in the negative direction: they are research-derived items, not learner-pulled ones.
 - **The outreach calls lose their demand-side justification.** They remain legitimate as *sizing* inputs (what would upstream tolerate; what breaks), but not as path-to-value work — there is no learner path for the value to flow down today.
 - **MC-1 and MC-2 are unaffected.** Neither requires a PKM; "no PKM" says nothing about whether the learner runs more than one curriculum, so both keep their #99 scores (M and L).
-- **Verdict-level consequences are not decided here.** Whether PKM-2/PKM-3/PKM-4 move from *deferred with a named trigger* to *rejected with warrant* is a decision for the roadmap write or its own decision ticket. This artifact supplies the input; it does not re-adjudicate G-Beyond (#280).
+- **The deferral stands (learner decision, 2026-09-16).** PKM-2/PKM-3/PKM-4 keep their named triggers; the nil demand branch is recorded as the deferral's caveat rather than as a warrant for rejection. This artifact does not re-adjudicate G-Beyond (#280), and no decision ticket is opened.
 
 ### 8.2 Which items warrant calls, and what each must answer
 
