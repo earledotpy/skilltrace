@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE — P-DiagnosticsSim — THROWAWAY</title>
+<!-- prototype/p-diagnosticssim.html — THROWAWAY decision aid for P-DiagnosticsSim (#285), wayfinder map #275.
+     Not production code. Single inline <style>, no build step, no dependencies (ADR 0006 discipline).
+     Zero JS: the simulated surface is static renderings of what the primitive WOULD print; the only
+     interactivity is the reader scrolling. Feeds the learner-demand branch of the diagnostics deferral
+     trigger (G-Beyond #280): if this convinces the learner the primitive is wanted, that branch trips —
+     a new verdict, not an automatic slot.
+
+     Question (#285): the learner-facing diagnostic surface ("why am I stuck / why recommended") is a
+     deferred Beyond item. What effect would it have on SkillTrace, and is it wanted? Simulated here on
+     fixture data so the learner can see the effect now, without waiting for lived friction.
+
+     Grounding (real repo, checked 2026-09-16):
+     - Real store: 36 events, 1 active node (agents.concepts.agent_fundamentals_01), zero blockers,
+       zero reviews, zero attempts, zero evidence records — the friction below is fabricated, and the
+       prototype says so wherever it appears.
+     - Real vocabulary reused: v1.6 analytics themes + thresholds (policy.analytics.default_v1_6),
+       v2.2 `graph impact` advisory conventions (read-only, exit 0 always, advisory words never a gate),
+       explain-seam facts (state, unsatisfied prerequisites, blockers, evidence status), remediation
+       pressure (failed_attempt_threshold: 3), review cadence (first_recall D+1, consolidation_recall
+       D+3, retention_recall D+7; missed_review_grace_days: 2), retention overlay (exponential decay,
+       attention_threshold 0.5), recommendation factor names (weights v0.7).
+     - Real node ids/titles from graph/nodes/; real edges from graph/edges.yaml
+       (agent_fundamentals_01 unlocks 9 nodes; langgraph_01 and docker_engine_build_run_01 each feed
+       the capstone). The remediation edge in §1 is FABRICATED — the real graph ships no remediation
+       edge today (verified 2026-09-16); it exists only to show what the surface would say when
+       pressure activates one.
+     - Read-only: no writes to graph/, evidence/, execution/, policy/; never asserts progress; appends
+       no audit event.
+-->
+<style>
+  :root {
+    --bg:#faf9f7; --fg:#25211c; --mut:#6f675e; --border:#e8e2da; --card:#ffffff;
+    --accent:#2f6b4f; --accent-ink:#ffffff; --accent-soft:#e4efe8;
+    --ok:#e7f3ec; --ok-ink:#1e5c3c; --warn:#faf0d7; --warn-ink:#6b5514;
+    --attn:#dcefff; --attn-ink:#274a68; --bad:#fbe9e7; --bad-ink:#8a3324;
+    --fixture:#f4f1ec; --code:#2d2a26; --code-ink:#f3efe8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; color:var(--fg); background:var(--bg); font:16px/1.55 Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Segoe UI', system-ui, sans-serif}
+  h1,h2,h3{font-weight:600; line-height:1.25; margin:0}
+  a{color:var(--accent)}
+  code{font:0.92em/1.4 Consolas, 'Cascadia Mono', monospace; background:var(--fixture); padding:1px 5px; border-radius:5px}
+  .throwaway-banner{background:#422006; color:#ffedd5; text-align:center; padding:6px 10px; font:12px/1.4 'Segoe UI',system-ui,sans-serif}
+  .throwaway-banner code{color:#ffe4c4; background:transparent}
+  header{background:var(--card); border-bottom:1px solid var(--border)}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 28px}
+  .topline{padding:22px 0 4px}
+  .topline h1{font-size:26px}
+  .topline .sub{color:var(--mut); font-size:15px; margin-top:6px}
+  main{padding:10px 0 60px}
+  section{margin-top:34px}
+  section > h2{font-size:20px; border-bottom:2px solid var(--border); padding-bottom:8px; margin-bottom:14px}
+  section > h2 .tag{font:12px/1 'Segoe UI',system-ui,sans-serif; color:var(--mut); border:1px solid var(--border); border-radius:999px; padding:3px 9px; vertical-align:3px; margin-left:8px; white-space:nowrap}
+  .lede{color:var(--mut); max-width:76ch}
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px}
+  .card h3{font-size:15px; margin-bottom:8px}
+  .card.fab{background:var(--fixture); border-style:dashed}
+  .card .chip{display:inline-block; font:11px/1 'Segoe UI',system-ui,sans-serif; letter-spacing:.04em; text-transform:uppercase; border-radius:999px; padding:4px 8px; margin-bottom:8px}
+  .chip.real{background:var(--accent-soft); color:var(--accent)}
+  .chip.add{background:var(--attn); color:var(--attn-ink)}
+  .chip.warn{background:var(--warn); color:var(--warn-ink)}
+  .chip.bad{background:var(--bad); color:var(--bad-ink)}
+
+  table{border-collapse:collapse; width:100%; background:var(--card); font-size:14.5px}
+  th,td{border:1px solid var(--border); padding:7px 10px; text-align:left; vertical-align:top}
+  th{background:var(--fixture); font:600 13px/1.3 'Segoe UI',system-ui,sans-serif}
+  td .dim{color:var(--mut)}
+  .scroll{overflow-x:auto; border-radius:12px; border:1px solid var(--border)}
+  .scroll table{border:none}
+  .term{background:var(--code); color:var(--code-ink); border-radius:12px; padding:14px 16px; font:13.5px/1.6 Consolas, 'Cascadia Mono', monospace; overflow-x:auto; white-space:pre}
+  .term .c{color:#9a938a}
+  .term .h{color:#9ad0b4; font-weight:700}
+  .term .w{color:#f2d38b}
+  .term .b{color:#9ec9f2}
+  .banner{border:1px solid var(--border); border-left:5px solid var(--warn-ink); background:var(--warn); color:var(--warn-ink); border-radius:10px; padding:10px 14px; font-size:14.5px}
+  .banner.ok{border-left-color:var(--accent); background:var(--ok); color:var(--ok-ink)}
+  .banner.bad{border-left-color:var(--bad-ink); background:var(--bad); color:var(--bad-ink)}
+  .verdict{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px}
+  .verdict h3{font-size:16px; margin:12px 0 4px}
+  .verdict p{margin:4px 0}
+  dl.facts{margin:0; display:grid; grid-template-columns:max-content 1fr; gap:4px 14px; font-size:14.5px}
+  dl.facts dt{color:var(--mut); white-space:nowrap}
+  dl.facts dd{margin:0}
+  ul.tight{margin:6px 0 0; padding-left:20px}
+  ul.tight li{margin:3px 0}
+  .foot{color:var(--mut); font-size:13.5px; border-top:1px solid var(--border); margin-top:44px; padding-top:12px}
+  .kbd{font:12px/1 'Segoe UI',system-ui,sans-serif; border:1px solid var(--border); border-bottom-width:2px; border-radius:6px; padding:2px 6px; background:var(--card)}
+</style>
+</head>
+<body>
+<div class="throwaway-banner">PROTOTYPE — P-DiagnosticsSim — THROWAWAY decision aid for <code>#285</code> (map <code>#275</code>). Not production code; the engine never reads it. Read-only: writes nothing, asserts nothing, appends no event.</div>
+<header>
+  <div class="wrap">
+    <div class="topline">
+      <h1>P-DiagnosticsSim — the learner-facing diagnostic surface, simulated on a bad day</h1>
+      <div class="sub">Fixture data · zero JS · the deferred Beyond item rendered once, to answer one question: <em>what effect would it have on SkillTrace, and is it wanted?</em></div>
+    </div>
+  </div>
+</header>
+<main class="wrap">
+
+<section id="question">
+  <h2>§0 The question <span class="tag">from #285</span></h2>
+  <p class="lede">"Diagnostic analytics (learner-facing)" — <strong>why am I stuck / why recommended</strong> primitives — was deferred in G-Beyond (#280) with a friction-shaped trigger: <em>the first real blocker or failed assessment attempt, or learner demand for the primitive</em>. Lived v2.x trips nothing yet: the real store on 2026-09-16 holds 36 events, one active node, and <strong>zero</strong> blockers, reviews, attempts, and evidence records. Waiting for friction means the first time these questions matter, no answer exists. So this prototype loans the friction: it builds a sandbox fixture day — never the real store, never the real event log — and renders the answers the primitive would give from it, in the engine's existing vocabulary. The fixture is visibly fabricated everywhere it appears (dashed cards); everything the surface <em>reuses</em> is real vocabulary from shipped code.</p>
+</section>
+
+<section id="fixture">
+  <h2>§1 The fixture day <span class="tag">fabricated on purpose</span></h2>
+  <p class="lede">One learner state, assembled from the real graph's own agents slice: the learner has studied on and off for two weeks, is active on <code>agents.concepts.agent_fundamentals_01</code>, has failed its assessment twice, opened a blocker six days ago, and — the part that needs the deepest back-story — <em>passed</em> a consolidation node eleven days ago, which scheduled all three review-cadence recalls at once, two of which are now overdue. That last sentence is the only way a review backlog can exist before mass passing: <strong>one real pass schedules the whole backlog</strong> (cadence policy, the one sanctioned automation).</p>
+  <div class="cards">
+    <div class="card fab">
+      <span class="chip warn">fabricated</span>
+      <h3>Asserted progress (loaned)</h3>
+      <dl class="facts">
+        <dt>active</dt><dd><code>agents.concepts.agent_fundamentals_01</code> — real node, real title ("Explain what an AI agent is and how tools extend an LLM"); active is also the <em>real</em> store's one active node</dd>
+        <dt>passed</dt><dd><code>consolidation.python_fundamentals_01</code> (real node) — D−11</dd>
+      </dl>
+    </div>
+    <div class="card fab">
+      <span class="chip warn">fabricated</span>
+      <h3>Execution friction</h3>
+      <dl class="facts">
+        <dt>Blocker</dt><dd><code>blk.agent_fundamentals_01.01</code>, open 6 days — "can read tool-calling code, cannot explain why the model re-invokes the tool loop"</dd>
+        <dt>Attempts</dt><dd>2 failed attempts on the active node (D−5, D−2) — one below the remediation threshold of 3</dd>
+        <dt>Sessions</dt><dd>4 sessions in two weeks; the last logged 2 days ago</dd>
+      </dl>
+    </div>
+    <div class="card fab">
+      <span class="chip warn">fabricated</span>
+      <h3>Retention aftermath</h3>
+      <dl class="facts">
+        <dt>Reviews</dt><dd>3 scheduled at pass: first_recall D+1 ✓ satisfactory · consolidation_recall D+3 ✓ satisfactory · retention_recall D+7 → <strong>overdue 2 days</strong> (grace 2 days spent)</dd>
+        <dt>Confidence</dt><dd>retention overlay derives <strong>0.42</strong> on the passed node — under the 0.5 attention threshold</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <span class="chip real">real</span>
+      <h3>Graph facts (copied verbatim)</h3>
+      <dl class="facts">
+        <dt>Ids / titles</dt><dd>agents slice, real frontmatter</dd>
+        <dt>Edges</dt><dd>the active node unlocks 9 downstream nodes; <code>langgraph_01</code> and <code>docker_engine_build_run_01</code> each feed the capstone</dd>
+        <dt>Real store</dt><dd>36 events, 1 active node, empty blockers/reviews/attempts — shown for contrast in §6</dd>
+      </dl>
+    </div>
+    <div class="card fab">
+      <span class="chip warn">fabricated</span>
+      <h3>One remediation edge</h3>
+      <p style="margin:0; font-size:14.5px"><code>consolidation.python_fundamentals_01 → agents.concepts.agent_fundamentals_01</code>, soft, dormant. <strong>The real graph ships no remediation edge</strong> (verified 2026-09-16); this one exists so §2 can show what the surface says when 2 failed attempts + an open blocker put pressure on the soft edge — the seed-value threshold (3) is real, the edge is not.</p>
+    </div>
+  </div>
+</section>
+
+<section id="stuck">
+  <h2>§2 "Why am I stuck?" <span class="tag">the first primitive, on the fixture</span></h2>
+  <p class="lede">Invocation: the learner asks about the active node. The primitive derives one explanation from existing records — no new record type, no new write. Vocabulary is deliberately the engine's own: blocker, AssessmentAttempt, remediation pressure (seed threshold), soft prerequisite, derived readiness.</p>
+  <div class="term"><span class="c">$ skilltrace explain agents.concepts.agent_fundamentals_01 <span class="h">— SIMULATED OUTPUT — fixture data, not your store</span></span>
+<span class="h">Why you're stuck on agents.concepts.agent_fundamentals_01</span>
+
+  <span class="b">state</span>     active since D−14 · in progress, not blocked as a state — being
+           stuck is a Blocker record, not a node state
+  <span class="b">blocker</span>   blk.agent_fundamentals_01.01, open 6 days
+           "can read tool-calling code, cannot explain why the model
+           re-invokes the tool loop"
+  <span class="b">attempts</span>  2 failed (D−5, D−2) · remediation pressure: 2 of 3 failed
+           attempts without a pass (threshold 3) — pressure is on, the
+           threshold has not tripped
+  <span class="b">pressure</span>  an open blocker plus the attempt count put pressure on the soft
+           edge consolidation.python_fundamentals_01 → this node
+           (fabricated fixture edge — your real graph has none)
+           → advisory suggestion: 30 min on the fundamentals node
+           (policy/remediation.yaml) · advisory only, never a gate
+  <span class="b">downstream</span> 9 nodes wait on this one · langgraph_01 is hard-locked until
+           you pass · fastapi_minimal_01 is reachable now (soft edge —
+           ordering, not dependency)
+  <span class="b">unblocks</span>  passing flips langgraph_01 locked → available (derived readiness,
+           written by sync — never asserted for you)
+
+  <span class="c">advisory — words only; nothing here blocks a human action, appends
+  an event, or touches asserted progress (v2.2 graph-impact conventions)</span></div>
+  <div class="banner">What's new vs. shipped surfaces: the facts all exist today — <code>next</code> already computes remediation pressure and leverage. What's simulated is <em>binding them to the learner's actual question</em> ("why <em>this</em> node, why now, what unblocks it") and rendering the answer as one derived explanation. No new authority, no new record, no new write.</div>
+</section>
+<section id="recommended">
+  <h2>§3 "Why recommended?" <span class="tag">the second primitive, on the fixture</span></h2>
+  <p class="lede">Same fixture day, the question turned around: for each recommendation the surface would show, <em>why is it here</em> — and for two instructive non-recommendations, <em>why is it not</em>. Factor names follow the recommendation weights (v0.7); readiness wording follows derived-readiness semantics (CONTEXT.md: the chain is an ordering, not a mandatory itinerary — but <code>locked</code> is the only wall).</p>
+  <div class="scroll">
+  <table>
+    <tr><th style="width:34%">Recommended</th><th>Why it is recommended — the words the primitive would emit</th></tr>
+    <tr>
+      <td><strong>1. agents.concepts.agent_fundamentals_01</strong><br><span class="dim">active · your one open thread</span></td>
+      <td>Already active — you are mid-node, and it out-ranks everything available. Rank factors: <strong>downstream leverage</strong> (9 nodes wait; the capstone sits two hops out along two hard-prerequisite chains), plus <strong>remediation pressure</strong> (2 failed attempts — one under the threshold — and an open blocker, 6 days old). It does not rank because you failed; it ranks because everything else is downstream of it.</td>
+    </tr>
+    <tr>
+      <td><strong>2. agents.deploy.fastapi_minimal_01</strong><br><span class="dim">available · the soft-edge path</span></td>
+      <td>All hard prerequisites satisfied — it is startable <em>now</em>, even though its soft source (your active node) is unpassed: a soft edge is ordering, not dependency. Leverage: it hard-gates <code>docker_engine_build_run_01</code>, which hard-gates the capstone. This row is the honest answer to "can I do anything else while stuck?" — yes, and here is why that's legal.</td>
+    </tr>
+    <tr>
+      <td><strong>3. retention_recall — consolidation.python_fundamentals_01</strong><br><span class="dim">passed · review overdue 2 days</span></td>
+      <td>Not a node — a due review. The D+7 retention recall slipped past its 2-day grace. The retention overlay derives confidence <strong>0.42</strong>, under the 0.5 attention threshold. The only thing that moves that number is the review itself — the overlay warns and reorders; it never writes.</td>
+    </tr>
+  </table>
+  </div>
+  <h3 style="margin:18px 0 8px; font-size:15px">Why NOT — the two instructive non-recommendations</h3>
+  <div class="scroll">
+  <table>
+    <tr><th style="width:34%">Not recommended</th><th>Why — derived readiness, not stored opinion</th></tr>
+    <tr>
+      <td><strong>agents.frameworks.langgraph_01</strong><br><span class="dim">locked</span></td>
+      <td>Hard prerequisite <code>agent_fundamentals_01</code> is active, not passed. Locked is the only wall: no surface may offer it, and no diagnostic can talk you into it. Pass the primer and sync — and only sync — flips it to available (derived readiness; asserted progress is never written by anything else).</td>
+    </tr>
+    <tr>
+      <td><strong>agents.capstone.deployed_agent_integration_01</strong><br><span class="dim">locked</span></td>
+      <td>Two hard chains converge on it and both are blocked: via <code>langgraph_01</code> and via <code>docker_engine_build_run_01</code>. The primitive's honest answer is a chain, not a shrug: primer → langgraph → capstone; primer → fastapi → docker → capstone.</td>
+    </tr>
+  </table>
+  </div>
+  <p class="lede" style="margin-top:10px">The remediation suggestion (§2) deliberately does <em>not</em> appear as a fourth recommendation: pressure reorders and warns inside the recommended node's story; it never manufactures a new target, and the soft edge's suggestion is advisory words in the <em>Do this next</em> register, not a rank.</p>
+</section>
+
+
+<section id="vocabulary">
+  <h2>§4 Every line above is existing vocabulary <span class="tag">the reuse ledger</span></h2>
+  <p class="lede">The simulated output names nothing the engine doesn't already derive. This ledger is the effect-on-SkillTrace answer in miniature: the primitive is an <em>assembly and rendering</em> of derivations that shipped in v1.6–v2.2, pointed at the learner's two questions.</p>
+  <div class="scroll">
+  <table>
+    <tr><th>Simulated line</th><th>Where the engine already says it</th></tr>
+    <tr><td>"2 of 3 failed attempts without a pass (threshold 3)"</td><td><code>policy/remediation.yaml</code> seed value; the suggest seam already renders this exact sentence shape</td></tr>
+    <tr><td>"remediation pressure: advisory only, never a gate"</td><td>remediation policy description — pressure warns and reorders, never blocks</td></tr>
+    <tr><td>"soft edge is ordering, not dependency"</td><td>the real edge's own <code>reason</code> field on <code>agent_fundamentals_01 → fastapi_minimal_01</code></td></tr>
+    <tr><td>"locked is the only wall; sync flips derived readiness"</td><td>derived-readiness semantics (CONTEXT.md node states; sync writes only <code>locked</code>/<code>available</code>)</td></tr>
+    <tr><td>"confidence 0.42, under the 0.5 attention threshold"</td><td>v2.1 retention overlay (exponential decay, <code>attention_threshold: 0.5</code>) — advisory, reorder-only</td></tr>
+    <tr><td>"retention_recall … 2-day grace spent"</td><td>review cadence policy (D+1/D+3/D+7, <code>missed_review_grace_days: 2</code>); overdue is derived, never stored</td></tr>
+    <tr><td>"9 nodes wait; capstone two hops along two hard chains"</td><td><code>graph/edges.yaml</code> facts; the same downstream-leverage factor the recommender scores</td></tr>
+    <tr><td>"advisory words, never a gate; appends no event"</td><td>v2.2 <code>graph impact</code> conventions (read-only, exit 0 always)</td></tr>
+    <tr><td>"fabricated fixture edge — your real graph has none"</td><td>the prototype's own honesty rule: every fabricated element is labeled at point of use</td></tr>
+  </table>
+  </div>
+</section>
+
+<section id="safety">
+  <h2>§5 Safety posture <span class="tag">the boundaries hold by construction</span></h2>
+  <div class="banner ok"><strong>Nothing here touches the hard boundaries.</strong> The primitive answers questions; it never flips <code>pass_node</code>/<code>master_node</code>, never deletes a record, never demotes asserted progress, never gates a human action, and AI review plays no part — the answer is a pure derivation rendered in Mentor-voice sections, exactly like every read-only command today. Evidence stays immutable; the simulated fixture edge lives only in the prototype, never in <code>graph/edges.yaml</code>.</div>
+  <ul class="tight">
+    <li>Read-only like <code>graph impact</code>: no audit event, exit 0 always, advisory findings only.</li>
+    <li>No new record types: blockers, attempts, reviews, sessions are consumed as they are.</li>
+    <li>No new authority: the surface explains; the learner still acts (and only the learner can pass/master).</li>
+    <li>Fixture hygiene: nothing in this prototype writes to <code>graph/</code>, <code>evidence/</code>, <code>execution/</code>, or <code>policy/</code>, and the real event log is untouched.</li>
+  </ul>
+</section>
+
+<section id="correspondence">
+  <h2>§6 Fixture ↔ real study days <span class="tag">the trip point is friction-shaped</span></h2>
+  <p class="lede">The deferral trigger was written friction-shaped on purpose, and the fixture proves the shape: the parts of this simulation do not age in together. Each element needs a different <em>kind</em> of real event, not a longer calendar — so no day count can predict when the surface becomes answerable.</p>
+  <div class="scroll">
+  <table>
+    <tr><th>Fixture element</th><th>What must really happen first</th><th>Earliest real day</th></tr>
+    <tr><td>an open blocker</td><td>the learner hits something and records a Blocker</td><td><strong>day one</strong> — nothing gates it on time</td></tr>
+    <tr><td>1 failed attempt</td><td>a first real assessment attempt</td><td><strong>day one</strong> of attempting evidence</td></tr>
+    <tr><td>remediation pressure ≥ 1</td><td>the first failed attempt without a pass</td><td>day one of attempts</td></tr>
+    <tr><td>any review on the calendar</td><td>the first <code>pass</code> (one pass auto-schedules all three recalls)</td><td>first pass + 1 day</td></tr>
+    <tr><td>an <em>overdue</em> review</td><td>pass, then the D+7 recall left 2 grace days past due</td><td>first pass + 9 days</td></tr>
+    <tr><td>confidence under 0.5</td><td>the overdue recall above, fed through the decay overlay</td><td>first pass + ~9–10 days</td></tr>
+    <tr><td>this whole §2/§3 output</td><td>blocker/attempts + one pass + a slipped recall</td><td><strong>~2–3 weeks of real study</strong> — or never, if no friction ever comes</td></tr>
+  </table>
+  </div>
+  <div class="banner" style="margin-top:12px">The live proof: the real store's 36 events span <strong>2026-07-10 → 2026-09-16 — about 68 days — and trip nothing</strong> (zero blockers, zero attempts, zero reviews, one active node). 68 calendar days without friction; a different learner could trip the same trigger on day one. That asymmetry <em>is</em> "friction-shaped, not day-count-shaped," and it is why G-Beyond rejected a day-count trigger.</div>
+  <p class="lede" style="margin-top:10px">Corollary for the demand branch: the surface is useful the day friction first appears, but the only way to see it <em>before</em> friction is a fixture like this one. The demand question is therefore answerable only from this artifact — or from lived friction later.</p>
+</section>
+
+<section id="verdict">
+  <h2>§7 What the simulation says <span class="tag">input to the demand verdict — not the verdict</span></h2>
+  <div class="verdict">
+    <h3>Effect on SkillTrace, if built</h3>
+    <p>One read-only explanation surface (an <code>explain</code>-style command plus "why" annotations on existing recommendations), assembled from shipped derivations — the v1.6 themes, v2.1 overlay, v2.2 advisory conventions, remediation/cadence policy values. No new record type, no new store, no new authority, one Mentor-voice section family. On an empty store it honestly declines ("nothing to diagnose yet") in refusal copy — the same posture as today's Mentor facts.</p>
+    <h3>What it buys</h3>
+    <p>On the fixture's bad day, the learner's two real questions get answers that <em>enforce the existing contracts while explaining them</em>: why the wall is a wall (hard prerequisite), why the detour is legal (soft edge), why the review is shouting (cadence + decay), and what passing would actually change (one derived flip). Nothing else in the engine answers "why <em>this</em>, why now" as a direct question today.</p>
+    <h3>What it costs</h3>
+    <p>A new read-only command and its copy to maintain; renderings on every Tier 1 surface that shows recommendations (or a deliberate CLI-only cut at first); and the standing risk of explanation drift from the derivations it quotes — mitigated the same way v2.2 kept <code>graph impact</code> honest: pure core, thin renderer, tables tested against the same fixtures.</p>
+    <h3>The demand question, stated plainly</h3>
+    <p>The fixture shows the primitive is <strong>coherent, small, and safe</strong>. It cannot show whether it is <strong>wanted</strong> before real friction exists — that judgment is the learner's, and this artifact is its input. If the rendered bad-day answers make the primitive wanted, the learner-demand branch of the diagnostics trigger (G-Beyond #280) trips: a <strong>new verdict on the deferral</strong>, candidacy via the roadmap process — never an automatic slot.</p>
+  </div>
+</section>
+
+<div class="foot">P-DiagnosticsSim (#285) · wayfinder map #275 · throwaway prototype, ADR 0006 discipline: single inline style, zero JS, no build step, no dependencies. Fixture elements are labeled fabricated at point of use; graph facts copied verbatim from <code>graph/edges.yaml</code> and node frontmatter (checked 2026-09-16). The engine never reads this file. If it convinces the learner, record the new verdict on G-Beyond (#280) — that is the demand branch tripping, not a slot appearing.</div>
+</main>
+</body>
+</html>
