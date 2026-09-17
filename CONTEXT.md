@@ -500,6 +500,21 @@ clock is read through one funnel (`execution.overdue.utc_today`) that
 honors the dispatcher's `Context.clock` override so midnight-UTC
 transitions cannot turn a passing test red.
 
+**Advisory model** — an optional, output-only source of advisory prose over
+derived facts: a small local model by default, or a restricted cloud model
+whose payload is derived curriculum-metadata facts only — node id, node
+state, node title, the next-action fact, and the command line it names — and
+never evidence, records, the progress store, or derived progress counts. It
+may reorder, warn, and explain over already-derived facts and nothing else:
+it never computes eligibility, grades an artifact, asserts or flips a node
+state, or writes a record, so it is never an acceptance authority. Its
+absence changes nothing — no event, no warning, no exit-code change — and
+the static Mentor voice remains the canonical behavior. Distinct from
+**Advisory annotation** (a note naming an evidence record) and **Advisory
+policy** (policy values that reorder recommendations or warn): an advisory
+model's prose attaches to no record and carries no policy value.
+(Locked before wiring; no slot in the post-v2.4 sequence, no model wired.)
+
 ## Resource verification (v1.7–v2.3)
 
 **Polite sweep** — the v2.3 batch hygiene wrapping the advisory URL
