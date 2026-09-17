@@ -7,6 +7,8 @@
 > **Contact posture:** no maintainer was contacted; no message, issue, e-mail, or DM was sent to any upstream project. Nothing here commits SkillTrace to any plugin or protocol.
 > **Verification posture:** every external claim is a primary source read on **2026-09-16** (repo READMEs, ADRs, changelogs, developer docs, GitHub code search); every local claim cites the current tree (`main` = `58756d2`) or a named research branch. Claims public sources cannot settle are marked **human-only**.
 
+**Amendment (2026-09-16, post-resolution learner input).** Gate 0 (§8.1) is answered: **the learner does not use a PKM**, and PKM tooling came to their attention only through this research cycle. Consequences: the PKM items (PKM-2, PKM-3, PKM-4) have **no learner demand** — the demand branch of their re-open trigger is empirically nil rather than merely untripped — and the §8 outreach calls lose their demand-side justification (they stay available as *sizing* inputs). MC-1 and MC-2 are **unaffected**: neither requires a PKM. Verdict-level consequences (whether the PKM items move from *deferred with a named trigger* to *rejected with warrant*) belong to the roadmap write or its own decision ticket, not here.
+
 ## 1. TL;DR
 
 | Item | Locked-rubric ROI (#99) | Contract demand found here | Contactless verdict |
@@ -220,9 +222,16 @@ So a roadmap reader should see three different verdicts where the deferral line 
 
 This is the named trigger branch #280 created for the contactless pass: *"a go signal there trips the re-open discussion without contacting anyone."* The pre-read has to answer two things — which items would be worth the calls, and what each call would then need to answer.
 
-### 8.1 Gate 0 — the gate no public source can open
+### 8.1 Gate 0 — answered: no PKM in use
 
-**Does the learner use a PKM at all, and which one?** Nothing in `graph/`, `policy/`, or `docs/USER_GUIDE.md` mentions Obsidian, Logseq, or a vault; every mention in the tree lives in `docs/research/`. **human-only.** If the answer is "no PKM", then every PKM item here is moot, all four outreach calls would be social capital spent on a hypothesis, and the only live branch of the Tier 3 trigger is *fresh user-demand evidence*. This gate costs one question and should be asked before anything else.
+**Answered 2026-09-16, by the learner:** **no PKM is in use.** Obsidian/Logseq-style tooling came to the learner's attention only during this research cycle, not from a workflow — and the tree agreed: nothing in `graph/`, `policy/`, or `docs/USER_GUIDE.md` mentions Obsidian, Logseq, or a vault, and every mention in the repo lives in `docs/research/`.
+
+Consequences, stated plainly:
+
+- **The demand branch of the Tier 3 trigger is empirically nil, not merely untripped.** For PKM-2/PKM-3/PKM-4 this is the *strongest* of their named triggers failing in the negative direction: they are research-derived items, not learner-pulled ones.
+- **The outreach calls lose their demand-side justification.** They remain legitimate as *sizing* inputs (what would upstream tolerate; what breaks), but not as path-to-value work — there is no learner path for the value to flow down today.
+- **MC-1 and MC-2 are unaffected.** Neither requires a PKM; "no PKM" says nothing about whether the learner runs more than one curriculum, so both keep their #99 scores (M and L).
+- **Verdict-level consequences are not decided here.** Whether PKM-2/PKM-3/PKM-4 move from *deferred with a named trigger* to *rejected with warrant* is a decision for the roadmap write or its own decision ticket. This artifact supplies the input; it does not re-adjudicate G-Beyond (#280).
 
 ### 8.2 Which items warrant calls, and what each must answer
 
@@ -284,7 +293,7 @@ A go signal from any call **does not graduate Tier 3**. It trips *the re-open di
 
 ## 11. Open questions (human-only)
 
-1. **Does the learner use a PKM, and which?** (§8.1) — the cheapest gate; unanswerable from the tree.
+1. ~~**Does the learner use a PKM, and which?**~~ **Answered 2026-09-16: no PKM is in use** (§8.1) — which makes the demand branch of the Tier 3 trigger empirically nil and removes the demand-side justification for the §8 outreach calls.
 2. **Is terminal approval acceptable for PKM-3 variant A?** ADR-017's *"disorienting"* finding is a warning; §1.1(2) argues its rationale does not transfer, but only the learner can confirm that for their own workflow.
 3. **The four maintainer questions** (§8.3) — unchanged, and unanswered by construction in this pass.
 4. **Is a projection wanted at all?** PKM-2's value proposition is "what's due?" outside the CLI, when `today` / `next` / `serve` already answer it inside the repo. Whether that is a real gap or a solved need is a learner answer, not a research finding.
