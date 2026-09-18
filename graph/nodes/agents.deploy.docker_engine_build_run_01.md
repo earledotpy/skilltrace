@@ -42,40 +42,27 @@ updated_at: 2026-09-05
 
 # Containerize the primer app and pass the Engine smoke check
 
-## Learning target
+## What this skill is
 
-Starting from the minimal-app node, write the from-scratch Dockerfile
-(official Python image, `WORKDIR /code`, copy `requirements.txt` first for
-layer cache, `pip install --no-cache-dir --upgrade -r`, copy `./app` last,
-exec-form `CMD ["fastapi", "run", "app/main.py", "--port", "80"]`), then pass
-the Engine 4-command acceptance on stock CI (`ubuntu-24.04`, preinstalled
-Client+Server 28.0.4; `docker --version` recorded as evidence only), fixed
-mapping `-p 80:80`, all exit 0: `docker build -t <primer-image> .`,
-`docker run -d --name <primer-container> -p 80:80 <primer-image>`,
-`curl -f http://localhost:80/` (body `{"message": "Hello World"}`),
-`curl -f http://localhost:80/docs` (HTTP 200, Swagger UI). No Compose, no
-Buildx, no push/registry in acceptance.
+Containerize a minimal app from scratch: write the Dockerfile, build and run it on Docker Engine, and confirm the app answers on its routes.
 
-## Study pointers
+## Why this skill
 
-FastAPI's Docker deployment page for the canonical Dockerfile; Engine install
-docs for the daemon/CLI shape; the Desktop-license page for why Desktop stays
-non-default (paid subscription above 250 employees or $10M revenue — the
-free-first default is Engine, never Desktop). Alternates advisory note
-(single note, inside this node, never multiplied acceptance): commands map to
-`podman build/run`; Rancher Desktop / Finch / Colima run the same Dockerfile
-via their Docker-compatible path. Engine is the only checked target.
+Container packaging is the deployment prerequisite for everything downstream: the capstone assumes the learner can build an image and run it reproducibly. A learner who can write a small Dockerfile and verify the running container stops debugging "works on my machine" and starts shipping.
 
-## Source provenance
+## What passing requires
 
-Primary: Docker Engine documentation, https://docs.docker.com/engine/ —
-install, architecture, license gates. Supporting: FastAPI in Containers,
-https://fastapi.tiangolo.com/deployment/docker/. Regeneration key:
-`docker-engine-28.0.4/primer-build-run-01`. All references `reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Practice from the minimal-app starting point: write the Dockerfile from scratch, build the image, run the container with a fixed port mapping, and curl the app routes to confirm they answer. The Engine command sequence here is practice direction, not a pass bar. Seed estimate: 60–120 minutes.
+
+## Resources
+
+- docker-engine-docs (registry)
+- fastapi-docs (registry)
 
 ## Notes
 
-Second half of the primer hard chain and one of the two hard-prerequisite
-lineages into the capstone (the other is LangGraph). Portfolio track: the
-Dockerfile plus the four-command exit-0 transcript is the evidence artifact.
-The single hard edge out of the primer is this node to the capstone.
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight. Aligned to the canonical node skeleton, 2026-09.

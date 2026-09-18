@@ -39,33 +39,26 @@ updated_at: 2026-09-05
 
 # Explain what an AI agent is and how tools extend an LLM
 
-## Learning target
+## What this skill is
 
-Given a task description, state in one paragraph what makes an agent more than
-a bare LLM call (perception via tools, action loop, memory), name the two
-agent styles from the course — CodeAgent (actions as code) versus
-tool-calling agent (actions as structured calls) — with a one-line example of
-a task each style suits, and list two tools an agent might use with what each
-one observes or changes.
+Define agent, tool, and action loop; contrast CodeAgents with tool-calling agents, with a one-line example of a task each style suits.
 
-## Study pointers
+## Why this skill
 
-HF Agents Course Unit 0 for the syllabus and learning paths; Unit 1 for the
-agent definition, the LLMs recap, the tools vocabulary, and the CodeAgents
-versus tool-calling comparison. The Unit 1 fundamentals certificate quiz is a
-good self-check that the vocabulary stuck.
+The agent vocabulary is the entry ticket to the whole agentic slice: every framework and protocol node downstream assumes the tool/action-loop distinction. A learner who can say what makes an agent more than a bare LLM call can follow delegation, guardrails, and tool-use discussions without getting lost.
 
-## Source provenance
+## What passing requires
 
-Primary: Hugging Face Agents Course (2025 edition),
-https://huggingface.co/learn/agents-course/unit0/introduction —
-Unit 0 (Welcome/syllabus/paths) + Unit 1 (Introduction to Agents).
-Regeneration key: `hf-agents-2025/agent-fundamentals-01`. All references are
-`reference_only` roadmap anchors; they never control locking or recommendation.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the syllabus and concepts units, then practice in writing: one paragraph on what makes an agent more than a bare LLM call, the two agent styles with an example task each, and two tools with what each observes or changes. Seed estimate: 60–120 minutes.
+
+## Resources
+
+- hf-agents-course (registry)
 
 ## Notes
 
-Entry node of the v1.9 Phase 3 chain. Every framework and protocol node in
-this slice lists it as a hard prerequisite: without the agent/tool/action-loop
-vocabulary those targets are incoherent. Learner-manual gate expected
-(conceptual judgment needs human review; AI is never an acceptance authority).
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight. Aligned to the canonical node skeleton, 2026-09.

@@ -51,31 +51,28 @@ updated_at: 2026-09-05
 
 # Frame an ML task and split data without leakage
 
-## Learning target
+## What this skill is
 
-Given a tabular problem statement, state whether it is supervised (regression or
-classification) or unsupervised, propose a train/validation/test split with a
-one-line justification for keeping the test set sacred, and name two leakage
-patterns (e.g. target-derived features, pre-split imputation/normalization) with
-a one-line fix for each.
+Given a tabular problem statement, state whether it is supervised (regression or classification) or unsupervised, propose a train/validation/test split that keeps the test set sacred, and name two leakage patterns with a one-line fix for each.
 
-## Study pointers
+## Why this skill
 
-Google ML Crash Course Framing + Data Prep modules for the workflow vocabulary;
-Ng ML Specialization Course 1 Week 1 for supervised/unsupervised framing; ISLP
-Chapter 1 for the statistical framing; Kaggle Learn Intro lesson 1 for the
-notebook-level workflow.
+Framing decides everything downstream: the wrong task definition or a leaked split makes every later model comparison meaningless. A learner who can frame cleanly and split without leakage can trust their evaluation before spending time on models.
 
-## Source provenance
+## What passing requires
 
-Primary: Google ML Crash Course (2024 refresh),
-https://developers.google.com/machine-learning/crash-course —
-Framing + Data Prep modules. Regeneration key:
-`mlcc-2024-11-12/ml-workflow-01`. Supporting sections: Ng MLS Course 1 Week 1;
-ISLP Chapter 1; Kaggle Learn Intro lesson 1. All references are
-`reference_only` roadmap anchors; they never control locking or recommendation.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the framing and data-prep vocabulary, then practice on a small tabular problem: write the task type, sketch the split with one line on why the test set stays untouched, and list two leakage patterns with fixes. Seed estimate: 60–120 minutes.
+
+## Resources
+
+- mlcc-crash-course (registry)
+- ng-ml-specialization-python (registry)
+- islp-python-edition (registry)
 
 ## Notes
 
-Entry node of the v1.8 Phase 2 chain. Learner-manual gate expected (framing
-judgment needs human review; AI is never an acceptance authority).
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight. Aligned to the canonical node skeleton, 2026-09.

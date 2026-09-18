@@ -51,29 +51,28 @@ updated_at: 2026-09-05
 
 # Train and evaluate logistic regression classifiers
 
-## Learning target
+## What this skill is
 
-Implement logistic regression in NumPy (sigmoid, log-loss, gradient descent),
-match it against a sklearn baseline, and for two given scenarios (balanced vs
-10:1 imbalanced) pick the right metric — accuracy vs F1 vs ROC-AUC — with a
-one-line justification each, plus a threshold-tuning note.
+Train logistic regression from scratch and with sklearn, and choose accuracy vs F1 vs ROC-AUC for a given class balance, with a threshold-tuning note.
 
-## Study pointers
+## Why this skill
 
-Google MLCC Logistic Regression + Classification modules for sigmoid/log-loss;
-Ng MLS Course 1 Week 3 and Course 2 for regularized logistic regression in
-Python; ISLP Chapter 4 Python labs for the classification reading; Kaggle Learn
-Intro for categorical-feature handling.
+Classification is the first place where the default metric lies: accuracy looks fine while the model ignores the minority class. A learner who can train a simple classifier and pick the metric that matches the class balance reads model quality honestly before moving to trees and tuning.
 
-## Source provenance
+## What passing requires
 
-Primary: Google ML Crash Course (2024 refresh) — Logistic Regression and
-Classification modules. Regeneration key:
-`mlcc-2024-11-12/logistic-regression-01`. Supporting: Ng MLS Courses 1–2; ISLP
-Chapter 4; Kaggle Learn Intro. All references `reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Implement the sigmoid, log-loss, and gradient-descent loop once from scratch, compare against a library baseline, then practice metric choice on a balanced versus an imbalanced scenario with one line of justification each. Seed estimate: 90–180 minutes.
+
+## Resources
+
+- mlcc-crash-course (registry)
+- ng-ml-specialization-python (registry)
+- islp-python-edition (registry)
 
 ## Notes
 
-Feeds the metrics half of the Phase 2 conceptual checkpoint (accuracy vs F1 vs
-ROC-AUC vs RMSE). Manual or objective gate per slot-builder choice; either way
-AI is never the acceptance authority.
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight. Aligned to the canonical node skeleton, 2026-09.

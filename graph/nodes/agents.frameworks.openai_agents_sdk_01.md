@@ -44,36 +44,27 @@ updated_at: 2026-09-05
 
 # Delegate a task with OpenAI Agents SDK handoffs and guardrails
 
-## Learning target
+## What this skill is
 
-Build two SDK agents (`pip install openai-agents`) where the first hands off
-to the second (agents-as-tools delegation), add one input or output guardrail
-that visibly fires on a hostile input, and give one agent a function tool plus
-one MCP-backed tool with tracing on. Write a half-page note: what the trace
-shows about the handoff decision, and what the guardrail blocked that the
-model alone would have allowed.
+Build two SDK agents where the first hands off to the second, add one guardrail that visibly fires on a hostile input, and give one agent a function tool plus an MCP-backed tool with tracing on.
 
-## Study pointers
+## Why this skill
 
-The Python SDK quickstart for install and first run; the Agents/Runner pages
-for sync/async execution; the handoffs pages for delegation; the guardrails
-pages for input/output checks; the tools and tracing pages for the MCP-backed
-tool. Only verified Python pages are cited — the realtime API surface is JS
-and is never part of this node. Per-token model billing plus metered tool
-calls apply; note your spend.
+Delegation plus guardrails is the core safety pattern for multi-agent work: handoffs split the task, guardrails bound what the model alone would allow. A learner who can trace a handoff decision and show a guardrail firing can build small agent teams without flying blind.
 
-## Source provenance
+## What passing requires
 
-Primary: OpenAI Agents SDK (Python),
-https://openai.github.io/openai-agents-python/ — quickstart, handoffs,
-guardrails, tools, tracing. Supporting: platform agents guide,
-https://developers.openai.com/api/docs/guides/agents. Regeneration key:
-`openai-agents-0.22.0/handoffs-guardrails-01`. All references
-`reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the quickstart, handoffs, guardrails, and tools/tracing material, then practice the delegation-and-safety loop on a small task and write a half-page note on what the trace shows and what the guardrail blocked. Seed estimate: 90–180 minutes.
+
+## Resources
+
+- openai-agents-sdk (registry)
+- mcp-spec (registry)
 
 ## Notes
 
-Delegation-and-safety node of the slice. Hard prerequisite is the
-fundamentals node only; the MCP node is a soft ordering. SDK is MIT OSS and
-free; running agents bills per-token plus metered tool calls (re-verify rates
-against official pricing at spec time — no rate is pinned here).
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight. Aligned to the canonical node skeleton, 2026-09.

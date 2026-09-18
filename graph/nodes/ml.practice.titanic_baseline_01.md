@@ -49,30 +49,27 @@ updated_at: 2026-09-05
 
 # Ship a Kaggle Titanic baseline with feature engineering
 
-## Learning target
+## What this skill is
 
-Produce a `kaggle-titanic/` folder with a first submission, then a second
-submission adding 3+ engineered features (e.g. family size, title, deck —
-per `docs/roadmap/phase-2-classical-ml.md`), each submission committed with a
-message explaining what changed, plus a one-page score comparison naming which
-feature moved the metric and why.
+Run the Kaggle Titanic loop end to end: a first baseline submission, then a second submission adding engineered features, with a written comparison naming which feature moved the metric and why.
 
-## Study pointers
+## Why this skill
 
-Kaggle Learn Intro + Intermediate for the notebook/pipeline mechanics and the
-Titanic competition pages for the submission loop; Google MLCC workflow for
-framing-to-evaluation discipline; ISLP classification labs for reading the
-model honestly.
+Titanic is the first place where workflow discipline meets a public scoreboard: framing, features, and honest score reading in one loop. A learner who can ship a baseline, improve it deliberately, and say what moved the score is ready for larger practice datasets.
 
-## Source provenance
+## What passing requires
 
-Primary: Kaggle Learn (Intro + Intermediate) + Titanic competition.
-Regeneration key: `kaggle-2026-08/titanic-baseline-01`. Supporting: Google MLCC
-end-to-end workflow; ISLP Chapters 4–5 labs. All references `reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Work the notebook-to-submission loop twice on the Titanic data: baseline first with a commit message explaining what changed, then a second pass with additional engineered features and a one-page score comparison. Seed estimate: 180–360 minutes.
+
+## Resources
+
+- kaggle-learn-ml (registry)
+- mlcc-crash-course (registry)
 
 ## Notes
 
-First half of the Phase 2 Kaggle checkpoint (Titanic ≥ 0.78 accuracy threshold
-lives in the roadmap doc, not in this node — the node records the submission
-discipline, not the score gate). Portfolio track: the folder is the evidence
-artifact.
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight. Aligned to the canonical node skeleton, 2026-09.
