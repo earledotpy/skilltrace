@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang='en'><head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>P-StudyFortnight — THROWAWAY decision aid (map #289, ticket #292)</title>
+<style>
+:root { --ink:#1a1a1a; --mut:#5b6470; --line:#dfe3e8; --bg:#fbfbfc; --acc:#2f5d8a; --warn:#a2520a; --warm:#fff7ed; --ok:#1f6f43; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.55 -apple-system,Segoe UI,Roboto,sans-serif; color:var(--ink); background:var(--bg); }
+main { max-width:1180px; margin:0 auto; padding:28px 22px 90px; }
+h1 { font-size:26px; margin:0 0 6px; } h2 { font-size:20px; margin:38px 0 8px; border-bottom:2px solid var(--line); padding-bottom:6px; }
+h3 { font-size:16px; margin:22px 0 8px; } .date { color:var(--mut); font-weight:400; font-size:13px; }
+.shape { display:block; color:var(--mut); font-size:12.5px; font-weight:400; margin-top:2px; }
+.throw { background:#3a2410; color:#ffd9a8; padding:6px 10px; border-radius:3px; font-size:12.5px; letter-spacing:.04em; }
+.legend span { display:inline-block; margin-right:14px; font-size:12.5px; color:var(--mut); }
+.tag { font-size:11px; letter-spacing:.05em; padding:1px 6px; border-radius:3px; border:1px solid currentColor; }
+.eng-tag { color:var(--acc); } .fab-tag { color:#6b4a8a; } .prop-tag { color:var(--warn); }
+.lede { color:var(--mut); max-width:88ch; }
+pre { background:#0f1720; color:#e6edf3; padding:11px 13px; border-radius:5px; font-size:12px; overflow-x:auto; white-space:pre-wrap; }
+code { background:#eef1f4; padding:1px 4px; border-radius:3px; font-size:12.5px; }
+.engine { border-left:3px solid var(--acc); background:#fff; margin:10px 0; padding:8px 12px; border-radius:0 5px 5px 0; }
+.engine-title { font:11px/1.4 ui-monospace,Consolas,monospace; color:var(--acc); letter-spacing:.04em; margin-bottom:6px; }
+.mock { border:2px dashed var(--warn); background:var(--warm); border-radius:7px; padding:12px; }
+.mock-title { font:11px/1.4 ui-monospace,Consolas,monospace; color:var(--warn); letter-spacing:.04em; margin-bottom:8px; }
+.mockbar { font-size:12px; color:var(--mut); margin-bottom:4px; }
+.mockinput { background:#fff; border:1px solid var(--line); border-radius:5px; padding:8px 10px; font-size:14px; }
+.caret { float:right; color:var(--mut); }
+.mockdd { background:#fff; border:1px solid var(--line); border-top:none; border-radius:0 0 5px 5px; }
+.ddrow { padding:8px 10px; border-bottom:1px solid var(--line); } .ddrow.dim { opacity:.62; }
+.ddsmall { font-size:12px; color:var(--mut); }
+.chip { font-size:10.5px; padding:1px 6px; border-radius:9px; border:1px solid currentColor; margin-left:6px; }
+.chip.ready { color:var(--ok); } .chip.locked { color:var(--mut); }
+.mockcards { display:flex; gap:9px; margin-top:11px; flex-wrap:wrap; }
+.card { background:#fff; border:1px solid var(--line); border-radius:6px; padding:9px 11px; flex:1 1 210px; }
+.healthgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:9px; }
+.hcard { background:#fff; border:1px solid var(--line); border-radius:6px; padding:9px 11px; }
+.hcard.warm { background:#fff3e6; border-color:#f0c9a0; } .hcard.quiet { opacity:.78; }
+.warn { color:var(--warn); font-weight:600; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:8px; }
+.cmp > div { min-width:0; }
+.acts code { display:inline-block; margin:2px 4px 2px 0; }
+.friction { margin:4px 0 8px 18px; padding:0; font-size:12.5px; color:var(--warn); }
+table.matrix { border-collapse:collapse; width:100%; margin-top:10px; font-size:12.5px; background:#fff; }
+table.matrix th, table.matrix td { border:1px solid var(--line); padding:6px 8px; vertical-align:top; text-align:left; }
+table.matrix th { background:#f2f5f8; font-size:11.5px; letter-spacing:.03em; }
+.bid { font:12px ui-monospace,Consolas,monospace; color:var(--acc); white-space:nowrap; }
+.mono { font-family:ui-monospace,Consolas,monospace; font-size:11.5px; } .small { font-size:11px; }
+.warncell { color:var(--warn); }
+.cand { border:1px solid var(--line); background:#fff; border-radius:7px; padding:12px 14px; margin:12px 0; }
+.trigger { font-size:12.5px; color:var(--mut); margin:4px 0 8px; }
+.disp { font-size:13px; font-weight:600; color:var(--acc); }
+.day { border:1px solid var(--line); background:#fff; border-radius:7px; padding:14px 16px; margin:14px 0; }
+.repro { font-size:12.5px; }
+footer { margin-top:40px; color:var(--mut); font-size:12.5px; border-top:1px solid var(--line); padding-top:12px; }
+</style></head>
+<body><main>
+<div class='throw'>THROWAWAY DECISION AID — not a spec, not a release artifact, never read by the engine, not acceptance of anything.
+Evidence delivery for wayfinder ticket #292 on map #289. Static page: no scripts, no network.</div>
+<h1>P-StudyFortnight — baseline journey and edge-case comparisons</h1>
+<p class='lede'>An accelerated two-week simulation of the locked contract in G-StudyContract (#290): eight 105-minute sessions
+on a beginner foundations arc, run against the real engine on isolated fabricated inputs. Every claim carries one of three labels.</p>
+<div class='legend'>
+<span><span class='tag eng-tag'>ENGINE OUTPUT</span> verbatim capture from the isolated fixture</span>
+<span><span class='tag fab-tag'>FABRICATED</span> hand-authored scenario data, never a real learner record</span>
+<span><span class='tag prop-tag'>PROPOSED</span> static illustration of a hypothetical UI, not engine behavior</span>
+</div>
+
+<h2 id='pins'>Pins, isolation and safety</h2>
+<div class='grid2'>
+<div>
+<b>Source revision</b><div class='ddsmall'>`main` @ `6dafd42` (merge of #288), package 2.4.0 — the revision G-StudyContract §4 froze.</div>
+<b>Simulated clock</b><div class='ddsmall'>Day 1 = 2026-09-22 (UTC); day N = day 1 + N−1. Session days 1/3/5/7/8/10/12/14, rest days 2/4/6/9/11/13.
+Carried through the dispatcher's `Context.clock`. Engine-written record timestamps ignore it (H1) — every such record is labeled as fabricated fixture data.</div>
+<b>Fixture</b><div class='ddsmall'>`fortnight-fixture v0` — one isolated root per scenario, built from this repo's shared read-only material
+(`graph/nodes`, `edges.yaml`, `resources.yaml`, `evidence/{artifact_specs,validation_gates}.yaml`, `policy/*`) plus fabricated learner records.
+Fixture roots are regenerable and deliberately not committed; the captured engine output under `out/` is.</div>
+<b>Entry set</b><div class='ddsmall'>`math.arithmetic.order_operations_01` (gate: manual, spec min 3), `programming.python.variables_01` (manual, min 1),
+`data.sql.select_basics_01` (manual, min 1). Each supports 1, 3 and 1 resources respectively.</div>
+</div>
+<div>
+<b>Policy values</b><div class='ddsmall'>Live `policy/*.yaml` at the pinned revision, unmodified: workload daily 180/warn 120, session 180/warn 90,
+active nodes 3/warn 2, stale 12 h, templates 15/45/90; remediation failed-attempt threshold 3, max 5 open;
+review cadence 1/3/7 days with a 2-day grace; retention 7-day half-life, 0.5 attention threshold, 2-day on-time window;
+analytics 30-day window, min 3 sessions, velocity 2/wk, review 0.80, coverage 0.60, blockers 3.</div>
+<b>Isolation</b><div class='ddsmall'>Every learner record was written inside a throwaway fixture root via `--root`/`Context.root`.
+Real `graph/state.yaml`, `evidence/` and `execution/` were hash-verified before and after — see the hash ledger below.</div>
+<b>Boundaries respected</b><div class='ddsmall'>No `pass_node`, `master_node` or `delete_record` was invoked anywhere, including in helpers.
+"Passed" starting facts are hand-authored scenario data (labeled), never the output of `pass`. No AI verdict was used as an acceptance authority:
+every manual-gate verdict in the arc is the scripted learner's own explicit `--accept`/`--reject`.</div>
+<b>Honesty riders</b><div class='ddsmall'>A simulation cannot show learning, comprehension, sustained demand, or real study time.
+Hypothetical acceptance snapshots are illustrations, not learner evidence. Trigger support means "reconsider", never "implement".</div>
+</div></div>
+<h2 id='journey'>The fortnight, day by day</h2>
+<p class='lede'>The locked baseline contract (G-StudyContract §2): eight 105-minute sessions on days 1, 3, 5, 7, 8, 10, 12, 14. Every panel below labels its own evidence: ENGINE OUTPUT is verbatim capture from the isolated fixture; FABRICATED is hand-authored scenario data; PROPOSED is a static illustration.</p>
+
+<section class='day'>
+  <h3>Day 1 <span class='date'>— 2026-09-22</span> <span class='shape'>Session 1 (105 min): discovery (math/data/Python), select entry, open session, first artifact work</span></h3>
+  <div class='grid2'>
+    <div><b>Starting facts</b><div class='ddsmall'>Fresh fixture; empty progress; `sync` derives 49 nodes available.</div>
+         <b>Actions</b><div class='acts'><code>today --minutes 105</code> · <code>next --minutes 105 --limit 5</code> · <code>next --show-locked --limit 3</code> · <code>node × 3 (entry details)</code> · <code>resources --node-id math entry</code> · <code>start MATH</code> · <code>work --minutes 70</code> · <code>close</code></div></div>
+    <div><b>Expected</b><div class='ddsmall'>A beginner could ask the engine for math/data/Python foundations and get walkable entry points.</div>
+         <b>Observed</b><div class='ddsmall'>Read-only surfaces work, but discovery is id-only: nothing accepts a subject query; `today` and `next` both top-rank an agents-course node (off the beginner arc) every single day of the fortnight.</div>
+         <b>Friction</b><ul class='friction'><li>No text/keyword discovery surface exists (`next` takes only minutes/limit/show-locked).</li><li>Learner must already know `programming.python.variables_01`-style ids to see any skill.</li><li>`next` prints a stale command form (`skilltrace session start --node …`) while `today` prints the real one (`skilltrace start …`).</li><li>`next --show-locked` sized a 60-min session and still rendered no locked rows visibly.</li></ul>
+         <b>Uncertainty</b><div class='ddsmall'>Whether the agents-first ranking is goal-weighting (seed intent) or accidental; real learner intent not measurable from simulation.</div></div>
+  </div>
+  <div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 1 — recommendations sized</div><pre>OPTION 1 — 105-MIN SESSION
+Explain what an AI agent is and how tools extend an LLM
+  [Ready to start]
+
+Explain what an AI agent is and how tools extend an LLM is the top pick for this session — it's in the 'foundational' track and scores highest overall. Passing this unlocks 10 downstream skills. Define agent, tool, and action loop; contrast CodeAgents with tool-calling agents.
+
+Where to learn
+  Hf Agents Course -- https://huggingface.co/learn/agents-course/unit0/introduction
+
+How to proceed
+  Start studying Explain what an AI agent is and how tools extend an LLM and submit evidence when your work is ready. Estimated effort: 60–120 min.
+
+… (73 more lines)</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 1 — discovery probe: math entry detail</div><pre>THIS SKILL
+Apply order of operations
+  [Ready to start]
+
+You're clear to begin Apply order of operations -- nothing is blocking you. It needs 3 accepted submission(s) to pass. You decide when the work is good enough, not an AI.
+
+Where to learn
+  Khan Arithmetic -- https://www.khanacademy.org/math/arithmetic
+
+How to proceed
+  0 of 3 Order of operations problem-set evidence.
+
+… (2 more lines)</pre></div>
+</section>
+
+<section class='day'>
+  <h3>Day 3 <span class='date'>— 2026-09-24</span> <span class='shape'>Session 2: return to unfinished work, evidence inspection, continued artifact work</span></h3>
+  <div class='grid2'>
+    <div><b>Starting facts</b><div class='ddsmall'>MATH active (in progress); 0/3 evidence; no session open.</div>
+         <b>Actions</b><div class='acts'><code>today</code> · <code>node MATH</code> · <code>work MATH (continue)</code> · <code>eligibility MATH</code> · <code>close</code></div></div>
+    <div><b>Expected</b><div class='ddsmall'>Today foregrounds the unfinished thread; work continues it.</div>
+         <b>Observed</b><div class='ddsmall'>`node` correctly shows [In progress] and the 0-of-3 bar; `eligibility` reads 0/3 NOT ELIGIBLE. But `work` refuses — a closed session cannot be reopened; returning to unfinished work requires a fresh `start` (a new session record per study day).</div>
+         <b>Friction</b><ul class='friction'><li>'Return to unfinished work' has no resume affordance: work requires an open session, so each study day re-`start`s (more sessions, no thread continuity).</li><li>`today` still says 'your best focus today is [agents node]' even with an in-progress node.</li></ul>
+         <b>Uncertainty</b><div class='ddsmall'>Whether repeated start/close is by design (session = day) — the record trail suggests yes, but the learner-facing copy never says so.</div></div>
+  </div>
+  <div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 3 — today: what is unfinished?</div><pre>TODAY
+
+There's no session open — your best focus today is Explain what an AI agent is and how tools extend an LLM. There's Study velocity is below target: 0.4 work items/week average (target: 2). and Review completion is below target: 0% (target: 80%). needing attention — but finishing your open work matters more than starting something new.
+
+Where to learn (top focus)
+  Hf Agents Course -- https://huggingface.co/learn/agents-course/unit0/introduction
+
+How to proceed
+  Start studying Explain what an AI agent is and how tools extend an LLM.
+
+DO THIS NEXT
+  Start studying agents.concepts.agent_fundamentals_01: `skilltrace start agents.concepts.agent_fundamentals_01`
+… (2 more lines)</pre></div>
+</section>
+
+<section class='day'>
+  <h3>Day 5 <span class='date'>— 2026-09-26</span> <span class='shape'>Session 3: discovery round 2, second-strand selection, artifact work</span></h3>
+  <div class='grid2'>
+    <div><b>Starting facts</b><div class='ddsmall'>MATH active; PY available; workload warn threshold at 2 active nodes.</div>
+         <b>Actions</b><div class='acts'><code>today</code> · <code>next --limit 8</code> · <code>node PY</code> · <code>resources PY</code> · <code>start PY</code> · <code>work PY</code> · <code>close</code></div></div>
+    <div><b>Expected</b><div class='ddsmall'>Second strand opens with a workload warning at the threshold.</div>
+         <b>Observed</b><div class='ddsmall'>Warning fired exactly: 'this start makes 2 active nodes — at or past the workload warning threshold of 2.' Advisory only; action proceeded.</div>
+         <b>Friction</b><ul class='friction'><li>Discovery round 2 again shows the same agents OPTION 1; strand browsing is impossible without ids.</li></ul>
+         <b>Uncertainty</b><div class='ddsmall'>None for the threshold; ranking behavior carried from Day 1.</div></div>
+  </div>
+  <div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 5 — open the Python-strand session</div><pre>opened session ses.2026-09-18.02.
+programming.python.variables_01: available -&gt; active.
+[warning] this start makes 2 active nodes — at or past the workload warning threshold of 2.</pre></div>
+</section>
+
+<section class='day'>
+  <h3>Day 7 <span class='date'>— 2026-09-28</span> <span class='shape'>Session 4: evidence submission + gate judgment readout, next-action readback</span></h3>
+  <div class='grid2'>
+    <div><b>Starting facts</b><div class='ddsmall'>MATH manual gate (learner authority), spec minimum 3 accepted submissions.</div>
+         <b>Actions</b><div class='acts'><code>today</code> · <code>submit MATH (no verdict)</code> · <code>submit MATH --accept</code> · <code>eligibility MATH</code> · <code>today</code> · <code>close</code></div></div>
+    <div><b>Expected</b><div class='ddsmall'>Submission without a verdict is refused; explicit learner verdict accepted; eligibility readback honest.</div>
+         <b>Observed</b><div class='ddsmall'>Refusal path is clean and explicit ('manual-authority node requires an explicit verdict … nothing written'). Accept wrote ev…001 (accepted); eligibility read 1/3 accepted, NOT ELIGIBLE. Gate readout matches the learner-authority boundary.</div>
+         <b>Friction</b><ul class='friction'><li>The node view says 'It needs 3 accepted submission(s) to pass' — countable, but the learner must find `eligibility` themselves; `today` never mentions evidence progress.</li><li>No open session existed on this day, so `close` refused — a submission day with no artifact work is a session-less day.</li></ul>
+         <b>Uncertainty</b><div class='ddsmall'>Objective-gate path (check-script judgment) not exercised in the baseline; math/data/Python entry gates are manual.</div></div>
+  </div>
+  <div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 7 — submit without a manual verdict</div><pre>[error] manual-authority node requires an explicit verdict: pass --accept or --reject.
+evidence submit: refused for node math.arithmetic.order_operations_01 — nothing written.</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 7 — scripted learner's manual gate</div><pre>verdict: ACCEPTED
+evidence submit: wrote ev.math.arithmetic.order_operations_01.001 (accepted).</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 7 — gate readback</div><pre>eligibility math.arithmetic.order_operations_01: NOT ELIGIBLE
+  spec spec.math.arithmetic.order_operations: 1/3 accepted (below minimum)</pre></div>
+</section>
+
+<section class='day'>
+  <h3>Day 8 <span class='date'>— 2026-09-29</span> <span class='shape'>Session 5: third-strand selection, artifact work (no-pass session permitted)</span></h3>
+  <div class='grid2'>
+    <div><b>Starting facts</b><div class='ddsmall'>3rd active node crosses the warn-2 threshold again.</div>
+         <b>Actions</b><div class='acts'><code>today</code> · <code>node SQL</code> · <code>start SQL</code> · <code>work SQL --minutes 105</code> · <code>close</code></div></div>
+    <div><b>Expected</b><div class='ddsmall'>Third strand opens; warning repeats; session ends without a pass — no demotion pressure.</div>
+         <b>Observed</b><div class='ddsmall'>Warning repeated; session closed; SQL stays active at 0/1 evidence. No-pass sessions are unproblematic.</div>
+         <b>Friction</b><ul class='friction'><li>Three strands at once is fine mechanically, but no surface summarizes 'you have 3 strands going' outside the workload warning.</li></ul>
+         <b>Uncertainty</b><div class='ddsmall'>None.</div></div>
+  </div>
+  <div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 8 — open the SQL-strand session</div><pre>opened session ses.2026-09-18.03.
+data.sql.select_basics_01: available -&gt; active.
+[warning] this start makes 3 active nodes — at or past the workload warning threshold of 2.</pre></div>
+</section>
+
+<section class='day'>
+  <h3>Day 10 <span class='date'>— 2026-10-01</span> <span class='shape'>Session 6: blocker/failure handling inside honest-work shape</span></h3>
+  <div class='grid2'>
+    <div><b>Starting facts</b><div class='ddsmall'>PY practice hit reassignment confusion; 3rd active warning expected on start.</div>
+         <b>Actions</b><div class='acts'><code>today</code> · <code>start PY</code> · <code>work PY --blocked</code> · <code>attempt record PY --outcome failed</code> · <code>blocker create PY</code> · <code>blockers</code> · <code>suggest remediation</code> · <code>close</code></div></div>
+    <div><b>Expected</b><div class='ddsmall'>Failed attempt and blocker recorded; remediation pressure appears.</div>
+         <b>Observed</b><div class='ddsmall'>Both records wrote cleanly (immutable attempt; open blocker listed). `suggest remediation` honestly reported there is no remediation edge covering this blocker and pointed at the ad-hoc action command.</div>
+         <b>Friction</b><ul class='friction'><li>Failed attempts are invisible in `today`/`next` — the learner's own failure exists only via `suggest remediation` or raw listings.</li><li>Blocker resolution later requires typing the id `blk.&lt;node&gt;.001` — the learner must copy it from a listing.</li></ul>
+         <b>Uncertainty</b><div class='ddsmall'>Whether any beginner node has a remediation edge (19 remediation edges exist in the graph; none from the Python entry).</div></div>
+  </div>
+  <div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 10 — record the failed attempt</div><pre>attempt att.programming.python.variables_01.001: failed
+attempt record: wrote att.programming.python.variables_01.001 (failed).</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 10 — name the persistent stuckness</div><pre>opened blocker blk.programming.python.variables_01.001.</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 10 — remediation pressure</div><pre>suggest remediation: no remediation edge covers blocker blk.programming.python.variables_01.001 on programming.python.variables_01 — log an ad-hoc action: skilltrace remediation create programming.python.variables_01 --description "..." --blocker blk.programming.python.variables_01.001 (~30 min, due 2026-09-19).</pre></div>
+</section>
+
+<section class='day'>
+  <h3>Day 12 <span class='date'>— 2026-10-03</span> <span class='shape'>Session 7: return to unfinished work, correction/supersession</span></h3>
+  <div class='grid2'>
+    <div><b>Starting facts</b><div class='ddsmall'>Open blocker on PY; day-7 accepted record ev…001 on MATH.</div>
+         <b>Actions</b><div class='acts'><code>today</code> · <code>blocker resolve --summary</code> · <code>remediation create --blocker</code> · <code>submit --supersedes ev…001 --reason … --accept</code> · <code>submit --supersedes ev…002 … --accept (depth 2)</code> · <code>eligibility MATH</code> · <code>close</code></div></div>
+    <div><b>Expected</b><div class='ddsmall'>Correction supersedes the old record; the chain stays as history; eligibility counts only live records.</div>
+         <b>Observed</b><div class='ddsmall'>Supersession wrote ev…002 then ev…003 (both accepted, chained); the original record was never edited or deleted. Supersede also requires the explicit manual verdict (`--accept`), same as first submission.</div>
+         <b>Friction</b><ul class='friction'><li>`today` showed the open blocker line — good; but nothing anywhere shows the correction chain except `report evidence`.</li><li>Session-less day again: no `start` issued, so `close` refused (honest, but the copy doesn't guide).</li></ul>
+         <b>Uncertainty</b><div class='ddsmall'>None beyond display gaps.</div></div>
+  </div>
+  <div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 12 — supersede the day-7 record</div><pre>verdict: ACCEPTED
+evidence submit: wrote ev.math.arithmetic.order_operations_01.002 (accepted).</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 12 — supersede the superseding record</div><pre>verdict: ACCEPTED
+evidence submit: wrote ev.math.arithmetic.order_operations_01.003 (accepted).</pre></div>
+</section>
+
+<section class='day'>
+  <h3>Day 14 <span class='date'>— 2026-10-05</span> <span class='shape'>Session 8: close sessions honestly, final evidence inspection, day report</span></h3>
+  <div class='grid2'>
+    <div><b>Starting facts</b><div class='ddsmall'>MATH 1/3 live accepted (after chain), PY blocker resolved + 1 failed attempt, SQL 0/1, 0 passes — by design.</div>
+         <b>Actions</b><div class='acts'><code>today</code> · <code>eligibility SQL</code> · <code>close</code> · <code>report progress/evidence/blockers</code> · <code>reviews</code> · <code>retention status</code> · <code>analytics velocity/blockers</code> · <code>health</code></div></div>
+    <div><b>Expected</b><div class='ddsmall'>A readable fortnight summary: what moved, what stands, what needs attention.</div>
+         <b>Observed</b><div class='ddsmall'>Reports are honest and detailed (progress per track, evidence chain, resolved blocker history). `health` rolls up repo diagnostics fine. But learner-facing advisories are misleading at this scale: 'Review completion is below target: 0% (target: 80%)' with zero reviews ever scheduled; evidence coverage 1% reads as failure, though the arc had no passes by contract.</div>
+         <b>Friction</b><ul class='friction'><li>Advisory copy doesn't qualify sparse-history baselines (velocity does — it prints a limited-data advisory only in `analytics velocity`).</li><li>No single learner-facing 'Health' view exists: the facts are spread across five commands.</li><li>Report progress 'Currently working on Apply order of operations. Next up: finish active evidence…' — the strongest line in the fortnight, buried in a report.</li></ul>
+         <b>Uncertainty</b><div class='ddsmall'>Real comprehension/time cannot be measured from automation (contract §7).</div></div>
+  </div>
+  <div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 14 — progress report</div><pre>Your Learning Journey
+---------------------
+You have completed 0 of 100 skills (0 mastered, 0 passed) across 4 study sessions (5.2 hours).
+
+Track Breakdown
+---------------
+1. Math Foundations -- 0% complete (0/31 nodes)
+   Currently working on Apply order of operations. Next up: finish active evidence submissions.
+
+2. Programming &amp; Tooling -- 0% complete (0/18 nodes)
+   Currently working on Use variables and expressions in Python. Next up: finish active evidence submissions.
+
+… (9 more lines)</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 14 — analytics: velocity</div><pre>[advisory] Study velocity is below target: 1.3 work items/week average (target: 2).
+[advisory] Review completion is below target: 0% (target: 80%).
+[advisory] Evidence coverage is below target: 1% (target: 60%).
+
+VELOCITY
+--------
+  Sessions in window : 4
+  Nodes touched      : 3
+  Study time         : 310 min (5.2 h)
+
+  Group (Prefix)                Sessions    Nodes
+  ----------------------------------------------
+… (6 more lines)</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — Day 14 — health roll-up</div><pre>graph: 100 nodes, 157 edges — OK
+evidence: 81 specs, 81 gates, 3 records, 1 attempts — OK, 38 warning(s) (see `skilltrace validate evidence`)
+execution: 4 sessions, 8 work items, 1 blockers, 1 remediation actions, 0 reviews — OK
+policy: 12 policy file(s) — OK
+resources: 45 resource(s) — OK
+progress store: 49 node(s); states: active=3, available=46
+[warning] 51 node(s) missing from the progress store — run `skilltrace sync`.
+resources: 45 resource(s); verified=45, stale=0, unverified=0, broken=0
+health: OK (39 warning(s)).</pre></div>
+</section>
+
+<h2 id='branches'>Branch-coverage matrix</h2>
+<p class='lede'>Every contract §5 branch, run on its own fixture. Stress branches are separate from the realistic baseline:
+a branch never inherits another branch's fabricated history. "RUN" means the branch executed against the real engine;
+nothing here was skipped silently — partial runs are named.</p>
+<table class='matrix'>
+<thead><tr><th>#</th><th>Branch (starting facts)</th><th>Actions</th><th>Expected</th><th>Observed</th><th>Friction</th><th>Candidate signal</th><th>Uncertainty</th><th>Status</th></tr></thead>
+<tbody><tr><td class='bid'>B01</td><td><b>Cold start</b><div class='ddsmall'>Empty fixture, no history</div></td><td>today/next at 30 and 105 min</td><td class='ddsmall'>Some entry point surfaces</td><td class='ddsmall'>Agents-course node tops every list at every minutes value</td><td class='ddsmall warncell'>Cold start is goal-biased to agents; beginner arc invisible</td><td class='ddsmall'>Discovery (rank for subject intent)</td><td class='ddsmall'>Real cold-start intent unmeasurable</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B02</td><td><b>Prior learning — pass direct from available</b><div class='ddsmall'>Fabricated passed node + accepted evidence (hand-authored)</div></td><td>node/next/today/start on the passed node</td><td class='ddsmall'>Pass respected; start refused or harmless</td><td class='ddsmall'>Session opened on the passed node with no state line; asserted state stayed passed (verified in store)</td><td class='ddsmall warncell'>No refusal and no explanation when starting a passed node</td><td class='ddsmall'>—</td><td class='ddsmall'>Whether a learner would ever try; mastery path untouched</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B03</td><td><b>Multiple active nodes</b><div class='ddsmall'>Two closed sessions (2 active)</div></td><td>start 3rd; today; next</td><td class='ddsmall'>Warning at 3rd; today picks open thread</td><td class='ddsmall'>Warning fired at 3 exactly; today picks the open-session thread; next still recommends starting the agents node</td><td class='ddsmall warncell'>next ignores active work entirely</td><td class='ddsmall'>Discovery ranking</td><td class='ddsmall'>Warn-threshold semantics (warn at 2, fires on 3rd) — as seeded</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B04</td><td><b>Hard vs soft prerequisites</b><div class='ddsmall'>Entries available; no passes</div></td><td>node on soft+hard targets; seed passes; sync; re-node</td><td class='ddsmall'>Hard target locks until prereq passed; soft never blocks</td><td class='ddsmall'>Exactly that: conditionals [Locked] with named unsatisfied prereq → [Ready to start] after the pass; soft algebra target never locked</td><td class='ddsmall warncell'>None — this works well and reads clearly</td><td class='ddsmall'>—</td><td class='ddsmall'>Single-edge observation, not full-graph</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B05</td><td><b>Insufficient evidence (rejected artifact)</b><div class='ddsmall'>MATH active, 0 accepted</div></td><td>submit --reject; eligibility; node; next</td><td class='ddsmall'>Rejected stays rejected; eligibility 0/3</td><td class='ddsmall'>verdict REJECTED written; eligibility 0/3 accepted; node shows 0 of 3; next unaffected</td><td class='ddsmall warncell'>Rejected record invisible outside report evidence</td><td class='ddsmall'>Diagnostic analytics (gap visibility)</td><td class='ddsmall'>—</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B06</td><td><b>Failed attempts below threshold (2/3)</b><div class='ddsmall'>2 failed attempts on PY</div></td><td>suggest remediation; node; next</td><td class='ddsmall'>No remediation pressure below 3</td><td class='ddsmall'>'nothing to suggest — no active remediation edges' at 2</td><td class='ddsmall warncell'>Failures invisible in learner surfaces</td><td class='ddsmall'>Diagnostic analytics</td><td class='ddsmall'>PY has no remediation edge; a node with one could differ (untested)</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B07</td><td><b>Failed attempts at threshold (3/3)</b><div class='ddsmall'>3 failed attempts</div></td><td>suggest remediation; node; next</td><td class='ddsmall'>Remediation edge activates at 3</td><td class='ddsmall'>Still 'nothing to suggest' — no edge exists from PY</td><td class='ddsmall warncell'>Threshold signal silent without graph edges</td><td class='ddsmall'>Diagnostic analytics</td><td class='ddsmall'>Edge-present variant untested here</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B08</td><td><b>Failed attempts above threshold (4/3)</b><div class='ddsmall'>4 failed attempts</div></td><td>suggest remediation; today; eligibility</td><td class='ddsmall'>Pressure saturates, never blocks</td><td class='ddsmall'>'nothing to suggest'; today unaffected; eligibility untouched by failures</td><td class='ddsmall warncell'>A learner's 4 failures change nothing they can see</td><td class='ddsmall'>Diagnostic analytics (strongest signal)</td><td class='ddsmall'>—</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B09</td><td><b>Blocker lifecycle</b><div class='ddsmall'>PY active, stuck work</div></td><td>blocker create/resolve; remediation create/complete; blockers; suggest</td><td class='ddsmall'>Full lifecycle with audit trail</td><td class='ddsmall'>All steps succeeded; suggest pointed to ad-hoc action; open list cleared after resolve</td><td class='ddsmall warncell'>Ids must be typed by hand (blk.&lt;node&gt;.001)</td><td class='ddsmall'>—</td><td class='ddsmall'>—</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B10</td><td><b>Due/overdue reviews around the 2-day grace boundary</b><div class='ddsmall'>Fabricated passed SQL + review due 09-24 (hand-authored)</div></td><td>reviews/suggest reviews/today at due, +1d, +2d, +3d</td><td class='ddsmall'>OVERDUE appears after grace</td><td class='ddsmall'>reviews flags [OVERDUE] from +1 day; on the due date suggest reviews says 'nothing due — 1 scheduled ahead' while reviews lists it due</td><td class='ddsmall warncell'>Two surfaces disagree on 'due' semantics on the boundary day; today never mentions the due review</td><td class='ddsmall'>Practice profiles (backlog shape) — negative here</td><td class='ddsmall'>Boundary defined as due date itself</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B11</td><td><b>Failed review without demotion</b><div class='ddsmall'>Fabricated passed SQL + scheduled review</div></td><td>review complete --outcome unsatisfactory; node; reviews; suggest</td><td class='ddsmall'>State stays passed; failure recorded</td><td class='ddsmall'>State held [Passed]; review completed unsatisfactory; reviews list empties</td><td class='ddsmall warncell'>After a failed review, nothing points the learner at rework</td><td class='ddsmall'>Diagnostic analytics; practice profiles</td><td class='ddsmall'>Mastery-eligibility effect untested</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B12</td><td><b>Superseding correction chain</b><div class='ddsmall'>MATH active</div></td><td>submit v1; v2 supersedes v1; v3 supersedes v2; report evidence; eligibility</td><td class='ddsmall'>Chain preserved; only live records count</td><td class='ddsmall'>ev…001→002→003 chained; eligibility counts 1/3 (2 superseded excluded); originals never edited/deleted</td><td class='ddsmall warncell'>Chain visible only in report evidence</td><td class='ddsmall'>—</td><td class='ddsmall'>—</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B13</td><td><b>Broken / mismatched resource</b><div class='ddsmall'>khan-arithmetic supports MATH</div></td><td>verify-resource --broken; resources; resource-report; node; today; replace-resource</td><td class='ddsmall'>Broken marker visible where the learner looks</td><td class='ddsmall'>resource-report shows [broken]; node view and today show nothing; replace-resource refused ('share no node') — correctly, but leaves the learner with only a dead resource</td><td class='ddsmall warncell'>Broken resource invisible in node view and today; no replacement candidate exists for this node</td><td class='ddsmall'>Resource deep-verification (negative); sweep scheduling (negative)</td><td class='ddsmall'>Reachability checks (network) intentionally not run</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B14</td><td><b>Interrupted / stale session</b><div class='ddsmall'>Session opened at 20:00, still open next morning</div></td><td>today (+13h); close --end</td><td class='ddsmall'>Stale warning past 12h; honest close accepted</td><td class='ddsmall'>today shows open session (~0 min) but no stale-age warning; close --end (fixture-dated) refused as 'in the future' — validated against the real wall clock, not the fixture clock</td><td class='ddsmall warncell'>Stale threshold not surfaced to the learner; close --end cannot operate under a simulated clock</td><td class='ddsmall'>—</td><td class='ddsmall'>Real-world close --end works (only wall-clock-validated here)</td><td class='ddsmall mono'>RUN (partial)</td></tr><tr><td class='bid'>B15</td><td><b>Duplicate submission</b><div class='ddsmall'>MATH active</div></td><td>submit same artifact ×2 accepted + 1 rejected; report; eligibility</td><td class='ddsmall'>New record each time; rejected stays rejected; accepted counted only</td><td class='ddsmall'>ev…001/002 accepted, 003 rejected; eligibility 2/3</td><td class='ddsmall warncell'>None — exactly the immutable-records doctrine</td><td class='ddsmall'>—</td><td class='ddsmall'>—</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B16a</td><td><b>Sparse history (1 session)</b><div class='ddsmall'>One 60-min session</div></td><td>analytics velocity; health; today</td><td class='ddsmall'>Limited-data advisory appears</td><td class='ddsmall'>'Limited data — fewer than 3 sessions…' advisory fired; velocity/review advisories still printed</td><td class='ddsmall warncell'>Review-completion advisory fires with zero reviews</td><td class='ddsmall'>Practice profiles (negative)</td><td class='ddsmall'>—</td><td class='ddsmall mono'>RUN</td></tr><tr><td class='bid'>B16b</td><td><b>Established history (3-session line)</b><div class='ddsmall'>3 sessions across 6 days (fixture-dated where the engine allows)</div></td><td>analytics velocity; health; today; retention</td><td class='ddsmall'>Full-data line, no limited-data advisory</td><td class='ddsmall'>Limited-data advisory gone; velocity 1.0 vs target 2; review-completion 0% advisory persists with zero reviews</td><td class='ddsmall warncell'>Same review-completion artifact as B16a</td><td class='ddsmall'>Practice profiles (review backlog — negative: no backlog builds)</td><td class='ddsmall'>Engine-written session timestamps still carry real dates (clock gap)</td><td class='ddsmall mono'>RUN (partial)</td></tr><tr><td class='bid'>B17</td><td><b>Curriculum edit flips availability; asserted progress holds</b><div class='ddsmall'>CPF active (closed session); FRA available</div></td><td>edges.yaml hard edge added; graph impact; sync; node ×2; next; revert; sync</td><td class='ddsmall'>FRA available→locked; CPF active holds; revert restores</td><td class='ddsmall'>Exactly: FRA [Locked] with named reason; CPF [In progress] untouched; after revert FRA [Ready to start] again</td><td class='ddsmall warncell'>`graph impact` compared the fixture against the real repo's git HEAD (ignores --root isolation); findings meaningless in a fixture</td><td class='ddsmall'>—</td><td class='ddsmall'>Impact advisory needs a git-context fixture to test properly</td><td class='ddsmall mono'>RUN (graph impact = observed hazard)</td></tr></tbody></table>
+
+<h2 id='candidates'>Deferred candidate – trigger matrix</h2>
+<p class='lede'>Nine deferred candidates from the roadmap's Beyond section, adjudicated against this fortnight's evidence only.
+Dispositions are <b>reconsideration-supported</b>, <b>deferral-supported</b>, or <b>insufficient-evidence</b>.
+No disposition implements anything: a supported trigger warrants reconsideration, and a trigger this simulation cannot
+trip is reported untested rather than argued away. Advisory AI remains an eligible non-slot candidate (#283) with no row here;
+the five rejects (auto-pass/master, LLM-graded evidence, cloud sync, Elo/BKT, generative tutoring) stay rejected and are not rows.</p>
+
+<div class='cand'>
+  <h3>1. Learner-facing diagnostic analytics</h3>
+  <div class='trigger'><b>Trigger (verbatim, POST_V2 Beyond + #280):</b> “a first real blocker or failed assessment attempt (friction to diagnose), or learner demand for the primitive”</div>
+  <div class='grid2'>
+    <div><b>Positive case</b><div class='ddsmall'>B06–B08: 2/3/4 failed attempts produce zero learner-visible signal; B11: failed review leaves nothing pointing at rework; B13: broken resource invisible in node view/today; B02: silent session-on-passed</div>
+         <b>Negative case</b><div class='ddsmall'>Learner can function without it: blockers/eligibility/report surfaces carry the facts when sought</div>
+         <b>Boundary case</b><div class='ddsmall'>P-DiagnosticsSim (#285) already shaped the friction surface; this fortnight adds the demand-side evidence shape</div></div>
+    <div><b>Measurable observation this fortnight</b><div class='ddsmall'>Friction exists and is invisible at exactly the trigger's shape; demand is the learner's call on reading this artifact</div>
+         <b>Disposition</b><div class='disp'>Reconsideration-supported (demand branch only; first-real-friction branch still needs lived data — learner verdict required)</div></div>
+  </div>
+</div>
+<div class='cand'>
+  <h3>2. Practice profiles + prompt extraction</h3>
+  <div class='trigger'><b>Trigger (verbatim, POST_V2 Beyond + #280):</b> “a first real review backlog (reviews accumulating under retention pressure)”</div>
+  <div class='grid2'>
+    <div><b>Positive case</b><div class='ddsmall'>B10/B11 exercise review flows but no backlog accumulates (no pass by contract)</div>
+         <b>Negative case</b><div class='ddsmall'>Zero reviews scheduled all fortnight; a sequencing layer would build nothing</div>
+         <b>Boundary case</b><div class='ddsmall'>B10 shows the boundary semantics a backlog would stress</div></div>
+    <div><b>Measurable observation this fortnight</b><div class='ddsmall'>Not trippable by simulation, as the contract predicted</div>
+         <b>Disposition</b><div class='disp'>Deferral-supported (unchanged trigger; insufficient evidence)</div></div>
+  </div>
+</div>
+<div class='cand'>
+  <h3>3. Badge issuance</h3>
+  <div class='trigger'><b>Trigger (verbatim, POST_V2 Beyond + #280):</b> “a concrete portfolio consumer demands a badge primitive”</div>
+  <div class='grid2'>
+    <div><b>Positive case</b><div class='ddsmall'>—</div>
+         <b>Negative case</b><div class='ddsmall'>—</div>
+         <b>Boundary case</b><div class='ddsmall'>—</div></div>
+    <div><b>Measurable observation this fortnight</b><div class='ddsmall'>UNTESTABLE by the fortnight: no consumer, no passed nodes by contract</div>
+         <b>Disposition</b><div class='disp'>Insufficient evidence (stays deferred)</div></div>
+  </div>
+</div>
+<div class='cand'>
+  <h3>4. Tier 3 MC/PKM integrations</h3>
+  <div class='trigger'><b>Trigger (verbatim, POST_V2 Beyond + #280):</b> “fresh-user demand (MC-1/MC-2, PKM-2/3/4) / ecosystem settling (PKM-4); MC-3 no-go by construction; PKM-1 shipped”</div>
+  <div class='grid2'>
+    <div><b>Positive case</b><div class='ddsmall'>—</div>
+         <b>Negative case</b><div class='ddsmall'>—</div>
+         <b>Boundary case</b><div class='ddsmall'>—</div></div>
+    <div><b>Measurable observation this fortnight</b><div class='ddsmall'>UNTESTABLE: no PKM in use; outreach tests the in-vault variant, not demand</div>
+         <b>Disposition</b><div class='disp'>Insufficient evidence (stays deferred)</div></div>
+  </div>
+</div>
+<div class='cand'>
+  <h3>5. Full gate-runner / scheduler-queue</h3>
+  <div class='trigger'><b>Trigger (verbatim, POST_V2 Beyond + #280):</b> “a concrete Phase 4/5 seed artifact whose objective gates are hand-run often enough to automate; earliest re-check is v2.5 receipt load”</div>
+  <div class='grid2'>
+    <div><b>Positive case</b><div class='ddsmall'>B12 chain exercised manual evidence handling, not gate running</div>
+         <b>Negative case</b><div class='ddsmall'>All three beginner gates are manual (learner authority) — no objective gate was hand-run in the arc</div>
+         <b>Boundary case</b><div class='ddsmall'>v2.5 receipt load unchanged</div></div>
+    <div><b>Measurable observation this fortnight</b><div class='ddsmall'>Hand-run load not demonstrated; simulation cannot supply it</div>
+         <b>Disposition</b><div class='disp'>Deferral-supported (unchanged; hand-run load unobserved)</div></div>
+  </div>
+</div>
+<div class='cand'>
+  <h3>6. Verification-sweep scheduling automation</h3>
+  <div class='trigger'><b>Trigger (verbatim, POST_V2 Beyond + #280):</b> “disjunction: demonstrated manual-sweep cadence, a downstream slot needing scheduled checks, or serve/today background-sweep work”</div>
+  <div class='grid2'>
+    <div><b>Positive case</b><div class='ddsmall'>B13: broken marker appears only after a manual verify-resource</div>
+         <b>Negative case</b><div class='ddsmall'>No sweep cadence demonstrated; single broken-resource incident, manually handled</div>
+         <b>Boundary case</b><div class='ddsmall'>—</div></div>
+    <div><b>Measurable observation this fortnight</b><div class='ddsmall'>No cadence emerged from the fortnight</div>
+         <b>Disposition</b><div class='disp'>Deferral-supported (unchanged)</div></div>
+  </div>
+</div>
+<div class='cand'>
+  <h3>7. Resource deep-verification (cert metadata, content-hash drift)</h3>
+  <div class='trigger'><b>Trigger (verbatim, POST_V2 Beyond + #280):</b> “a content-drift incident a hash check would have caught, or a host/publisher requiring pinned-content verification”</div>
+  <div class='grid2'>
+    <div><b>Positive case</b><div class='ddsmall'>B13 simulates a dead link (reachability), not content drift</div>
+         <b>Negative case</b><div class='ddsmall'>No drift incident; no pinned-content host in the arc</div>
+         <b>Boundary case</b><div class='ddsmall'>—</div></div>
+    <div><b>Measurable observation this fortnight</b><div class='ddsmall'>Trigger untripped; cert-metadata slice remains first if it ever trips</div>
+         <b>Disposition</b><div class='disp'>Deferral-supported (unchanged)</div></div>
+  </div>
+</div>
+<div class='cand'>
+  <h3>8. Portable evidence locator</h3>
+  <div class='trigger'><b>Trigger (verbatim, POST_V2 Beyond + #280):</b> “a second external consumer of evidence records beyond the portfolio export exists”</div>
+  <div class='grid2'>
+    <div><b>Positive case</b><div class='ddsmall'>—</div>
+         <b>Negative case</b><div class='ddsmall'>—</div>
+         <b>Boundary case</b><div class='ddsmall'>—</div></div>
+    <div><b>Measurable observation this fortnight</b><div class='ddsmall'>UNTESTABLE: no second consumer exists</div>
+         <b>Disposition</b><div class='disp'>Insufficient evidence (stays deferred)</div></div>
+  </div>
+</div>
+<div class='cand'>
+  <h3>9. Default-deny share-profile extensions</h3>
+  <div class='trigger'><b>Trigger (verbatim, POST_V2 Beyond + #280):</b> “a second sharing/export surface demands a privacy posture”</div>
+  <div class='grid2'>
+    <div><b>Positive case</b><div class='ddsmall'>—</div>
+         <b>Negative case</b><div class='ddsmall'>—</div>
+         <b>Boundary case</b><div class='ddsmall'>—</div></div>
+    <div><b>Measurable observation this fortnight</b><div class='ddsmall'>UNTESTABLE: existing Share profile in force</div>
+         <b>Disposition</b><div class='disp'>Insufficient evidence (stays deferred)</div></div>
+  </div>
+</div>
+
+<h2 id='discovery'>Discovery — current behavior vs proposed (identical inputs)</h2>
+<p class='lede'>One learner input, two renderings. On the left, the real engine given the input "python for beginners" (plus the near-miss ids
+a learner would actually guess). On the right, a PROPOSED mockup — a static illustration of a dropdown/card/combination surface for the same input.
+The mockup is not engine behavior, not a spec, and not accepted; it exists to make the gap judgeable.</p>
+<div class='grid2 cmp'>
+  <div><b>CURRENT — engine output (verbatim)</b><div class='engine'><div class='engine-title'>ENGINE OUTPUT — the only discovery surface's flags</div><pre>usage: skilltrace next [-h] [--minutes MINUTES] [--limit LIMIT]
+                       [--show-locked]
+
+options:
+  -h, --help         show this help message and exit
+  --minutes MINUTES  Minutes available this session.
+  --limit LIMIT      Maximum number of recommendations.
+  --show-locked      Also show locked nodes (never recommended as available).</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — intent probe</div><pre>OPTION 1 — 105-MIN SESSION
+Explain what an AI agent is and how tools extend an LLM
+  [Ready to start]
+
+Explain what an AI agent is and how tools extend an LLM is the top pick for this session — it's in the 'foundational' track and scores highest overall. Passing this unlocks 10 downstream skills. Define agent, tool, and action loop; contrast CodeAgents with tool-calling agents.
+
+Where to learn
+  Hf Agents Course -- https://huggingface.co/learn/agents-course/unit0/introduction
+… (77 more lines)</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — synonym probe: guess the id 'variables_01'</div><pre>node: FAILED -- unknown node variables_01.</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — synonym probe: guess 'python.vars_01'</div><pre>node: FAILED -- unknown node programming.python.vars_01.</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — no-results probe</div><pre>node: FAILED -- unknown node nonexistent.foo_01.</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — ambiguity probe: two plausible</div><pre>THIS SKILL
+Choose the right chart for the question
+  [Ready to start]
+
+You're clear to begin Choose the right chart for the question -- nothing is blocking you. It needs 1 accepted submission(s) to pass. You decide when the work is good enough, not an AI.
+
+Where to learn
+  Data To Viz -- https://www.data-to-viz.com/
+… (7 more lines)</pre></div></div>
+  <div><b>PROPOSED — static mockup</b>
+<div class='mock'>
+  <div class='mock-title'>PROPOSED MOCKUP — discovery (dropdown / cards / combination), static illustration</div>
+  <div class='mockbar'>Ask for a subject you actually want to learn…</div>
+  <div class='mockinput'>python for beginners <span class='caret'>▾</span></div>
+  <div class='mockdd'>
+    <div class='ddrow'><b>Use variables and expressions in Python</b> <span class='chip ready'>ready</span><div class='ddsmall'>Python · 1 accepted submission needed · <code>programming.python.variables_01</code></div></div>
+    <div class='ddrow'><b>Define and call Python functions</b> <span class='chip ready'>ready</span><div class='ddsmall'>Python · unlocks 6 downstream skills · <code>programming.python.functions_01</code></div></div>
+    <div class='ddrow dim'><b>Read and write CSV files with Pandas</b> <span class='chip locked'>locked</span><div class='ddsmall'>needs “Use basic Pandas DataFrame operations” · <code>data.csv.read_csv_01</code></div></div>
+  </div>
+  <div class='mockcards'>
+    <div class='card'><div class='chip ready'>Math</div><b>Apply order of operations</b><div class='ddsmall'>3 accepted submissions · Khan Arithmetic</div></div>
+    <div class='card'><div class='chip ready'>Data</div><b>Query rows and columns with SELECT</b><div class='ddsmall'>1 accepted submission · SQLBolt</div></div>
+    <div class='card'><div class='chip ready'>Python</div><b>Use variables and expressions in Python</b><div class='ddsmall'>1 accepted submission · Python Tutorial</div></div>
+  </div>
+  <div class='ddsmall'>Keyboard: type to filter, ↑/↓ to move, Enter to open the node card, Esc to dismiss. Mobile: stacked cards, 44 px tap targets, the dropdown becomes a full-screen list. No-script: the same query renders as a plain static results page (the tier-0 posture the repo already ships). All states above are illustrations, not engine output.</div>
+</div></div>
+</div>
+
+<h2 id='health'>Health — current behavior vs proposed (identical inputs)</h2>
+<p class='lede'>Same fixture, same day-14 state, same facts. Left: the five commands a learner must know to assemble a health picture.
+Right: a PROPOSED single Health view over exactly those facts. The proposed card is a static illustration, labeled as such.</p>
+<div class='grid2 cmp'>
+  <div><b>CURRENT — engine output (verbatim)</b><div class='engine'><div class='engine-title'>ENGINE OUTPUT — health roll-up</div><pre>graph: 100 nodes, 157 edges — OK
+evidence: 81 specs, 81 gates, 3 records, 1 attempts — OK, 38 warning(s) (see `skilltrace validate evidence`)
+execution: 4 sessions, 8 work items, 1 blockers, 1 remediation actions, 0 reviews — OK
+policy: 12 policy file(s) — OK
+resources: 45 resource(s) — OK
+progress store: 49 node(s); states: active=3, available=46
+[warning] 51 node(s) missing from the progress store — run `skilltrace sync`.
+resources: 45 resource(s); verified=45, stale=0, unverified=0, broken=0
+… (1 more lines)</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — evidence warnings detail</div><pre>evidence: 81 specs, 81 gates, 3 records, 1 attempts
+[warning] node agents.capstone.deployed_agent_integration_01 has no gate — it cannot accept evidence and is never pass-eligible.
+[warning] node agents.capstone.deployed_agent_integration_01 has no required artifact spec — it is never pass-eligible.
+[warning] node agents.concepts.agent_fundamentals_01 has no gate — it cannot accept evidence and is never pass-eligible.
+[warning] node agents.concepts.agent_fundamentals_01 has no required artifact spec — it is never pass-eligible.
+[warning] node agents.data.llamaindex_rag_01 has no gate — it cannot accept evidence and is never pass-eligible.
+[warning] node agents.data.llamaindex_rag_01 has no required artifact spec — it is never pass-eligible.
+[warning] node agents.deploy.docker_engine_build_run_01 has no gate — it cannot accept evidence and is never pass-eligible.
+… (32 more lines)</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — review health</div><pre>Scheduled Reviews
+------------------
+Your retention checks keep passed skills from fading. No reviews currently scheduled.
+
+Ready for Mastery Verification
+------------------------------
+No reviews currently scheduled. Pass a skill to schedule spaced retention checks.
+Recent Review Outcomes
+… (2 more lines)</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — blocker health</div><pre>Where you are stuck
+-------------------
+You have no open blockers -- smooth sailing!
+
+Current Obstacles
+-----------------
+No open obstacles logged. When you encounter persistent friction, run `skilltrace blocker create`.
+Resolved History
+… (4 more lines)</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — progress health</div><pre>Your Learning Journey
+---------------------
+You have completed 0 of 100 skills (0 mastered, 0 passed) across 4 study sessions (5.2 hours).
+
+Track Breakdown
+---------------
+1. Math Foundations -- 0% complete (0/31 nodes)
+   Currently working on Apply order of operations. Next up: finish active evidence submissions.
+… (13 more lines)</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — resource health</div><pre>resource-report: 45 resource(s), 100 node(s); stale after 180d; summary: active=45, retired=0.
+  [verified] khan-arithmetic — last verified 2026-07-10
+  [verified] khan-algebra — last verified 2026-07-10
+  [verified] khan-precalculus — last verified 2026-07-10
+  [verified] khan-statistics-probability — last verified 2026-07-10
+  [verified] khan-linear-algebra — last verified 2026-07-10
+  [verified] khan-differential-calculus — last verified 2026-07-10
+  [verified] 3blue1brown-essence-linear-algebra — last verified 2026-07-10
+… (39 more lines)</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — review suggestions</div><pre>suggest reviews: nothing due — 0 scheduled ahead.
+
+suggest reviews: Retention suggestions
+suggest reviews: ----------------------
+suggest reviews: nothing fading — no retention suggestions right now.</pre></div><div class='engine'><div class='engine-title'>ENGINE OUTPUT — baseline day 14 — analytics velocity advisories</div><pre>[advisory] Study velocity is below target: 1.3 work items/week average (target: 2).
+[advisory] Review completion is below target: 0% (target: 80%).
+[advisory] Evidence coverage is below target: 1% (target: 60%).
+
+VELOCITY
+--------
+… (12 more lines)</pre></div></div>
+  <div><b>PROPOSED — static mockup</b>
+<div class='mock'>
+  <div class='mock-title'>PROPOSED MOCKUP — learner-facing Health, static illustration</div>
+  <div class='healthgrid'>
+    <div class='hcard'><b>Study rhythm</b><div>4 sessions · 5.2 h · 1.6 items/week <span class='warn'>below 2/wk</span></div><div class='ddsmall'>Framed with the limited-data qualifier at &lt;3 sessions.</div></div>
+    <div class='hcard'><b>Stuck right now</b><div>0 open blockers · 1 resolved (PY reassignment)</div><div class='ddsmall'>Shows the failed attempt + its remediation state, which no current surface shows.</div></div>
+    <div class='hcard'><b>Due for review</b><div>None scheduled</div><div class='ddsmall'>No false “0% vs 80%” completion line when nothing was ever scheduled.</div></div>
+    <div class='hcard'><b>Evidence gaps</b><div>MATH 1/3 · PY 0/1 · SQL 0/1</div><div class='ddsmall'>Per-node bars instead of a single 1% coverage alarm.</div></div>
+    <div class='hcard warm'><b>Study resources</b><div>1 broken (khan-arithmetic) on a node with no replacement</div><div class='ddsmall'>Today this fact exists only in <code>resource-report</code>.</div></div>
+    <div class='hcard quiet'><b>Repository diagnostics</b><div>graph OK · 38 evidence warnings · policy OK · resources OK <span class='ddsmall'>(collapsed)</span></div><div class='ddsmall'>Kept, but demoted: it is operator detail, not learner health.</div></div>
+  </div>
+</div></div>
+</div>
+
+<h2 id='hazards'>Engine observations worth a decision</h2>
+<p class='lede'>Not a bug list, and not acceptance: the friction the fortnight exposed, each traceable to a captured step above.</p>
+<table class='matrix'><tbody><tr><td class='bid'>H1</td><td><b>The fixture clock cannot date engine-written records</b><div class='ddsmall'>`start`/`close` stamp real wall-clock ids and timestamps (sessions came out `ses.2026-09-18.*`; record `created_at` likewise), `review schedule` reads `_now_iso()` directly, and `close --end` validates against the real clock. Fabricated histories therefore cannot be date-labeled by the engine itself: the fortnight's records carry real dates in an isolated fixture, and the simulated-day labels exist only in this artifact. Fixing it would mean threading `Context.clock` through those writers.</div></td></tr><tr><td class='bid'>H2</td><td><b>`next` prints a stale command form</b><div class='ddsmall'>`next`'s DO THIS NEXT line says `skilltrace session start --node &lt;id&gt;`; that command does not exist — the real form printed by `today` is `skilltrace start &lt;id&gt;`. A learner following `next` verbatim hits an argparse error.</div></td></tr><tr><td class='bid'>H3</td><td><b>`next` ignores the learner's active work</b><div class='ddsmall'>With one, two, and three active strands, OPTION 1 stayed a never-touched agents node every day. Only `today` picked up the open-session thread. Recommendation ranking and the daily view disagree about what matters.</div></td></tr><tr><td class='bid'>H4</td><td><b>Discovery is id-only</b><div class='ddsmall'>No command accepts a subject query; `node` fails with a bare 'unknown node &lt;id&gt;' on a near-miss (`variables_01`, `python.vars_01`). Math/data/Python browsing is impossible without memorized ids.</div></td></tr><tr><td class='bid'>H5</td><td><b>Failures and resource problems are invisible where the learner looks</b><div class='ddsmall'>2/3/4 failed attempts, a failed review, a rejected artifact, and a broken resource change nothing in `today` or `node`; each is reachable only through a separate command the learner must know to run.</div></td></tr><tr><td class='bid'>H6</td><td><b>Advisories overstate penalty on a sparse, pass-free fortnight</b><div class='ddsmall'>'Review completion is below target: 0% (target: 80%)' printed with zero reviews ever scheduled, and 'evidence coverage is below target: 1%' with no passes possible under the contract. Only `analytics velocity` qualifies itself with a limited-data advisory.</div></td></tr><tr><td class='bid'>H7</td><td><b>Two review surfaces disagree on the due date</b><div class='ddsmall'>On the due date `reviews` lists the review as due while `suggest reviews` says 'nothing due — 1 scheduled ahead'. A day later both agree it is overdue.</div></td></tr><tr><td class='bid'>H8</td><td><b>The 12 h stale-session policy is never surfaced</b><div class='ddsmall'>A session left open 13 hours still reads as '~0 min' with no staleness note.</div></td></tr><tr><td class='bid'>H9</td><td><b>`graph impact` escapes `--root` isolation</b><div class='ddsmall'>Run against a fixture, it compared the fixture's edges to the host repo's git HEAD and reported unrelated no-op edges — advisory output from a fixture is meaningless.</div></td></tr><tr><td class='bid'>H10</td><td><b>`--show-locked` renders no locked rows visibly</b><div class='ddsmall'>Probing locked-skill visibility via `next --show-locked` returned the same available-node OPTION 1 output; locked skills stayed undiscoverable.</div></td></tr><tr><td class='bid'>H11</td><td><b>Starting a passed node opens a session silently</b><div class='ddsmall'>`start` on a passed node returned exit 0 and opened a session with no transition line and no explanation. The asserted state held (verified in the store) — the invariant is intact; the affordance is unexplained.</div></td></tr></tbody></table>
+
+<h2 id='untested'>Runnable vs reported-untested</h2>
+<p class='lede'>Nothing here is silently skipped. Everything not exercised is named with its reason.</p>
+<table class='matrix'><thead><tr><th>Case</th><th>Why it was not exercised</th><th>Status</th></tr></thead><tbody><tr><td><b>Objective-gate judgment (check-script run)</b></td><td class='ddsmall'>All three beginner entry gates are manual (`authority: manual`); no objective gate was hand-run.</td><td class='mono'>UNTESTED</td></tr><tr><td><b>Mastery path and mastery eligibility</b></td><td class='ddsmall'>No pass occurs in the locked arc (no required pass); mastery needs passed + spaced review.</td><td class='mono'>UNTESTED</td></tr><tr><td><b>Review auto-scheduling after pass</b></td><td class='ddsmall'>Scheduling is pass-driven; automating `pass` is forbidden, so the auto-schedule path was never triggered.</td><td class='mono'>UNTESTED</td></tr><tr><td><b>Resource reachability checks (`check-resource(s)`)</b></td><td class='ddsmall'>Deliberately not called: they perform network reads and this prototype stays offline.</td><td class='mono'>UNTESTED</td></tr><tr><td><b>`graph impact` on a fixture</b></td><td class='ddsmall'>Depends on git context; observed to escape `--root` (H9). Needs a git-context fixture to test properly.</td><td class='mono'>UNTESTED (observed hazard)</td></tr><tr><td><b>`replace-resource` success path</b></td><td class='ddsmall'>No same-node candidate exists for the broken math resource; refusal observed ('share no node') instead.</td><td class='mono'>UNTESTED</td></tr><tr><td><b>Honest backdated `close --end` under a simulated clock</b></td><td class='ddsmall'>Refused as future-dated because the check uses the real clock (H1).</td><td class='mono'>UNTESTED</td></tr><tr><td><b>Keyboard / mobile / no-script behavior</b></td><td class='ddsmall'>No shipped surface was probed in a browser; these remain PROPOSED mockup properties only.</td><td class='mono'>PROPOSED-ONLY</td></tr><tr><td><b>Human comprehension, real study time, sustained demand</b></td><td class='ddsmall'>Cannot be measured from automation (contract §7).</td><td class='mono'>NOT MEASURABLE</td></tr><tr><td><b>Badge, MC/PKM, portable evidence locator, share-profile triggers</b></td><td class='ddsmall'>Untestable by construction: no consumer, no PKM in use, no second export surface.</td><td class='mono'>UNTESTED BY CONSTRUCTION</td></tr><tr><td><b>Sweep cadence, content-drift incident, gate-runner hand-run load</b></td><td class='ddsmall'>Trigger conditions cannot be produced inside a fortnight.</td><td class='mono'>UNTESTED BY CONSTRUCTION</td></tr></tbody></table>
+
+<h2 id='hashes'>Protected-record hash ledger</h2>
+<p class='lede'>Contract §7: real learner records are protected. <b>No protected file changed.</b> The dirty working tree was never reset.</p>
+<table class='matrix'><thead><tr><th>File</th><th>before (sha256, first 16)</th><th>after</th><th>verdict</th></tr></thead><tbody><tr><td class='mono'>evidence\artifact_specs.yaml</td><td class='mono small'>0763e0bcc0880e6f…</td><td class='mono small'>0763e0bcc0880e6f…</td><td class='mono'>unchanged</td></tr><tr><td class='mono'>evidence\attempts.yaml</td><td class='mono small'>6432e3b88ad380b7…</td><td class='mono small'>6432e3b88ad380b7…</td><td class='mono'>unchanged</td></tr><tr><td class='mono'>evidence\evidence_records.yaml</td><td class='mono small'>9889acfd0170755a…</td><td class='mono small'>9889acfd0170755a…</td><td class='mono'>unchanged</td></tr><tr><td class='mono'>evidence\validation_gates.yaml</td><td class='mono small'>da7e4b90fe23af9c…</td><td class='mono small'>da7e4b90fe23af9c…</td><td class='mono'>unchanged</td></tr><tr><td class='mono'>execution\blockers.yaml</td><td class='mono small'>999622b0eab7b7e2…</td><td class='mono small'>999622b0eab7b7e2…</td><td class='mono'>unchanged</td></tr><tr><td class='mono'>execution\events.yaml</td><td class='mono small'>e38c0b503fcf42ff…</td><td class='mono small'>e38c0b503fcf42ff…</td><td class='mono'>unchanged</td></tr><tr><td class='mono'>execution\remediation_actions.yaml</td><td class='mono small'>c723ccfc8503f46c…</td><td class='mono small'>c723ccfc8503f46c…</td><td class='mono'>unchanged</td></tr><tr><td class='mono'>execution\reviews.yaml</td><td class='mono small'>485729ddbbebec93…</td><td class='mono small'>485729ddbbebec93…</td><td class='mono'>unchanged</td></tr><tr><td class='mono'>execution\session_work.yaml</td><td class='mono small'>a442dd7706bd7e20…</td><td class='mono small'>a442dd7706bd7e20…</td><td class='mono'>unchanged</td></tr><tr><td class='mono'>execution\sessions.yaml</td><td class='mono small'>2920037276e0d46d…</td><td class='mono small'>2920037276e0d46d…</td><td class='mono'>unchanged</td></tr><tr><td class='mono'>graph\state.yaml</td><td class='mono small'>f641403abe1122ed…</td><td class='mono small'>f641403abe1122ed…</td><td class='mono'>unchanged</td></tr></tbody></table>
+
+<h2 id='repro'>Reproduction</h2>
+<div class='repro'>
+<p>All scripts are on the throwaway branch <code>prototype/study-fortnight</code> and never touch real records:</p>
+<pre>python prototype/study-fortnight/run_baseline.py    # 8 sessions  -> out/baseline.json
+python prototype/study-fortnight/run_branches.py    # 18 branches -> out/branches.json
+python prototype/study-fortnight/run_probes.py      # discovery + health -> out/probes.json
+python prototype/study-fortnight/run_probes2.py     # corrected probes  -> out/probes2.json
+python prototype/study-fortnight/check_protected.py # before/after hashes
+python prototype/study-fortnight/assemble.py        # this page + reports/</pre>
+<p>Fixture roots rebuild under <code>prototype/study-fortnight/fixture/</code> on every run (git-ignored, regenerable);
+<code>out/*.json</code> holds the verbatim captured output this page quotes.</p>
+</div>
+<footer>Built by the prototype session on branch <code>prototype/study-fortnight</code> from <code>main @ 6dafd42</code>.
+Simulated days cannot demonstrate learning, retention, demand or comprehension. Substantive verdicts remain the learner's.</footer>
+</main></body></html>
