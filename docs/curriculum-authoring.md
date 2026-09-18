@@ -234,27 +234,79 @@ the node cannot be finished in either micro window. Session-fit scoring rests on
 honest effort claims, so a 45-minute node does not advertise that it fits a
 15-minute session.
 
-**Body** — three sections only:
+**Body** — the canonical six-slot skeleton (G-CurriculumDirection #295,
+learner-approved 2026-09-17). Frontmatter is unchanged. Every node body uses
+these six slots in this order:
 
 ```markdown
 # <title>
 
-## Learning target
+## What this skill is
 
-<what the learner will be able to do — usually the summary, expanded>
+<plain-language statement of the skill — usually the summary, expanded.
+Feeds discovery/search; no unexplained jargon.>
 
-## Study pointers
+## Why this skill
 
-<deep links into the registered resources: which chapter/unit to start with>
+<2–4 sentences on what the learner can do afterward; conceptual downstream
+framing only, never an edges source of truth.>
+
+## What passing requires
+
+<pointer only: names the artifact spec and validation gate in `evidence/`
+for this node. Never restates them — see the canonical-surface rule below.>
+
+## How to work on it
+
+<suggested approach, typical session shape, time estimate labeled as a seed
+estimate.>
+
+## Resources
+
+<reference lines into the `resources.yaml` registry (registry IDs, not
+inlined URLs). The registry stays the sole store.>
 
 ## Notes
 
-<optional authoring notes; never learner state>
+<optional: provenance, spec-pending marker, last-review date; never learner
+state.>
 ```
 
 Empty `Evidence` / `Blockers` / `Reflection` shadow sections are gone — they
 invited state into curriculum files. Evidence lives in the evidence layer;
 blockers and reflection in the execution layer.
+
+## The canonical-surface rule
+
+The artifact spec plus the validation gate are the **sole statement of what
+passing requires**. Node bodies only point at them, never restate them:
+
+- The body's `What passing requires` slot names the spec and gate; it copies
+  no thresholds, counts, file names, or gate wording into the body.
+- When spec and body disagree, the spec + gate win. Fix the body, never
+  re-read the body as the requirement.
+- This is the two-sources-of-truth guard behind the R-CurriculumAudit finding
+  (#291): bodies that declare evidence expectations without a spec/gate, and
+  bodies silent beside a spec+gate, both violate the rule in opposite
+  directions. New bodies follow the pointer discipline from day one.
+
+## Migration criteria: minor edit vs new Node ID
+
+Per `CONTEXT.md`, a Node ID is immutable and never reused; minor-vs-material
+is a human judgment. G-CurriculumDirection settles the test:
+
+- **Claim-accuracy drift = minor edit in place.** Status labels, version pins,
+  URLs, fees, prose depth, wording/structure alignment (including aligning a
+  body to the six-slot skeleton) happen in place. History and asserted
+  progress are untouched.
+- **Skill substance change = new Node ID.** A different capability, a
+  different artifact, or a different meaning of its prerequisites is a new
+  node with its own ID and edges. The old node's history stays true forever;
+  evidence and records are never migrated or rewritten; the new node re-links
+  resources and edges but inherits no asserted progress.
+
+Hour estimates produced during fill work remain seed estimates, never
+measured learning time, and are subject to ordinary learner review.
 
 ## Namespaces
 
@@ -270,6 +322,13 @@ only for a genuinely new band:
   (named for the topic — depth is a curriculum choice that can deepen later, so
   not `calculus_intuition`), `data.sql.*`, `data.visualization.*`,
   `consolidation.*`.
+- Minted for the v1.8/v1.9 tranches (human-locked; audit §5 inventory):
+  `ml.*` (`ml.framing`, `ml.regression`, `ml.classification`, `ml.trees`,
+  `ml.evaluation`, `ml.practice`, `ml.capstone`) and `agents.*`
+  (`agents.concepts`, `agents.frameworks`, `agents.data`, `agents.protocol`,
+  `agents.optimization`, `agents.deploy`, `agents.capstone`). Author new ML and
+  agent skills inside these bands; mint a sub-namespace only for a genuinely
+  new band, never per tool version or vendor pin.
 
 **A node's namespace says what the skill *is*; `track` and edges say what role
 it *plays*.**
