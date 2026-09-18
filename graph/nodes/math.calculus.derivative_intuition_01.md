@@ -22,14 +22,27 @@ updated_at: 2026-07-06
 
 # Read a derivative as sensitivity
 
-## Learning target
+## What this skill is
 
-Interpret a derivative as how much a function's output changes per small change in its input, read it as the slope of the tangent line, and tell where a function is increasing, decreasing, or flat from its derivative's sign.
+Interpret a derivative as how much a function’s output changes per small change in its input, read it as the slope of the tangent line, and tell where a function is increasing, decreasing, or flat from its derivative’s sign.
 
-## Study pointers
+## Why this skill
 
-3Blue1Brown Essence of Calculus, "The paradox of the derivative" and "Derivative formulas through geometry," for intuition; Khan Academy Differential Calculus, "Derivative introduction," for worked reads.
+The sensitivity framing is what makes gradients and backpropagation legible later.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.calculus.derivative_intuition`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Build intuition from the geometric paradox first, then work derivative-introduction reads that connect sign to increase, decrease, and flatness. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- 3blue1brown-essence-calculus (registry)
+- khan-differential-calculus (registry)
 
 ## Notes
 
-Intuition only — the sensitivity framing is what makes gradients and backpropagation legible later.
+Intuition only — the sensitivity framing is what makes gradients and backpropagation legible later. Aligned to the canonical node skeleton, 2026-09.

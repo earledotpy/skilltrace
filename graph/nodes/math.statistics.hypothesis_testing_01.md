@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Interpret a hypothesis test and p-value
 
-## Learning target
+## What this skill is
 
-State a null and alternative hypothesis for a simple claim, interpret a given p-value against a stated significance level, and write the conclusion in plain language — including what the test does not prove.
+State a null and alternative hypothesis for a simple claim, interpret a given p-value against a stated significance level, and write the conclusion in plain language, including what the test does not prove.
 
-## Study pointers
+## Why this skill
 
-OpenIntro Statistics chapter 5 (foundations for inference) for worked tests with answers; Khan Academy Statistics, "Significance tests," for step-by-step examples.
+Reading significance claims critically is core data literacy; the p-value is the most-misread number in applied statistics.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.statistics.hypothesis_testing`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Work inference-foundations problems with answers, then practise writing conclusions that state the limits as plainly as the verdict. Seed estimate: 45–90 minutes.
+
+## Resources
+
+- openintro-statistics (registry)
+- khan-statistics-probability (registry)
 
 ## Notes
 
-Reading significance claims critically is core data literacy; the p-value is the most-misread number in applied stats.
+Reading significance claims critically is core data literacy; the p-value is the most-misread number in applied stats. Aligned to the canonical node skeleton, 2026-09.

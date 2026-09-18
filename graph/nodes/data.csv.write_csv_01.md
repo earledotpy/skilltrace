@@ -21,26 +21,27 @@ updated_at: 2026-07-06
 
 # Write rows to a CSV file
 
-## Learning target
+## What this skill is
 
-Turn in-memory records into a CSV another program can read back. For the
-objective gate, define one function in your solution script:
+Turn in-memory records into a CSV another program can read back, with a proper header row and a clean delimiter.
 
-- `write_rows(path, rows)` — write `rows` (a list of dicts that share the same
-  keys) to a CSV at `path`, with the keys as a header row.
+## Why this skill
 
-Save your script at `evidence/artifacts/data/csv_write_csv_solution.py` and
-submit. The gate round-trips your output back through `csv.DictReader`, so a
-missing header row or a mangled delimiter is caught.
+The counterpart to reading: a write that another program cannot read back is not a write, so the round-trip discipline is the skill.
 
-## Study pointers
+## What passing requires
 
-The Python `csv` module docs (docs.python.org/3/library/csv.html) for
-`csv.writer` / `csv.DictWriter` and the `newline=""` file argument that avoids
-blank rows on Windows; Real Python's "Reading and Writing CSV Files in Python"
-for worked writer examples.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.csv.write_csv`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study the csv-module writer pattern and the newline handling first, then write shared-key records and read them back with the standard library. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- python-stdlib-reference (registry)
+- automate-the-boring-stuff (registry)
 
 ## Notes
 
-Objective-gated: the checker writes with your function, reads the file back with
-the standard library, and asserts it recovers exactly the rows written.
+The gate round-trips the output back through the standard library, so a missing header or mangled delimiter is caught. Aligned to the canonical node skeleton, 2026-09.

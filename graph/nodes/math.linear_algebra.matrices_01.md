@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Read a matrix as a transformation
 
-## Learning target
+## What this skill is
 
 Read a matrix as a rectangular grid of numbers and, for a 2x2 matrix, describe the linear transformation it represents by where it sends the standard basis vectors.
 
-## Study pointers
+## Why this skill
 
-3Blue1Brown Essence of Linear Algebra, "Linear transformations and matrices," for the transformation view; Khan Academy Linear Algebra, "Matrix transformations," for worked examples.
+The transformation view is what makes matrix multiplication as composition and neural-network layers make sense.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.linear_algebra.matrices`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Watch the transformation view first, then work matrix-transformation examples that track where the basis vectors land. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- 3blue1brown-essence-linear-algebra (registry)
+- khan-linear-algebra (registry)
 
 ## Notes
 
-The transformation view is what makes matrix multiplication (composition) and neural-network layers make sense.
+The transformation view is what makes matrix multiplication (composition) and neural-network layers make sense. Aligned to the canonical node skeleton, 2026-09.

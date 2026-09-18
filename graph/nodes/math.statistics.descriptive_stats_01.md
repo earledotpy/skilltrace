@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Summarize a dataset with descriptive statistics
 
-## Learning target
+## What this skill is
 
-Compute mean, median, and mode for a small dataset, describe its spread with range and standard deviation, and say which measure of center best represents the data and why.
+Summarize a small dataset with its center and spread: mean, median, and mode, plus range and standard deviation, and say which measure of center best represents the data and why.
 
-## Study pointers
+## Why this skill
 
-Khan Academy's *Statistics and Probability* course, the "Summarizing quantitative data" unit, for worked center-and-spread problems; OpenIntro Statistics chapter 1 for the same with answers.
+Summaries are the foundation for distributions and every later statistical read; median-versus-mean judgment recurs in real data work.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.statistics.descriptive_stats`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Work center-and-spread problems with answers, computing each measure by hand on small datasets before trusting a library call. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- khan-statistics-probability (registry)
+- openintro-statistics (registry)
 
 ## Notes
 
-Foundation for distributions and every later summary; median-vs-mean judgment recurs in real data work.
+Foundation for distributions and every later summary; median-vs-mean judgment recurs in real data work. Aligned to the canonical node skeleton, 2026-09.

@@ -21,27 +21,27 @@ updated_at: 2026-07-06
 
 # Derive a new column in Pandas
 
-## Learning target
+## What this skill is
 
-Compute a new column from existing ones — the everyday shape of feature
-engineering. The objective gate calls your function on the same fixed `sales`
-DataFrame (`region, product, units, revenue`):
+Compute a new column from existing ones: the everyday shape of feature engineering.
 
-- `add_unit_price(df)` — return the DataFrame with a new `unit_price` column
-  equal to `revenue / units`, leaving the existing columns unchanged.
+## Why this skill
 
-Save your script at
-`evidence/artifacts/data/pandas_transform_columns_solution.py` and submit.
+Derived columns are where domain knowledge enters the frame, and the operation recurs in every analysis.
 
-## Study pointers
+## What passing requires
 
-The "10 minutes to pandas" Operations section and the Pandas "Indexing and
-selecting data → Setting" notes (pandas.pydata.org/docs) for assigning a new
-column from a vectorized expression; Real Python's "pandas: How to Add Columns"
-for worked variants including `assign`.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.pandas.transform_columns`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study new-column assignment from a vectorized expression first, then practise one clean derived-column computation, leaving existing columns unchanged. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- pandas-docs (registry)
+- python-for-data-analysis (registry)
 
 ## Notes
 
-Objective-gated: the checker compares every row's `unit_price` against
-`revenue / units`. The seed numbers divide cleanly, so a correct answer never
-fails on floating-point noise; a wrong formula does.
+Derived values are exact here, so a correct answer never fails on floating-point noise while a wrong formula does. Aligned to the canonical node skeleton, 2026-09.

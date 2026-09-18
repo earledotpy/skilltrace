@@ -21,25 +21,27 @@ updated_at: 2026-07-06
 
 # Aggregate a DataFrame with groupby
 
-## Learning target
+## What this skill is
 
-Collapse rows into per-group summaries — the split-apply-combine pattern at the
-heart of exploratory analysis. The objective gate calls your function on the
-same fixed `sales` DataFrame (`region, product, units, revenue`):
+Collapse rows into per-group summaries: the split-apply-combine pattern at the heart of exploratory analysis.
 
-- `revenue_by_region(df)` — return a Series of the total `revenue` for each
-  `region` (group by `region`, sum `revenue`).
+## Why this skill
 
-Save your script at
-`evidence/artifacts/data/pandas_groupby_aggregation_solution.py` and submit.
+Grouping plus aggregation is how raw rows become the per-category numbers every report is built from.
 
-## Study pointers
+## What passing requires
 
-The Pandas "Group by: split-apply-combine" user guide
-(pandas.pydata.org/docs/user_guide/groupby.html) for `groupby` and aggregation;
-the "10 minutes to pandas" Grouping section for a compact worked example.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.pandas.groupby_aggregation`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study the split-apply-combine guide first, then practise group-by-region-and-sum shapes on a small fixed frame. Seed estimate: 45–90 minutes.
+
+## Resources
+
+- pandas-docs (registry)
+- python-for-data-analysis (registry)
 
 ## Notes
 
-Objective-gated: the checker compares the result as a `{region: total}` mapping,
-so the Series index order is not the skill — the grouping and the sum are.
+The grouping and the sum are the skill; index order is not. Aligned to the canonical node skeleton, 2026-09.

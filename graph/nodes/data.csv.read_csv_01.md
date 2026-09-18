@@ -27,30 +27,27 @@ updated_at: 2026-07-06
 
 # Read a CSV file with Python
 
-## Learning target
+## What this skill is
 
-Open a CSV file and turn its rows into records you can work with. For the
-objective gate, define one function in your solution script:
+Open a CSV file and turn its rows into records you can work with, each keyed by the header, in file order.
 
-- `read_rows(path)` — open the CSV at `path` and return its data rows as a list
-  of dicts, each keyed by the header, in file order.
+## Why this skill
 
-A three-row `people.csv` (columns `name, age, city`) ships at
-`evidence/checks/data/datasets/people.csv` — read that same file while you
-develop. Save your script at
-`evidence/artifacts/data/csv_read_csv_solution.py` and submit.
+Reading tabular files is the entry to the whole data band; every later CSV, Pandas, and SQL skill assumes records you can trust.
 
-## Study pointers
+## What passing requires
 
-The Python `csv` module docs (docs.python.org/3/library/csv.html) for
-`csv.reader` / `csv.DictReader` and the `newline=""` file argument; Real
-Python's "Reading and Writing CSV Files in Python" for the header-as-keys
-pattern with worked examples.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.csv.read_csv`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study the csv-module reader pattern and the newline handling first, then read a small shipped CSV into header-keyed records. Seed estimate: 45–120 minutes.
+
+## Resources
+
+- python-stdlib-reference (registry)
+- automate-the-boring-stuff (registry)
 
 ## Notes
 
-Objective-gated: the checker runs `read_rows` on the shipped `people.csv` and
-asserts it returns one header-keyed dict per data row (values stay strings, as
-`csv` reads them). Retrofitted from a manual gate — reading a CSV into records
-has one correct result, so exit-0 is honestly the skill.
-
+Retrofitted from a manual gate — reading a CSV into records has one correct result, so exit-0 is honestly the skill. Aligned to the canonical node skeleton, 2026-09.

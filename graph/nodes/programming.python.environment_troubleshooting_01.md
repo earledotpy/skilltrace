@@ -21,27 +21,27 @@ updated_at: 2026-07-07
 
 # Troubleshoot Python environment and path problems
 
-## Learning target
+## What this skill is
 
-Diagnose and fix the environment failures that stop work before any real code
-runs: `ModuleNotFoundError` for a package you thought you installed, running the
-wrong Python, a virtual environment that isn't activated, and PATH confusion on
-Windows. The rescue skill is *locating* the problem — asking which interpreter
-and which environment is actually running (`where python`, `python -c "import
-sys; print(sys.executable)"`, `pip show`) — rather than reinstalling blindly.
+Diagnose and fix the environment failures that stop work before any real code runs: a missing module, the wrong interpreter, an inactive virtual environment, and PATH confusion. The rescue skill is locating the problem — asking which interpreter and environment is actually running — rather than reinstalling blindly.
 
-## Study pointers
+## Why this skill
 
-- Real Python's guides to virtual environments and to `pip`/`PATH` on Windows;
-  the Python Tutorial's "Modules" and "Virtual Environments" chapters for how
-  import resolution finds (or fails to find) a package.
-- Reproduce one failure on purpose (activate no venv, then import a venv-only
-  package) so the diagnosis steps become muscle memory.
+These failures stop everything before any code runs, so locating the cause quickly is what unblocks the real work.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.environment_troubleshooting`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Study how import resolution and virtual environments work first, then reproduce one failure on purpose so the diagnosis steps become muscle memory. Seed estimate: 20–45 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- missing-semester (registry)
 
 ## Notes
 
-A remediation node homed in the Python domain and narrower than the
-`environment_01` setup node: this is a troubleshooting drill for when the
-environment breaks, surfacing on a blocker or repeated failure. Its role lives
-in its `remediation` edges and `track: remediation` (weight 0.5). Rescues the
-setup, imports, and library-dependent data nodes. Manual-gated.
+A remediation node homed in the Python domain and narrower than the environment-setup node: a troubleshooting drill for when the environment breaks, surfacing on a blocker or repeated failure. Its role lives in its remediation edges and track label. Aligned to the canonical node skeleton, 2026-09.

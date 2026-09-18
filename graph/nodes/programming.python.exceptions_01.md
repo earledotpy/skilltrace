@@ -21,28 +21,27 @@ updated_at: 2026-07-06
 
 # Handle errors with try/except
 
-## Learning target
+## What this skill is
 
-Wrap an operation that might fail in `try`/`except`, catch the specific error,
-and return a fallback rather than letting the program crash. For the objective
-gate, define two functions in your solution script with exactly this behavior:
+Wrap an operation that might fail in try/except, catch the specific error, and return a fallback rather than letting the program crash.
 
-- `safe_divide(a, b)` — return `a / b`, or `None` when `b` is `0` (catch
-  `ZeroDivisionError`).
-- `parse_int(s)` — return `int(s)`, or `None` when `s` is not a valid integer
-  (catch `ValueError`).
+## Why this skill
 
-Save your script at `evidence/artifacts/programming/python_exceptions_solution.py`
-and submit it.
+Programs that crash on the first bad input never ship; catching the specific error is what makes them robust.
 
-## Study pointers
+## What passing requires
 
-The Python Tutorial §8 "Errors and Exceptions", especially §8.3 "Handling
-Exceptions" (docs.python.org/3/tutorial/errors.html); Real Python's "Python
-Exceptions: An Introduction" for catching specific error types.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.exceptions`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study the exception-handling form first, then practise the happy path and the failing path side by side until catching is automatic. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- runestone-py4e (registry)
 
 ## Notes
 
-Objective-gated: the checker calls the happy path *and* the failing path, so a
-function that lets the exception escape (or returns the wrong fallback) is
-rejected — catching is the substance the gate verifies.
+The gate exercises the happy path and the failing path, so letting the exception escape or returning the wrong fallback is rejected. Aligned to the canonical node skeleton, 2026-09.

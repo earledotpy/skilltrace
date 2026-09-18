@@ -22,26 +22,28 @@ updated_at: 2026-07-07
 
 # Build a data-cleaning tool portfolio project
 
-## Learning target
+## What this skill is
 
-Build a command-line or importable Python tool that takes a messy CSV, applies
-a set of cleaning rules you chose and can defend (which rows to drop, which
-values to fill, which columns to coerce), and writes out a clean CSV. Ship it as
-a small repository: working code, a README another person can follow to run it,
-and a short honest write-up of the cleaning decisions and their trade-offs.
+Build a command-line or importable Python tool that takes a messy CSV, applies a set of cleaning rules you chose and can defend, and writes out a clean CSV. Ship it as a small repository: working code, a README another person can follow to run it, and a short honest write-up of the cleaning decisions and their trade-offs.
 
-## Study pointers
+## Why this skill
 
-- Real Python's articles on writing CLI tools and on reading/writing CSV files
-  cover the mechanics; the Pandas docs are an alternative engine if you reach for
-  a DataFrame.
-- Decide your cleaning rules from the data, not from a template — the write-up
-  is where you justify them.
+The first tool someone else can run on their mess: defended rules plus runnable code plus docs.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.portfolio.project.data_cleaning_tool`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Decide the cleaning rules from the data rather than a template, build the tool around them, then write the README and the trade-off write-up. Seed estimate: 120–300 minutes.
+
+## Resources
+
+- pandas-docs (registry)
+- python-tutorial (registry)
+- make-a-readme (registry)
 
 ## Notes
 
-Hard-edged only from the code skills the working tool is built from (cleaning a
-CSV, and the file handling that reads and writes it) — mechanically enabling.
-Git, the README, and the write-up are packaging around the deliverable, so those
-edges are soft. Manual-gated: working code plus a readable README plus an honest
-write-up is judged, never proxied by one command.
+Hard-edged only from the code skills the working tool is built from — mechanically enabling. Git, the README, and the write-up are packaging around the deliverable, so those edges are soft. Manual-gated: working code plus a readable README plus an honest write-up is judged, never proxied. Aligned to the canonical node skeleton, 2026-09.

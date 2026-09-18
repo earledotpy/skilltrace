@@ -21,23 +21,27 @@ updated_at: 2026-07-06
 
 # Choose the right chart for the question
 
-## Learning target
+## What this skill is
 
-Given a dataset and a question, pick the chart that answers it — a bar for
-comparison across categories, a line for change over time, a scatter for
-relationship between two variables, a histogram for a single variable's
-distribution — and be able to say why the alternatives are worse. The evidence
-is a short write-up choosing a chart type for three question/data pairs and
-justifying each choice.
+Given a dataset and a question, pick the chart that answers it — comparison across categories, change over time, relationship between two variables, or a single variable’s distribution — and say why the alternatives are worse.
 
-## Study pointers
+## Why this skill
 
-From Data to Viz (data-to-viz.com) for the decision tree from data shape to
-chart family, and its caveats on each; the Financial Times Visual Vocabulary
-(referenced from the same guide) for the comparison → distribution → relationship
-framing.
+The wrong chart answers the wrong question, so the choice and its justification are the skill.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.visualization.choosing_charts`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Walk the data-shape-to-chart decision tree first, then practise choosing and justifying a chart type for a few question-and-data pairs. Seed estimate: 20–45 minutes.
+
+## Resources
+
+- data-to-viz (registry)
+- fundamentals-of-dataviz (registry)
 
 ## Notes
 
-Manual-gated: the substance is judgment — is this the chart that answers the
-question? — which is read, not exit-checked.
+Manual-gated: the substance is judgment — is this the chart that answers the question? — which is read, not exit-checked. Aligned to the canonical node skeleton, 2026-09.

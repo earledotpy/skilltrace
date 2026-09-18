@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Compute expected value
 
-## Learning target
+## What this skill is
 
 Compute the expected value of a discrete random variable as the probability-weighted sum of its outcomes, and interpret it as the long-run average rather than a single likely outcome.
 
-## Study pointers
+## Why this skill
 
-Khan Academy Statistics, "Random variables," for worked expected-value problems; OpenIntro chapter 3.4 for the definition with exercises and answers.
+Expectation is the bridge from probability to averages, loss functions, and estimator reasoning.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.statistics.expectation`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Work expected-value problems with answers, checking each result against the long-run-average interpretation. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- khan-statistics-probability (registry)
+- openintro-statistics (registry)
 
 ## Notes
 
-Expectation is the bridge from probability to averages, loss functions, and estimator reasoning.
+Expectation is the bridge from probability to averages, loss functions, and estimator reasoning. Aligned to the canonical node skeleton, 2026-09.

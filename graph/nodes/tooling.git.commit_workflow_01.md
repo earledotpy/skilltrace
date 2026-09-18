@@ -27,24 +27,27 @@ updated_at: 2026-07-06
 
 # Use the basic Git commit workflow
 
-## Learning target
+## What this skill is
 
-Stage a change and record it as a commit with a message. For the objective gate,
-build a Git repository at `evidence/artifacts/git_repo/`: initialize it, add a
-file, and commit it with a real message. Submit the repository (point
-`--location` at `evidence/artifacts/git_repo/`).
+Stage a change and record it as a commit with a message: the basic Git commit workflow.
 
-The gate asks Git whether `HEAD` resolves to a commit that carries a message and
-tracks a file — the mechanical result of the workflow, not that a `.git` folder
-merely exists.
+## Why this skill
 
-## Study pointers
+The commit is the unit of saved work; every later Git skill assumes staged, messaged commits.
 
-Pro Git chapter 2.2 "Recording Changes to the Repository" (git-scm.com/book/en/v2)
-for `git add`, `git status`, and `git commit`; GitHub Docs "Committing and
-reviewing changes to your project" for the same in practice.
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.tooling.git.commit_workflow`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study the record-changes flow first, then initialize a repository, add a file, and commit it with a real message. Seed estimate: 45–120 minutes.
+
+## Resources
+
+- pro-git-book (registry)
+- github-docs (registry)
 
 ## Notes
 
-Objective-gated: `evidence/checks/tooling.git.commit_workflow_check.py` interrogates
-the repository artifact with `git rev-parse`, `git log`, and `git ls-tree`.
+The gate asks Git whether the history carries a messaged commit tracking a file — the mechanical result of the workflow, not that a folder merely exists. Aligned to the canonical node skeleton, 2026-09.

@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Apply a matrix to a vector
 
-## Learning target
+## What this skill is
 
 Compute a matrix-vector product by the row-by-column rule and interpret the result as the input vector transformed by the matrix.
 
-## Study pointers
+## Why this skill
 
-3Blue1Brown Essence of Linear Algebra, "Linear transformations and matrices," for the applied-to-a-vector view; Khan Academy Linear Algebra, "Matrix-vector products," for worked computation.
+Matrix-vector multiplication is the single most common operation in machine learning: every dense layer is one.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.linear_algebra.matrix_vector_product`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Practise the applied-to-a-vector view first, then drill the row-by-column computation with worked answers. Seed estimate: 45–90 minutes.
+
+## Resources
+
+- 3blue1brown-essence-linear-algebra (registry)
+- khan-linear-algebra (registry)
 
 ## Notes
 
-Matrix-vector multiplication is the single most common operation in ML — every dense layer is one.
+Matrix-vector multiplication is the single most common operation in ML — every dense layer is one. Aligned to the canonical node skeleton, 2026-09.

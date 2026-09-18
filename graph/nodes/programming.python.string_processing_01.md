@@ -21,27 +21,27 @@ updated_at: 2026-07-06
 
 # Clean and process text with string methods
 
-## Learning target
+## What this skill is
 
-Reach for the right string methods to clean and summarize text — the daily work
-of preparing raw data. For the objective gate, define three functions in your
-solution script with exactly this behavior:
+Reach for the right string methods to clean and summarize text: the daily work of preparing raw data.
 
-- `normalize(s)` — return `s` with surrounding whitespace stripped and lower-cased.
-- `initials(full_name)` — return dotted, upper-case initials
-  (`"Ada Lovelace"` → `"A.L."`), one initial per whitespace-separated name.
-- `count_vowels(s)` — return the number of vowels (`a e i o u`, either case) in `s`.
+## Why this skill
 
-Save your script at `evidence/artifacts/programming/python_string_processing_solution.py`
-and submit it.
+Raw text is rarely analyzable as found; normalization and extraction turn it into data you can count.
 
-## Study pointers
+## What passing requires
 
-The Python Tutorial §3.1.2 "Strings" for slicing and the string-methods table in
-the library reference (docs.python.org/3/library/stdtypes.html#string-methods);
-Real Python's "Strings and Character Data in Python" for worked transformations.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.string_processing`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study slicing and the string-methods table first, then practise normalize, extract, and count transformations on short strings. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- automate-the-boring-stuff (registry)
 
 ## Notes
 
-Objective-gated: `evidence/checks/programming.python.string_processing_check.py`
-imports the solution and asserts each transformation.
+Each transformation is asserted on its result. Aligned to the canonical node skeleton, 2026-09.

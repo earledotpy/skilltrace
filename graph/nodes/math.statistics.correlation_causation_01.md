@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Distinguish correlation from causation
 
-## Learning target
+## What this skill is
 
-Interpret a scatterplot and correlation coefficient for strength and direction, and explain, with a concrete confounder or reverse-causation example, why a correlation does not by itself establish causation.
+Interpret a scatterplot and correlation coefficient for strength and direction, and explain with a concrete confounder or reverse-causation example why a correlation does not by itself establish causation.
 
-## Study pointers
+## Why this skill
 
-Khan Academy Statistics, "Bivariate numerical data," for reading correlation; OpenIntro chapter 8.1 for worked correlation with answers.
+Confounding and correlation-is-not-causation are the judgment errors that most often corrupt data conclusions.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.statistics.correlation_causation`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Read bivariate-data problems for correlation strength first, then practise naming the confounder that breaks each causal reading. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- khan-statistics-probability (registry)
+- openintro-statistics (registry)
 
 ## Notes
 
-Confounding and 'correlation is not causation' are the judgment errors that most often corrupt data conclusions.
+Confounding and ‘correlation is not causation’ are the judgment errors that most often corrupt data conclusions. Aligned to the canonical node skeleton, 2026-09.

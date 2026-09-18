@@ -21,26 +21,27 @@ updated_at: 2026-07-06
 
 # Filter rows and select columns in Pandas
 
-## Learning target
+## What this skill is
 
-Cut a DataFrame down to the rows and columns a question needs — the first move
-in nearly every analysis. The objective gate calls your function on a fixed
-six-row `sales` DataFrame with columns `region, product, units, revenue`:
+Cut a DataFrame down to the rows and columns a question needs: the first move in nearly every analysis.
 
-- `high_revenue(df)` — return the rows where `revenue` is at least 100, keeping
-  only the `region`, `product`, and `revenue` columns.
+## Why this skill
 
-Save your script at
-`evidence/artifacts/data/pandas_filtering_selection_solution.py` and submit.
+Filtering to exactly the needed rows and columns is what turns a dataset into an answerable question.
 
-## Study pointers
+## What passing requires
 
-The Pandas "Indexing and selecting data" user guide
-(pandas.pydata.org/docs/user_guide/indexing.html) for boolean indexing and
-column selection; the "10 minutes to pandas" tutorial's Selection section for a
-quick worked run.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.pandas.filtering_selection`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study boolean indexing and column selection first, then practise threshold-plus-columns cuts on a small fixed frame. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- pandas-docs (registry)
+- python-for-data-analysis (registry)
 
 ## Notes
 
-Objective-gated: the checker compares the returned rows (order-insensitive) and
-the exact column set, so an off-by-one threshold or an extra column is caught.
+An off-by-one threshold or an extra column is the skill failing, so exactness here is the point. Aligned to the canonical node skeleton, 2026-09.

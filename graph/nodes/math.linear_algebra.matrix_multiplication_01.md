@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Multiply two matrices
 
-## Learning target
+## What this skill is
 
 Compute the product of two conformable matrices by the row-by-column rule, check dimension compatibility first, and interpret the product as applying one transformation after another.
 
-## Study pointers
+## Why this skill
 
-3Blue1Brown Essence of Linear Algebra, "Matrix multiplication as composition," for meaning; Khan Academy Linear Algebra, "Multiplying matrices," for worked problems.
+Composition of transformations is why stacked layers work, and dimension bookkeeping here prevents most later tensor-shape bugs.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.linear_algebra.matrix_multiplication`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Learn multiplication-as-composition first, then work matrix-product problems that force the compatibility check every time. Seed estimate: 45–90 minutes.
+
+## Resources
+
+- 3blue1brown-essence-linear-algebra (registry)
+- khan-linear-algebra (registry)
 
 ## Notes
 
-Composition of transformations is why stacked layers work; dimension bookkeeping here prevents most later tensor-shape bugs.
+Composition of transformations is why stacked layers work; dimension bookkeeping here prevents most later tensor-shape bugs. Aligned to the canonical node skeleton, 2026-09.

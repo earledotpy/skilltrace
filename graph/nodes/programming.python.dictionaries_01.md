@@ -21,28 +21,27 @@ updated_at: 2026-07-06
 
 # Store and look up data with Python dictionaries
 
-## Learning target
+## What this skill is
 
-Create dictionaries, read and write values by key, and build one up from data.
-For the objective gate, define three functions in your solution script with
-exactly this behavior:
+Store and look up data with Python dictionaries: create them, read and write values by key, and build one up from data.
 
-- `word_count(text)` — return a dict mapping each whitespace-separated word to
-  the number of times it appears (`"a b a"` → `{"a": 2, "b": 1}`).
-- `get_or_default(d, key, default)` — return `d[key]` if the key is present,
-  otherwise `default`.
-- `invert(d)` — return a new dict with keys and values swapped.
+## Why this skill
 
-Save your script at `evidence/artifacts/programming/python_dictionaries_solution.py`
-and submit it.
+Dictionaries are the counting, lookup, and grouping workhorse the rest of the band reaches for constantly.
 
-## Study pointers
+## What passing requires
 
-The Python Tutorial §5.5 "Dictionaries" (docs.python.org/3/tutorial/datastructures.html)
-for the core operations; Real Python's "Dictionaries in Python" for building and
-iterating dicts with runnable examples.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.dictionaries`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study the core dict operations first, then practise building, reading with defaults, and inverting small dicts. Seed estimate: 45–90 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- automate-the-boring-stuff (registry)
 
 ## Notes
 
-Objective-gated: `evidence/checks/programming.python.dictionaries_check.py` imports
-the solution and asserts each function's stated result.
+Each stated result is asserted on behavior, not syntax. Aligned to the canonical node skeleton, 2026-09.

@@ -20,27 +20,27 @@ updated_at: 2026-07-06
 
 # Transform sequences with comprehensions
 
-## Learning target
+## What this skill is
 
-Map and filter a sequence into a new list or dict with a comprehension. For the
-objective gate, define three functions in your solution script with exactly this
-behavior:
+Map and filter a sequence into a new list or dict with a comprehension.
 
-- `evens(nums)` — return a list of the even numbers from `nums`, in order.
-- `square_map(nums)` — return a dict mapping each number to its square.
-- `long_words(words, min_len)` — return a list of the words whose length is at
-  least `min_len`, in order.
+## Why this skill
 
-Save your script at `evidence/artifacts/programming/python_comprehensions_solution.py`
-and submit it.
+Comprehensions are the compact map/filter vocabulary that keeps sequence transforms readable.
 
-## Study pointers
+## What passing requires
 
-The Python Tutorial §5.1.3 "List Comprehensions" and §5.5 for dict
-comprehensions (docs.python.org/3/tutorial/datastructures.html); Real Python's
-"When to Use a List Comprehension in Python" for the map/filter mental model.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.comprehensions`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study the list- and dict-comprehension forms first, then practise even-filter, square-map, and length-filter shapes. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- runestone-py4e (registry)
 
 ## Notes
 
-Objective-gated: the checker asserts behavior, not syntax — but each stated
-result is the natural product of a comprehension over the input.
+Behavior is asserted, not syntax — but each stated result is the natural product of a comprehension over the input. Aligned to the canonical node skeleton, 2026-09.

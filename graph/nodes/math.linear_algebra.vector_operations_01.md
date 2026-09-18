@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Measure vector length and distance
 
-## Learning target
+## What this skill is
 
-Compute the magnitude (Euclidean norm) of a vector, compute the distance between two vectors, and explain magnitude as length and distance as dissimilarity.
+Compute the magnitude (Euclidean norm) of a vector and the distance between two vectors, and explain magnitude as length and distance as dissimilarity.
 
-## Study pointers
+## Why this skill
 
-Khan Academy Linear Algebra, "Vectors and spaces > vector length," for worked norm problems; 3Blue1Brown Essence of Linear Algebra chapter 1 for the geometric picture.
+Norm and distance are the raw material of similarity, error, and clustering used later in machine learning.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.linear_algebra.vector_operations`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Hold the geometric picture while working norm problems with answers, then connect each computation to a similarity or error reading. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- khan-linear-algebra (registry)
+- 3blue1brown-essence-linear-algebra (registry)
 
 ## Notes
 
-Norm and distance are the raw material of similarity, error, and clustering used later in ML.
+Norm and distance are the raw material of similarity, error, and clustering used later in ML. Aligned to the canonical node skeleton, 2026-09.

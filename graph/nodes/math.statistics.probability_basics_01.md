@@ -21,14 +21,28 @@ updated_at: 2026-07-06
 
 # Compute basic probabilities
 
-## Learning target
+## What this skill is
 
-Express a probability as a number between 0 and 1, compute the probability of simple events, and combine events with the complement rule, the addition rule (or), and the multiplication rule (and) for independent events.
+Express a probability as a number between 0 and 1, compute probabilities of simple events, and combine events with the complement rule, the addition rule (or), and the multiplication rule (and) for independent events.
 
-## Study pointers
+## Why this skill
 
-Khan Academy Statistics, the "Probability" unit, for worked rule-by-rule problems; Seeing Theory "Basic Probability" for the visual model; OpenIntro chapter 3 for exercises with answers.
+These rules are constitutive of expectation and Bayes, and they recur everywhere probability appears in later machine-learning work.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.statistics.probability_basics`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Work rule-by-rule problems with answers, then check each result against the visual model of what the rule counts. Seed estimate: 45–90 minutes.
+
+## Resources
+
+- khan-statistics-probability (registry)
+- openintro-statistics (registry)
+- seeing-theory (registry)
 
 ## Notes
 
-Constitutive of expectation and Bayes; the rules recur everywhere probability appears in ML.
+Constitutive of expectation and Bayes; the rules recur everywhere probability appears in ML. Aligned to the canonical node skeleton, 2026-09.

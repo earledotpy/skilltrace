@@ -21,19 +21,27 @@ updated_at: 2026-07-06
 
 # Read a repository's history and diffs
 
-## Learning target
+## What this skill is
 
-Read a repository's commit log, inspect a diff between two commits, and explain
-in your own words what changed and why. Write a short note that reads the log of
-a real repository and walks through one diff.
+Read a repository’s commit log, inspect a diff between two commits, and explain in your own words what changed and why.
 
-## Study pointers
+## Why this skill
 
-Pro Git chapter 2.3 "Viewing the Commit History" (git-scm.com/book/en/v2) for
-`git log` and its options, and 2.2 for `git diff`; GitHub Docs "Viewing and
-comparing commits" for reading diffs in a browser.
+History is how teams read how code evolved; the skill is reading a log or diff and explaining the change.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.tooling.git.viewing_history`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Study the log and diff options first, then read a real repository’s log and walk through one diff in a short note. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- pro-git-book (registry)
+- github-docs (registry)
 
 ## Notes
 
-Manual-gated: the skill is reading a log or diff and explaining what changed,
-which is judgment, not an exit code.
+Manual-gated: the skill is reading a log or diff and explaining what changed, which is judgment, not an exit code. Aligned to the canonical node skeleton, 2026-09.

@@ -21,21 +21,27 @@ updated_at: 2026-07-06
 
 # Manage files and folders from the command line
 
-## Learning target
+## What this skill is
 
-Create, copy, move, rename, and remove files and folders from the terminal, and
-know which command does which. Capture a short transcript showing you doing each
-of these, with enough notes to reproduce the sequence.
+Create, copy, move, rename, and remove files and folders from the terminal, and know which command does which, captured as a short reproducible transcript.
 
-## Study pointers
+## Why this skill
 
-The Missing Semester "Shell Tools and Scripting" lecture
-(missing.csail.mit.edu/2020/shell-tools) for the core file commands; on Windows,
-the Microsoft "Windows commands" reference
-(learn.microsoft.com/windows-server/administration/windows-commands) for the
-PowerShell/cmd equivalents (`copy`, `move`, `del`, `mkdir`).
+Project work assumes file fluency; hesitation over which command does what slows everything downstream.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.tooling.cli.file_management`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Study the core file commands first, then perform each operation once, keeping notes detailed enough to reproduce the sequence. Seed estimate: 20–45 minutes.
+
+## Resources
+
+- missing-semester (registry)
+- microsoft-windows-commands (registry)
 
 ## Notes
 
-Manual-gated: the substance is choosing and sequencing the right commands, which
-is judged, not exit-checked.
+Manual-gated: the substance is choosing and sequencing the right commands, which is judged, not exit-checked. Aligned to the canonical node skeleton, 2026-09.

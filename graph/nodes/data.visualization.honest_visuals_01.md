@@ -21,23 +21,27 @@ updated_at: 2026-07-06
 
 # Spot and avoid misleading charts
 
-## Learning target
+## What this skill is
 
-Recognize the common ways a chart misleads — a truncated or inverted axis, a
-dual y-axis that manufactures correlation, a cherry-picked range, an area that
-encodes the wrong quantity — and say how to fix each. The evidence is a short
-critique of two or three misleading charts naming the distortion and the honest
-alternative.
+Recognize the common ways a chart misleads — a truncated or inverted axis, a dual y-axis that manufactures correlation, a cherry-picked range, an area that encodes the wrong quantity — and say how to fix each.
 
-## Study pointers
+## Why this skill
 
-From Data to Viz's "Caveats" section (data-to-viz.com/caveats.html) for a
-catalogue of common distortions with before/after examples; Claus Wilke's
-"Fundamentals of Data Visualization" (clauswilke.com/dataviz) chapter on
-proportional ink and axis choices.
+A chart that misleads is worse than no chart; spotting the distortion and justifying the fix is the substance of this node.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.visualization.honest_visuals`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Study the distortion catalogue with its before-and-after examples first, then practise critiquing a few misleading charts toward their honest alternatives. Seed estimate: 20–45 minutes.
+
+## Resources
+
+- data-to-viz (registry)
+- fundamentals-of-dataviz (registry)
 
 ## Notes
 
-Manual-gated: spotting a distortion and justifying the fix is a judgment about
-whether a chart tells the truth — the substance of this node, and not something
-an exit code can decide.
+Manual-gated: spotting a distortion and justifying the fix is a judgment about whether a chart tells the truth. Aligned to the canonical node skeleton, 2026-09.

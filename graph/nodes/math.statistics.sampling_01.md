@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Reason about samples and sampling variability
 
-## Learning target
+## What this skill is
 
 Distinguish a sample from a population, explain why a statistic computed from a sample varies from sample to sample, and argue why larger samples give more stable estimates.
 
-## Study pointers
+## Why this skill
 
-Seeing Theory "Frequentist Inference" for interactive sampling variability; Khan Academy Statistics, "Sampling distributions," for worked reasoning.
+Sampling variability is the idea hypothesis testing is built on, and it underlies train/test splits later.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.statistics.sampling`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Watch sampling variability happen in an interactive simulation, then work sampling-distribution reasoning problems. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- khan-statistics-probability (registry)
+- seeing-theory (registry)
 
 ## Notes
 
-Sampling variability is the idea hypothesis testing is built on; it also underlies train/test splits later.
+Sampling variability is the idea hypothesis testing is built on; it also underlies train/test splits later. Aligned to the canonical node skeleton, 2026-09.

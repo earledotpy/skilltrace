@@ -21,23 +21,27 @@ updated_at: 2026-07-06
 
 # Write up an analysis result honestly
 
-## Learning target
+## What this skill is
 
-Turn an analysis into a short written result a reader can trust: state the
-finding, show the evidence behind it, name the caveats and what the data does
-*not* support, and give the next step. The evidence is a one-page write-up of a
-real (or worked) analysis that leads with the claim and is honest about its
-limits.
+Turn an analysis into a short written result a reader can trust: state the finding, show the evidence behind it, name the caveats and what the data does not support, and give the next step, leading with the claim and honest about its limits.
 
-## Study pointers
+## Why this skill
 
-Google's Technical Writing One course (developers.google.com/tech-writing) for
-leading with the main point and writing for the reader; the "Communicating
-results" framing in OpenIntro Statistics (openintro.org) for stating a finding
-with its uncertainty rather than overclaiming.
+Trust comes from stated limits, not bigger claims; an honest write-up is what makes an analysis usable.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.communication.reports.results_summary`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Study point-first technical writing first, then write one page on a real or worked analysis, with each claim naming the evidence under it. Seed estimate: 20–60 minutes.
+
+## Resources
+
+- google-tech-writing (registry)
+- openintro-statistics (registry)
 
 ## Notes
 
-Manual-gated: the substance is whether the write-up is clear and honest about
-what the evidence supports — a judgment, read rather than exit-checked. Builds on
-the technical-summary skill and pairs with the visualization band.
+Manual-gated: whether the write-up is clear and honest about what the evidence supports is a judgment, read rather than exit-checked. Builds on the technical-summary skill and pairs with the visualization band. Aligned to the canonical node skeleton, 2026-09.

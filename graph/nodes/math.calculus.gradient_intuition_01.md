@@ -22,14 +22,27 @@ updated_at: 2026-07-06
 
 # Read a gradient as steepest ascent
 
-## Learning target
+## What this skill is
 
 Interpret the gradient of a multi-input function as the vector of its partial derivatives, explain that it points in the direction of steepest increase, and describe what its magnitude means.
 
-## Study pointers
+## Why this skill
 
-3Blue1Brown, "Gradient descent, how neural networks learn" (Neural Networks series) and Essence of Calculus for the multivariable step; Khan Academy Multivariable Calculus, "Gradient," for worked reads.
+The gradient-as-uphill-direction picture is the whole basis of gradient descent.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.calculus.gradient_intuition`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Watch the multivariable step first, then work gradient reads that connect direction to steepest increase and magnitude to steepness. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- 3blue1brown-essence-calculus (registry)
+- khan-differential-calculus (registry)
 
 ## Notes
 
-Intuition only — the gradient-as-uphill-direction picture is the whole basis of gradient descent.
+Intuition only — the gradient-as-uphill-direction picture is the whole basis of gradient descent. Aligned to the canonical node skeleton, 2026-09.

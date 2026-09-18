@@ -26,28 +26,27 @@ updated_at: 2026-07-06
 
 # Read and write files in Python
 
-## Learning target
+## What this skill is
 
-Write data to a text file and read it back. For the objective gate, define two
-functions in your solution script with exactly this behavior:
+Write data to a text file and read it back in Python, so what one function writes the other recovers exactly.
 
-- `write_lines(path, lines)` — write each string in `lines` to the file at
-  `path`, one per line.
-- `read_lines(path)` — return the file's lines as a list of strings, without
-  trailing newlines.
+## Why this skill
 
-Save your script at `evidence/artifacts/programming/python_files_solution.py` and
-submit it. The gate round-trips a list of lines through a temporary file using
-your two functions, so they must agree: what `write_lines` writes, `read_lines`
-must recover exactly.
+File round-trips underlie CSV work, artifacts, and every later skill that persists data to disk.
 
-## Study pointers
+## What passing requires
 
-The Python Tutorial §7.2 "Reading and Writing Files"
-(docs.python.org/3/tutorial/inputoutput.html) for `open`, `with`, and the read/
-write methods; Real Python's "Reading and Writing Files in Python" for patterns.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.files`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study the open-and-with pattern and the read/write methods first, then practise a write-then-read round-trip until the pair agrees exactly. Seed estimate: 45–120 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- automate-the-boring-stuff (registry)
 
 ## Notes
 
-Objective-gated: the checker asserts a write→read round-trip, so a mismatched
-newline or encoding choice between the two functions is rejected.
+A mismatched newline or encoding choice between the two halves is the skill failing, so agreement is the point. Aligned to the canonical node skeleton, 2026-09.

@@ -21,27 +21,27 @@ updated_at: 2026-07-06
 
 # Merge two DataFrames on a key
 
-## Learning target
+## What this skill is
 
-Bring two tables together on a shared key — the Pandas counterpart of a SQL
-join, and how lookup tables get attached to a dataset. The objective gate calls
-your function on the fixed `sales` DataFrame (`region, product, units, revenue`)
-and a small `regions` lookup (`region, manager`):
+Bring two tables together on a shared key: the Pandas counterpart of a SQL join, and how lookup tables get attached to a dataset.
 
-- `attach_manager(sales, regions)` — return `sales` with each row's `manager`
-  attached by matching on `region`.
+## Why this skill
 
-Save your script at
-`evidence/artifacts/data/pandas_merge_join_solution.py` and submit.
+Attaching reference data by key is how isolated tables become one analyzable frame.
 
-## Study pointers
+## What passing requires
 
-The Pandas "Merge, join, concatenate and compare" user guide
-(pandas.pydata.org/docs/user_guide/merging.html) for `DataFrame.merge`, the `on`
-key, and `how`; the "10 minutes to pandas" Merge section for a compact example.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.pandas.merge_join`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Study the merge guide’s key and join-type handling first, then practise attaching a small lookup table to a fixed frame. Seed estimate: 45–90 minutes.
+
+## Resources
+
+- pandas-docs (registry)
+- python-for-data-analysis (registry)
 
 ## Notes
 
-Objective-gated: the checker compares the merged rows (order-insensitive) and
-the column set, so a cross join (every sales row against every region) or the
-wrong key is caught.
+A cross join or the wrong key is the skill failing, so key discipline is the point. Aligned to the canonical node skeleton, 2026-09.

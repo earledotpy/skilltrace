@@ -27,20 +27,27 @@ updated_at: 2026-07-06
 
 # Write a basic project README
 
-## Learning target
+## What this skill is
 
-Create a README that lets another person run your project: what it does, how to
-set it up, how to run it, what files matter, and what output to expect — clear
-enough that someone who has never seen the code can follow it.
+Create a README that lets another person run your project: what it does, how to set it up, how to run it, what files matter, and what output to expect — clear enough that someone who has never seen the code can follow it.
 
-## Study pointers
+## Why this skill
 
-Make a README (makeareadme.com) for a well-explained minimal template and section
-checklist; GitHub's "About READMEs" docs (docs.github.com) for what a project's
-landing document should contain.
+The README is a project’s landing document; ‘could a stranger run this from the README?’ is the bar every deliverable meets.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.communication.readme.basic_readme`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Study a minimal well-explained template and section checklist first, then write a README for a real small project and read it as a stranger would. Seed estimate: 45–120 minutes.
+
+## Resources
+
+- make-a-readme (registry)
+- github-docs (registry)
 
 ## Notes
 
-Manual-gated: "could a stranger run this from the README?" is a judgment about
-clarity, read rather than exit-checked.
-
+Manual-gated: ‘could a stranger run this from the README?’ is a judgment about clarity, read rather than exit-checked. Aligned to the canonical node skeleton, 2026-09.

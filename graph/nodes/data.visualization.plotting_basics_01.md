@@ -21,23 +21,27 @@ updated_at: 2026-07-06
 
 # Produce a clear, labeled plot
 
-## Learning target
+## What this skill is
 
-Turn a small dataset into a chart a reader can understand without your help: a
-descriptive title, labeled axes with units, a legend when there is more than one
-series, and a sensible scale. The evidence is a plot you produced (with the code
-that made it) plus a sentence on what it shows.
+Turn a small dataset into a chart a reader can understand without your help: a descriptive title, labeled axes with units, a legend when there is more than one series, and a sensible scale, plus the code that made it and a sentence on what it shows.
 
-## Study pointers
+## Why this skill
 
-The Matplotlib "Quick start" and "Pyplot tutorial" (matplotlib.org/stable) for
-building a figure and setting title, `xlabel`/`ylabel`, and legend; Claus Wilke's
-"Fundamentals of Data Visualization" (clauswilke.com/dataviz) chapters on axes
-and labeling for what makes a chart readable.
+Producing a figure is mechanical, but clarity and correct labeling are judgment; a chart nobody can read answers nothing.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.visualization.plotting_basics`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Build a first figure from the quick-start guide, then revise it against labeling guidance until title, axes, legend, and scale are all reader-ready. Seed estimate: 30–90 minutes.
+
+## Resources
+
+- matplotlib-docs (registry)
+- fundamentals-of-dataviz (registry)
 
 ## Notes
 
-Manual-gated: producing a figure is mechanical, but "is this chart clear and
-correctly labeled?" is a judgment, so the gate reads the plot and its code rather
-than exit-checking that a file was written (which would be the proxy the honesty
-rule forbids).
+Manual-gated: ‘is this chart clear and correctly labeled?’ is a judgment, so the gate reads the plot and its code rather than exit-checking that a file was written. Aligned to the canonical node skeleton, 2026-09.

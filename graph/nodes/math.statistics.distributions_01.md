@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Read and describe a distribution
 
-## Learning target
+## What this skill is
 
-Read a histogram, describe a distribution's shape (symmetric, skewed, bimodal), locate its center and spread visually, and recognize when a distribution is roughly normal.
+Read a histogram and describe a distribution's shape (symmetric, skewed, bimodal), locate its center and spread visually, and recognize when a distribution is roughly normal.
 
-## Study pointers
+## Why this skill
 
-Seeing Theory (Brown University), the "Probability Distributions" chapter, for interactive shape intuition; Khan Academy Statistics, "Modeling data distributions," for worked reads.
+Distribution literacy underlies sampling, hypothesis testing, and reading model outputs later.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.statistics.distributions`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Practise shape reads interactively first, then work distribution-modeling problems that ask for center, spread, and the normal call. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- khan-statistics-probability (registry)
+- seeing-theory (registry)
 
 ## Notes
 
-Distribution literacy underlies sampling, hypothesis testing, and reading model outputs later.
+Distribution literacy underlies sampling, hypothesis testing, and reading model outputs later. Aligned to the canonical node skeleton, 2026-09.

@@ -21,28 +21,27 @@ updated_at: 2026-07-07
 
 # Read a Python traceback to locate a failure
 
-## Learning target
+## What this skill is
 
-Given a program that raises, read the traceback from the bottom up: name the
-exception type, identify the exact line and call that raised it, and state the
-one next thing you would check. Practise on real tracebacks for the errors that
-stop beginners cold — `NameError`, `TypeError`, `IndexError`, `KeyError`,
-`IndentationError`. The narrow skill here is *reading the message the
-interpreter already gave you* rather than guessing, which is what turns being
-stuck into a next step.
+Given a program that raises, read the traceback from the bottom up: name the exception type, identify the exact line and call that raised it, and state the one next thing to check.
 
-## Study pointers
+## Why this skill
 
-- Real Python's articles on understanding tracebacks and on Python exceptions;
-  the Python Tutorial's "Errors and Exceptions" chapter for the exception
-  vocabulary.
-- Collect three tracebacks from your own recent errors and practise on those —
-  the rescue sticks when the examples are yours.
+The narrow skill here is reading the message the interpreter already gave instead of guessing, which is what turns being stuck into a next step.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.reading_errors`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Study the exception vocabulary first, then collect three tracebacks from recent real errors and practise the bottom-up read on those. Seed estimate: 20–45 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- python-tutor (registry)
 
 ## Notes
 
-A remediation node homed in the Python domain and deliberately narrower than the
-`errors_debugging_01` learning node: this is a traceback-reading drill that
-surfaces when you are stuck, not a first course in debugging method. Its role
-lives in its `remediation` edges and `track: remediation` (weight 0.5). Rescues
-the code nodes learners most often stall on. Manual-gated.
+A remediation node homed in the Python domain and deliberately narrower than the errors-debugging learning node: a traceback-reading drill that surfaces when you are stuck. Its role lives in its remediation edges and track label. Aligned to the canonical node skeleton, 2026-09.

@@ -22,25 +22,27 @@ updated_at: 2026-07-07
 
 # Interpret a real dataset's summary honestly
 
-## Learning target
+## What this skill is
 
-Take a real, messy-enough dataset, compute descriptive statistics over it, and
-write an interpretation that a careful reader would trust: what the central
-tendency and spread actually say, where an outlier or a skew changes the story,
-and — the load-bearing part — what the summary does *not* license you to claim
-(no causation from correlation, no population claim from a biased sample). The
-skill this weaves is statistical reasoning meeting honest communication.
+Take a real, messy-enough dataset, compute descriptive statistics over it, and write an interpretation that a careful reader would trust: what the central tendency and spread actually say, where an outlier or a skew changes the story, and what the summary does not license you to claim.
 
-## Study pointers
+## Why this skill
 
-- OpenIntro Statistics chapters on summarizing data and on the
-  correlation-is-not-causation trap give the reasoning; keep it open while you
-  write.
-- Google Technical Writing guidance on stating claims and their support shapes
-  the write-up so each claim names the evidence behind it.
+The skill this weaves is statistical reasoning meeting honest communication: the load-bearing part is naming what the numbers do not support.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.consolidation.dataset_interpretation`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Summarize the data first, hunt the outlier and the skew that change the story, then write the interpretation with each claim naming its evidence and each limit named plainly. Seed estimate: 60–120 minutes.
+
+## Resources
+
+- openintro-statistics (registry)
+- google-tech-writing (registry)
 
 ## Notes
 
-Soft-edged from the statistics and communication bands it weaves.
-Manual-gated: honest interpretation is the whole point and is judged by a
-reader, never by a command.
+Soft-edged from the statistics and communication bands it weaves. Manual-gated: honest interpretation is the whole point and is judged by a reader, never by a command. Aligned to the canonical node skeleton, 2026-09.

@@ -22,14 +22,27 @@ updated_at: 2026-07-06
 
 # Read an integral as accumulation
 
-## Learning target
+## What this skill is
 
 Interpret a definite integral as the accumulated area under a curve, connect it to finding a total from a rate, and explain the sign of area below the axis.
 
-## Study pointers
+## Why this skill
 
-3Blue1Brown Essence of Calculus, "Integration and the fundamental theorem of calculus," for the accumulation picture; Khan Academy Integral Calculus, "Accumulations of change," for worked reads.
+Accumulation underlies expectations of continuous variables and areas under curves read later.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.calculus.integral_intuition`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Build the accumulation picture first, then work accumulations-of-change problems that connect rates to totals. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- 3blue1brown-essence-calculus (registry)
+- khan-differential-calculus (registry)
 
 ## Notes
 
-Intuition only — accumulation underlies expectations of continuous variables and areas under curves (e.g. ROC) later.
+Intuition only — accumulation underlies expectations of continuous variables and areas under curves later. Aligned to the canonical node skeleton, 2026-09.
