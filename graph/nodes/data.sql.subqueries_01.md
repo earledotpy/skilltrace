@@ -21,29 +21,27 @@ updated_at: 2026-07-06
 
 # Filter against a subquery
 
-## Learning target
+## What this skill is
 
-Compute a value with one query and filter another query against it — the move
-behind "above average", "more than the median", and countless real questions.
-Against the same seeded dataset:
+Compute a value with one query and filter another query against it — the move behind ‘above average’ and countless real questions — using a nested SELECT rather than a hardcoded number.
 
-- `employees(id, name, department_id, salary, hire_year)`
-- `departments(id, name, location)`
+## Why this skill
 
-Write one SQL statement that returns the `name` of every employee who earns more
-than the company-wide average salary, computing that average with a subquery
-rather than hardcoding it. Save it at
-`evidence/artifacts/data/sql_subqueries_solution.sql` and submit.
+Composing queries lets each question build on the last instead of freezing a number that will go stale. A threshold computed live stays honest as the data changes; a hardcoded one silently rots.
 
-## Study pointers
+## What passing requires
 
-Mode's SQL Tutorial "Advanced SQL → Subqueries" for a nested `SELECT` in a
-`WHERE` clause with worked examples; the SQLite `SELECT` documentation
-(sqlite.org/lang_select.html) for how a scalar subquery evaluates.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.sql.subqueries`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Work nested-SELECT-in-WHERE drills, each time computing the threshold inside the query and checking the result against a hand-computed expectation. Seed estimate: 45–90 minutes.
+
+## Resources
+
+- sqlbolt (registry)
+- sqlite-docs (registry)
 
 ## Notes
 
-Objective-gated: the checker compares the four names above the company average
-(order-insensitive). The gate can only observe the returned rows, so a hardcoded
-threshold that happens to match is accepted — the honesty rule governs the
-author shipping no proxy, not adversarial-proofing a single honest learner.
+Aligned to the canonical node skeleton, 2026-09.

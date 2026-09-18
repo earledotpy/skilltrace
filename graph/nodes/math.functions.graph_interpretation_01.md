@@ -27,10 +27,26 @@ updated_at: 2026-07-06
 
 # Interpret graphs
 
-## Learning target
+## What this skill is
 
-Explain what a graph says about relationships, trends, and change.
+Explain what a graph says about relationships, trends, and change: what rises with what, where change is fastest, and what the shape implies.
 
-## Study pointers
+## Why this skill
+
+Reading results — in reports, dashboards, and honest-visual checks — is graph interpretation. The skill is narrating a graph’s story in sentences, which is also how you catch a misleading one.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.functions.graph_interpretation`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Pick a worked graph, cover its caption, and narrate its story aloud before comparing against the given interpretation. Seed estimate: 45–150 minutes.
+
+## Resources
+
+- khan-algebra (registry)
 
 ## Notes
+
+Aligned to the canonical node skeleton, 2026-09.

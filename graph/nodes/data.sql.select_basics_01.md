@@ -21,27 +21,28 @@ updated_at: 2026-07-06
 
 # Query rows and columns with SELECT
 
-## Learning target
+## What this skill is
 
-Read data out of a relational table by naming the columns you want. The
-objective gate runs your query against a fixed two-table dataset:
+Read data out of a relational table by naming the columns you want in a basic SELECT statement (column projection).
 
-- `employees(id, name, department_id, salary, hire_year)`
-- `departments(id, name, location)`
+## Why this skill
 
-with eight employees across three departments.
+Every later query is a SELECT plus further clauses, so this is the entry to the whole SQL band and its shared practice dataset. Projection — asking for exactly the columns you need — is also the first step of honest data handling.
 
-Write one SQL statement that returns the `name` and `salary` of every employee.
-Save it at `evidence/artifacts/data/sql_select_basics_solution.sql` and submit.
+## What passing requires
 
-## Study pointers
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.sql.select_basics`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
 
-SQLBolt lessons 1–2 (sqlbolt.com) for `SELECT` and column projection, done in
-the browser against a live table; Mode's SQL Tutorial "Basic SQL → SELECT" for
-the same idea with worked examples.
+## How to work on it
+
+Work the introductory SELECT lessons in the browser against a live table, then write the node’s query against the practice dataset. Seed estimate: 20–45 minutes.
+
+## Resources
+
+- sqlbolt (registry)
+- select-star-sql (registry)
+- sqlite-docs (registry)
 
 ## Notes
 
-Objective-gated: the shipped checker runs your statement against a seeded
-in-memory SQLite database and compares the returned rows (order-insensitive) to
-the expected `(name, salary)` for all eight employees.
+Aligned to the canonical node skeleton, 2026-09.

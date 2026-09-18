@@ -27,10 +27,26 @@ updated_at: 2026-07-06
 
 # Use the coordinate plane
 
-## Learning target
+## What this skill is
 
-Plot, read, and interpret points on the coordinate plane.
+Plot points on the coordinate plane, read coordinates back off it, and interpret what a point’s position says.
 
-## Study pointers
+## Why this skill
+
+Every graph you will meet assumes you can locate and read points without thinking. Slope, functions, and plots all build on this plane, so comfort here is comfort with the shared drawing board of the mathematics ahead.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.functions.coordinate_plane`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Plot points by hand on graph paper, then cover the labels and read the coordinates back; alternate until both directions feel instant. Seed estimate: 30–90 minutes.
+
+## Resources
+
+- khan-algebra (registry)
 
 ## Notes
+
+Aligned to the canonical node skeleton, 2026-09.

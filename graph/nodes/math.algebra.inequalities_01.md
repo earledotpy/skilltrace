@@ -27,10 +27,26 @@ updated_at: 2026-07-06
 
 # Solve and interpret inequalities
 
-## Learning target
+## What this skill is
 
-Solve simple inequalities and represent their solution sets.
+Solve simple inequalities and represent their solution sets as ranges of values.
 
-## Study pointers
+## Why this skill
+
+Real constraints arrive as bounds — at most, at least, between — rather than exact equalities. Reading a solution set as a range, and knowing which endpoint behavior flips an inequality, is how those constraints become usable mathematics.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.algebra.inequalities`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Solve a few inequalities, then draw each solution set on a number line and read it back as a sentence about which values qualify. Seed estimate: 45–120 minutes.
+
+## Resources
+
+- khan-algebra (registry)
 
 ## Notes
+
+Aligned to the canonical node skeleton, 2026-09.

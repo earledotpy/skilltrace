@@ -27,10 +27,26 @@ updated_at: 2026-07-06
 
 # Work with variables and algebraic expressions
 
-## Learning target
+## What this skill is
 
-Translate between words, symbols, and algebraic expressions.
+Translate between words, symbols, and algebraic expressions: read a sentence as an expression, and read an expression back as a sentence about quantities.
 
-## Study pointers
+## Why this skill
+
+This translation is the move inside solving equations, branching on values in code, and reading formulas anywhere. A learner who can move both directions between words and symbols stops being stuck at the first line of a problem.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.algebra.variables_expressions`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Drill short translations in both directions — words to symbols, then symbols back to words — checking each against a worked answer. Seed estimate: 45–120 minutes.
+
+## Resources
+
+- khan-algebra (registry)
 
 ## Notes
+
+Aligned to the canonical node skeleton, 2026-09.

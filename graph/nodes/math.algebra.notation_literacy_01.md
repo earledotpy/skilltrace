@@ -21,26 +21,27 @@ updated_at: 2026-07-07
 
 # Read mathematical notation with confidence
 
-## Learning target
+## What this skill is
 
-Read, out loud and correctly, the notation that a formula-heavy resource assumes
-you already know: function notation `f(x)`, subscripts and indices like `x_i`,
-the summation sign `Σ`, product notation, and the Greek letters that recur (μ,
-σ, Σ, θ, λ, Δ). The rescue is *translation* — turning a dense expression into a
-sentence you understand — because the wall self-learners hit in statistics and
-linear algebra is usually notation, not the underlying idea.
+Read, out loud and correctly, the notation that formula-heavy material assumes you know: function notation f(x), subscripts and indices, summation, product notation, and the recurring Greek letters. The rescue is translation — turning a dense expression into a sentence you understand.
 
-## Study pointers
+## Why this skill
 
-- Khan Academy Algebra's function-notation content for `f(x)`; a summation-
-  notation walkthrough (Khan or the OpenIntro appendix) for `Σ` and indices.
-- Take one intimidating formula from a later node (an expectation or a dot
-  product) and rewrite it in words — that translation is the whole exercise.
+The wall self-learners hit in statistics and linear algebra is usually notation, not the underlying idea. Once a formula can be read as a sentence, the idea behind it becomes approachable with ordinary study.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.algebra.notation_literacy`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Take one intimidating formula from later material (an expectation or a dot product) and rewrite it in words; then read function-notation and summation walkthroughs, translating each symbol as you go. Seed estimate: 20–45 minutes.
+
+## Resources
+
+- khan-algebra (registry)
+- openintro-statistics (registry)
 
 ## Notes
 
-A remediation node homed in the algebra domain, where symbolic and function
-notation originate — not given a namespace of its own (doctrine: remediation
-nodes are homed in their natural domain). Its role lives in its `remediation`
-edges and `track: remediation` (weight 0.5). Rescues the notation-dense
-statistics, linear-algebra, and calculus-intuition nodes. Manual-gated.
+A remediation node homed in the algebra domain, where symbolic and function notation originate. Rescues the notation-dense statistics, linear-algebra, and calculus-intuition nodes. Aligned to the canonical node skeleton, 2026-09.

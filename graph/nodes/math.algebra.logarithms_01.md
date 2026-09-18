@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Evaluate and apply logarithms
 
-## Learning target
+## What this skill is
 
-Evaluate a logarithm as 'the power the base must be raised to,' convert between exponential and logarithmic form, and apply the product, quotient, and power log rules.
+Evaluate a logarithm as ‘the power the base must be raised to,’ convert between exponential and logarithmic form, and apply the product, quotient, and power log rules.
 
-## Study pointers
+## Why this skill
 
-Khan Academy Algebra 2 / Precalculus, the "Logarithms" unit, for worked evaluation and rule problems with answers.
+Logs are constitutive of log-loss, log-scales, and information and entropy reasoning throughout machine learning. They also compress multiplicative relationships into additive ones, which is why they appear wherever growth and likelihood are discussed.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.algebra.logarithms`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Work evaluation and rule problems with answers, always converting to exponential form when an evaluation feels opaque. Seed estimate: 45–90 minutes.
+
+## Resources
+
+- khan-algebra (registry)
+- khan-precalculus (registry)
 
 ## Notes
 
-Logs are constitutive of log-loss, log-scales, and information/entropy reasoning throughout ML.
+Aligned to the canonical node skeleton, 2026-09.

@@ -27,10 +27,26 @@ updated_at: 2026-07-06
 
 # Apply order of operations
 
-## Learning target
+## What this skill is
 
-Evaluate arithmetic expressions using standard order of operations.
+Evaluate arithmetic expressions using the standard order of operations (parentheses, then exponents, then multiply and divide, then add and subtract, left to right).
 
-## Study pointers
+## Why this skill
+
+Almost every later expression you simplify — algebra, statistics formulas, Python conditions — assumes you group operations the same way everyone else does. Getting this wrong silently changes results, so this grouping habit pays for itself in every band that follows.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.arithmetic.order_operations`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Work a few mixed-operation expressions by hand, writing each grouping step before computing. Seed estimate: 30–90 minutes.
+
+## Resources
+
+- khan-arithmetic (registry)
 
 ## Notes
+
+Aligned to the canonical node skeleton, 2026-09.

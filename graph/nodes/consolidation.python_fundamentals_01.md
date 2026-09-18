@@ -20,23 +20,27 @@ updated_at: 2026-07-07
 
 # Write one Python script exercising variables through files
 
-## Learning target
+## What this skill is
 
-Write one coherent script — not five snippets — that puts the Python
-fundamentals together: values held in variables, a conditional that branches on
-them, a loop over a collection, at least one function you define and call, and a
-file read or write. The integration is the skill: a working program where the
-pieces cooperate, rather than each concept demonstrated in isolation.
+Write one coherent script — not five snippets — that puts the Python fundamentals together: values held in variables, a conditional that branches on them, a loop over a collection, at least one function you define and call, and a file read or write.
 
-## Study pointers
+## Why this skill
 
-- The Python Tutorial's "An Informal Introduction" through "Input and Output"
-  chapters cover every piece this weaves; the exercise is to combine them.
-- Real Python's beginner project walkthroughs model the same
-  variables-to-files arc in one program — read one for shape, then write your own.
+The integration is the skill: a working program where the pieces cooperate, rather than each concept demonstrated in isolation. This is the shape real tools take — small programs where variables, branches, loops, functions, and files work together.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.consolidation.python_fundamentals`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Combine the tutorial chapters into a single program of your own design; read one beginner project walkthrough for shape first, then write yours without copying it. Seed estimate: 60–120 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- automate-the-boring-stuff (registry)
 
 ## Notes
 
-Soft-edged from the Python band it weaves — a learner already fluent can pass it
-directly. Manual-gated: whether the pieces genuinely cooperate in one working
-program is judgment, not an exit code.
+Soft-edged from the Python band it weaves — prior fluency passes it directly. Whether the pieces genuinely cooperate in one working program is judgment, not an exit code. Aligned to the canonical node skeleton, 2026-09.

@@ -21,26 +21,28 @@ updated_at: 2026-07-06
 
 # Summarize groups with GROUP BY
 
-## Learning target
+## What this skill is
 
-Collapse many rows into per-group summaries — the daily bread of exploratory
-data work — against the same seeded dataset:
+Collapse many rows into per-group summaries — counts and averages by group — with aggregate functions and GROUP BY.
 
-- `employees(id, name, department_id, salary, hire_year)`
-- `departments(id, name, location)`
+## Why this skill
 
-Write one SQL statement that returns, for each department, its `department_id`,
-the number of employees in it, and their average salary. Save it at
-`evidence/artifacts/data/sql_aggregation_solution.sql` and submit.
+Per-group summaries are the daily bread of exploratory data work: how many per department, what average per category. This is the move that turns raw rows into statements about the world.
 
-## Study pointers
+## What passing requires
 
-SQLBolt lessons 6–7 (sqlbolt.com) for aggregate functions and `GROUP BY`;
-Mode's SQL Tutorial "Intermediate SQL → Aggregate functions / GROUP BY" for
-`COUNT`, `AVG`, and grouping with worked queries.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.sql.aggregation`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Work aggregate-and-group drills in the interactive lessons, predicting the number of result rows (one per group) before running each query. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- sqlbolt (registry)
+- select-star-sql (registry)
+- sqlite-docs (registry)
 
 ## Notes
 
-Objective-gated: the checker compares the three per-department summary rows
-(order-insensitive). A missing `GROUP BY` collapses to one row and rejects; so
-does the wrong aggregate (e.g. `SUM` for `AVG`).
+Aligned to the canonical node skeleton, 2026-09.

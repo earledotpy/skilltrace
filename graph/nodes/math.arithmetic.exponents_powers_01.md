@@ -21,14 +21,27 @@ updated_at: 2026-07-06
 
 # Compute with exponents and scientific notation
 
-## Learning target
+## What this skill is
 
 Evaluate integer powers, apply the product, quotient, and power exponent rules, and convert numbers to and from scientific notation.
 
-## Study pointers
+## Why this skill
 
-Khan Academy Arithmetic/Pre-algebra, "Exponents" and "Scientific notation," and Algebra "Exponents" for the rules with worked problems.
+Exponent fluency underlies logarithms, log-scale plots, and reading very large or small quantities — the compact notations that later material uses without pausing to explain. Scientific notation is how data at extreme scales is written everywhere you will meet it.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.arithmetic.exponents_powers`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Work the exponent rules and notation conversions as short problem sets with worked answers, saying each rule aloud as you apply it. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- khan-arithmetic (registry)
+- khan-algebra (registry)
 
 ## Notes
 
-Exponent fluency underlies logarithms, log-scale plots, big-O, and reading very large or small quantities.
+Aligned to the canonical node skeleton, 2026-09.

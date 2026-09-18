@@ -26,18 +26,27 @@ updated_at: 2026-07-06
 
 # Read tracebacks and debug simple errors
 
-## Learning target
+## What this skill is
 
-Read a Python traceback, locate the failing line, name the error, and describe
-the fix — a repeatable debugging method, not a guess-and-check habit.
+Read a Python traceback, locate the failing line, name the error, and describe the fix — a repeatable debugging method, not guess-and-check.
 
-## Study pointers
+## Why this skill
 
-The Python Tutorial §8.1–8.2 "Syntax Errors" and "Exceptions"
-(docs.python.org/3/tutorial/errors.html) for reading tracebacks; Real Python's
-"Understanding the Python Traceback" for how to read one top to bottom.
+Every later bug asks the same questions: where did it fail, what kind of error is it, and what change addresses the cause. A method here saves whole sessions later, because debugging stops being stuckness and becomes procedure.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.errors_debugging`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Break a small snippet on purpose, read the traceback top to bottom, state the fix before applying it, and confirm the program runs after. Seed estimate: 45–120 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- python-tutor (registry)
 
 ## Notes
 
-Manual-gated: explaining a debugging approach is judgment; no exit code proves
-you understood *why* the error occurred, which is the skill.
+Aligned to the canonical node skeleton, 2026-09.

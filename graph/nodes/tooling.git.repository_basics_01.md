@@ -27,18 +27,27 @@ updated_at: 2026-07-06
 
 # Create or clone a Git repository
 
-## Learning target
+## What this skill is
 
-Initialize a new repository or clone an existing one, and read `git status` to
-see what state the working tree is in.
+Initialize a new repository or clone an existing one, and read git status to see what state the working tree is in.
 
-## Study pointers
+## Why this skill
 
-Pro Git chapter 2.1 "Getting a Git Repository" (git-scm.com/book/en/v2) for
-`git init` and `git clone`, and 1.7 for first-time setup; GitHub Docs "About
-remote repositories" for cloning from GitHub.
+Repositories hold the work, and status is the first question before every commit: what changed, what is staged, what is untouched. Reading status fluently is the habit that makes later version-control work legible.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.tooling.git.repository_basics`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Initialize or clone a practice repository and inspect its status after each small change, narrating what the status output is telling you. Seed estimate: 30–90 minutes.
+
+## Resources
+
+- pro-git-book (registry)
+- github-docs (registry)
 
 ## Notes
 
-Manual-gated: initializing or cloning is a setup step the learner attests to; the
-committing skill it precedes is where the objective gate lands.
+Aligned to the canonical node skeleton, 2026-09.

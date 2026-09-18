@@ -27,10 +27,26 @@ updated_at: 2026-07-06
 
 # Solve one-variable linear equations
 
-## Learning target
+## What this skill is
 
-Solve equations of the form ax + b = c and explain each transformation.
+Solve equations of the form ax + b = c, showing and explaining each transformation that keeps the equation balanced.
 
-## Study pointers
+## Why this skill
+
+Balanced manipulation of expressions is reused wherever an unknown is isolated — systems of equations, slope and intercept work, and linear models all move the same way. Explaining each step is what makes the method transferable rather than memorized.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.algebra.linear_equations`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Solve by hand, writing each balanced step and its reason before computing the next line. Seed estimate: 45–150 minutes.
+
+## Resources
+
+- khan-algebra (registry)
 
 ## Notes
+
+Aligned to the canonical node skeleton, 2026-09.

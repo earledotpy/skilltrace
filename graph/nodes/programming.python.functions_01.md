@@ -26,25 +26,28 @@ updated_at: 2026-07-06
 
 # Define and call Python functions
 
-## Learning target
+## What this skill is
 
-Write reusable functions with parameters and return values. For the objective
-gate, define three functions in your solution script with exactly this behavior:
+Define and call your own functions with parameters and return values, giving a repeated computation a name.
 
-- `rectangle_area(width, height)` — return the area (`width * height`).
-- `celsius_to_fahrenheit(c)` — return the Fahrenheit temperature (`c * 9/5 + 32`).
-- `greet(name)` — return the string `"Hello, <name>!"` for the given name.
+## Why this skill
 
-Save your script at `evidence/artifacts/programming/python_functions_solution.py`
-and submit it; the gate runs the shipped checker against these three functions.
+Named, reusable pieces are the unit the rest of Python composes: later work factors behavior into functions so it can be tested, reused, and reasoned about one piece at a time.
 
-## Study pointers
+## What passing requires
 
-The Python Tutorial §4.7–4.8 "Defining Functions" (docs.python.org/3/tutorial/controlflow.html)
-for parameters and return values; Real Python's "Defining Your Own Python Function"
-for worked examples with runnable code.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.functions`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Write three tiny functions, call each with sample inputs, and read back the returned values before moving on. Seed estimate: 60–180 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- automate-the-boring-stuff (registry)
+- runestone-py4e (registry)
 
 ## Notes
 
-Objective-gated: the checker `evidence/checks/programming.python.functions_check.py`
-imports the solution and asserts each function's stated return value.
+Aligned to the canonical node skeleton, 2026-09.

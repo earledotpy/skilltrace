@@ -27,18 +27,27 @@ updated_at: 2026-07-06
 
 # Run Python locally
 
-## Learning target
+## What this skill is
 
-Confirm Python runs on your machine and execute a simple script from the command
-line.
+Confirm Python runs on your machine and execute a simple script from the command line.
 
-## Study pointers
+## Why this skill
 
-The Python Tutorial §1–2 "Whetting Your Appetite" and "Using the Python
-Interpreter" (docs.python.org/3/tutorial/interpreter.html); Real Python's "Python
-Development Setup" for installing and running Python on Windows.
+Having a working Python environment lets you run every piece of code that follows — it is the one-time setup the whole Python band stands on. A learner who can run a script cold can start each later node on the work itself rather than on installation.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.environment`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Follow a Windows setup walkthrough, check the version from the terminal, and run a two-line script from a file (not just the REPL). Seed estimate: 30–90 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- automate-the-boring-stuff (registry)
 
 ## Notes
 
-Manual-gated: confirming your own environment runs is a setup step you attest to,
-not a behavior a shipped command can check for you.
+Aligned to the canonical node skeleton, 2026-09.

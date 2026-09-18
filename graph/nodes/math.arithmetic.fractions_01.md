@@ -21,26 +21,26 @@ updated_at: 2026-07-07
 
 # Regain fraction and negative-number fluency
 
-## Learning target
+## What this skill is
 
-Get back to doing fraction arithmetic (add, subtract, multiply, divide, and
-simplify) and signed-number arithmetic (adding, subtracting, and multiplying
-negatives) without hesitation or sign slips. This is a rescue drill, not a
-first-time lesson: the target is fluency you can trust under load, because these
-are the operations that silently derail solving equations, computing slope, and
-manipulating probabilities.
+Add, subtract, multiply, divide, and simplify fractions, and add, subtract, and multiply signed numbers, without hesitation or sign slips. This is a rescue drill, not a first-time lesson: the target is fluency you can trust under load.
 
-## Study pointers
+## Why this skill
 
-- Khan Academy Arithmetic — the fractions and negative-numbers units; use the
-  timed practice and unit tests rather than the videos, since the goal is speed
-  and reliability, not first exposure.
-- Drill the two together (e.g. subtracting a negative fraction) — the mixed case
-  is where most slips hide.
+These are the operations that silently derail solving equations, computing slope, and manipulating probabilities. Fluency here removes a whole class of mysterious wrong answers later, because the arithmetic stops being the thing you have to think about.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.arithmetic.fractions`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Use timed practice and unit tests rather than videos, since the goal is speed and reliability. Drill the two together (for example, subtracting a negative fraction) — the mixed case is where most slips hide. Seed estimate: 20–45 minutes.
+
+## Resources
+
+- khan-arithmetic (registry)
 
 ## Notes
 
-A remediation node homed in its natural arithmetic domain; its role lives in its
-`remediation` edges and `track: remediation` (weight 0.5, sinking at rest until
-a blocker or repeated failure on a rescued node lifts it). Rescues equation
-solving, slope, and probability. Manual-gated.
+A remediation node homed in its natural arithmetic domain; its remediation role lives in its edge type and track label. Rescues equation solving, slope, and probability. Aligned to the canonical node skeleton, 2026-09.

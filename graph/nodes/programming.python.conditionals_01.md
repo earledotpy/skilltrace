@@ -26,25 +26,28 @@ updated_at: 2026-07-06
 
 # Use conditionals in Python
 
-## Learning target
+## What this skill is
 
-Use `if`, `elif`, and `else` to branch on values. For the objective gate, define
-three functions in your solution script with exactly this behavior:
+Use if, elif, and else to branch on values and control which code runs.
 
-- `classify(n)` — return `"negative"`, `"zero"`, or `"positive"` for `n`.
-- `is_even(n)` — return `True` when `n` is even, else `False`.
-- `larger(a, b)` — return the larger of `a` and `b`.
+## Why this skill
 
-Save your script at `evidence/artifacts/programming/python_conditionals_solution.py`
-and submit it.
+Programs that react — classifying inputs, choosing paths, guarding edge cases — all branch. Conditionals turn straight-line scripts into behavior, which is why they appear in nearly every program you will write or read.
 
-## Study pointers
+## What passing requires
 
-The Python Tutorial §4.1 "if Statements" and §4.4 on comparisons
-(docs.python.org/3/tutorial/controlflow.html); Real Python's "Conditional
-Statements in Python" for worked branching examples.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.conditionals`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Write small branching snippets and exercise every path, including the else, before trusting the logic. Seed estimate: 45–120 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- automate-the-boring-stuff (registry)
+- runestone-py4e (registry)
 
 ## Notes
 
-Objective-gated: the checker exercises every branch of each function, so a
-missed `elif` or a wrong comparison is rejected.
+Aligned to the canonical node skeleton, 2026-09.

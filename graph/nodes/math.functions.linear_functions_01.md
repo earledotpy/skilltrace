@@ -27,10 +27,26 @@ updated_at: 2026-07-06
 
 # Work with linear functions
 
-## Learning target
+## What this skill is
 
-Connect slope, intercept, equations, tables, and graphs.
+Connect slope, intercept, equations, tables, and graphs of a line: move a single linear relationship freely between each representation.
 
-## Study pointers
+## Why this skill
+
+Lines are the shared shape behind trends, predictions, and linear models. Fluency in moving between a line’s equation, its table, and its graph is what lets you recognize the same relationship however it is presented.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.math.functions.linear_functions`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Take one line and render it all four ways — equation, table, graph, and a sentence about its rate and starting value — then repeat for a line with a negative slope. Seed estimate: 60–180 minutes.
+
+## Resources
+
+- khan-algebra (registry)
 
 ## Notes
+
+Aligned to the canonical node skeleton, 2026-09.

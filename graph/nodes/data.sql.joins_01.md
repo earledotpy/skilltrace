@@ -21,27 +21,28 @@ updated_at: 2026-07-06
 
 # Combine tables with an inner join
 
-## Learning target
+## What this skill is
 
-Bring columns from two tables together by matching a shared key — the operation
-that turns normalized tables back into an analysis-ready view. Against the same
-seeded dataset:
+Combine two related tables with an inner join, matching a shared key so each row pairs columns from both tables.
 
-- `employees(id, name, department_id, salary, hire_year)`
-- `departments(id, name, location)`
+## Why this skill
 
-Write one SQL statement that returns each employee's `name` paired with their
-department's `name`, matching `employees.department_id` to `departments.id`.
-Save it at `evidence/artifacts/data/sql_joins_solution.sql` and submit.
+Real data arrives normalized across tables; the join turns those tables back into one analysis-ready view. Matching on the key — rather than pairing every row with every row — is the whole discipline.
 
-## Study pointers
+## What passing requires
 
-SQLBolt lessons 4–5 (sqlbolt.com) for `INNER JOIN` and join keys, practiced
-against live tables; Mode's SQL Tutorial "Intermediate SQL → JOINs" for the
-`ON` clause and how a join expands rows.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.sql.joins`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Practice inner joins on live tables, each time naming the key columns on both sides before writing the ON clause. Seed estimate: 45–90 minutes.
+
+## Resources
+
+- sqlbolt (registry)
+- select-star-sql (registry)
+- sqlite-docs (registry)
 
 ## Notes
 
-Objective-gated: the checker compares the eight `(employee, department)` pairs
-(order-insensitive). A cross join (every name against every department) produces
-the wrong row count and rejects.
+Aligned to the canonical node skeleton, 2026-09.

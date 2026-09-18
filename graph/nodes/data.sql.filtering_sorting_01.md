@@ -21,26 +21,28 @@ updated_at: 2026-07-06
 
 # Filter and sort query results
 
-## Learning target
+## What this skill is
 
-Narrow a result set to the rows that matter and put them in a useful order,
-against the same seeded dataset as the other SQL nodes:
+Restrict rows with WHERE and order them with ORDER BY, so a result set holds the rows that matter in a useful order.
 
-- `employees(id, name, department_id, salary, hire_year)`
-- `departments(id, name, location)`
+## Why this skill
 
-Write one SQL statement that returns the `name` of every employee earning more
-than 90000, ordered so the highest salary comes first. Save it at
-`evidence/artifacts/data/sql_filtering_sorting_solution.sql` and submit.
+Narrowing to the relevant rows and sorting them is the daily question shape — best, worst, most recent, above a bar. Both the filter and the sort are the skill here: an unsorted answer to an ordered question is a wrong answer.
 
-## Study pointers
+## What passing requires
 
-SQLBolt lessons 2–3 (sqlbolt.com) for `WHERE` predicates and `ORDER BY`; Mode's
-SQL Tutorial "Intermediate SQL → WHERE / ORDER BY / LIMIT" for comparison and
-sort operators with runnable examples.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.data.sql.filtering_sorting`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Practice comparison predicates and sort direction in the interactive lessons, stating the intended order before running each query. Seed estimate: 30–60 minutes.
+
+## Resources
+
+- sqlbolt (registry)
+- select-star-sql (registry)
+- sqlite-docs (registry)
 
 ## Notes
 
-Objective-gated: both the filter and the sort are the skill, so the checker
-compares the returned names in order — a missing `ORDER BY` or the wrong
-direction rejects.
+Aligned to the canonical node skeleton, 2026-09.

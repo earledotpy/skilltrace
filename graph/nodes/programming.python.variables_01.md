@@ -26,27 +26,28 @@ updated_at: 2026-07-06
 
 # Use variables and expressions in Python
 
-## Learning target
+## What this skill is
 
-Create variables, assign values, and compute results with expressions. For the
-objective gate, define three module-level variables in your solution script,
-each the result of an expression:
+Create variables, assign values, and use expressions to compute simple results in Python.
 
-- `seconds_per_day` — the number of seconds in a day (`24 * 60 * 60` → `86400`).
-- `total_cost` — for a price of `4.90`, quantity `5`, and tax `2.00`, the total
-  `price * quantity + tax` (`26.5`).
-- `average` — the mean of `10`, `20`, and `30` (`20.0`).
+## Why this skill
 
-Save your script at `evidence/artifacts/programming/python_variables_solution.py`
-and submit it.
+Values living in variables is what the rest of the band operates on: conditionals branch on them, loops accumulate into them, functions receive them. This is the vocabulary the next several nodes speak.
 
-## Study pointers
+## What passing requires
 
-The Python Tutorial §3.1.1 "Numbers" and §3.1.3 "Using Python as a Calculator"
-(docs.python.org/3/tutorial/introduction.html); Real Python's "Variables in
-Python" for naming and assignment.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.variables`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Try small calculator-style expressions in the REPL, then collect a few assignments into a script and run it from the command line. Seed estimate: 30–90 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- automate-the-boring-stuff (registry)
+- runestone-py4e (registry)
 
 ## Notes
 
-Objective-gated: `evidence/checks/programming.python.variables_check.py` imports
-the solution and asserts each variable holds the stated value.
+Aligned to the canonical node skeleton, 2026-09.

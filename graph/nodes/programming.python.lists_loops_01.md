@@ -27,25 +27,28 @@ updated_at: 2026-07-06
 
 # Use lists and loops in Python
 
-## Learning target
+## What this skill is
 
-Hold repeated values in a list and process them with a loop. For the objective
-gate, define three functions in your solution script with exactly this behavior:
+Hold repeated values in a list and process them with a loop, including accumulating a running result.
 
-- `sum_list(nums)` — return the total of the numbers (`0` for an empty list).
-- `count_evens(nums)` — return how many of the numbers are even.
-- `squares_up_to(n)` — return `[1, 4, 9, ..., n*n]` for `1` through `n`.
+## Why this skill
 
-Save your script at `evidence/artifacts/programming/python_lists_loops_solution.py`
-and submit it.
+Datasets are collections, and totals, counts, and transforms over collections are loops. The accumulation pattern — start a result, update it per item, return it — is one of the most reused shapes in data programming.
 
-## Study pointers
+## What passing requires
 
-The Python Tutorial §4.2–4.3 "for Statements" and "range", and §5.1 on lists
-(docs.python.org/3/tutorial/controlflow.html); Real Python's "Python for Loops"
-for accumulation patterns.
+See the artifact spec and validation gate in `evidence/` for this node (`spec.programming.python.lists_loops`); Evidence is checked by running your submission against its objective gate. The body does not restate them.
+
+## How to work on it
+
+Practice accumulation on small lists, including the empty list, and trace the running result by hand for one example before running it. Seed estimate: 60–180 minutes.
+
+## Resources
+
+- python-tutorial (registry)
+- automate-the-boring-stuff (registry)
+- runestone-py4e (registry)
 
 ## Notes
 
-Objective-gated: `evidence/checks/programming.python.lists_loops_check.py` asserts
-each function over sample inputs, including the empty-list edge case.
+Aligned to the canonical node skeleton, 2026-09.

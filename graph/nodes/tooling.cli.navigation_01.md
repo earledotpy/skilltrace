@@ -27,19 +27,27 @@ updated_at: 2026-07-06
 
 # Navigate folders from the command line
 
-## Learning target
+## What this skill is
 
-Use basic terminal commands to see where you are, list a folder's contents, move
-between folders, and run a local command.
+Use basic terminal commands to see where you are, list a folder’s contents, move between folders, and run a local command.
 
-## Study pointers
+## Why this skill
 
-The Missing Semester "The Shell" lecture (missing.csail.mit.edu/2020/course-shell)
-for `pwd`, `ls`, and `cd`; on Windows, the Microsoft "Windows commands" reference
-(learn.microsoft.com/windows-server/administration/windows-commands) for the
-PowerShell/cmd equivalents.
+The shell is where Python runs, Git lives, and files move — every later tool assumes you can get around in it. A learner comfortable here spends study time on the skill itself rather than on finding things.
+
+## What passing requires
+
+See the artifact spec and validation gate in `evidence/` for this node (`spec.tooling.cli.navigation`); Evidence is judged by learner manual review. The body does not restate them.
+
+## How to work on it
+
+Walk a real folder tree with the shell lesson: print the location, list, move, and run a command at each stop, using the Windows command equivalents where they differ. Seed estimate: 30–90 minutes.
+
+## Resources
+
+- missing-semester (registry)
+- microsoft-windows-commands (registry)
 
 ## Notes
 
-Manual-gated: "I can move around a filesystem" has no honest exit-0 artifact; the
-learner attests to the walkthrough.
+Aligned to the canonical node skeleton, 2026-09.
