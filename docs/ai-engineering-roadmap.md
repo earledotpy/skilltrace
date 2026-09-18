@@ -1,6 +1,8 @@
 # AI Engineering Roadmap with Agentic Coding Emphasis
 
 > **Scope:** Canonical index to `roadmap/*` (`reference_only` per `docs/curriculum-authoring.md:12-13`). Roadmap anchors never control locking — see `graph/edges.yaml`. Phases 2–5 are post-v1 reference (PRD:52, backlog v1.2/v1.3). Detail lives in `roadmap/phase-0:prerequisites` → `phase-5` + `capstone-projects.md`; annexes in `resources/*`.
+>
+> **Naming note (2026-09-18, G-ResourceRevisions #301):** this roadmap's "Phase 3" (Deep Learning & Transformers) is a curriculum sequence label only. It is *not* the same "Phase 3" as `docs/spec-v1.9-phase3-llm-agents-mcp-seed-graph.md`, which is a release-slot label for the LLM/agents/MCP seed-graph tranche (content that lives in this roadmap's Phase 4 / `roadmap/phase-4-agentic-ai.md`). Where the two must appear together, say "roadmap Phase 3" vs "spec-v1.9 Phase 3".
 
 **Version:** 1.0 (August 2026)  
 **Audience:** Complete beginners  

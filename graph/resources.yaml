@@ -425,24 +425,24 @@ resources:
 - id: ms-agent-framework
   url: https://learn.microsoft.com/en-us/agent-framework/overview
   cost: free
-  license: 'Source: Microsoft Agent Framework documentation (repo MIT, Public Preview RC-1; successor to Semantic Kernel and AutoGen, AutoGen in maintenance mode; third-party model/hosting costs per docs notice); sections: agents overview, function tools plus MCP servers as tools, workflows (sequential, concurrent, handoff), migration guides; regeneration key ms-agent-framework-rc1; roadmap anchor reference_only; human last_verified pending (unverified by design, re-pin at spec time).'
+  license: 'Source: Microsoft Agent Framework documentation (repo MIT; current release — only the Go port is in public preview — docs updated 2026-08-25, verified 2026-09-18; successor to Semantic Kernel and AutoGen, AutoGen in maintenance mode; third-party model/hosting costs per docs notice); sections: agents overview, function tools plus MCP servers as tools, workflows (sequential, concurrent, handoff), migration guides; regeneration key ms-agent-framework-2026-08; roadmap anchor reference_only; human last_verified pending (unverified by design, re-pin at spec time).'
   supports:
   - agents.frameworks.ms_agent_framework_01
-  last_verified: '2026-09-06'
+  last_verified: '2026-09-18'
 - id: openai-agents-sdk
   url: https://openai.github.io/openai-agents-python/
   cost: free
-  license: 'Source: OpenAI Agents SDK Python documentation (repo MIT; SDK free, running agents bills per-token plus metered tool calls, rates never pinned here); sections: quickstart, Agents/Runner, handoffs, guardrails, function tools plus MCP servers, tracing; regeneration key openai-agents-0.22.0; roadmap anchor reference_only; human last_verified pending (unverified by design, re-pin at spec time).'
+  license: 'Source: OpenAI Agents SDK Python documentation (repo MIT; SDK free, running agents bills per-token plus metered tool calls, rates never pinned here); sections: quickstart, Agents/Runner, handoffs, guardrails, function tools plus MCP servers, tracing; regeneration key openai-agents-0.22.3 (latest release v0.22.3, 2026-09-17, verified 2026-09-18); roadmap anchor reference_only; human last_verified pending (unverified by design, re-pin at spec time).'
   supports:
   - agents.frameworks.openai_agents_sdk_01
-  last_verified: '2026-09-06'
+  last_verified: '2026-09-18'
 - id: pydanticai-docs
-  url: https://pydantic.dev/docs/ai/
+  url: https://ai.pydantic.dev/
   cost: free
-  license: 'Source: PydanticAI documentation (repo MIT; V2.0 stable 2026-06-23, harness-first; Logfire and provider costs separate); sections: agents/dependencies/structured output, function tools and toolsets, testing with built-in test model, pydantic-evals; regeneration key pydanticai-v2; roadmap anchor reference_only; human last_verified pending (unverified by design, re-pin at spec time).'
+  license: 'Source: PydanticAI documentation, canonical at ai.pydantic.dev (verified 2026-09-18; repo MIT; harness-first with capabilities, durable execution, realtime voice; Logfire and provider costs separate); sections: agents/dependencies/structured output, function tools and toolsets, testing with built-in test model, pydantic-evals; regeneration key pydanticai-2026-09; roadmap anchor reference_only; human last_verified pending (unverified by design, re-pin at spec time).'
   supports:
   - agents.frameworks.pydanticai_01
-  last_verified: '2026-09-06'
+  last_verified: '2026-09-18'
 - id: fastapi-docs
   url: https://fastapi.tiangolo.com/
   cost: free
@@ -455,11 +455,11 @@ resources:
 - id: docker-engine-docs
   url: https://docs.docker.com/engine/
   cost: free
-  license: 'Source: Docker Engine documentation (Engine OSS Apache-2.0, no subscription gate; Desktop paid above 250 employees or $10M revenue, never the default); sections: install, architecture, Desktop license gates; alternates Podman/Rancher Desktop/Finch/Colima advisory-only; regeneration key docker-engine-28.0.4; roadmap anchor reference_only; human last_verified pending (unverified by design, re-pin at spec time).'
+  license: 'Source: Docker Engine documentation (Engine OSS Apache-2.0, no subscription gate; Desktop free for fewer than 250 employees AND less than $10M annual revenue — both conditions, verified 2026-09-18 at docs.docker.com/subscription/desktop-license — paid subscription required for professional use in larger organizations; never the default); sections: install, architecture, Desktop license gates; alternates Podman/Rancher Desktop/Finch/Colima advisory-only; regeneration key docker-engine-28.0.4; roadmap anchor reference_only; human last_verified pending (unverified by design, re-pin at spec time).'
   supports:
   - agents.deploy.docker_engine_build_run_01
   - agents.capstone.deployed_agent_integration_01
-  last_verified: '2026-09-06'
+  last_verified: '2026-09-18'
 - id: hf-spaces-zerogpu
   url: https://huggingface.co/docs/hub/en/spaces-zerogpu
   cost: free

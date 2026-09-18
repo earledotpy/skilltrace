@@ -1,7 +1,9 @@
 # Free Compute Guide for AI Engineering
 
-**Last Verified:** August 2026  
+**Last Verified:** 2026-09-18 (G-ResourceRevisions #301; Render section re-verified against the primary source below)
 **Purpose:** Reference for free GPU/CPU compute across all roadmap phases
+
+> **Sources (fetched 2026-09-18):** [Render "Deploy for Free" docs](https://render.com/docs/free) (spin-down duration, service-type limits, Postgres expiry, usage caps). Other platforms' quotas below keep their 2026-08-08 verification date — re-check them on the next quarterly review.
 
 ---
 
@@ -126,14 +128,26 @@ ollama run gemma3:1b
 
 ## Cost Tracking (Even Free Tiers Have Limits)
 
-| Resource | Limit | Monitoring |
-|----------|-------|------------|
-| **Kaggle GPU** | 30h/wk | Dashboard → GPU Usage |
-| **Colab GPU** | Dynamic | Runtime → Manage Sessions |
-| **HF ZeroGPU** | 5 min/day | Space Analytics |
-| **Lightning AI** | 80h/mo | Studio → Usage |
-| **Render** | 750h/mo | Dashboard → Usage |
-| **Ollama** | Local RAM | `ollama ps` / Activity Monitor |
+| Resource | Limit | Monitoring | Verified |
+|----------|-------|------------|----------|
+| **Kaggle GPU** | 30h/wk | Dashboard → GPU Usage | 2026-08-08 |
+| **Colab GPU** | Dynamic | Runtime → Manage Sessions | 2026-08-08 |
+| **HF ZeroGPU** | 5 min/day | Space Analytics | 2026-08-08 |
+| **Lightning AI** | 80h/mo | Studio → Usage | 2026-08-08 |
+| **Render** | 750h/mo (free web services) | Dashboard → Usage | 2026-09-18 |
+| **Ollama** | Local RAM | `ollama ps` / Activity Monitor | 2026-08-08 |
+
+---
+
+## Render Free Tier (verified 2026-09-18)
+
+Free instances exist **only** for these service types: **web services, Postgres, Key Value, and static sites**. Background workers and cron jobs are excluded — they have no free tier.
+
+- **Spin-down (reconciled):** a free web service spins down after **15 minutes** without inbound traffic (HTTP or WebSocket); spin-up on the next request takes ~1 minute. The previous "30-minute" figure in this file was wrong and has been removed — 15 minutes is the documented value. (Per [Render docs](https://render.com/docs/free), fetched 2026-09-18.)
+- **Postgres expiry:** free Postgres databases **expire 30 days after creation** (1 GB cap, one active free database per workspace); 14-day grace period to upgrade before deletion. No backups or connection pooling on free Postgres.
+- **Monthly cap:** 750 free instance hours per workspace per month; spun-down services do not consume hours. Free services also count against monthly included bandwidth and build-pipeline minutes.
+- **Ephemeral filesystem:** local file changes are lost on every redeploy, restart, or spin-down; free web services cannot attach persistent disks.
+- **Key Value:** free instances are in-memory only — all data is lost on restart; one active free instance per workspace.
 
 ---
 
@@ -145,7 +159,7 @@ ollama run gemma3:1b
 | Colab disconnects | Keep tab active; use `%%capture` for long outputs; Colab Pro for background |
 | HF Space builds fail | Check `requirements.txt` pins; use `Dockerfile` for complex deps |
 | Ollama OOM | Use smaller quantization (q4_k_m → q3_k_m); close other apps |
-| Render spins down | Free tier spins down after 15min idle; first request ~30s cold start |
+| Render spins down | Free tier spins down after 15 min idle (verified 2026-09-18); spin-up ~1 min, not ~30s — allow a full minute on first request |
 
 ---
 

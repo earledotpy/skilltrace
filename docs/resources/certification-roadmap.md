@@ -1,7 +1,9 @@
 # Certification Roadmap for AI Engineering
 
-**Last Verified:** August 2026  
+**Last Verified:** 2026-09-18 (G-ResourceRevisions #301; all volatile claims re-checked against dated primary sources below)
 **Strategy:** Free first → High-ROI paid → Advanced paid
+
+> **Sources (fetched 2026-09-18):** [AWS ML Specialty page](https://aws.amazon.com/certification/certified-machine-learning-specialty/) (retirement notice + $300 fee); [AWS ML Engineer Associate page](https://aws.amazon.com/certification/certified-machine-learning-engineer-associate) ($150 fee, MLA-C02 transition notice); [AWS AI Practitioner page](https://aws.amazon.com/certification/certified-ai-practitioner) ($100 fee). Fees are stated "subject to change" by AWS — confirm on the exam-pricing page before paying. No salary-uplift figures are cited anywhere in this file: the previous "~$18k salary uplift" claim was unsourced and has been removed.
 
 ---
 
@@ -75,7 +77,7 @@
 
 | Certification | Cost | Level | Value for AI Engineer | Recommendation |
 |---------------|------|-------|----------------------|----------------|
-| **AWS Certified AI Practitioner (AIF-C01)** | $100 USD | Foundational | **High** — Cloud + AI literacy signal; recognized globally; ~$18k salary uplift reported | **Yes — Primary paid cert** |
+| **AWS Certified AI Practitioner (AIF-C01)** | $100 USD (per AWS exam page, 2026-09-18; subject to change) | Foundational | **High** — Cloud + AI literacy signal; recognized globally | **Yes — Primary paid cert** |
 
 **Why AWS AI Practitioner:**
 - Covers: ML concepts, GenAI, responsible AI, security, compliance
@@ -94,8 +96,8 @@
 
 | Certification | Cost | Level | Value | Recommendation |
 |---------------|------|-------|-------|----------------|
-| **Azure AI Fundamentals (AI-900)** | ~$99 USD (varies by region) | Foundational | Medium — Azure ecosystem; occasional free via Microsoft events | **Only if free voucher** |
-| **Google Cloud AI/ML Certifications** | $99–$200 | Foundational/Associate | Low-Medium — Less recognized for AI Engineer roles | **Skip unless GCP-targeted** |
+| **Azure AI Fundamentals (AI-900)** | Fee varies by region — check the Microsoft Learn exam page before scheduling (no fee pinned here) | Foundational | Medium — Azure ecosystem; occasional free via Microsoft events | **Only if free voucher** |
+| **Google Cloud AI/ML Certifications** | Fees vary — check the Google Cloud exam page before scheduling (no fee pinned here) | Foundational/Associate | Low-Medium — Less recognized for AI Engineer roles | **Skip unless GCP-targeted** |
 
 **Free Azure AI-900 Path:**
 - Microsoft Learn: AI-900 learning path (free)
@@ -106,9 +108,13 @@
 
 | Certification | Cost | Level | Value | Recommendation |
 |---------------|------|-------|-------|----------------|
-| **AWS ML Engineer Associate (MLA-C01)** | $150 USD | Associate | High — Hands-on ML on AWS; requires AIF-C01 or equivalent | **After AIF-C01 + 1yr experience** |
-| **AWS GenAI Developer Professional (AIP-C01)** | $300 USD | Professional | High — Production GenAI on AWS | **Senior roles only (3+ yr)** |
-| **Azure AI Engineer Associate (AI-102)** | ~$165 USD | Associate | Medium — Azure-specific | **If Azure-targeted** |
+| **AWS ML Engineer Associate (MLA-C01 → MLA-C02)** | $150 USD for MLA-C01 (per AWS exam page, 2026-09-18; subject to change) | Associate | High — Hands-on ML on AWS; requires AIF-C01 or equivalent | **After AIF-C01 + 1yr experience — but read the transition note first** |
+| **AWS GenAI Developer Professional (AIP-C01)** | Fee unverified — check the AWS exam page before scheduling (no fee pinned here) | Professional | High — Production GenAI on AWS | **Senior roles only (3+ yr)** |
+| **Azure AI Engineer Associate (AI-102)** | Fee varies by region — check the Microsoft Learn exam page before scheduling (no fee pinned here) | Associate | Medium — Azure-specific | **If Azure-targeted** |
+
+> **⚠️ MLA-C01 → MLA-C02 transition (per the [AWS ML Engineer Associate page](https://aws.amazon.com/certification/certified-machine-learning-engineer-associate), fetched 2026-09-18):** registration for the updated exam (MLA-C02, beta code ME1-C02) opened September 1, 2026; the last day to take the current MLA-C01 exam **in English is September 28, 2026** (other languages remain available until MLA-C02 general availability, expected early 2027). Do **not** schedule MLA-C01 in English without checking whether it is still offered — prepare against the MLA-C02 exam guide instead. A credential earned before retirement stays valid for its normal 3-year term.
+
+**Retired — do not pursue:** AWS Certified Machine Learning Specialty (MLS-C01). Last exam delivery was March 31, 2026, per the [AWS certification page](https://aws.amazon.com/certification/certified-machine-learning-specialty/) (fetched 2026-09-18). Its successor for ML-engineering roles is the ML Engineer Associate above.
 
 ---
 
@@ -116,8 +122,9 @@
 
 | Certification | Reason |
 |---------------|--------|
-| **Coursera/edX Verified Certificates** | $50–$100 each; audit is free; employers value portfolio > certificates |
-| **DeepLearning.AI PRO Certificates** | Requires $49/mo subscription; short courses free during beta |
+| **AWS ML Specialty (MLS-C01)** | **Retired** — last delivery 2026-03-31; take MLA-C01/MLA-C02 instead (see Tier 3) |
+| **Coursera/edX Verified Certificates** | Audit is free; employers value portfolio > certificates (no per-course fee pinned here — check the platform before paying) |
+| **DeepLearning.AI PRO Certificates** | Requires a paid subscription; short courses free during beta (no price pinned here — check the platform before paying) |
 | **Generic "AI/ML" Certificates** (Simplilearn, etc.) | Not recognized; expensive; content available free |
 | **University MicroMasters** | $1000+; time-intensive; degree not required for AI Engineer |
 
@@ -134,7 +141,7 @@
 | **4** | **HF Agents (2), MCP (2), Context (2)** = 6 certs | — |
 | **5** | Remaining Kaggle (CV, NLP, etc.) | **Schedule AWS AI Practitioner** |
 | **Capstone** | — | **Take AWS AI Practitioner exam** |
-| **Post-Roadmap** | — | AWS ML Engineer Associate (after 1yr) |
+| **Post-Roadmap** | — | AWS ML Engineer Associate (after 1yr; check MLA-C01 vs MLA-C02 availability first — see Tier 3) |
 
 ---
 
@@ -170,8 +177,8 @@
 - [ ] HF: Audio Excellence
 
 ## Paid (Target: 1-2)
-- [ ] AWS AI Practitioner (AIF-C01) — $100 — Target: Capstone phase
-- [ ] AWS ML Engineer Associate (MLA-C01) — $150 — Target: 1 year post-roadmap
+- [ ] AWS AI Practitioner (AIF-C01) — $100 (per AWS, 2026-09-18; confirm before paying) — Target: Capstone phase
+- [ ] AWS ML Engineer Associate (MLA-C01/MLA-C02) — $150 for MLA-C01 (per AWS, 2026-09-18; confirm before paying; check transition note) — Target: 1 year post-roadmap
 ```
 
 ---
@@ -193,9 +200,11 @@
 | Tier | Certificates | Total Cost |
 |------|--------------|------------|
 | **Free** | 18+ | $0 |
-| **Essential Paid** | 1 (AWS AI Practitioner) | $100 |
-| **Advanced Paid** | 1 (AWS ML Engineer) | +$150 |
+| **Essential Paid** | 1 (AWS AI Practitioner) | $100 (per AWS exam page, 2026-09-18; subject to change) |
+| **Advanced Paid** | 1 (AWS ML Engineer) | +$150 (MLA-C01 per AWS exam page, 2026-09-18; subject to change; MLA-C02 pricing to be confirmed at GA) |
 | **Total (Recommended)** | 19+ | **$100** |
 | **Total (Full)** | 20+ | **$250** |
 
 **Original Roadmap Budget:** ~$250/year → **This roadmap: $100 total (first 3 years)**
+
+*Fees last checked 2026-09-18 against the linked AWS exam pages. AWS states fees are subject to change — re-confirm on the [exam pricing page](https://aws.amazon.com/certification/policies/before-testing/#Exam_pricing) before scheduling or budgeting.*

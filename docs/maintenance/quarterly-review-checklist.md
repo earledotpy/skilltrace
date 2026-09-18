@@ -2,7 +2,8 @@
 
 **Purpose:** Keep roadmap resources current — run every 3 months  
 **Last Run:** August 2026  
-**Next Due:** November 2026
+**Next Due:** November 2026  
+**Checklist revised:** 2026-09-18 (G-ResourceRevisions #301) — the verification bar is now content-currency, not HTTP-200 (see §1 and §8)
 
 ---
 
@@ -18,14 +19,17 @@
 
 ## 1. Resource Link Verification (All Phases)
 
+> **Verification bar (content-currency, not HTTP-200):** a URL returning 200 OK proves nothing about currency. For every resource, fetch the live primary source and compare its *content* against what the registry/docs claim — version pins, status labels, license terms, fees, quotas. Record the fetch date with each corrected claim. A bare `curl -I` pass is only a triage pre-step, never the verification itself.
+
 For each resource in all phase files + resource files:
-- [ ] URL accessible (200 OK)
+- [ ] URL accessible (200 OK) — triage only
 - [ ] Content still free (no paywall added)
 - [ ] Course version/edition current
 - [ ] Certificate still offered (if applicable)
 - [ ] Estimated hours still accurate
+- [ ] **Volatile claims re-checked against a dated primary source:** version pins (SDK/framework releases pages), status labels (official docs overview pages), license terms (vendor license pages), fees (official exam/pricing pages), quotas (provider free-tier docs)
 
-**Tool:** `curl -I <URL>` or browser check
+**Tools:** `curl -I <URL>` or browser check for triage; full page fetch + dated comparison for verification (see §10)
 
 **Priority Resources (Check First):**
 - [ ] Hugging Face Courses (Agents, MCP, Context, LLM, CV, Diffusion, Deep RL, Audio)
@@ -117,7 +121,7 @@ For each resource in all phase files + resource files:
 
 ## 8. Documentation Updates
 
-- [ ] Update `last verified` dates in all files
+- [ ] Update `last verified` dates in all files — each corrected claim carries its fetch date and primary source
 - [ ] Increment version in `ai-engineering-roadmap.md`
 - [ ] Add changelog entry
 - [ ] Commit with message: `chore: quarterly review YYYY-MM-DD`
@@ -151,6 +155,10 @@ For each resource in all phase files + resource files:
 | AutoGen → Agent Framework | Migration timeline unclear | Quarterly |
 | Kaggle GPU/TPU quotas | Can change with platform updates | Quarterly |
 | Render free tier | Spun down policies, hours | Quarterly |
+| SDK/framework version pins (e.g., OpenAI Agents SDK, FastAPI, PydanticAI) | Patch releases land weekly; pins go stale silently | Quarterly — re-pin from the releases page, dated |
+| Framework status labels (e.g., MS Agent Framework preview → current) | Status changes without a version bump | Quarterly — re-read the official overview page, dated |
+| Docker Desktop license terms | Free-gate thresholds are legal terms, not technical facts | Quarterly — re-read the vendor license page, dated |
+| Certification fees and exam versions (AWS AIF-C01, MLA-C01/MLA-C02) | Fees "subject to change"; exams retire on fixed dates (MLS-C01 retired 2026-03-31; MLA-C01 English ends 2026-09-28) | Quarterly — re-read the official exam pages, dated; never pin a fee without a fetch date |
 
 ---
 
@@ -180,7 +188,7 @@ For each resource in all phase files + resource files:
 ## Quick Commands for Verification
 
 ```bash
-# Check all URLs in markdown files (requires markdown-link-check)
+# Triage only: link liveness is NOT verification (see §1)
 npx markdown-link-check docs/**/*.md
 
 # Or manually check key URLs
@@ -189,6 +197,8 @@ curl -sI https://course.fast.ai/ | head -1
 curl -sI https://cs50.harvard.edu/python | head -1
 curl -sI https://www.kaggle.com/learn | head -1
 ```
+
+Content-currency verification means fetching each volatile primary source in full and comparing its content against the pinned claim — e.g., the SDK releases page for the pinned version, the framework overview page for the status label, the vendor license page for the free-gate terms, the official exam page for the fee and version. Record the fetch date (YYYY-MM-DD) with the source URL next to every corrected claim, as `graph/resources.yaml` license strings and the `certification-roadmap.md` header demonstrate.
 
 ---
 
