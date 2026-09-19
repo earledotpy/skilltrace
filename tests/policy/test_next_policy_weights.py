@@ -73,9 +73,11 @@ def _ranked_ids(out: str) -> list[str]:
     """Extract node IDs in rank order from Mentor-voice output.
 
     Mentor-voice (issue #44): node IDs appear in the DO THIS NEXT action line
-    as '--node <node_id>'. One per OPTION block, in kicker order.
+    as the backticked real command '`skilltrace start <node_id>`' (or
+    '`skilltrace work <node_id>`' while a session is open). One per OPTION
+    block, in kicker order.
     """
-    return re.findall(r"--node\s+([^\s`]+)", out)
+    return re.findall(r"`skilltrace\s+(?:start|work)\s+([^\s`]+)`", out)
 
 
 def _block_for(out: str, node_id: str) -> str:
@@ -83,7 +85,7 @@ def _block_for(out: str, node_id: str) -> str:
     # Split on the separator between options and find the block containing node_id.
     blocks = re.split(r"\n---\n", out)
     for block in blocks:
-        if f"--node {node_id}" in block:
+        if f"skilltrace start {node_id}" in block or f"skilltrace work {node_id}" in block:
             return block
     raise AssertionError(f"{node_id} not found in any OPTION block:\n{out}")
 

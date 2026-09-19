@@ -326,8 +326,8 @@ def test_resource_status_does_not_affect_recommend(resources_repo, capsys):
     # Both runs recommend the same node — resource status doesn't affect ranking.
     # (Mentor-voice output now surfaces resources in Where to learn, so the
     # full output is no longer byte-for-byte identical; the ranking is what matters.)
-    assert f"--node {node}" in without_resource
-    assert f"--node {node}" in with_broken_resource
+    assert f"skilltrace start {node}" in without_resource
+    assert f"skilltrace start {node}" in with_broken_resource
 
 
 def _write_state(root: Path, states: dict[str, str]) -> None:

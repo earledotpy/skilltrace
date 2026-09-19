@@ -101,7 +101,7 @@ def test_open_blocker_activates_the_edge(policy_repo, capsys):
     assert any(REM in a and TARGET in a for a in advisories)
     # Activation never locks the target — it stays a ranked candidate.
     # Mentor-voice output (issue #44): TARGET appears in its DO THIS NEXT action line.
-    assert f"--node {TARGET}" in out
+    assert f"skilltrace start {TARGET}" in out
 
 
 def test_failed_attempt_threshold_activates_the_edge(policy_repo, capsys):

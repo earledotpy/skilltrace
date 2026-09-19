@@ -38,6 +38,7 @@ from ..mentor.cards import (
 )
 from ..context import load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..execution.records import open_session
 from ..graph.edges import EdgeLoadError, GraphEdge
 from ..graph.nodes import NodeLoadError, SkillNode
 from ..graph.recommendation import (
@@ -165,17 +166,54 @@ def _how_to_proceed(node: SkillNode, state: str, minutes: int) -> str:
     return base
 
 
-def _do_this_next(node: SkillNode, state: str) -> str:
-    """The single concrete next action for this candidate."""
+def _do_this_next(node: SkillNode, state: str, *, has_open_session: bool) -> str:
+    """The single concrete next action for this candidate.
+
+    Honest handoff (issue #306, matching the discovery behavior contract
+    from #304): every printed command is real, and never one the session
+    planner would refuse — `start` is refused while a session is open
+    (``use `work` to add to it``), `work` is refused with none open.
+    """
+    verb = "work" if has_open_session else "start"
     if state == "active":
-        return f"Continue {node.id}: `skilltrace session start --node {node.id}`"
-    return f"Start studying {node.id}: `skilltrace session start --node {node.id}`"
+        return f"Continue {node.id}: `skilltrace {verb} {node.id}`"
+    return f"Start studying {node.id}: `skilltrace {verb} {node.id}`"
 
 
 # --- Report renderer ----------------------------------------------------------
 
 
 
+
+
+def _open_thread_banner(
+    *,
+    has_open_session: bool,
+    open_thread_id: str | None,
+    node_map: dict[str, SkillNode],
+) -> MentorCard | None:
+    """The lead banner naming the open thread, when a session is open.
+
+    `next` accounts for active work consistently with `today` (issue #306):
+    today picks the open session's node up as its focus; here the open
+    thread leads the report instead of being ignored. Advisory only —
+    ranking is untouched, nothing is started implicitly.
+    """
+    if not has_open_session:
+        return None
+    if open_thread_id is None:
+        return MentorCard.banner_card(
+            "advisory",
+            "You've got a session open, but nothing's logged on it yet — "
+            "add a work item with `skilltrace work <node_id>`.",
+        )
+    node = node_map.get(open_thread_id)
+    title = node.title if node is not None else open_thread_id
+    return MentorCard.banner_card(
+        "advisory",
+        f"You've still got a session open on {title} — that's the thread "
+        f"to pick up. Add to it with `skilltrace work {open_thread_id}`.",
+    )
 
 
 def _mentor_cards(
@@ -186,6 +224,9 @@ def _mentor_cards(
     resources_by_node: dict[str, list[LearningResource]],
     store,
     active_remediations_list: list[ActiveRemediation],
+    *,
+    has_open_session: bool = False,
+    open_thread_id: str | None = None,
 ) -> list[MentorCard]:
     """The enriched Mentor-voice next report as structured cards.
 
@@ -196,6 +237,13 @@ def _mentor_cards(
     shell's `/next` page render exactly these cards.
     """
     cards: list[MentorCard] = []
+    banner = _open_thread_banner(
+        has_open_session=has_open_session,
+        open_thread_id=open_thread_id,
+        node_map=node_map,
+    )
+    if banner is not None:
+        cards.append(banner)
     for track in result.unmapped_tracks:
         cards.append(
             MentorCard.banner_card(
@@ -257,7 +305,7 @@ def _mentor_cards(
             NextAction(
                 intent="start",
                 node_id=node.id,
-                command=_do_this_next(node, state),
+                command=_do_this_next(node, state, has_open_session=has_open_session),
             )
         )
 
@@ -330,6 +378,17 @@ def derive_next(
         prereq_reviews_due=inputs.prereq_reviews_due,
         agent_boosted=inputs.agent_boosted,
     )
+    # Active work, the way `today` sees it (issue #306): the open session's
+    # node is the thread to pick up — the last work item's node, or None
+    # when nothing is logged on the open session yet.
+    current_session = open_session(joined.sessions)
+    open_thread_id: str | None = None
+    if current_session is not None:
+        session_items = [
+            w for w in joined.work if w.session_id == current_session.id
+        ]
+        if session_items:
+            open_thread_id = session_items[-1].node_id
     cards = _mentor_cards(
         result,
         minutes,
@@ -338,6 +397,8 @@ def derive_next(
         joined.resources_by_node,
         joined.store,
         list(inputs.active_remediations),
+        has_open_session=current_session is not None,
+        open_thread_id=open_thread_id,
     )
     return NextModel(
         lines=render.cards_to_lines(cards),

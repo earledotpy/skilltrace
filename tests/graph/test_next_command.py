@@ -18,6 +18,8 @@ from skilltrace.policy.weights import load_track_weights
 from skilltrace.events import load_events
 from skilltrace.graph.nodes import load_nodes
 
+from _builders import write_node
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -44,14 +46,15 @@ def _recommended_order(capsys) -> list[str]:
 
     Mentor-voice kicker lines look like:  OPTION 1 — 60-MIN SESSION
     The node ID appears in the DO THIS NEXT action line:
-      Start studying <node_id>: `skilltrace session start --node <node_id>`
-    or Continue <node_id>: ...
-    We extract the node ID from the --node argument in the action line.
+      Start studying <node_id>: `skilltrace start <node_id>`
+    or Continue <node_id>: `skilltrace work <node_id>` (session open).
+    We extract the node ID from the backticked real command.
     """
     import re
     out = capsys.readouterr().out
-    # Match "--node <node_id>" where node_id ends before a backtick, whitespace, or end.
-    ids = re.findall(r"--node\s+([^\s`]+)", out)
+    # Match "`skilltrace start <node_id>`" / "`skilltrace work <node_id>`"
+    # where node_id ends before a backtick, whitespace, or end.
+    ids = re.findall(r"`skilltrace\s+(?:start|work)\s+([^\s`]+)`", out)
     return ids
 
 
@@ -136,3 +139,102 @@ def test_load_track_weights_reads_the_shipped_map(tmp_path):
 def test_load_track_weights_missing_policy_returns_empty(tmp_path):
     (tmp_path / "graph").mkdir()
     assert load_track_weights(tmp_path) == {}
+
+
+# --- Issue #306: honest handoff + active-work awareness ----------------------
+#
+# `next` printed `skilltrace session start --node <id>` — a command that does
+# not exist — and ignored the open session entirely (contradicting `today`,
+# which picks the open thread up as its focus). Every printed command must be
+# a real one (`start` opens, `work` adds to the open session), and an open
+# session must surface in the report the way `today` surfaces it.
+
+
+def _write_doc(root: Path, relpath: str, doc: dict) -> None:
+    path = root / relpath
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+
+def _session_repo(tmp_path: Path, *, with_work: bool) -> Path:
+    """Minimal repo: shipped policy, one node, and one open session."""
+    node_id = "testing.next.subject_01"
+    shutil.copytree(REPO_ROOT / "policy", tmp_path / "policy")
+    _write_doc(tmp_path, "evidence/artifact_specs.yaml", {"artifact_specs": []})
+    _write_doc(tmp_path, "evidence/validation_gates.yaml", {"validation_gates": []})
+    _write_doc(tmp_path, "evidence/evidence_records.yaml", {"evidence_records": []})
+    _write_doc(tmp_path, "evidence/attempts.yaml", {"attempts": []})
+    _write_doc(tmp_path, "graph/resources.yaml", {"resources": []})
+    write_node(tmp_path, node_id)
+    _write_doc(
+        tmp_path,
+        "graph/state.yaml",
+        {"progress": {node_id: {"state": "active"}}},
+    )
+    _write_doc(
+        tmp_path,
+        "execution/sessions.yaml",
+        {
+            "sessions": [
+                {
+                    "id": "sess.001",
+                    "status": "open",
+                    "started_at": "2020-01-01T00:00:00+00:00",
+                }
+            ]
+        },
+    )
+    if with_work:
+        _write_doc(
+            tmp_path,
+            "execution/session_work.yaml",
+            {
+                "session_work": [
+                    {
+                        "id": "work.001",
+                        "session_id": "sess.001",
+                        "node_id": node_id,
+                        "created_at": "2020-01-01T00:05:00+00:00",
+                    }
+                ]
+            },
+        )
+    return tmp_path
+
+
+def test_next_prints_only_real_commands(tmp_path, capsys):
+    root = _seed_repo(tmp_path)
+    rc = cli.run(["next", "--minutes", "60", "--limit", "5"], root=root)
+    assert rc == 0
+    out = capsys.readouterr().out
+    # The stale form names a subcommand that does not exist.
+    assert "session start" not in out
+    assert "--node" not in out
+    # The honest handoff: `start` opens a session on the candidate.
+    assert "`skilltrace start " in out
+
+
+def test_next_with_open_session_names_the_open_thread(tmp_path, capsys):
+    root = _session_repo(tmp_path, with_work=True)
+    rc = cli.run(["next", "--minutes", "60", "--limit", "5"], root=root)
+    assert rc == 0
+    out = capsys.readouterr().out
+    # Consistent with `today`: the open thread is the lead, not ignored.
+    assert "session open" in out
+    assert "thread to pick up" in out
+    assert "testing.next.subject_01" in out
+    # While a session is open `start` would be refused — the honest
+    # continuation is `work` on the open session.
+    assert "`skilltrace work testing.next.subject_01`" in out
+    assert "`skilltrace start " not in out
+
+
+def test_next_with_open_session_and_no_logged_work(tmp_path, capsys):
+    root = _session_repo(tmp_path, with_work=False)
+    rc = cli.run(["next", "--minutes", "60", "--limit", "5"], root=root)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "session open" in out
+    assert "nothing's logged on it yet" in out
+    assert "`skilltrace work " in out
+    assert "`skilltrace start " not in out
