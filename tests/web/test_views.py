@@ -380,28 +380,32 @@ def test_node_page_escapes_hostile_title(tmp_path):
     assert "<script>" not in page(title, "")
 
 
-# --- GET /health — five validators + liveness -------------------------------------
+# --- GET /health — the study-guidance roll-up (§C-ter, #311) ------------------------
 
 
-def test_health_page_rolls_up_validators_and_liveness(repo):
+def test_health_page_is_study_guidance_without_diagnostics(repo):
     title, body, status = views.health_body(repo)
     assert status == 200
     assert title == "Health"
-    for layer in ("graph", "evidence", "execution", "policy", "resources"):
-        assert f">{layer}</td>" in body or f"<th>{layer}</th>" in body
-    assert "health:" in body  # verdict line
-    assert "states: available=" in body  # progress-store liveness line
-    assert "verified=" in body  # resource verification liveness line
-    # T4 §H: the ambient headline opens the roll-up.
-    assert "Everything looks good." in body or "Needs attention" in body
+    # The five-card hierarchy renders in its locked order.
+    order = [body.index(t) for t in (
+        "Stuck right now", "Due for review", "Evidence gaps",
+        "Study rhythm", "Study resources",
+    )]
+    assert order == sorted(order)
+    # Repository diagnostics have zero web-UI presence: no per-layer table,
+    # no validator counts, no liveness lines, no verdict banner.
+    for diagnostic in ("Graph", "FAILED", "warning(s)", "health:", "states:", "verified="):
+        assert diagnostic not in body
+    assert "Full roll-up" not in body
 
 
-def test_health_page_reports_layer_errors_honestly(repo):
+def test_health_page_renders_when_policy_is_broken(repo):
     (repo / "policy" / "recommendation.yaml").write_text("::: not yaml [", encoding="utf-8")
     _, body, status = views.health_body(repo)
-    assert status == 200  # health renders the condition; exit-code semantics are CLI's
-    assert "FAILED" in body
-    assert '<p class="banner error">' in body
+    assert status == 200  # lenient degradation: guidance renders, no diagnostics leak
+    assert "Stuck right now" in body
+    assert "FAILED" not in body
 
 
 # --- Lenient degradation and strict refusal ----------------------------------------

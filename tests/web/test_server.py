@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import argparse
 import errno
-import re
 import shutil
 import threading
 import urllib.request
@@ -176,11 +175,13 @@ def test_health_route_renders_via_lenient_seam(running_server):
     assert status == 200
     assert content_type.startswith("text/html")
     assert "charset=utf-8" in content_type
-    # Layer counts derived from the fresh lenient join over the seed repo —
-    # matched loosely so curriculum edits don't break the shell's tests.
-    assert re.search(r"\d+ nodes, \d+ edges", body)
-    assert "verified=" in body  # resource verification summary present
-    assert "states: available=" in body  # progress-store roll-up present
+    # The study-guidance roll-up derived from the fresh lenient join over the
+    # seed repo — the five-card hierarchy, with zero diagnostics presence.
+    for card in ("Stuck right now", "Due for review", "Evidence gaps",
+                 "Study rhythm", "Study resources"):
+        assert card in body
+    assert "verified=" not in body  # liveness summary stays CLI-only
+    assert "states: available=" not in body
 
 
 def test_index_route_renders_today_dashboard(running_server):

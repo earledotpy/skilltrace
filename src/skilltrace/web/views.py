@@ -74,6 +74,7 @@ from .discovery import (
     card_for,
     discover,
 )
+from .health import derive_study_guidance, render_guidance_html
 from .interface.affordances import intent_label
 from .interface.cards import ActiveViewState, Affordance, Card, view_by_name
 from .interface.handoff import handoff_html
@@ -363,9 +364,10 @@ def _nav_html(current_view: str = "", health=None) -> str:
     derives from the declared interface ``VIEWS`` table (the seam), never
     from URL string-matching in the page bodies. Health is not a nav stop
     (T4 §H): the chrome carries a header pill strip plus a muted
-    ``Full roll-up`` pointer to the one roll-up page. The health strip
-    renders an ambient headline plus one attention pill from the structured
-    ``HealthReport`` (warning counts ride the P2.4 seam).
+    ``Health`` pointer to the one study-guidance roll-up page (renamed from
+    "Full roll-up" by §C-ter — the "Full" name implied repository validity).
+    The health strip renders an ambient headline plus one attention pill from
+    the structured ``HealthReport`` (warning counts ride the P2.4 seam).
     """
     from .interface import VIEWS
 
@@ -396,7 +398,7 @@ def _nav_html(current_view: str = "", health=None) -> str:
             )
         else:
             pills = '<span class="mut calm">Everything looks good.</span>'
-        pills += ' <a class="health-rollup" href="/health">Full roll-up →</a>'
+        pills += ' <a class="health-rollup" href="/health">Health →</a>'
     return (
         "<header>"
         '<div class="wrap">'
@@ -1933,68 +1935,29 @@ def _drill_down_card(
 
 
 def health_body(root) -> tuple[str, str, int]:
-    """GET `/health` — the ambient roll-up (T4 §H).
+    """GET `/health` — the study-guidance roll-up (§C-ter, build #311).
 
-    An ambient headline plus one attention pill when anything needs it;
-    per-layer warning counts ride the P2.4 seam; not a nav stop (health
-    reaches only through the header pill strip + ``Full roll-up``).
+    Five cards in the locked hierarchy (Stuck right now → Due for review →
+    Evidence gaps → Study rhythm → Study resources), each carrying counts +
+    one-line why + links. Repository diagnostics are CLI-only with zero web-UI
+    presence — the per-layer validator table and liveness lines live only in
+    `skilltrace health`. Not a nav stop: health reaches only through the
+    header pill strip + ``Health`` pointer.
     """
-    report = health_report(Path(root))
-
-    warnings = sum(layer.warning_count for layer in report.layers if layer.ok)
-    failed = [layer for layer in report.layers if not layer.ok]
-    if failed:
-        headline = (
-            '<p class="big">Needs attention — '
-            f"{len(failed)} layer{'s' if len(failed) != 1 else ''} failing.</p>\n"
-        )
-    elif warnings:
-        headline = (
-            '<p class="big">Needs attention — '
-            f"{warnings} warning{'s' if warnings != 1 else ''}.</p>\n"
-        )
-    else:
-        headline = '<p class="big">Everything looks good.</p>\n'
-
-    rows = [
-        [
-            _esc(layer.target),
-            _esc(layer.counts),
-            '<span class="pill '
-            + ("verified" if layer.ok else "broken")
-            + '">'
-            + ("OK" if layer.ok else "FAILED")
-            + "</span>",
-            (
-                f'<span class="pill attention">{_esc(layer.warning_count)} warning'
-                + ('s' if layer.warning_count != 1 else '')
-                + "</span>"
-                if layer.warning_count
-                else '<span class="mut">-</span>'
-            ),
-        ]
-        for layer in report.layers
-    ]
-    error_banners = "".join(
-        f'<p class="banner error">{_esc(line[len("[error] "):])}</p>'
-        for layer in report.layers
-        for line in layer.error_lines
-    )
-    verdict_class = "ok" if report.error_count == 0 else "fail"
-
+    view, failure = _fresh_join(root)
+    if view is None:
+        return "Error", failure[0], failure[1]
+    guidance = derive_study_guidance(view, utc_today())
     header_html = _chrome(root)
-
     body = (
         header_html
-        + '<div class="card">\n'
+        + '<div class="card guidance">\n'
         + '<div class="kicker">Health roll-up</div>\n'
-        + headline
-        + _table(["Layer", "Counts", "Status", "Warnings"], rows)
-        + error_banners
-        + cards_html(report.liveness_lines)
-        + f'<p class="banner {verdict_class}">{_esc(report.verdict())}</p>\n'
-        + '<p class="mut">Read fresh from the truth files at request time — '
-        "updates appear on refresh.</p>\n</div>\n"
+        + '<p class="big">Your study guidance for today.</p>\n'
+        + '<p class="mut">Daily study guidance only — repository checks live '
+        "on the command line, and nothing here blocks your next move.</p>\n"
+        + "</div>\n"
+        + render_guidance_html(guidance)
     )
     return "Health", body, 200
 

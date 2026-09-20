@@ -165,15 +165,14 @@ def test_nothing_marked_current_on_node_pages(repo):
 def test_health_ambient_headline_and_warning_counts(repo):
     _, body, status = views.health_body(repo)
     assert status == 200
-    assert "Everything looks good." in body or "Needs attention" in body
-    assert "Warnings" in body
-
+    assert "Study rhythm" in body  # the guidance hierarchy, not a diagnostics table
+    assert "<table>" not in body  # zero diagnostics presence (§C-ter)
 
 def test_health_absent_from_nav_but_reachable_from_the_pill(repo):
     _, home, _ = views.home_body(repo)
     assert 'href="/health"' not in _nav(home)
     header = _header(home)
-    assert "Full roll-up" in header
+    assert "Health →" in header
     assert 'href="/health"' in header
 
 
