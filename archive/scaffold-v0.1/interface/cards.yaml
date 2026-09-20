@@ -1,0 +1,46 @@
+cards:
+  -
+    id: card.home.recommendation
+    view_id: view.home
+    card_kind: recommendation
+    title: Recommended next node
+    body: Run the next-node recommendation command to select the next available study target.
+    severity: info
+    priority: 5
+    action_ids:
+      - action.home.recommend
+    created_at: "2026-06-28T00:00:00"
+  -
+    id: card.home.health
+    view_id: view.home
+    card_kind: system
+    title: System health
+    body: Run ordered validation before mutating graph, evidence, execution, or interface files.
+    severity: info
+    priority: 4
+    action_ids:
+      - action.home.health
+    created_at: "2026-06-28T00:00:00"
+  -
+    id: card.blockers.open
+    view_id: view.blockers
+    card_kind: blocker
+    title: Open blockers
+    body: Inspect blockers before starting new work; create remediation for any blocker that remains actionable.
+    severity: warning
+    priority: 4
+    action_ids:
+      - action.blockers.show
+      - action.blockers.remediate
+    created_at: "2026-06-28T00:00:00"
+  -
+    id: card.reviews.due
+    view_id: view.reviews
+    card_kind: review
+    title: Due reviews
+    body: Check due reviews before starting new nodes to support retention and later mastery decisions.
+    severity: info
+    priority: 3
+    action_ids:
+      - action.reviews.show
+    created_at: "2026-06-28T00:00:00"

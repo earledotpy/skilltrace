@@ -1,0 +1,12 @@
+state:
+  id: interface.local
+  preferred_mode: cli
+  default_output_format: text
+  active_view_id: view.home
+  last_command_id: null
+  last_node_id: null
+  last_session_id: null
+  show_warnings: true
+  show_locked_nodes: true
+  show_debug_details: false
+  updated_at: "2026-06-28T00:00:00"

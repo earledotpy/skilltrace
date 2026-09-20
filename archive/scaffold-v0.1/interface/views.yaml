@@ -1,0 +1,311 @@
+views:
+  -
+    id: view.home
+    title: Home
+    view_kind: home
+    mode: cli
+    description: Compact system summary showing graph status, evidence status, execution attention, and recommended next nodes.
+    inputs:
+      []
+    primary_command_id: cmd.interface.show_home
+    actions:
+      -
+        id: action.home.show
+        label: Show home
+        action_kind: read
+        command_id: cmd.interface.show_home
+        description: Display the local home view.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.home.recommend
+        label: Recommend next
+        action_kind: recommend
+        command_id: cmd.graph.recommend_next
+        description: Show next-node recommendations.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.home.health
+        label: System health
+        action_kind: validate
+        command_id: cmd.interface.show_system_health
+        description: Validate all local layers.
+        destructive: false
+        requires_confirmation: false
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: view.next_node
+    title: Next Node
+    view_kind: next_node
+    mode: cli
+    description: Shows recommended nodes and explains why they are available or valuable now.
+    inputs:
+      -
+        name: minutes
+        description: Available study time in minutes.
+        required: false
+        default: 60
+    primary_command_id: cmd.graph.recommend_next
+    actions:
+      -
+        id: action.next_node.recommend
+        label: Recommend next node
+        action_kind: recommend
+        command_id: cmd.graph.recommend_next
+        description: Compute next-node recommendations.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.next_node.plan
+        label: Plan session
+        action_kind: create
+        command_id: cmd.execution.plan_session
+        description: Create a session for a selected node.
+        destructive: false
+        requires_confirmation: false
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: view.graph_status
+    title: Graph Status
+    view_kind: graph_status
+    mode: cli
+    description: Validates graph structure and reports node-state counts.
+    inputs:
+      []
+    primary_command_id: cmd.graph.validate
+    actions:
+      -
+        id: action.graph.validate
+        label: Validate graph
+        action_kind: validate
+        command_id: cmd.graph.validate
+        description: Validate graph files.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.graph.sync
+        label: Sync readiness
+        action_kind: update
+        command_id: cmd.graph.sync_readiness
+        description: Synchronize safe readiness states.
+        destructive: false
+        requires_confirmation: false
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: view.node_detail
+    title: Node Detail
+    view_kind: node_detail
+    mode: cli
+    description: Inspects one node, including metadata, evidence requirements, gates, records, and blockers.
+    inputs:
+      -
+        name: node_id
+        description: Node ID to inspect.
+        required: true
+        example: math.arithmetic.order_operations_01
+    primary_command_id: cmd.interface.show_node_detail
+    actions:
+      -
+        id: action.node.show
+        label: Show node detail
+        action_kind: read
+        command_id: cmd.interface.show_node_detail
+        description: Display node detail.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.node.start
+        label: Start node
+        action_kind: transition
+        command_id: cmd.state.update_node
+        description: Move an available node into active state.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.node.check_pass
+        label: Check pass eligibility
+        action_kind: read
+        command_id: cmd.evidence.check_pass_eligibility
+        description: Check whether the node can be passed.
+        destructive: false
+        requires_confirmation: false
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: view.evidence_status
+    title: Evidence Status
+    view_kind: evidence_status
+    mode: cli
+    description: Shows artifact specs, validation gates, evidence records, and accepted evidence counts.
+    inputs:
+      -
+        name: node_id
+        description: Optional node ID to inspect.
+        required: false
+        example: math.arithmetic.order_operations_01
+    primary_command_id: cmd.interface.show_evidence_status
+    actions:
+      -
+        id: action.evidence.show
+        label: Show evidence status
+        action_kind: read
+        command_id: cmd.interface.show_evidence_status
+        description: Display evidence coverage.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.evidence.validate
+        label: Validate evidence
+        action_kind: validate
+        command_id: cmd.evidence.validate
+        description: Validate evidence files.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.evidence.check_pass
+        label: Check pass eligibility
+        action_kind: read
+        command_id: cmd.evidence.check_pass_eligibility
+        description: Check node pass eligibility.
+        destructive: false
+        requires_confirmation: false
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: view.session_planner
+    title: Session Planner
+    view_kind: session_planner
+    mode: cli
+    description: Creates explicit planned study sessions from recommended or selected nodes.
+    inputs:
+      -
+        name: kind
+        description: Session kind.
+        required: true
+        example: standard
+      -
+        name: planned_minutes
+        description: Planned minutes.
+        required: true
+        example: 60
+      -
+        name: focus_node_ids
+        description: Focus node IDs.
+        required: true
+        example: math.arithmetic.order_operations_01
+    primary_command_id: cmd.execution.plan_session
+    actions:
+      -
+        id: action.session.plan
+        label: Plan session
+        action_kind: create
+        command_id: cmd.execution.plan_session
+        description: Create a session.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.session.record_work
+        label: Record work
+        action_kind: create
+        command_id: cmd.execution.record_work
+        description: Record session work.
+        destructive: false
+        requires_confirmation: false
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: view.blockers
+    title: Blockers
+    view_kind: blockers
+    mode: cli
+    description: Shows open blockers and supports creation of blockers and remediation actions.
+    inputs:
+      []
+    primary_command_id: cmd.interface.show_blockers
+    actions:
+      -
+        id: action.blockers.show
+        label: Show blockers
+        action_kind: read
+        command_id: cmd.interface.show_blockers
+        description: Display open blockers.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.blockers.create
+        label: Create blocker
+        action_kind: create
+        command_id: cmd.execution.create_blocker
+        description: Create a blocker record.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.blockers.remediate
+        label: Create remediation
+        action_kind: create
+        command_id: cmd.execution.create_remediation
+        description: Create remediation for a blocker.
+        destructive: false
+        requires_confirmation: false
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: view.reviews
+    title: Reviews
+    view_kind: reviews
+    mode: cli
+    description: Shows due and upcoming review items and supports review scheduling.
+    inputs:
+      []
+    primary_command_id: cmd.interface.show_reviews
+    actions:
+      -
+        id: action.reviews.show
+        label: Show reviews
+        action_kind: read
+        command_id: cmd.interface.show_reviews
+        description: Display reviews.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.reviews.schedule
+        label: Schedule review
+        action_kind: create
+        command_id: cmd.execution.schedule_review
+        description: Schedule a review item.
+        destructive: false
+        requires_confirmation: false
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: view.system_health
+    title: System Health
+    view_kind: system_health
+    mode: cli
+    description: Runs validation across graph, evidence, execution, and interface layers.
+    inputs:
+      []
+    primary_command_id: cmd.interface.show_system_health
+    actions:
+      -
+        id: action.system.health
+        label: System health
+        action_kind: validate
+        command_id: cmd.interface.show_system_health
+        description: Validate all layers.
+        destructive: false
+        requires_confirmation: false
+      -
+        id: action.system.export
+        label: Export SQLite
+        action_kind: export
+        command_id: cmd.system.export_sqlite
+        description: Export validated records to SQLite.
+        destructive: false
+        requires_confirmation: false
+    created_at: 2026-06-28
+    updated_at: 2026-06-28

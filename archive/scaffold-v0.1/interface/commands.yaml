@@ -1,0 +1,526 @@
+commands:
+  -
+    id: cmd.graph.validate
+    name: validate-graph
+    category: graph
+    action_kind: validate
+    description: Validate graph nodes, edges, prerequisite references, and hard-prerequisite cycles.
+    module_path: compiler.validate_graph
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: false
+    example_command: python -m compiler.validate_graph
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.graph.recommend_next
+    name: recommend-next
+    category: recommendation
+    action_kind: recommend
+    description: Recommend the next available graph nodes based on prerequisites, state, and available study time.
+    module_path: compiler.recommend_next
+    arguments:
+      -
+        name: minutes
+        description: Available study time in minutes.
+        required: false
+        default: 60
+        example: 30
+      -
+        name: limit
+        description: Maximum number of recommendations to show.
+        required: false
+        default: 5
+        example: 3
+      -
+        name: show_locked
+        description: Whether to show locked nodes and blockers.
+        required: false
+        default: "false"
+        example: "true"
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.recommend_next --minutes 60 --limit 5 --show-locked
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.graph.sync_readiness
+    name: sync-readiness
+    category: graph
+    action_kind: update
+    description: Synchronize safe graph node readiness states based on prerequisite completion.
+    module_path: compiler.sync_readiness
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: true
+    requires_validation_first: true
+    example_command: python -m compiler.sync_readiness
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.state.update_node
+    name: update-node-state
+    category: state
+    action_kind: transition
+    description: Apply an explicit legal state transition to a graph node.
+    module_path: compiler.update_state
+    arguments:
+      -
+        name: node_id
+        description: Node ID to update.
+        required: true
+        example: math.arithmetic.order_operations_01
+      -
+        name: action
+        description: Transition action to apply.
+        required: true
+        example: start
+      -
+        name: evidence
+        description: Evidence ID used for pass or mastery transitions.
+        required: false
+        example: evidence.math.order_operations.001
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: true
+    requires_validation_first: true
+    example_command: python -m compiler.update_state math.arithmetic.order_operations_01 start
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.evidence.validate
+    name: validate-evidence
+    category: evidence
+    action_kind: validate
+    description: Validate evidence YAML files and cross-check evidence references against graph nodes.
+    module_path: compiler.validate_evidence
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.validate_evidence
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.evidence.check_pass_eligibility
+    name: check-pass-eligibility
+    category: evidence
+    action_kind: read
+    description: Check whether a node has accepted evidence and a satisfied closing gate.
+    module_path: compiler.check_pass_eligibility
+    arguments:
+      -
+        name: node_id
+        description: Node ID to evaluate.
+        required: true
+        example: math.arithmetic.order_operations_01
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.check_pass_eligibility math.arithmetic.order_operations_01
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.execution.validate
+    name: validate-execution
+    category: execution
+    action_kind: validate
+    description: Validate execution YAML and cross-check sessions, blockers, reviews, and work records.
+    module_path: compiler.validate_execution
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.validate_execution
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.execution.plan_session
+    name: plan-session
+    category: execution
+    action_kind: create
+    description: Create a planned study session and append a local learning event.
+    module_path: compiler.plan_session
+    arguments:
+      -
+        name: kind
+        description: Session kind such as micro, standard, deep_work, review, or project.
+        required: true
+        example: standard
+      -
+        name: planned_minutes
+        description: Planned session length in minutes.
+        required: true
+        example: 60
+      -
+        name: focus_node_ids
+        description: One or more node IDs to focus on.
+        required: true
+        example: math.arithmetic.order_operations_01
+      -
+        name: goal
+        description: Plain-language goal for the session.
+        required: false
+        example: Complete one short problem set.
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: true
+    requires_validation_first: true
+    example_command: python -m compiler.plan_session standard 60 math.arithmetic.order_operations_01 --goal "Complete one short problem set"
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.execution.record_work
+    name: record-work
+    category: execution
+    action_kind: create
+    description: Record node-specific work completed during a study session.
+    module_path: compiler.record_work
+    arguments:
+      -
+        name: session_id
+        description: Study session ID.
+        required: true
+        example: session.20260628.190000
+      -
+        name: node_id
+        description: Node ID worked on.
+        required: true
+        example: math.arithmetic.order_operations_01
+      -
+        name: outcome
+        description: Work outcome.
+        required: true
+        example: progressed
+      -
+        name: minutes_spent
+        description: Minutes spent on the node.
+        required: true
+        example: 55
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: true
+    requires_validation_first: true
+    example_command: python -m compiler.record_work session.20260628.190000 math.arithmetic.order_operations_01 progressed 55 --notes "Completed one short set."
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.execution.create_blocker
+    name: create-blocker
+    category: execution
+    action_kind: create
+    description: Create a blocker record when study progress is interrupted by a specific issue.
+    module_path: compiler.create_blocker
+    arguments:
+      -
+        name: node_id
+        description: Blocked node ID.
+        required: true
+        example: math.arithmetic.order_operations_01
+      -
+        name: kind
+        description: Blocker kind.
+        required: true
+        example: conceptual
+      -
+        name: title
+        description: Short blocker title.
+        required: true
+        example: Nested parentheses confusion
+      -
+        name: description
+        description: Detailed blocker description.
+        required: true
+        example: Repeated mistakes with nested parentheses.
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: true
+    requires_validation_first: true
+    example_command: python -m compiler.create_blocker math.arithmetic.order_operations_01 conceptual "Nested parentheses confusion" "Repeated mistakes with nested parentheses."
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.execution.create_remediation
+    name: create-remediation
+    category: execution
+    action_kind: create
+    description: Create a targeted remediation action for a blocker or weak node.
+    module_path: compiler.create_remediation
+    arguments:
+      -
+        name: target_node_id
+        description: Node ID to repair.
+        required: true
+        example: math.arithmetic.order_operations_01
+      -
+        name: kind
+        description: Remediation kind.
+        required: true
+        example: practice_set
+      -
+        name: title
+        description: Short remediation title.
+        required: true
+        example: Nested-parentheses practice
+      -
+        name: description
+        description: Detailed remediation task.
+        required: true
+        example: Complete a focused 10-question practice set.
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: true
+    requires_validation_first: true
+    example_command: python -m compiler.create_remediation math.arithmetic.order_operations_01 practice_set "Nested-parentheses practice" "Complete a focused 10-question set." --planned-minutes 20 --due-in-days 1
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.execution.schedule_review
+    name: schedule-review
+    category: review
+    action_kind: create
+    description: Schedule a review item for retention, retry, explanation, or project consolidation.
+    module_path: compiler.schedule_review
+    arguments:
+      -
+        name: node_id
+        description: Node ID to review.
+        required: true
+        example: math.arithmetic.order_operations_01
+      -
+        name: review_kind
+        description: Review kind.
+        required: true
+        example: spaced_recall
+      -
+        name: prompt
+        description: Review prompt.
+        required: true
+        example: Solve five problems without notes and explain one correction.
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: true
+    requires_validation_first: true
+    example_command: python -m compiler.schedule_review math.arithmetic.order_operations_01 spaced_recall "Solve five problems without notes." --in-days 3
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.system.export_sqlite
+    name: export-sqlite
+    category: system
+    action_kind: export
+    description: Export validated graph, evidence, execution, and interface records into local SQLite tables.
+    module_path: compiler.sqlite_export_interface
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: true
+    requires_validation_first: true
+    example_command: python -m compiler.sqlite_export && python -m compiler.sqlite_export_evidence && python -m compiler.sqlite_export_execution && python -m compiler.sqlite_export_interface
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.interface.show_home
+    name: show-home
+    category: system
+    action_kind: read
+    description: Show the local home view with graph, evidence, execution, attention, and next-node summary.
+    module_path: compiler.show_home
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.show_home
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.interface.show_node_detail
+    name: show-node-detail
+    category: graph
+    action_kind: read
+    description: Show node metadata, evidence requirements, validation gates, evidence records, and blockers.
+    module_path: compiler.show_node_detail
+    arguments:
+      -
+        name: node_id
+        description: Node ID to inspect.
+        required: true
+        example: math.arithmetic.order_operations_01
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.show_node_detail math.arithmetic.order_operations_01
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.interface.show_evidence_status
+    name: show-evidence-status
+    category: evidence
+    action_kind: read
+    description: Show evidence coverage and accepted evidence counts globally or for one node.
+    module_path: compiler.show_evidence_status
+    arguments:
+      -
+        name: node_id
+        description: Optional node ID to inspect.
+        required: false
+        example: math.arithmetic.order_operations_01
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.show_evidence_status --node-id math.arithmetic.order_operations_01
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.interface.show_blockers
+    name: show-blockers
+    category: execution
+    action_kind: read
+    description: Show all currently open blockers and their next actions.
+    module_path: compiler.show_blockers
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.show_blockers
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.interface.show_reviews
+    name: show-reviews
+    category: review
+    action_kind: read
+    description: Show due and upcoming review items.
+    module_path: compiler.show_reviews
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.show_reviews
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.interface.show_system_health
+    name: show-system-health
+    category: system
+    action_kind: validate
+    description: Run ordered validation checks for graph, evidence, execution, and interface layers.
+    module_path: compiler.show_system_health
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: false
+    example_command: python -m compiler.show_system_health
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.policy.validate
+    name: validate-policy
+    category: system
+    action_kind: validate
+    description: Validate learning policy YAML and cross-check safety against all local layers.
+    module_path: compiler.validate_policy
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.validate_policy
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.policy.check_automation
+    name: check-automation
+    category: system
+    action_kind: read
+    description: Check whether a proposed automation action is allowed, advisory-only, or forbidden.
+    module_path: compiler.check_automation
+    arguments:
+      -
+        name: action
+        description: Automation action to check.
+        required: true
+        example: pass_node
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.check_automation pass_node
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.policy.check_mastery_eligibility
+    name: check-mastery-eligibility
+    category: state
+    action_kind: read
+    description: Check whether a passed node satisfies mastery promotion requirements.
+    module_path: compiler.check_mastery_eligibility
+    arguments:
+      -
+        name: node_id
+        description: Node ID to evaluate for mastery.
+        required: true
+        example: math.arithmetic.order_operations_01
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.check_mastery_eligibility math.arithmetic.order_operations_01
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.policy.suggest_remediation
+    name: suggest-remediation
+    category: execution
+    action_kind: recommend
+    description: Suggest remediation actions from open blockers and failed attempts without creating them automatically.
+    module_path: compiler.suggest_remediation
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.suggest_remediation
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
+  -
+    id: cmd.policy.suggest_reviews
+    name: suggest-reviews
+    category: review
+    action_kind: recommend
+    description: Suggest reviews for passed nodes according to the active review cadence policy.
+    module_path: compiler.suggest_reviews
+    arguments:
+      []
+    output_format: text
+    safe_for_beginner: true
+    mutates_files: false
+    requires_validation_first: true
+    example_command: python -m compiler.suggest_reviews
+    created_at: 2026-06-28
+    updated_at: 2026-06-28
