@@ -45,8 +45,13 @@ def graph_impact(ctx: Context) -> CommandResult:
         return CommandResult(exit_code=1)
 
     if baseline_opt is not None:
+        candidate = Path(baseline_opt)
+        # Honor --root/Context.root like every other engine command: a
+        # relative --baseline resolves against the throwaway root, never
+        # the process cwd (fortnight hazard H9).
+        baseline_path = candidate if candidate.is_absolute() else Path(root) / candidate
         source: GitBaselineSource | PathBaselineSource = PathBaselineSource(
-            Path(baseline_opt)
+            baseline_path
         )
     else:
         source = GitBaselineSource(root, from_ref)

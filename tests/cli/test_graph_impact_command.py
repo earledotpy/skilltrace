@@ -91,6 +91,62 @@ def test_graph_impact_non_git_dir_fails_cleanly(tmp_path, capsys):
     assert "FAILED" in out and "baseline" in out
 
 
+def test_graph_impact_never_reads_a_parent_git_repo(tmp_path, capsys):
+    """--root isolation: a throwaway root without its own repo fails closed.
+
+    Git discovery walks up from `cwd`, so without isolation a non-git
+    fixture nested under a parent checkout would silently read the outer
+    repo (fortnight hazard H9). The fix pins git to `root` itself.
+    """
+    outer = tmp_path / "outer"
+    outer.mkdir()
+    _git(outer, "init", "-q")
+    _git(outer, "config", "user.email", "tester@example.com")
+    _git(outer, "config", "user.name", "Tester")
+    (outer / "marker.txt").write_text("outer\n", encoding="utf-8")
+    _git(outer, "add", "-A")
+    _git(outer, "commit", "-q", "-m", "outer baseline")
+
+    root = outer / "inner"
+    root.mkdir()
+    _copy_seed(root)  # never `git init`'d
+    rc = cli.run(["graph", "impact"], root=root)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "FAILED" in out and "baseline" in out
+
+
+def test_graph_impact_relative_baseline_resolves_against_root(
+    tmp_path, capsys, monkeypatch
+):
+    """A relative `--baseline` resolves against --root, never the cwd."""
+    root = tmp_path / "repo"
+    root.mkdir()
+    _copy_seed(root)
+    _git(root, "init", "-q")
+    _git(root, "config", "user.email", "tester@example.com")
+    _git(root, "config", "user.name", "Tester")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", "seed baseline")
+
+    baseline = root / "second-checkout"
+    baseline.mkdir()
+    _copy_seed(baseline)
+
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)  # cwd holds no `second-checkout`
+
+    # `--from` names a ref that does not exist; if the relative `--baseline`
+    # resolved against the cwd the run would fail, but against --root it
+    # computes (exit 0). `--baseline` also wins over `--from` (D-Baseline).
+    rc = cli.run(
+        ["graph", "impact", "--from", "no.such.ref", "--baseline", "second-checkout"],
+        root=root,
+    )
+    assert rc == 0
+
+
 # --- --baseline over --from ------------------------------------------------
 
 

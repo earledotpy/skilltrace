@@ -19,6 +19,7 @@ renderer/exit-code only.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from dataclasses import dataclass, field
 from datetime import date
@@ -367,8 +368,38 @@ def _is_missing_blob(exc: BaselineUnavailable) -> bool:
     return "does not exist" in message or "exists on disk, but not in" in message
 
 
+def _git_env_for_root(root: Path) -> dict[str, str]:
+    """Isolate git discovery to `root` like every other engine command.
+
+    Git walks up from `cwd` looking for a parent `.git`, so a throwaway
+    fixture root without its own repo would silently read the outer
+    checkout (fortnight hazard H9). Pointing `GIT_DIR` at `<root>/.git`
+    pins discovery to the fixture root itself — git fails closed when it
+    is absent instead of reading a parent checkout — and scrubbing
+    `GIT_WORK_TREE` / `GIT_COMMON_DIR` / `GIT_NAMESPACE` keeps ambient env
+    from redirecting the lookup elsewhere. Prepending `root` to
+    `GIT_CEILING_DIRECTORIES` is belt-and-braces for any git code path
+    that still consults the ceiling. Callers may still inject via
+    `run_git`.
+    """
+    env = dict(os.environ)
+    try:
+        resolved = Path(root).resolve()
+    except OSError:
+        resolved = Path(root)
+    env["GIT_DIR"] = str(resolved / ".git")
+    for key in ("GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_NAMESPACE"):
+        env.pop(key, None)
+    ceiling = str(resolved)
+    existing = env.get("GIT_CEILING_DIRECTORIES")
+    env["GIT_CEILING_DIRECTORIES"] = (
+        f"{ceiling}{os.pathsep}{existing}" if existing else ceiling
+    )
+    return env
+
+
 def _run_git(root: Path, *argv: str) -> str:
-    """Run one read-only git file-fetch; any failure is unavailable."""
+    """Run one read-only git file-fetch confined to `root`; any failure is unavailable."""
     try:
         completed = subprocess.run(
             ["git", *argv],
@@ -376,6 +407,7 @@ def _run_git(root: Path, *argv: str) -> str:
             capture_output=True,
             text=True,
             check=False,
+            env=_git_env_for_root(root),
         )
     except OSError as exc:
         raise BaselineUnavailable(f"not a git repository ({exc})") from exc
