@@ -43,7 +43,11 @@ One funnel: `Context.clock`, injected through `cli.run(..., clock=...)` (and
 
 - **`skilltrace ui` (serve)** — the browser layer has no clock context, so it
   reads the wall clock. A page-visible simulated day is not supported; use
-  the CLI for simulated runs.
+  the CLI for simulated runs. Tests may still pin that wall clock for
+  byte-exact output: `tests/web/test_route_snapshots.py` rebinds the one
+  funnel (plus the two read paths that call `datetime.now` directly) so the
+  golden route bodies cannot drift with the calendar. The served surface
+  itself still has no clock context.
 - **`export sqlite` `retention_memory.computed_at`** — a disposable mirror
   stamp (the mirror is never read back by the engine). The derived `today`
   that feeds the retention rows *is* threaded, so the row dates follow the

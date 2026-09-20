@@ -1,0 +1,5 @@
+# Golden route-body snapshots are compared byte-for-byte, so they must land
+# with LF endings in every checkout — core.autocrlf (Windows) would otherwise
+# rewrite the very bytes the web layer renders, failing the harness on a
+# machine whose views are correct.
+*.html text eol=lf

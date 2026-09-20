@@ -1,0 +1,629 @@
+<header><div class="wrap"><h1 class="brand">SkillTrace</h1><nav class="nav daily" aria-label="Daily loop"><a href="/">Today</a><a href="/next">Next</a></nav><nav class="nav periodic" aria-label="Periodic"><a href="/analytics">Analytics</a><form class="jump" method="get" action="/nodes/jump"><input type="text" name="node_id" placeholder="Jump to a skill" aria-label="jump to skill" title="Type a skill name or id to jump straight to its page" size="32"><button type="submit">Go</button></form></nav><div class="health-strip" aria-label="health"><span class="pill attention">Needs attention — 38 warnings</span> <a class="health-rollup" href="/health">Health →</a></div></div></header>
+<div class="card">
+<div class="kicker">Find a skill</div>
+<form class="finder" method="get" action="/nodes/jump"><label>Search skills <input type="text" name="q" value="pandas" placeholder="Type a skill name" aria-label="search skills by title" size="32"></label><button type="submit">Search</button></form>
+</div>
+<h2 class="result-count">7 skills match “pandas”</h2>
+<div class="card result">
+<p class="lead"><a href="/nodes/consolidation.data_roundtrip_01">Carry a dataset through a CSV to SQL to Pandas round-trip</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Load a CSV, query it with SQL, then reproduce the same answer in Pandas, and confirm the two paths agree.</p>
+<p class="mut ref">consolidation.data_roundtrip_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> <span class="pill in-progress">In progress</span></p>
+<p class="big">Load, inspect, filter, and summarize tabular data with Pandas.</p>
+<p class="mut ref">data.pandas.dataframe_basics_01</p>
+</div>
+<div class="card result locked">
+<p class="lead">Derive a new column in Pandas <span class="pill locked">Locked</span></p>
+<p class="big">Add a computed column from existing ones with vectorized arithmetic.</p>
+<p class="mut ref">data.pandas.transform_columns_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Filter rows and select columns in Pandas <span class="pill locked">Locked</span></p>
+<p class="big">Subset a DataFrame with a boolean condition and pick columns.</p>
+<p class="mut ref">data.pandas.filtering_selection_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Aggregate a DataFrame with groupby <span class="pill locked">Locked</span></p>
+<p class="big">Split a DataFrame by a key and compute a per-group summary.</p>
+<p class="mut ref">data.pandas.groupby_aggregation_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Merge two DataFrames on a key <span class="pill locked">Locked</span></p>
+<p class="big">Combine two DataFrames by matching a shared column.</p>
+<p class="mut ref">data.pandas.merge_join_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Produce a dataset analysis report portfolio project <span class="pill locked">Locked</span></p>
+<p class="big">Analyse a dataset with Pandas and deliver a written report with at least one chart, an honest reading of the findings, and a reproducible…</p>
+<p class="mut ref">portfolio.project.dataset_analysis_report_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> — pass it first.</p>
+</div>
+<div class="card" id="browse">
+<div class="kicker">Browse by subject</div>
+<ul><li><a href="#subject-math">Math</a></li><li><a href="#subject-data">Data</a></li><li><a href="#subject-programming">Python</a></li><li><a href="#subject-agents">AI agents</a></li><li><a href="#subject-ml">Machine learning</a></li><li><a href="#subject-tooling">Tooling</a></li><li><a href="#subject-communication">Communication</a></li><li><a href="#subject-consolidation">Consolidation</a></li><li><a href="#subject-portfolio">Portfolio</a></li></ul>
+<table>
+<thead><tr><th>Subject</th><th>Skills</th></tr></thead>
+<tbody><tr><td>Math</td><td>33</td></tr><tr><td>Data</td><td>17</td></tr><tr><td>Python</td><td>14</td></tr><tr><td>AI agents</td><td>12</td></tr><tr><td>Machine learning</td><td>7</td></tr><tr><td>Tooling</td><td>6</td></tr><tr><td>Communication</td><td>3</td></tr><tr><td>Consolidation</td><td>4</td></tr><tr><td>Portfolio</td><td>4</td></tr></tbody>
+</table>
+</div>
+<div class="card" id="subject-math">
+<div class="kicker">Math</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.arithmetic.order_operations_01">Apply order of operations</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Evaluate arithmetic expressions using standard order of operations.</p>
+<p class="mut ref">math.arithmetic.order_operations_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.statistics.probability_basics_01">Compute basic probabilities</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Compute probabilities of simple and combined events using the complement, addition, and multiplication rules.</p>
+<p class="mut ref">math.statistics.probability_basics_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.arithmetic.exponents_powers_01">Compute with exponents and scientific notation</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Evaluate powers, apply basic exponent rules, and read and write numbers in scientific notation.</p>
+<p class="mut ref">math.arithmetic.exponents_powers_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.statistics.correlation_causation_01">Distinguish correlation from causation</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Interpret a correlation, judge its strength and direction, and explain why correlation does not establish causation.</p>
+<p class="mut ref">math.statistics.correlation_causation_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.functions.graph_interpretation_01">Interpret graphs</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Explain what a graph says about relationships, trends, and change.</p>
+<p class="mut ref">math.functions.graph_interpretation_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.calculus.integral_intuition_01">Read an integral as accumulation</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Interpret a definite integral as accumulated area under a curve and connect it to totals from a rate.</p>
+<p class="mut ref">math.calculus.integral_intuition_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.statistics.distributions_01">Read and describe a distribution</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Read a histogram, describe a distribution&#x27;s shape, center, and spread, and recognize a roughly normal distribution.</p>
+<p class="mut ref">math.statistics.distributions_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.algebra.notation_literacy_01">Read mathematical notation with confidence</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Decode the symbols that stall self-learners — function notation, subscripts and indices, summation, and common Greek letters — so a formula…</p>
+<p class="mut ref">math.algebra.notation_literacy_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.statistics.sampling_01">Reason about samples and sampling variability</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Distinguish a sample from a population and explain why repeated samples vary and why larger samples vary less.</p>
+<p class="mut ref">math.statistics.sampling_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.functions.nonlinear_functions_01">Recognize nonlinear function shapes</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Recognize and describe quadratic and exponential functions by their graph shape and rate of change.</p>
+<p class="mut ref">math.functions.nonlinear_functions_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.arithmetic.fractions_01">Regain fraction and negative-number fluency</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Rebuild reliable fluency with fractions and signed numbers — the arithmetic that quietly breaks algebra, slope, and probability when it…</p>
+<p class="mut ref">math.arithmetic.fractions_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.linear_algebra.vectors_01">Represent and combine vectors</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Read a vector as a list of numbers, add two vectors, and scale one by a constant.</p>
+<p class="mut ref">math.linear_algebra.vectors_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.algebra.inequalities_01">Solve and interpret inequalities</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Solve simple inequalities and represent their solution sets.</p>
+<p class="mut ref">math.algebra.inequalities_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.statistics.descriptive_stats_01">Summarize a dataset with descriptive statistics</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Compute and interpret center (mean, median, mode) and spread (range, standard deviation) for a small dataset.</p>
+<p class="mut ref">math.statistics.descriptive_stats_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.functions.coordinate_plane_01">Use the coordinate plane</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Plot, read, and interpret points on the coordinate plane.</p>
+<p class="mut ref">math.functions.coordinate_plane_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.arithmetic.percentages_ratios_01">Work with percentages, ratios, and proportions</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Convert between fractions, decimals, and percentages and solve ratio and proportion problems.</p>
+<p class="mut ref">math.arithmetic.percentages_ratios_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/math.algebra.variables_expressions_01">Work with variables and algebraic expressions</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Translate between words, symbols, and algebraic expressions.</p>
+<p class="mut ref">math.algebra.variables_expressions_01</p>
+</div>
+<div class="card result locked">
+<p class="lead">Apply a matrix to a vector <span class="pill locked">Locked</span></p>
+<p class="big">Compute a matrix-vector product and interpret it as applying the matrix&#x27;s transformation to the vector.</p>
+<p class="mut ref">math.linear_algebra.matrix_vector_product_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.linear_algebra.matrices_01">Read a matrix as a transformation</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Compute expected value <span class="pill locked">Locked</span></p>
+<p class="big">Compute the expected value of a discrete random variable as a probability-weighted average and interpret it.</p>
+<p class="mut ref">math.statistics.expectation_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.statistics.probability_basics_01">Compute basic probabilities</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Compute the dot product and cosine similarity <span class="pill locked">Locked</span></p>
+<p class="big">Compute the dot product of two vectors and use it to judge their similarity via the cosine of the angle between them.</p>
+<p class="mut ref">math.linear_algebra.dot_product_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.linear_algebra.vectors_01">Represent and combine vectors</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Evaluate and apply logarithms <span class="pill locked">Locked</span></p>
+<p class="big">Evaluate logarithms as the inverse of exponentiation and apply the product, quotient, and power log rules.</p>
+<p class="mut ref">math.algebra.logarithms_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.arithmetic.exponents_powers_01">Compute with exponents and scientific notation</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Explain and calculate slope <span class="pill locked">Locked</span></p>
+<p class="big">Calculate slope from two points and explain it as rate of change.</p>
+<p class="mut ref">math.functions.slope_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.functions.coordinate_plane_01">Use the coordinate plane</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Explain optimization by following the gradient <span class="pill locked">Locked</span></p>
+<p class="big">Explain how following the negative gradient downhill in small steps finds a minimum, and where the intuition breaks.</p>
+<p class="mut ref">math.calculus.optimization_intuition_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.calculus.gradient_intuition_01">Read a gradient as steepest ascent</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Interpret a hypothesis test and p-value <span class="pill locked">Locked</span></p>
+<p class="big">State a null hypothesis, interpret a p-value against a significance level, and state the conclusion in plain language.</p>
+<p class="mut ref">math.statistics.hypothesis_testing_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.statistics.sampling_01">Reason about samples and sampling variability</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Measure vector length and distance <span class="pill locked">Locked</span></p>
+<p class="big">Compute a vector&#x27;s magnitude (norm) and the distance between two vectors, and explain what each measures.</p>
+<p class="mut ref">math.linear_algebra.vector_operations_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.linear_algebra.vectors_01">Represent and combine vectors</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Multiply two matrices <span class="pill locked">Locked</span></p>
+<p class="big">Compute a matrix-matrix product and interpret it as composing two transformations.</p>
+<p class="mut ref">math.linear_algebra.matrix_multiplication_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.linear_algebra.matrix_vector_product_01">Apply a matrix to a vector</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Read a derivative as sensitivity <span class="pill locked">Locked</span></p>
+<p class="big">Interpret a derivative as the rate of change of an output per small change in input — the slope of the tangent.</p>
+<p class="mut ref">math.calculus.derivative_intuition_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.functions.slope_01">Explain and calculate slope</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Read a gradient as steepest ascent <span class="pill locked">Locked</span></p>
+<p class="big">Interpret a gradient as the vector of partial sensitivities pointing in the direction of steepest increase.</p>
+<p class="mut ref">math.calculus.gradient_intuition_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.calculus.derivative_intuition_01">Read a derivative as sensitivity</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Read a matrix as a transformation <span class="pill locked">Locked</span></p>
+<p class="big">Read a matrix as a grid of numbers and as a linear transformation of space defined by where it sends the basis vectors.</p>
+<p class="mut ref">math.linear_algebra.matrices_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.linear_algebra.vectors_01">Represent and combine vectors</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Solve a system of two linear equations <span class="pill locked">Locked</span></p>
+<p class="big">Solve a system of two linear equations in two unknowns by substitution or elimination and interpret the solution.</p>
+<p class="mut ref">math.algebra.systems_equations_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.algebra.linear_equations_01">Solve one-variable linear equations</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Solve one-variable linear equations <span class="pill locked">Locked</span></p>
+<p class="big">Solve equations of the form ax + b = c and explain each transformation.</p>
+<p class="mut ref">math.algebra.linear_equations_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.algebra.variables_expressions_01">Work with variables and algebraic expressions</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Update beliefs with Bayes&#x27; rule <span class="pill locked">Locked</span></p>
+<p class="big">Use conditional probability and Bayes&#x27; rule to update a probability given new evidence, including base-rate cases.</p>
+<p class="mut ref">math.statistics.bayes_intuition_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.statistics.probability_basics_01">Compute basic probabilities</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Work with linear functions <span class="pill locked">Locked</span></p>
+<p class="big">Connect slope, intercept, equations, tables, and graphs.</p>
+<p class="mut ref">math.functions.linear_functions_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.functions.slope_01">Explain and calculate slope</a> — pass it first.</p>
+</div>
+</div>
+<div class="card" id="subject-data">
+<div class="kicker">Data</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/data.sql.select_basics_01">Query rows and columns with SELECT</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Retrieve specific columns from a table with a basic SELECT statement.</p>
+<p class="mut ref">data.sql.select_basics_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/data.sql.join_mental_models_01">Build a mental model for SQL joins</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Reason about what each join type keeps and drops, so joins stop being trial-and-error — a focused rescue drill for the concept, not the…</p>
+<p class="mut ref">data.sql.join_mental_models_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/data.visualization.choosing_charts_01">Choose the right chart for the question</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Match a chart type to the data and the question being asked.</p>
+<p class="mut ref">data.visualization.choosing_charts_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/data.visualization.plotting_basics_01">Produce a clear, labeled plot</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Build a readable chart with titles, axis labels, and units.</p>
+<p class="mut ref">data.visualization.plotting_basics_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/data.visualization.honest_visuals_01">Spot and avoid misleading charts</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Identify distortions like truncated axes and fix them.</p>
+<p class="mut ref">data.visualization.honest_visuals_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> <span class="pill in-progress">In progress</span></p>
+<p class="big">Load, inspect, filter, and summarize tabular data with Pandas.</p>
+<p class="mut ref">data.pandas.dataframe_basics_01</p>
+</div>
+<div class="card result locked">
+<p class="lead">Aggregate a DataFrame with groupby <span class="pill locked">Locked</span></p>
+<p class="big">Split a DataFrame by a key and compute a per-group summary.</p>
+<p class="mut ref">data.pandas.groupby_aggregation_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Clean a simple CSV dataset <span class="pill locked">Locked</span></p>
+<p class="big">Handle missing or malformed values in a small CSV file.</p>
+<p class="mut ref">data.csv.clean_simple_dataset_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.csv.read_csv_01">Read a CSV file with Python</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Combine tables with an inner join <span class="pill locked">Locked</span></p>
+<p class="big">Join two related tables on a key to combine their columns.</p>
+<p class="mut ref">data.sql.joins_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.sql.select_basics_01">Query rows and columns with SELECT</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Derive a new column in Pandas <span class="pill locked">Locked</span></p>
+<p class="big">Add a computed column from existing ones with vectorized arithmetic.</p>
+<p class="mut ref">data.pandas.transform_columns_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Filter against a subquery <span class="pill locked">Locked</span></p>
+<p class="big">Use a nested SELECT to compute a threshold you filter against.</p>
+<p class="mut ref">data.sql.subqueries_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.sql.select_basics_01">Query rows and columns with SELECT</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Filter and sort query results <span class="pill locked">Locked</span></p>
+<p class="big">Restrict rows with WHERE and order them with ORDER BY.</p>
+<p class="mut ref">data.sql.filtering_sorting_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.sql.select_basics_01">Query rows and columns with SELECT</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Filter rows and select columns in Pandas <span class="pill locked">Locked</span></p>
+<p class="big">Subset a DataFrame with a boolean condition and pick columns.</p>
+<p class="mut ref">data.pandas.filtering_selection_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Merge two DataFrames on a key <span class="pill locked">Locked</span></p>
+<p class="big">Combine two DataFrames by matching a shared column.</p>
+<p class="mut ref">data.pandas.merge_join_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Read a CSV file with Python <span class="pill locked">Locked</span></p>
+<p class="big">Load a simple CSV file and inspect rows and columns.</p>
+<p class="mut ref">data.csv.read_csv_01</p>
+<p class="sub">Blocked by <a href="/nodes/programming.python.files_01">Read and write files in Python</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Summarize groups with GROUP BY <span class="pill locked">Locked</span></p>
+<p class="big">Compute per-group counts and averages with aggregate functions.</p>
+<p class="mut ref">data.sql.aggregation_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.sql.select_basics_01">Query rows and columns with SELECT</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Write rows to a CSV file <span class="pill locked">Locked</span></p>
+<p class="big">Write a list of records to a well-formed CSV with the csv module.</p>
+<p class="mut ref">data.csv.write_csv_01</p>
+<p class="sub">Blocked by <a href="/nodes/programming.python.files_01">Read and write files in Python</a> — pass it first.</p>
+</div>
+</div>
+<div class="card" id="subject-programming">
+<div class="kicker">Python</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/programming.python.variables_01">Use variables and expressions in Python</a> <span class="pill passed">Passed</span></p>
+<p class="big">Create variables, assign values, and use expressions to compute simple results.</p>
+<p class="mut ref">programming.python.variables_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/programming.python.string_processing_01">Clean and process text with string methods</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Normalize, split, and measure strings with Python&#x27;s string methods.</p>
+<p class="mut ref">programming.python.string_processing_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/programming.python.functions_01">Define and call Python functions</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Write reusable functions with parameters and return values.</p>
+<p class="mut ref">programming.python.functions_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/programming.python.exceptions_01">Handle errors with try/except</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Catch expected exceptions and return a sensible fallback instead of crashing.</p>
+<p class="mut ref">programming.python.exceptions_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/programming.python.reading_errors_01">Read a Python traceback to locate a failure</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Given a failing program, read its traceback to name the error type, find the failing line, and form the next debugging step — a focused…</p>
+<p class="mut ref">programming.python.reading_errors_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/programming.python.files_01">Read and write files in Python</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Use Python to read from and write to local text files.</p>
+<p class="mut ref">programming.python.files_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/programming.python.errors_debugging_01">Read tracebacks and debug simple errors</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Use Python error messages to identify and fix simple bugs.</p>
+<p class="mut ref">programming.python.errors_debugging_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/programming.python.environment_01">Run Python locally</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Confirm Python runs locally and execute a simple script.</p>
+<p class="mut ref">programming.python.environment_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/programming.python.environment_troubleshooting_01">Troubleshoot Python environment and path problems</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Diagnose the environment failures that block beginners — wrong interpreter, module not found, activation and PATH confusion — a focused…</p>
+<p class="mut ref">programming.python.environment_troubleshooting_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/programming.python.modules_imports_01">Use the standard library through imports</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Import and use standard-library modules to accomplish tasks without writing everything by hand.</p>
+<p class="mut ref">programming.python.modules_imports_01</p>
+</div>
+<div class="card result locked">
+<p class="lead">Store and look up data with Python dictionaries <span class="pill locked">Locked</span></p>
+<p class="big">Build, index, and transform key-value dictionaries.</p>
+<p class="mut ref">programming.python.dictionaries_01</p>
+</div>
+<div class="card result locked">
+<p class="lead">Transform sequences with comprehensions <span class="pill locked">Locked</span></p>
+<p class="big">Use list and dictionary comprehensions to map and filter data concisely.</p>
+<p class="mut ref">programming.python.comprehensions_01</p>
+<p class="sub">Blocked by <a href="/nodes/programming.python.lists_loops_01">Use lists and loops in Python</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Use conditionals in Python <span class="pill locked">Locked</span></p>
+<p class="big">Use if, elif, and else statements to control program flow.</p>
+<p class="mut ref">programming.python.conditionals_01</p>
+</div>
+<div class="card result locked">
+<p class="lead">Use lists and loops in Python <span class="pill locked">Locked</span></p>
+<p class="big">Represent repeated values and process them with loops.</p>
+<p class="mut ref">programming.python.lists_loops_01</p>
+</div>
+</div>
+<div class="card" id="subject-agents">
+<div class="kicker">AI agents</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/agents.concepts.agent_fundamentals_01">Explain what an AI agent is and how tools extend an LLM</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Define agent, tool, and action loop; contrast CodeAgents with tool-calling agents.</p>
+<p class="mut ref">agents.concepts.agent_fundamentals_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/agents.deploy.fastapi_minimal_01">Serve a minimal FastAPI app with interactive docs</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Build the app/ Hello World service, run it with fastapi dev and fastapi run, and read its /docs.</p>
+<p class="mut ref">agents.deploy.fastapi_minimal_01</p>
+</div>
+<div class="card result locked">
+<p class="lead">Build a first CodeAgent with smolagents and one custom tool <span class="pill locked">Locked</span></p>
+<p class="big">Run a CodeAgent and a ToolCallingAgent; author one custom tool and compare the styles.</p>
+<p class="mut ref">agents.frameworks.smolagents_01</p>
+<p class="sub">Blocked by <a href="/nodes/agents.concepts.agent_fundamentals_01">Explain what an AI agent is and how tools extend an LLM</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Build a small RAG pipeline with LlamaIndex retrievers <span class="pill locked">Locked</span></p>
+<p class="big">Index a document set, query it through a retriever and query engine, and run one agentic-RAG turn.</p>
+<p class="mut ref">agents.data.llamaindex_rag_01</p>
+<p class="sub">Blocked by <a href="/nodes/agents.concepts.agent_fundamentals_01">Explain what an AI agent is and how tools extend an LLM</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Containerize the primer app and pass the Engine smoke check <span class="pill locked">Locked</span></p>
+<p class="big">Write the from-scratch Dockerfile, build and run on Docker Engine, and curl / and /docs to exit 0.</p>
+<p class="mut ref">agents.deploy.docker_engine_build_run_01</p>
+<p class="sub">Blocked by <a href="/nodes/agents.deploy.fastapi_minimal_01">Serve a minimal FastAPI app with interactive docs</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Delegate a task with OpenAI Agents SDK handoffs and guardrails <span class="pill locked">Locked</span></p>
+<p class="big">Build two agents with a handoff, add one guardrail, and trace the run with one MCP-backed tool.</p>
+<p class="mut ref">agents.frameworks.openai_agents_sdk_01</p>
+<p class="sub">Blocked by <a href="/nodes/agents.concepts.agent_fundamentals_01">Explain what an AI agent is and how tools extend an LLM</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Deploy an agent behind FastAPI on Engine plus a ZeroGPU Space (capstone) <span class="pill locked">Locked</span></p>
+<p class="big">Ship a LangGraph agent with MCP tools served by FastAPI, checked on Engine-local and hosted on Gradio ZeroGPU.</p>
+<p class="mut ref">agents.capstone.deployed_agent_integration_01</p>
+<p class="sub">Blocked by <a href="/nodes/agents.deploy.docker_engine_build_run_01">Containerize the primer app and pass the Engine smoke check</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Expose a tool through an MCP server and call it from a client <span class="pill locked">Locked</span></p>
+<p class="big">Implement one MCP server tool and invoke it over stdio and Streamable HTTP from a client.</p>
+<p class="mut ref">agents.protocol.mcp_01</p>
+<p class="sub">Blocked by <a href="/nodes/agents.concepts.agent_fundamentals_01">Explain what an AI agent is and how tools extend an LLM</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Optimize a program with DSPy signatures, modules, and metrics <span class="pill locked">Locked</span></p>
+<p class="big">Write a DSPy program with typed signatures, score it with a metric, and run one optimizer pass.</p>
+<p class="mut ref">agents.optimization.dspy_01</p>
+<p class="sub">Blocked by <a href="/nodes/agents.concepts.agent_fundamentals_01">Explain what an AI agent is and how tools extend an LLM</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Orchestrate a stateful graph with LangGraph and persistence <span class="pill locked">Locked</span></p>
+<p class="big">Build a small stateful graph with reducers, add checkpointing, and run the prebuilt ReAct agent.</p>
+<p class="mut ref">agents.frameworks.langgraph_01</p>
+<p class="sub">Blocked by <a href="/nodes/agents.concepts.agent_fundamentals_01">Explain what an AI agent is and how tools extend an LLM</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Run an agent team with Microsoft Agent Framework workflows <span class="pill locked">Locked</span></p>
+<p class="big">Build one agent with MCP tools, run a sequential workflow, and note the AutoGen migration standing.</p>
+<p class="mut ref">agents.frameworks.ms_agent_framework_01</p>
+<p class="sub">Blocked by <a href="/nodes/agents.concepts.agent_fundamentals_01">Explain what an AI agent is and how tools extend an LLM</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Ship a typed agent with PydanticAI tools and test-model evals <span class="pill locked">Locked</span></p>
+<p class="big">Build a typed agent with structured output, test it with the built-in test model, and run one eval.</p>
+<p class="mut ref">agents.frameworks.pydanticai_01</p>
+<p class="sub">Blocked by <a href="/nodes/agents.concepts.agent_fundamentals_01">Explain what an AI agent is and how tools extend an LLM</a> — pass it first.</p>
+</div>
+</div>
+<div class="card" id="subject-ml">
+<div class="kicker">Machine learning</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/ml.framing.ml_workflow_01">Frame an ML task and split data without leakage</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Frame a supervised task, choose train/validation/test splits, and name two leakage patterns to avoid.</p>
+<p class="mut ref">ml.framing.ml_workflow_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/ml.practice.titanic_baseline_01">Ship a Kaggle Titanic baseline with feature engineering</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Submit a Titanic baseline, then improve it with three engineered features and a written score comparison.</p>
+<p class="mut ref">ml.practice.titanic_baseline_01</p>
+</div>
+<div class="card result locked">
+<p class="lead">Integrate the Phase 2 chain on Kaggle House Prices (capstone) <span class="pill locked">Locked</span></p>
+<p class="big">Deliver a full CSV-to-submission pipeline on House Prices reusing framing, regression, validation, and ensembles.</p>
+<p class="mut ref">ml.capstone.house_prices_integration_01</p>
+<p class="sub">Blocked by <a href="/nodes/ml.practice.titanic_baseline_01">Ship a Kaggle Titanic baseline with feature engineering</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Train and evaluate logistic regression classifiers <span class="pill locked">Locked</span></p>
+<p class="big">Train logistic regression from scratch and with sklearn, and choose accuracy vs F1 vs ROC-AUC for a given class balance.</p>
+<p class="mut ref">ml.classification.logistic_regression_01</p>
+<p class="sub">Blocked by <a href="/nodes/ml.regression.linear_regression_01">Train and interpret linear regression</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Train and interpret linear regression <span class="pill locked">Locked</span></p>
+<p class="big">Train linear regression with gradient descent intuition, read loss curves, and compare against a sklearn baseline.</p>
+<p class="mut ref">ml.regression.linear_regression_01</p>
+<p class="sub">Blocked by <a href="/nodes/ml.framing.ml_workflow_01">Frame an ML task and split data without leakage</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Train tree ensembles and control overfitting <span class="pill locked">Locked</span></p>
+<p class="big">Train decision trees, random forests, and gradient boosting with sklearn and explain the overfitting controls.</p>
+<p class="mut ref">ml.trees.ensembles_01</p>
+<p class="sub">Blocked by <a href="/nodes/ml.evaluation.validation_metrics_01">Validate models and diagnose bias-variance</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Validate models and diagnose bias-variance <span class="pill locked">Locked</span></p>
+<p class="big">Run train/validation/test discipline, read validation curves, and apply regularization against overfitting.</p>
+<p class="mut ref">ml.evaluation.validation_metrics_01</p>
+<p class="sub">Blocked by <a href="/nodes/ml.classification.logistic_regression_01">Train and evaluate logistic regression classifiers</a> — pass it first.</p>
+</div>
+</div>
+<div class="card" id="subject-tooling">
+<div class="kicker">Tooling</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/tooling.git.repository_basics_01">Create or clone a Git repository</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Initialize or clone a repository and inspect its status.</p>
+<p class="mut ref">tooling.git.repository_basics_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/tooling.cli.file_management_01">Manage files and folders from the command line</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Create, copy, move, and remove files and folders from the terminal.</p>
+<p class="mut ref">tooling.cli.file_management_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/tooling.cli.navigation_01">Navigate folders from the command line</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Use basic terminal commands to move through folders and run local commands.</p>
+<p class="mut ref">tooling.cli.navigation_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/tooling.git.viewing_history_01">Read a repository&#x27;s history and diffs</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Read the commit log and a diff, and explain what changed between two commits.</p>
+<p class="mut ref">tooling.git.viewing_history_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/tooling.cli.inspecting_files_01">View and search file contents from the command line</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Print, page, and search within a file&#x27;s contents from the terminal.</p>
+<p class="mut ref">tooling.cli.inspecting_files_01</p>
+</div>
+<div class="card result locked">
+<p class="lead">Use the basic Git commit workflow <span class="pill locked">Locked</span></p>
+<p class="big">Stage, commit, and inspect changes in a local repository.</p>
+<p class="mut ref">tooling.git.commit_workflow_01</p>
+<p class="sub">Blocked by <a href="/nodes/tooling.git.repository_basics_01">Create or clone a Git repository</a> — pass it first.</p>
+</div>
+</div>
+<div class="card" id="subject-communication">
+<div class="kicker">Communication</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/communication.readme.basic_readme_01">Write a basic project README</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Create a README that explains what a project does and how to run it.</p>
+<p class="mut ref">communication.readme.basic_readme_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/communication.notes.technical_summary_01">Write a concise technical summary</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Summarize a concept, procedure, or blocker in clear technical notes.</p>
+<p class="mut ref">communication.notes.technical_summary_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/communication.reports.results_summary_01">Write up an analysis result honestly</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Report a finding with its evidence, caveats, and next step.</p>
+<p class="mut ref">communication.reports.results_summary_01</p>
+</div>
+</div>
+<div class="card" id="subject-consolidation">
+<div class="kicker">Consolidation</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/consolidation.data_roundtrip_01">Carry a dataset through a CSV to SQL to Pandas round-trip</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Load a CSV, query it with SQL, then reproduce the same answer in Pandas, and confirm the two paths agree.</p>
+<p class="mut ref">consolidation.data_roundtrip_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/consolidation.dataset_interpretation_01">Interpret a real dataset&#x27;s summary honestly</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Compute a summary of a real dataset and write an honest interpretation that separates what the numbers show from what they do not.</p>
+<p class="mut ref">consolidation.dataset_interpretation_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/consolidation.math_foundations_01">Solve a mixed math-foundations problem set</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Work an unlabelled problem set that mixes arithmetic, algebra, and function skills, choosing the right tool for each problem.</p>
+<p class="mut ref">consolidation.math_foundations_01</p>
+</div>
+<div class="card result">
+<p class="lead"><a href="/nodes/consolidation.python_fundamentals_01">Write one Python script exercising variables through files</a> <span class="pill ready-to-start">Ready to start</span></p>
+<p class="big">Write a single small program that reads input, holds it in variables, branches and loops, factors work into functions, and reads or writes…</p>
+<p class="mut ref">consolidation.python_fundamentals_01</p>
+</div>
+</div>
+<div class="card" id="subject-portfolio">
+<div class="kicker">Portfolio</div>
+<div class="card result locked">
+<p class="lead">Build a data-cleaning tool portfolio project <span class="pill locked">Locked</span></p>
+<p class="big">Build a small, reusable Python tool that reads a messy CSV, applies documented cleaning rules, writes a clean CSV, and ships with a README…</p>
+<p class="mut ref">portfolio.project.data_cleaning_tool_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.csv.clean_simple_dataset_01">Clean a simple CSV dataset</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Build a slope calculator portfolio project <span class="pill locked">Locked</span></p>
+<p class="big">Create a small Python project that calculates slope, handles edge cases, uses Git, and includes a README.</p>
+<p class="mut ref">portfolio.project.slope_calculator_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.functions.slope_01">Explain and calculate slope</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Build a statistical simulation portfolio project <span class="pill locked">Locked</span></p>
+<p class="big">Build a Python program that simulates a random process over many trials, estimates a probability or expectation from the results, and…</p>
+<p class="mut ref">portfolio.project.stats_simulation_01</p>
+<p class="sub">Blocked by <a href="/nodes/math.statistics.probability_basics_01">Compute basic probabilities</a> — pass it first.</p>
+</div>
+<div class="card result locked">
+<p class="lead">Produce a dataset analysis report portfolio project <span class="pill locked">Locked</span></p>
+<p class="big">Analyse a dataset with Pandas and deliver a written report with at least one chart, an honest reading of the findings, and a reproducible…</p>
+<p class="mut ref">portfolio.project.dataset_analysis_report_01</p>
+<p class="sub">Blocked by <a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> — pass it first.</p>
+</div>
+</div>
