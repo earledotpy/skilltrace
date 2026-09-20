@@ -34,14 +34,21 @@ import yaml
 from .registry import _REGISTRY_RELPATH, _TOP_KEY, ResourceLoadError
 
 
-def today_iso() -> str:
+def today_iso(*, clock=None) -> str:
     """Today's date (UTC) as an ISO `YYYY-MM-DD` string.
 
     A date, not a timestamp: `last_verified` and the broken marker are *dated*
     facts (CONTEXT.md), and staleness is derived in whole days against a policy
     window.
+
+    ``clock`` is the dispatcher's fixture/test override (``Context.clock``),
+    funneled through ``execution.overdue.utc_today`` so simulated-day runs date
+    the resource facts they write (issue #308) and production reads the wall
+    clock unchanged.
     """
-    return datetime.now(timezone.utc).date().isoformat()
+    from ..execution.overdue import utc_today
+
+    return utc_today(clock=clock).isoformat()
 
 
 def record_verification(

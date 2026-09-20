@@ -31,10 +31,6 @@ from ..policy.remediation_edges import (
 from ..policy.retention_model import derive_memory_states
 
 
-def _today() -> date:
-    return utc_today()
-
-
 def _suggestion_defaults(view, today: date) -> tuple[int | None, str | None]:
     """(suggested minutes, ISO due date) from the remediation seed, or Nones.
 
@@ -81,7 +77,7 @@ def suggest_remediation(ctx: Context) -> CommandResult:
         attempts=view.attempts,
         failed_attempt_threshold=view.policy.failed_attempt_threshold,
     )
-    sizing = _sizing_clause(*_suggestion_defaults(view, _today()))
+    sizing = _sizing_clause(*_suggestion_defaults(view, utc_today(clock=ctx.clock)))
 
     lines: list[str] = []
     for remediation in active:
@@ -159,7 +155,7 @@ def suggest_reviews(ctx: Context) -> CommandResult:
         return CommandResult(exit_code=1)
     reviews = view.reviews
 
-    today = _today()
+    today = utc_today(clock=ctx.clock)
     due: list[tuple[date, str, str]] = []
     upcoming = 0
     for review in reviews:

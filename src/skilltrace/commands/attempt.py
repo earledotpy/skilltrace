@@ -19,7 +19,6 @@ nothing written).
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -29,12 +28,9 @@ from ..evidence._schema import EvidenceLoadError, read_yaml_list
 from ..evidence.attempt_recording import AttemptOutcome, plan_attempt
 from ..evidence.evidence import load_assessment_attempts, load_validation_gates
 from ..graph.state import ProgressStoreError, load_state
+from ._common import now_iso as _now_iso
 
 _ATTEMPTS_RELPATH = Path("evidence") / "attempts.yaml"
-
-
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def _append_attempt(root: Path, record: dict) -> None:
@@ -85,7 +81,7 @@ def record(ctx: Context) -> CommandResult:
         has_gate=_node_has_gate(gates, node_id),
         existing_attempt_ids=[a.id for a in attempts],
         node_state=store.state_of(node_id),
-        now=_now_iso(),
+        now=_now_iso(clock=ctx.clock),
     )
 
     _report(outcome, node_id)

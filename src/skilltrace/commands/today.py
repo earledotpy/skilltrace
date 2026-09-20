@@ -57,8 +57,12 @@ from ..resources.registry import LearningResource
 # --- Small loaders and helpers -------------------------------------------------
 
 
-def _minutes_open(started_at: str | None) -> int | None:
-    """Minutes the open session has been running, or None if unknown/stale."""
+def _minutes_open(started_at: str | None, *, now: datetime | None = None) -> int | None:
+    """Minutes the open session has been running, or None if unknown/stale.
+
+    ``now`` is the caller's clock moment (``Context.clock`` under fixture
+    runs); ``None`` reads the wall clock.
+    """
     if not started_at:
         return None
     try:
@@ -67,7 +71,10 @@ def _minutes_open(started_at: str | None) -> int | None:
         return None
     if started.tzinfo is None:
         started = started.replace(tzinfo=timezone.utc)
-    delta = datetime.now(timezone.utc) - started
+    current = now if now is not None else datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    delta = current - started
     minutes = int(delta.total_seconds() // 60)
     return minutes if minutes >= 0 else None
 
@@ -265,8 +272,15 @@ class TodayModel:
     days_practiced: int
 
 
-def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
-    """Synthesize the study day from one loaded JoinedView. Pure of printing."""
+def derive_today(
+    joined, root: Path, *, minutes: int = 30, now: datetime | None = None
+) -> TodayModel:
+    """Synthesize the study day from one loaded JoinedView. Pure of printing.
+
+    ``now`` is the caller's clock moment (``Context.clock`` under fixture
+    runs, so simulated-day runs derive both "today" and the open-session
+    age from the simulation); ``None`` reads the wall clock.
+    """
     nodes = joined.nodes
     edges = joined.edges
     store = joined.store
@@ -282,7 +296,11 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
 
     # Top recommendations (same engine + advisory pressure as `next`,
     # prepared once behind the shared seam).
-    today_dt = utc_today()
+    if now is None:
+        today_dt = utc_today()
+    else:
+        moment = now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
+        today_dt = moment.astimezone(timezone.utc).date()
     inputs = prepare(joined, root, today_dt)
     result = recommend(
         nodes,
@@ -306,7 +324,7 @@ def derive_today(joined, root: Path, *, minutes: int = 30) -> TodayModel:
         session_items = [w for w in session_work if w.session_id == current_session.id]
         if session_items:
             focus_node_id = session_items[-1].node_id
-        minutes_open = _minutes_open(current_session.started_at)
+        minutes_open = _minutes_open(current_session.started_at, now=now)
 
     top_rec = result.recommendations[0] if result.recommendations else None
     if focus_node_id is None and top_rec is not None:
@@ -438,7 +456,12 @@ def today(ctx: Context) -> CommandResult:
         print(f"today: FAILED — {exc}")
         return CommandResult(exit_code=1)
 
-    model = derive_today(joined, root, minutes=ctx.args.minutes)
+    model = derive_today(
+        joined,
+        root,
+        minutes=ctx.args.minutes,
+        now=ctx.clock() if ctx.clock is not None else None,
+    )
     for line in model.lines:
         print(line)
 

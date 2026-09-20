@@ -65,11 +65,15 @@ def _banner_card(generated_at: str) -> str:
     )
 
 
-def _health_strip_card(root: Path) -> str:
-    """The five validators plus liveness, mirroring the serve health strip."""
+def _health_strip_card(root: Path, *, clock=None) -> str:
+    """The five validators plus liveness, mirroring the serve health strip.
+
+    ``clock`` is the dispatcher's test/fixture override, threaded through so
+    a simulated-day export derives liveness from the simulation.
+    """
     from .web.views import cards_html
 
-    report = health_report(Path(root))
+    report = health_report(Path(root), clock=clock)
     pills = "".join(
         f'<span class="pill {"verified" if layer.ok else "broken"}">'
         f"{html.escape(layer.target)}: {'OK' if layer.ok else 'FAILED'}</span>"
@@ -106,5 +110,9 @@ def render_html(ctx) -> str:
             f"<section>\n<h2>{html.escape(title)}</h2>\n{inner}\n</section>\n"
         )
 
-    body = _banner_card(now_iso()) + sections_html + _health_strip_card(ctx.root)
+    body = (
+        _banner_card(now_iso(clock=getattr(ctx, "clock", None)))
+        + sections_html
+        + _health_strip_card(ctx.root, clock=getattr(ctx, "clock", None))
+    )
     return page("SkillTrace export", body)

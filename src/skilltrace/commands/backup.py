@@ -9,13 +9,24 @@ is empty because backup mutates no domain record, only a fresh file under
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 
 from ..backup import create_backup
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
 
 
+def _backup_moment(clock) -> datetime | None:
+    """The dispatcher's clock override as a `create_backup` moment, or None.
+
+    ``create_backup(now=None)`` reads the wall clock itself, so production
+    behavior is unchanged; a fixture clock is threaded through so the
+    timestamped archive name follows the simulation (issue #308).
+    """
+    return clock() if clock is not None else None
+
+
 def backup(ctx: Context) -> CommandResult:
-    path = create_backup(ctx.root)
+    path = create_backup(ctx.root, now=_backup_moment(ctx.clock))
     print(f"backup: wrote {path.relative_to(ctx.root).as_posix()}")
     return CommandResult()
 

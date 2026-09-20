@@ -42,7 +42,7 @@ def schedule(ctx: Context) -> CommandResult:
         node_state=store.state_of(ctx.args.node_id),
         date=ctx.args.date,
         existing_review_ids=[r.id for r in reviews],
-        now=_now_iso(),
+        now=_now_iso(clock=ctx.clock),
     )
     _report(plan)
     if plan.exit_code != 0:
@@ -69,7 +69,7 @@ def complete(ctx: Context) -> CommandResult:
         review_status=_find_status(reviews, ctx.args.review_id),
         outcome=ctx.args.outcome,
         summary=ctx.args.summary,
-        now=_now_iso(),
+        now=_now_iso(clock=ctx.clock),
     )
     _report(plan)
     if plan.exit_code != 0:
@@ -96,7 +96,7 @@ def cancel(ctx: Context) -> CommandResult:
         ctx.args.review_id,
         review_status=_find_status(reviews, ctx.args.review_id),
         reason=ctx.args.reason,
-        now=_now_iso(),
+        now=_now_iso(clock=ctx.clock),
     )
     _report(plan)
     if plan.exit_code != 0:

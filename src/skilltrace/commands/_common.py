@@ -3,12 +3,26 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Callable
 
 from ..execution.base_plan import BasePlan
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+def now_iso(*, clock: Callable[[], datetime] | None = None) -> str:
+    """Current UTC timestamp as an ISO string.
+
+    ``clock`` is the dispatcher's test/fixture override (``Context.clock``);
+    when ``None`` the wall clock is read. Threading one ``now`` through
+    every engine-written record lets fixture/simulated clocks date the
+    records they write (issue #308, fortnight hazard H1).
+    """
+    if clock is not None:
+        moment = clock()
+    else:
+        moment = datetime.now(timezone.utc)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.isoformat(timespec="seconds")
 
 
 def report_plan(plan: BasePlan) -> None:

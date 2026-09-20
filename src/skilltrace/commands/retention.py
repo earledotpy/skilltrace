@@ -25,10 +25,6 @@ from ..policy.retention_model import (
 from ._common import now_iso
 
 
-def _today() -> date:
-    return utc_today()
-
-
 def _state_for_all(root: Path, today: date):
     """Compute memory state for every passed/mastered node.
 
@@ -58,7 +54,7 @@ def _state_for_all(root: Path, today: date):
 def retention_status(ctx: Context) -> CommandResult:
     root = ctx.root
     node_id = getattr(ctx.args, "node_id", None)
-    today = _today()
+    today = utc_today(clock=ctx.clock)
 
     states, view, error = _state_for_all(root, today)
     if error:
@@ -82,7 +78,7 @@ def retention_status(ctx: Context) -> CommandResult:
         return CommandResult()
 
     print(
-        f"retention status ({len(states)} node(s), computed {now_iso()}, today={today.isoformat()})"
+        f"retention status ({len(states)} node(s), computed {now_iso(clock=ctx.clock)}, today={today.isoformat()})"
     )
     print("-" * 72)
     for s in states:

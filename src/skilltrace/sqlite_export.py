@@ -110,7 +110,7 @@ _RETENTION_COLUMNS = (
 )
 
 
-def _retention_rows(data: ExportData) -> list[tuple]:
+def _retention_rows(data: ExportData, today=None) -> list[tuple]:
     """Derive one row per passed/mastered node for the `retention_memory` table.
 
     Computed on the fly during the mirror's rebuild pass from
@@ -118,13 +118,21 @@ def _retention_rows(data: ExportData) -> list[tuple]:
     policy document. A missing seed or no passed/mastered nodes yields
     no rows (the table exists with the documented shape regardless).
 
+    ``today`` is the caller's clock date (threaded from ``Context.clock``
+    so fixture/simulated clocks date the derived rows); ``None`` reads
+    the wall clock.
+
+    ``today`` is the caller's clock date (threaded from ``Context.clock``
+    so fixture/simulated clocks date the derived rows); ``None`` reads
+    the wall clock.
+
     The mirror is the only place this derivation runs for export
     purposes; the live CLI surfaces (`retention status`,
     `suggest reviews`) run the same pure function against the live
     store, so the two share the formula by construction. This is the
     documented exception to the CLI-only-clock rule (T-Clock D1):
-    ``date.today()`` lives in three call sites, all behind the
-    retention derivation; tests pin the clock by exercising the
+    ``date.today()`` lives in the retention derivation's export call
+    site; tests pin the clock by exercising the
     ``retention_model.compute_memory_state`` function directly.
     """
     from datetime import datetime, timezone
@@ -138,7 +146,8 @@ def _retention_rows(data: ExportData) -> list[tuple]:
     if policy_doc is None:
         return []
     seed = retention_seed_from_doc(policy_doc)
-    today = datetime.now(timezone.utc).date()
+    if today is None:
+        today = datetime.now(timezone.utc).date()
     computed_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     states = derive_memory_states(
         nodes=data.nodes, store=data.state, reviews=data.reviews,
@@ -159,8 +168,14 @@ def _retention_rows(data: ExportData) -> list[tuple]:
     ]
 
 
-def write_sqlite_export(data: ExportData, path: Path | str) -> Path:
-    """Rebuild the SQLite mirror at `path` from `data`. Returns the written path."""
+def write_sqlite_export(
+    data: ExportData, path: Path | str, *, today=None
+) -> Path:
+    """Rebuild the SQLite mirror at `path` from `data`. Returns the written path.
+
+    ``today`` is the caller's clock date (``Context.clock`` under fixture
+    runs); ``None`` reads the wall clock for the derived retention rows.
+    """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.unlink(missing_ok=True)
@@ -288,7 +303,7 @@ def write_sqlite_export(data: ExportData, path: Path | str) -> Path:
         )
         _create_and_fill(
             conn, "retention_memory", _RETENTION_COLUMNS,
-            _retention_rows(data),
+            _retention_rows(data, today=today),
         )
         conn.commit()
     finally:

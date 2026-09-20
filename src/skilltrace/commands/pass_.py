@@ -42,6 +42,7 @@ from ..execution.records import append_review, load_reviews
 from ..graph.nodes import NodeLoadError, load_nodes
 from ..graph.state import ProgressStoreError, load_state, save_state
 from ..policy.cadence import load_cadence, review_dates
+from ._common import now_iso
 
 
 def pass_node(ctx: Context) -> CommandResult:
@@ -87,8 +88,9 @@ def pass_node(ctx: Context) -> CommandResult:
     if outcome.proceed:
         # Assert `passed` through the guarded writer (which refuses any backward
         # move as defense in depth) and persist the store. The dispatcher appends
-        # the one audit event on exit 0.
-        store.write_asserted(node_id, "passed")
+        # the one audit event on exit 0. The stamp honors Context.clock so
+        # fixture/simulated clocks date the transition (issue #308).
+        store.write_asserted(node_id, "passed", now=now_iso(clock=ctx.clock))
         save_state(store, root)
         # The one sanctioned automation (v0.6): schedule every cadence interval,
         # dated from the pass. The created ids ride in this command's single

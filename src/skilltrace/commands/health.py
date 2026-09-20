@@ -90,7 +90,7 @@ def _resources_counts(result: ResourceValidationResult) -> str:
     return f"{result.resource_count} resource(s)"
 
 
-def _liveness_lines(root: Path) -> tuple[list[str], int]:
+def _liveness_lines(root: Path, *, clock=None) -> tuple[list[str], int]:
     """Liveness facts `validate` doesn't cover. Returns (lines, warning_count).
 
     A missing progress store already explains every node as "not yet synced",
@@ -136,7 +136,7 @@ def _liveness_lines(root: Path) -> tuple[list[str], int]:
     current = open_session(sessions)
     if current is not None:
         message = stale_warning(
-            current, now=now_iso(), threshold_hours=stale_session_hours(root)
+            current, now=now_iso(clock=clock), threshold_hours=stale_session_hours(root)
         )
         if message:
             lines.append(render.warning(message))
@@ -147,7 +147,7 @@ def _liveness_lines(root: Path) -> tuple[list[str], int]:
     except ResourceLoadError:
         resources = None
     if resources is not None:
-        today = utc_today()
+        today = utc_today(clock=clock)
         window = stale_after_days(root)
         summary = verification_summary(resources, today=today, stale_after_days=window)
         lines.append(f"resources: {len(resources)} resource(s); {summary}")
@@ -203,8 +203,13 @@ class HealthReport:
         )
 
 
-def health_report(root: Path) -> HealthReport:
-    """Run the five validators plus liveness facts. Pure of printing."""
+def health_report(root: Path, *, clock=None) -> HealthReport:
+    """Run the five validators plus liveness facts. Pure of printing.
+
+    ``clock`` is the dispatcher's test/fixture override (``Context.clock``);
+    ``None`` reads the wall clock. Web/HTML-export callers that have no clock
+    context leave it ``None``.
+    """
     graph_result = load_and_validate(root)
     evidence_result = load_and_validate_evidence(root)
     execution_result = load_and_validate_execution(root)
@@ -236,7 +241,7 @@ def health_report(root: Path) -> HealthReport:
         error_count += len(result.errors)
         warning_count += len(result.warnings)
 
-    liveness_lines, liveness_warnings = _liveness_lines(root)
+    liveness_lines, liveness_warnings = _liveness_lines(root, clock=clock)
     warning_count += liveness_warnings
 
     return HealthReport(
@@ -250,7 +255,7 @@ def health_report(root: Path) -> HealthReport:
 def health(ctx: Context) -> CommandResult:
     root = ctx.root
 
-    report = health_report(Path(root))
+    report = health_report(Path(root), clock=ctx.clock)
 
     for layer in report.layers:
         print(layer.line)

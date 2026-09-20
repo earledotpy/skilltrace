@@ -28,7 +28,6 @@ import hashlib
 import shlex
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -48,12 +47,9 @@ from ..evidence.submission import (
     plan_submit,
 )
 from ..graph.state import ProgressStoreError, load_state
+from ._common import now_iso as _now_iso
 
 _RECORDS_RELPATH = Path("evidence") / "evidence_records.yaml"
-
-
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def _run_gate(command: str):
@@ -186,7 +182,7 @@ def submit(ctx: Context) -> CommandResult:
         supersede_reason=args.reason,
         run_gate=_run_gate,
         hasher=_make_hasher(root),
-        now=_now_iso(),
+        now=_now_iso(clock=ctx.clock),
         root=root,
         exists=lambda p: p.is_file(),
     )

@@ -87,6 +87,13 @@ The five canonical triage roles map to label strings `needs-triage`,
 Single-context layout: one `CONTEXT.md` at the repo root plus `docs/adr`.
 See `docs/agents/domain.md`.
 
+### Fixture clock
+
+Simulated-day/fixture runs inject `Context.clock` through
+`cli.run(..., clock=)` so the engine dates the records it writes — not the
+wall clock. Coverage, and what stays wall-clock, is listed in
+`docs/agents/fixture-clock.md`.
+
 ## Working conventions
 
 - Active direction: `docs/POST_V2_ROADMAP.md` slot table + linked

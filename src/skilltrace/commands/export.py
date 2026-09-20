@@ -16,6 +16,7 @@ import argparse
 
 from ..context import load_context_strict
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..execution.overdue import utc_today
 from ..export_data import ExportData, load_export_data
 from ..html_export import HTML_EXPORT_RELPATH, render_html
 from ..markdown_export import MARKDOWN_EXPORT_RELPATH, render_markdown
@@ -40,7 +41,9 @@ def export_markdown(ctx: Context) -> CommandResult:
 
     path = ctx.root / MARKDOWN_EXPORT_RELPATH
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render_markdown(data, now=now_iso()), encoding="utf-8")
+    path.write_text(
+        render_markdown(data, now=now_iso(clock=ctx.clock)), encoding="utf-8"
+    )
     print(f"export markdown: wrote {MARKDOWN_EXPORT_RELPATH.as_posix()}")
     return CommandResult()
 
@@ -51,7 +54,7 @@ def export_sqlite(ctx: Context) -> CommandResult:
         return CommandResult(exit_code=1)
 
     path = ctx.root / SQLITE_EXPORT_RELPATH
-    write_sqlite_export(data, path)
+    write_sqlite_export(data, path, today=utc_today(clock=ctx.clock))
     print(f"export sqlite: wrote {SQLITE_EXPORT_RELPATH.as_posix()}")
     return CommandResult()
 

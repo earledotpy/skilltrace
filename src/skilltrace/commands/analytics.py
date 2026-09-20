@@ -408,6 +408,7 @@ def analytics_export(ctx: Context) -> CommandResult:
             state=state,
             output=output,
             today=utc_today(clock=ctx.clock),
+            now=ctx.clock() if ctx.clock is not None else None,
         )
     except ExportError as exc:
         print(f"analytics export: FAILED — {exc}")

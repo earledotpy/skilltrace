@@ -562,6 +562,7 @@ def export_analytics(
     state: list[str] | None = None,
     output: Path | None = None,
     today: datetime.date | None = None,
+    now: datetime.datetime | None = None,
 ) -> Path:
     """Derive and render analytics in the requested format.
 
@@ -587,6 +588,10 @@ def export_analytics(
         Window end date (``None`` → wall clock). The CLI and Serve layers
         inject it (§8.1 clock injection); always pass an explicit date
         from tests for determinism.
+    now:
+        Timestamp moment for the export's ``generated_at`` stamp (``None`` →
+        wall clock). Threaded from ``Context.clock`` so a fixture/simulated
+        run stamps the published export with simulated time (issue #308).
 
     Returns
     -------
@@ -640,8 +645,11 @@ def export_analytics(
             *warnings,
         ]
 
-    # Timestamp
-    generated_at = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Timestamp (simulated/fixture clock when injected, else the wall clock)
+    moment = now if now is not None else datetime.datetime.now(datetime.timezone.utc)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=datetime.timezone.utc)
+    generated_at = moment.astimezone(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # Render
     if fmt == "md":

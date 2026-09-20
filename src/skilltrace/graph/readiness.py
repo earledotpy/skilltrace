@@ -96,7 +96,11 @@ def derive_readiness(
 
 
 def sync_readiness(
-    nodes: list[SkillNode], edges: list[GraphEdge], store: ProgressStore
+    nodes: list[SkillNode],
+    edges: list[GraphEdge],
+    store: ProgressStore,
+    *,
+    now: str | None = None,
 ) -> SyncResult:
     """Recompute derived readiness for every non-asserted node, mutating `store`.
 
@@ -105,6 +109,10 @@ def sync_readiness(
     write still goes through `store.write_readiness`, whose guard refuses asserted
     targets as defense in depth. Only genuine flips are written and reported, so a
     node already at its derived state is left untouched (no `changed_at` churn).
+
+    ``now`` is the already-stamped timestamp the caller owns (threaded from
+    ``Context.clock`` so fixture/simulated clocks date the readiness flips);
+    when ``None`` the store stamps the wall clock.
     """
     prereq_sources = _active_hard_prereqs_by_target(edges)
     result = SyncResult(node_count=len(nodes))
@@ -116,7 +124,7 @@ def sync_readiness(
             continue
         desired = derive_readiness(node.id, prereq_sources, store)
         if desired != current:
-            store.write_readiness(node.id, desired)
+            store.write_readiness(node.id, desired, now=now)
             result.changes.append(ReadinessChange(node.id, current, desired))
 
     return result

@@ -122,7 +122,7 @@ def verify_resource(ctx: Context) -> CommandResult:
             print(f"verify-resource: FAILED — {exc}")
             return CommandResult(exit_code=1)
 
-        date = today_iso()
+        date = today_iso(clock=ctx.clock)
         if not result.ok:
             if result.status_code is not None:
                 broken_reason = f"status {result.status_code}: {result.reason}"
@@ -159,7 +159,7 @@ def verify_resource(ctx: Context) -> CommandResult:
         )
         return CommandResult(exit_code=1)
 
-    date = today_iso()
+    date = today_iso(clock=ctx.clock)
     record_verification(
         root, resource_id, date=date, broken_reason=reason if broken else None
     )

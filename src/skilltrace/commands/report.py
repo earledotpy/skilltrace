@@ -174,7 +174,7 @@ def report_blockers(ctx: Context) -> CommandResult:
     blockers = joined.blockers
     actions = joined.remediations
     titles = joined.titles
-    today = utc_today()
+    today = utc_today(clock=getattr(ctx, "clock", None))
 
     open_blockers = [b for b in blockers if b.status == "open"]
     open_blockers.sort(key=lambda b: str(b.created_at))
@@ -268,7 +268,7 @@ def report_reviews(ctx: Context) -> CommandResult:
     store = joined.store
     reviews = joined.reviews
     titles = joined.titles
-    today = utc_today()
+    today = utc_today(clock=getattr(ctx, "clock", None))
 
     scheduled = [r for r in reviews if r.status == "scheduled"]
     completed = [r for r in reviews if r.status == "completed"]

@@ -29,6 +29,7 @@ from ..policy.mastery import (
     plan_master,
 )
 from .eligibility import passed_at_of
+from ._common import now_iso
 
 
 def master_node(ctx: Context) -> CommandResult:
@@ -64,7 +65,9 @@ def master_node(ctx: Context) -> CommandResult:
     _report(outcome)
 
     if outcome.proceed:
-        store.write_asserted(node_id, "mastered")
+        # The stamp honors Context.clock so fixture/simulated clocks date the
+        # transition (issue #308); production (clock=None) reads the wall clock.
+        store.write_asserted(node_id, "mastered", now=now_iso(clock=ctx.clock))
         save_state(store, root)
 
     return CommandResult(records_touched=outcome.records_touched, exit_code=outcome.exit_code)

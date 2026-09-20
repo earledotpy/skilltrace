@@ -41,6 +41,7 @@ def append_event(
     command: str,
     args: dict[str, Any] | None = None,
     records_touched: list[str] | None = None,
+    now: str | None = None,
 ) -> dict:
     """Append one audit event and return it.
 
@@ -48,13 +49,17 @@ def append_event(
     name, the invocation arguments, and the ids of records it touched (possibly
     empty — a mutating command that changed nothing still records one event).
     The file is created if absent so a fresh repo can log its first command.
+
+    ``now`` is the already-stamped timestamp the dispatcher owns (threaded
+    from ``Context.clock`` so fixture/simulated clocks date the event);
+    when ``None`` the wall clock is read.
     """
     path = events_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
 
     events = load_events(root)
     event = {
-        "timestamp": _now_iso(),
+        "timestamp": now if now is not None else _now_iso(),
         "command": command,
         "args": dict(args or {}),
         "records_touched": list(records_touched or []),

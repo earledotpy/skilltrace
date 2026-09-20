@@ -41,8 +41,13 @@ from ..policy.advisory import (
 )
 
 
-def _apply(root, plan: SessionPlan, store) -> CommandResult:
-    """Bind a planner's decision to the filesystem (records, then state)."""
+def _apply(root, plan: SessionPlan, store, *, now: str) -> CommandResult:
+    """Bind a planner's decision to the filesystem (records, then state).
+
+    ``now`` is the caller's already-stamped timestamp (threaded from
+    ``Context.clock`` so fixture/simulated clocks date the ``active`` flip);
+    the session/work payloads already carry that same stamp from the plan.
+    """
     if plan.exit_code != 0:
         return CommandResult(exit_code=plan.exit_code)
     if plan.session is not None:
@@ -56,7 +61,7 @@ def _apply(root, plan: SessionPlan, store) -> CommandResult:
             ended_at=plan.close_session["ended_at"],
         )
     if plan.activate_node is not None:
-        store.write_asserted(plan.activate_node, "active")
+        store.write_asserted(plan.activate_node, "active", now=now)
         save_state(store, root)
     return CommandResult(records_touched=plan.records_touched)
 
@@ -83,23 +88,24 @@ def start(ctx: Context) -> CommandResult:
     store, sessions, work_items = facts
 
     current = open_session(sessions)
+    now = _now_iso(clock=ctx.clock)
     plan = plan_start(
         ctx.args.node_id,
         node_state=store.state_of(ctx.args.node_id),
         open_session_id=current.id if current is not None else None,
         existing_session_ids=[s.id for s in sessions],
         existing_work_ids=[w.id for w in work_items],
-        now=_now_iso(),
+        now=now,
         template=ctx.args.template,
         known_templates=known_templates(ctx.root),
     )
     _report(plan)
     if plan.exit_code == 0:
-        _warn_start_advisories(ctx.root, store, ctx.args.node_id)
-    return _apply(ctx.root, plan, store)
+        _warn_start_advisories(ctx.root, store, ctx.args.node_id, clock=ctx.clock)
+    return _apply(ctx.root, plan, store, now=now)
 
 
-def _warn_start_advisories(root, store, node_id: str) -> None:
+def _warn_start_advisories(root, store, node_id: str, *, clock=None) -> None:
     """Advisory warnings at the moment of taking on work (warn-only, never blocks).
 
     Any failure to read the review or remediation histories silences the
@@ -117,7 +123,7 @@ def _warn_start_advisories(root, store, node_id: str) -> None:
     warnings = start_warnings(
         prospective_active_count=active,
         limits=load_workload_limits(root),
-        overdue_reviews=overdue_review_count(reviews, today=utc_today()),
+        overdue_reviews=overdue_review_count(reviews, today=utc_today(clock=clock)),
         open_remediations=sum(1 for action in actions if action.status == "open"),
         max_open_remediations=load_max_open_remediations(root),
     )
@@ -125,12 +131,12 @@ def _warn_start_advisories(root, store, node_id: str) -> None:
         print(f"[warning] {warning}")
 
 
-def _warn_if_stale(root, current: Session | None) -> None:
+def _warn_if_stale(root, current: Session | None, *, clock=None) -> None:
     """Print the stale-open-session warning (warn-only, never blocks)."""
     if current is None:
         return
     warning = stale_warning(
-        current, now=_now_iso(), threshold_hours=stale_session_hours(root)
+        current, now=_now_iso(clock=clock), threshold_hours=stale_session_hours(root)
     )
     if warning is not None:
         print(f"[warning] {warning}")
@@ -143,19 +149,20 @@ def work(ctx: Context) -> CommandResult:
     store, sessions, work_items = facts
 
     current = open_session(sessions)
-    _warn_if_stale(ctx.root, current)
+    _warn_if_stale(ctx.root, current, clock=ctx.clock)
+    now = _now_iso(clock=ctx.clock)
     plan = plan_work(
         ctx.args.node_id,
         node_state=store.state_of(ctx.args.node_id),
         open_session_id=current.id if current is not None else None,
         existing_work_ids=[w.id for w in work_items],
-        now=_now_iso(),
+        now=now,
         blocked=ctx.args.blocked,
         notes=ctx.args.notes,
         minutes=ctx.args.minutes,
     )
     _report(plan)
-    return _apply(ctx.root, plan, store)
+    return _apply(ctx.root, plan, store, now=now)
 
 
 def close(ctx: Context) -> CommandResult:
@@ -165,14 +172,15 @@ def close(ctx: Context) -> CommandResult:
     _store_unused, sessions, _work_unused = facts
 
     current = open_session(sessions)
+    now = _now_iso(clock=ctx.clock)
     plan = plan_close(
         open_session_id=current.id if current is not None else None,
         started_at=current.started_at if current is not None else None,
         end=ctx.args.end,
-        now=_now_iso(),
+        now=now,
     )
     _report(plan)
-    return _apply(ctx.root, plan, None)
+    return _apply(ctx.root, plan, None, now=now)
 
 
 def register(registry: Registry) -> None:

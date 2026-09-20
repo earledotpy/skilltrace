@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
@@ -45,11 +45,14 @@ class Context:
     untouched; when set it lands in the single audit event's args beside the
     invocation arguments.
 
-    ``clock`` is an optional wall-clock override for tests. When ``None``,
-    handlers that need a current timestamp fall back to ``datetime.now``. Tests
-    that compare dates derived from the wall clock (e.g. scheduled review
-    dates) inject a fixed ``clock`` here so a midnight-UTC transition cannot
-    turn a passing test red.
+    ``clock`` is an optional wall-clock override for tests and fixtures.
+    When ``None``, handlers that need a current timestamp fall back to
+    ``datetime.now``. Tests that compare dates derived from the wall clock
+    (e.g. scheduled review dates) inject a fixed ``clock`` here so a
+    midnight-UTC transition cannot turn a passing test red. Fixture and
+    simulated-day runs inject their simulated clock here so every
+    engine-written record (execution/evidence/state/event timestamps) is
+    dated by the simulation, never the wall clock (issue #308).
     """
 
     root: Path
@@ -138,6 +141,24 @@ def _event_args(args: argparse.Namespace) -> dict[str, Any]:
     return result
 
 
+def _event_now(clock: Callable[[], datetime] | None) -> str:
+    """One stamped timestamp for the dispatcher's single audit event.
+
+    Local to the dispatcher (not the shared ``_common.now_iso`` helper) so
+    this module never imports the command package — ``commands/__init__``
+    imports the registry from here, so that import would be circular. The
+    stamp honors ``Context.clock`` so fixture/simulated clocks date the
+    event (issue #308, fortnight hazard H1); ``None`` reads the wall clock.
+    """
+    if clock is not None:
+        moment = clock()
+    else:
+        moment = datetime.now(timezone.utc)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.isoformat(timespec="seconds")
+
+
 def dispatch(command: Command, ctx: Context) -> int:
     """Run one command, enforcing the automation boundary and audit rule.
 
@@ -163,6 +184,7 @@ def dispatch(command: Command, ctx: Context) -> int:
             command=command.name,
             args=event_args,
             records_touched=result.records_touched,
+            now=_event_now(ctx.clock),
         )
 
     return result.exit_code

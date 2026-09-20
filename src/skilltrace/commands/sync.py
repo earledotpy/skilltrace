@@ -20,6 +20,7 @@ from ..graph.edges import EdgeLoadError, GraphEdge, load_edges
 from ..graph.nodes import NodeLoadError, load_nodes
 from ..graph.readiness import SyncResult, sync_readiness
 from ..graph.state import ProgressStoreError, load_state, save_state
+from ._common import now_iso
 
 _EDGES_RELPATH = "graph/edges.yaml"
 
@@ -52,7 +53,7 @@ def sync(ctx: Context) -> CommandResult:
         print(f"sync: FAILED — {exc}")
         return CommandResult(exit_code=1)
 
-    result = sync_readiness(nodes, edges, store)
+    result = sync_readiness(nodes, edges, store, now=now_iso(clock=ctx.clock))
     if result.changes:
         save_state(store, root)
     _print_report(result)

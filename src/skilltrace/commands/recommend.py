@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 
 from .. import render
@@ -38,6 +39,7 @@ from ..mentor.cards import (
 )
 from ..context import load_context_lenient
 from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..execution.overdue import utc_today
 from ..execution.records import open_session
 from ..graph.edges import EdgeLoadError, GraphEdge
 from ..graph.nodes import NodeLoadError, SkillNode
@@ -356,14 +358,19 @@ def derive_next(
     minutes: int = 60,
     limit: int = 5,
     show_locked: bool = False,
+    today: date | None = None,
 ) -> NextModel:
     """Load-free ranking over one loaded JoinedView. Pure of printing.
 
     Advisory inputs (prerequisite-retention urgency, agent recommendations)
     are derived fresh by `prepare`; a missing retention seed or agent file
     simply stands the relevant factor down.
+
+    ``today`` is the caller's clock date (``Context.clock`` under fixture
+    runs so simulated-day runs rank against the simulation); ``None`` lets
+    ``prepare`` read the wall clock.
     """
-    inputs = prepare(joined, root)
+    inputs = prepare(joined, root, today)
     result = recommend(
         joined.nodes,
         joined.edges,
@@ -425,6 +432,7 @@ def recommend_next(ctx: Context) -> CommandResult:
         minutes=ctx.args.minutes,
         limit=ctx.args.limit,
         show_locked=ctx.args.show_locked,
+        today=utc_today(clock=ctx.clock),
     )
     for line in model.lines:
         print(line)

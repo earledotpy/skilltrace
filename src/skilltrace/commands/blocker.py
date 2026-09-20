@@ -36,7 +36,7 @@ def create(ctx: Context) -> CommandResult:
         description=ctx.args.description,
         existing_blocker_ids=[b.id for b in blockers],
         open_blocker_node_ids=[b.node_id for b in blockers if b.status == "open"],
-        now=_now_iso(),
+        now=_now_iso(clock=ctx.clock),
     )
     _report(plan)
     if plan.exit_code != 0:
@@ -58,7 +58,7 @@ def resolve(ctx: Context) -> CommandResult:
         ctx.args.blocker_id,
         blocker_status=target.status if target is not None else None,
         summary=ctx.args.summary,
-        now=_now_iso(),
+        now=_now_iso(clock=ctx.clock),
     )
     _report(plan)
     if plan.exit_code != 0:
