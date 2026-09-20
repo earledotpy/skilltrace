@@ -66,6 +66,14 @@ from ..mentor.cards import (
 )
 from ..context import JoinedView, load_context_lenient
 from ..dispatch import Context, dispatch
+from .discovery import (
+    ENTRY_NODES,
+    DiscoveryCard,
+    browse_cards,
+    browse_subjects,
+    card_for,
+    discover,
+)
 from .interface.affordances import intent_label
 from .interface.cards import ActiveViewState, Affordance, Card, view_by_name
 from .interface.handoff import handoff_html
@@ -207,6 +215,9 @@ _STYLE = """
   .health-strip .pill.attention{background:var(--warn); border-color:var(--warn-ink)}
   .health-strip .pill.broken{background:var(--err); border-color:var(--err-ink)}
   .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:var(--card-pad); margin:var(--space-intra) 0; gap:var(--space-intra)}
+  /* Discovery result cards (§C-bis): greyed locked cards + small secondary ID */
+  .result.locked{opacity:.55; border-style:dashed}
+  .result .ref{font-size:var(--step-135); margin:.2rem 0 0}
   .kicker{font-family:var(--font-sans); font-size:var(--step-135); font-weight:700; color:var(--muted); margin:.6rem 0 .25rem}
   .kicker:first-child{margin-top:0}
   .title{font-family:var(--font-sans); font-size:var(--step-24); font-weight:700; line-height:1.2; margin:4px 0}
@@ -1436,63 +1447,132 @@ def _candidate_stack(view, model) -> str:
     )
 
 
-def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
-    """GET `/nodes/jump` with no param — the title-first finder list (v2.4 S4).
+def _discovery_card_html(card: DiscoveryCard) -> str:
+    """One discovery card — the §C-bis anatomy.
 
-    Server-rendered, titles are links (href carries the id, label the
-    title), each row carries its single-line node description
-    (``SkillNode.summary``), grouped by track (the G-Health #251 handoff
-    triaged in G-Spec #250 as in-table content — no route change).
-    Nothing is marked current on the finder (header form only).
+    Available/active cards link to the node view (selection navigates only —
+    never implicitly starts, passes, or opens a session). A locked card is
+    greyed and never a link into the node as available: it names and links
+    its blocking prerequisite instead — locked stays the only wall.
+    """
+    cls = "card result" + (" locked" if card.locked else "")
+    title_html = _esc(card.title)
+    if not card.locked:
+        title_html = f'<a href="/nodes/{_esc(card.node_id)}">{title_html}</a>'
+    lines = [f'<div class="{cls}">\n']
+    lines.append(
+        f'<p class="lead">{title_html} '
+        f'<span class="pill {_esc(_slug(card.chip))}">{_esc(card.chip)}</span></p>\n'
+    )
+    lines.append(f'<p class="big">{_esc(card.description)}</p>\n')
+    if card.description_pending:
+        lines.append('<p class="mut">description pending</p>\n')
+    lines.append(f'<p class="mut ref">{_esc(card.node_id)}</p>\n')
+    if card.locked and card.blocked_by_id:
+        lines.append(
+            f'<p class="sub">Blocked by <a href="/nodes/{_esc(card.blocked_by_id)}">'
+            f"{_esc(card.blocked_by_title)}</a> — pass it first.</p>\n"
+        )
+    lines.append("</div>\n")
+    return "".join(lines)
+
+
+def _no_results_html(view: JoinedView, raw: str) -> str:
+    """The no-results pattern — never an empty box (spec §C-bis)."""
+    entries = "".join(
+        f'<li><a href="/nodes/{_esc(node_id)}">'
+        f"{_esc(view.titles.get(node_id) or node_id)}</a></li>"
+        for node_id in ENTRY_NODES
+        if node_id in view.node_map
+    )
+    return (
+        '<div class="card">\n'
+        f'<h2 class="result-count">No skills match “{_esc(raw)}”.</h2>\n'
+        "<p>Try different words, or start from a foundations entry:</p>\n"
+        f"<ul>{entries}</ul>\n"
+        '<p><a href="#browse">Browse by subject</a></p>\n'
+        "</div>\n"
+    )
+
+
+def _browse_html(view: JoinedView) -> str:
+    """The browse-by-subject half: anchor index + grouped-count table +
+    per-subject card lists (entry nodes first, then rest, locked greyed)."""
+    subjects = browse_subjects(view)
+    index_links = "".join(
+        f'<li><a href="#subject-{_esc(subject)}">{_esc(label)}</a></li>'
+        for subject, label, _count in subjects
+    )
+    count_rows = "".join(
+        f"<tr><td>{_esc(label)}</td><td>{count}</td></tr>"
+        for _subject, label, count in subjects
+    )
+    parts = [
+        '<div class="card" id="browse">\n',
+        '<div class="kicker">Browse by subject</div>\n',
+        f"<ul>{index_links}</ul>\n",
+        "<table>\n<thead><tr><th>Subject</th><th>Skills</th></tr></thead>\n"
+        f"<tbody>{count_rows}</tbody>\n</table>\n",
+        "</div>\n",
+    ]
+    for subject, label, _count in subjects:
+        cards_html = "".join(_discovery_card_html(card) for card in browse_cards(view, subject))
+        parts.append(
+            f'<div class="card" id="subject-{_esc(subject)}">\n'
+            f'<div class="kicker">{_esc(label)}</div>\n'
+            f"{cards_html}"
+            "</div>\n"
+        )
+    return "".join(parts)
+
+
+def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
+    """GET `/nodes/jump` — the discovery combination surface (§C-bis, #310).
+
+    The v2.4 S4 title-first list, upgraded to the locked discovery contract:
+    a text input plus server-rendered result cards on submit — subject/track
+    labels + title words + curated synonyms are the primary matchers, node-ID
+    exact/fragment matching secondary only; every match shows (no silent
+    top-1), ranked available first and locked last; locked cards render
+    greyed and name + link their blocking prerequisite; a no-results query
+    yields the entry-links + browse-anchor pattern; and the browse-by-subject
+    index (anchor links per subject + grouped-count table) stands alongside.
+    Zero JavaScript — full function with script absent (tier 0, ADR 0008; no
+    live-filter). Selection navigates only. Nothing is marked current here
+    (header form only).
     """
     view, failure = _fresh_join(root)
     if view is None:
         return "Error", failure[0], failure[1]
 
-    needle = ""
+    raw = ""
     if query:
-        raw = query.get("q") or query.get("node_id") or [""]
-        needle = (raw[0] if raw else "").strip().lower()
-
-    nodes = sorted(view.nodes, key=lambda n: (n.title or "").lower())
-    if needle:
-        nodes = [
-            n
-            for n in nodes
-            if needle in (n.title or "").lower() or needle in n.id.lower()
-        ]
-
-    by_track: dict[str, list] = {}
-    for node in nodes:
-        track = (node.track or "other").strip() or "other"
-        by_track.setdefault(track, []).append(node)
+        source = query.get("q") or query.get("node_id") or [""]
+        raw = (source[0] if source else "").strip()
 
     parts = [
         '<div class="card">\n',
         '<div class="kicker">Find a skill</div>\n',
         '<form class="finder" method="get" action="/nodes/jump">'
-        f'<label>Search by title <input type="text" name="q" value="{_esc(query.get("q", [""])[0] if query and query.get("q") else "")}" placeholder="Type a skill name" aria-label="search skills by title" size="32"></label>'
+        f'<label>Search skills <input type="text" name="q" value="{_esc(raw)}" placeholder="Type a skill name" aria-label="search skills by title" size="32"></label>'
         '<button type="submit">Search</button>'
         "</form>\n",
         "</div>\n",
     ]
-    if not nodes:
-        parts.append(
-            '<div class="card">\n<p class="mut">No skills match that search.</p>\n</div>\n'
+    if raw:
+        cards = discover(view, raw)
+        heading = (
+            f'<h2 class="result-count">{len(cards)} '
+            f"skill{'s' if len(cards) != 1 else ''} "
+            f"{'match' if len(cards) != 1 else 'matches'} "
+            f"“{_esc(raw)}”</h2>\n"
         )
-    for track in sorted(by_track):
-        rows = "".join(
-            f'<li><a href="/nodes/{_esc(node.id)}">{_esc(node.title)}</a>'
-            + (f' — <span class="mut">{_esc((node.summary or "").splitlines()[0][:160])}</span>' if (node.summary or "").strip() else "")
-            + "</li>"
-            for node in sorted(by_track[track], key=lambda n: (n.title or "").lower())
-        )
-        parts.append(
-            '<div class="card">\n'
-            f'<div class="kicker">{_esc(track)}</div>\n'
-            f"<ul>{rows}</ul>\n"
-            "</div>\n"
-        )
+        if cards:
+            parts.append(heading)
+            parts.extend(_discovery_card_html(card) for card in cards)
+        else:
+            parts.append(_no_results_html(view, raw))
+    parts.append(_browse_html(view))
     header_html = _chrome(root)
     return (
         "Find a skill",
