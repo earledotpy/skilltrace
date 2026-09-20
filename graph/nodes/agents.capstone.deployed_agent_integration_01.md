@@ -55,50 +55,39 @@ updated_at: 2026-09-05
 
 # Deploy an agent behind FastAPI on Engine plus a ZeroGPU Space (capstone)
 
-## Learning target
+## What this skill is
 
-Deliver a `deployed-agent/` folder that integrates the slice: a LangGraph
-agent (stateful graph, checkpointer on) whose tools arrive over MCP (at least
-one tool served by your own MCP server from the protocol node), wrapped in
-the primer FastAPI service, checked twice — Engine-local via the 4-command
-acceptance, and hosted via Gradio SDK plus `@spaces.GPU` ZeroGPU deploy (free
-tier: max 2 Spaces, 5 min/day; acceptance checks the Space URL resolves plus
-the ZeroGPU decorator present). Never `docker push` to Spaces (Docker Spaces
-need a paid plan). Close with a best-model-style analysis naming which
-source's technique (LangGraph persistence, MCP tool surface, DSPy-optimized
-prompts, LlamaIndex retrieval) moved the agent's behavior at each step.
+Ship a complete `deployed-agent/` folder that integrates the slice: a LangGraph agent (stateful graph, checkpointer on) whose tools arrive over MCP — at least one tool served by your own MCP server from the protocol node — wrapped in the primer FastAPI service, checked both Engine-local in Docker and hosted on a Gradio ZeroGPU Space, then closed out with a best-model-style behavior analysis.
 
-## Study pointers
+## Why this skill
 
-LangGraph persistence and ReAct pages for the orchestrated core; the MCP
-server-Tools and stdio pages for the tool surface; the FastAPI primer nodes
-for the serving wrapper; the Spaces ZeroGPU pages for the hosted split
-(Gradio-only compatibility, quotas, no `torch.compile`).
+Integration is where the separate skills stop being separate: persistence, tool protocol, serving, and container discipline must all cooperate in one deliverable. A learner who can ship this capstone can stand up a real agent service end to end, and account for which technique moved the behavior at each step.
 
-## Source provenance
+## What passing requires
 
-Primary: LangGraph documentation. Supporting: MCP specification (Tools,
-stdio); FastAPI docs (first steps, containers); Docker Engine docs (local
-acceptance); Spaces ZeroGPU docs (hosted split). Regeneration key:
-`langgraph-1.2.11/deployed-agent-capstone-01`. All references
-`reference_only` — this node *integrates* sources without any anchor
-controlling locking.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
 
-## Capstone integration identification
+## How to work on it
 
-This node is the v1.9 >= 1 / >= 2-sources capstone. Prerequisites cite two
-source lineages (the LangGraph-anchored `agents.frameworks.langgraph_01`
-chain and the primer-anchored `agents.deploy.docker_engine_build_run_01`
-chain), and its artifact cites LangGraph plus MCP (tools via MCP) plus the
-primer (served by FastAPI, checked on Engine, hosted on ZeroGPU) — satisfying
->= 1 node citing >= 2 sources with the agentic deploy-via-primer flavor, in
-the Engine-local plus Gradio-ZeroGPU hosted split per the locked primer
-verdict. See the draft-branch note for the full criterion walk-through.
+Assemble the integration from its prerequisite nodes, then check it twice — locally via the Docker primer path, and hosted via the Gradio SDK plus the ZeroGPU decorator — and write the best-model-style analysis naming which source's technique (LangGraph persistence, MCP tool surface, DSPy-optimized prompts, LlamaIndex retrieval) moved the agent's behavior at each step. Seed estimate: 240–480 minutes.
+
+## Resources
+
+- hf-agents-course (registry)
+- dspy-docs (registry)
+- langgraph-docs (registry)
+- llamaindex-docs (registry)
+- mcp-spec (registry)
+- fastapi-docs (registry)
+- docker-engine-docs (registry)
+- hf-spaces-zerogpu (registry)
 
 ## Notes
 
-Second half of the Phase 3 agentic checkpoint (deployed-agent discipline per
-the slot row). Portfolio track: the folder plus behavior analysis is the
-evidence artifact. DSPy-optimized prompts and LlamaIndex retrieval are
-expected ingredients of the analysis, not extra prerequisites — the hard
-parents stay exactly the two locked ones.
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight.
+
+Second half of the Phase 3 agentic checkpoint (deployed-agent discipline per the slot row). Portfolio track: the folder plus behavior analysis is the evidence artifact. DSPy-optimized prompts and LlamaIndex retrieval are expected ingredients of the analysis, not extra prerequisites — the hard parents stay exactly the two locked ones.
+
+Capstone integration identification: this is the v1.9 >= 1 / >= 2-sources capstone. Prerequisites cite two source lineages (the LangGraph-anchored `agents.frameworks.langgraph_01` chain and the primer-anchored `agents.deploy.docker_engine_build_run_01` chain), and its artifact cites LangGraph plus MCP (tools via MCP) plus the primer — satisfying >= 1 node citing >= 2 sources with the agentic deploy-via-primer flavor.
+
+Hosted-split resource facts (background, not acceptance text): free ZeroGPU tier is max 2 Spaces, 5 min/day, Gradio SDK only; never `docker push` to Spaces (Docker Spaces need a paid plan); no `torch.compile`. Primary source: LangGraph documentation; supporting: MCP specification (Tools, stdio), FastAPI docs, Docker Engine docs, Spaces ZeroGPU docs; regeneration key `langgraph-1.2.11/deployed-agent-capstone-01`. All references `reference_only` — this node *integrates* sources without any anchor controlling locking. Aligned to the canonical node skeleton, 2026-09.

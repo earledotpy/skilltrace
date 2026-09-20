@@ -43,34 +43,28 @@ updated_at: 2026-09-05
 
 # Ship a typed agent with PydanticAI tools and test-model evals
 
-## Learning target
+## What this skill is
 
-Build a PydanticAI agent with typed dependencies, one function tool, and
-structured output validated by a Pydantic model; drive it first with the
-built-in `test` model (no API key), then against one real provider via the
-string-swap models overview; and run one `pydantic-evals` pytest-style eval
-showing a pass. Write a half-page note: what the type boundary caught that a
-dict-passing agent would have let through.
+Build a PydanticAI agent with typed dependencies, one function tool, and structured output validated by a Pydantic model; drive it first with the built-in `test` model (no API key), then against one real provider via the string-swap models overview; and run one `pydantic-evals` pytest-style eval showing a pass.
 
-## Study pointers
+## Why this skill
 
-The agents/dependencies/structured-output pages for the typed core; the tools
-and toolsets pages for the function tool; the testing page for the `test`
-model loop; the evals pages for the pytest-style eval. MCP, instructions,
-hooks, and durable execution are pointers, not built here. Observe the V1 to
-V2 upgrade guide if any example you meet still speaks V1.
+Typed agents turn silent model drift into loud type errors, and evals make behavior checkable without a full acceptance pipeline. A learner who can state the type boundary can say precisely what a dict-passing agent would have let through.
 
-## Source provenance
+## What passing requires
 
-Primary: PydanticAI documentation, https://pydantic.dev/docs/ai/ — agents,
-tools, testing, evals. Regeneration key: `pydanticai-v2/typed-agent-evals-01`.
-The PyPI pin must be re-verified at spec time. All references
-`reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the agents/dependencies/structured-output pages, build the typed agent, exercise the test-model loop, then the real provider, and run the eval. Write a half-page note: what the type boundary caught that a dict-passing agent would have let through. Seed estimate: 90–180 minutes.
+
+## Resources
+
+- pydanticai-docs (registry)
 
 ## Notes
 
-Type-safety node of the slice and the second framework-comparison soft edge
-(with the OpenAI SDK node): harness-first typed agents versus the
-delegation-first SDK. Hard prerequisite is the fundamentals node only.
-Framework is MIT OSS; Logfire observability and provider tokens are separate
-costs, not pinned here.
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight.
+
+Type-safety node of the slice and the second framework-comparison soft edge (with the OpenAI SDK node): harness-first typed agents versus the delegation-first SDK. Hard prerequisite is the fundamentals node only. Framework is MIT OSS; Logfire observability and provider tokens are separate costs, not pinned here. MCP, instructions, hooks, and durable execution are pointers, not built here; observe the V1 to V2 upgrade guide if any example still speaks V1. Primary source: PydanticAI documentation — agents, tools, testing, evals; regeneration key `pydanticai-v2/typed-agent-evals-01`; the PyPI pin must be re-verified at spec time. All references `reference_only`. Aligned to the canonical node skeleton, 2026-09.

@@ -41,34 +41,30 @@ updated_at: 2026-09-05
 
 # Serve a minimal FastAPI app with interactive docs
 
-## Learning target
+## What this skill is
 
-Build the canonical primer layout — `app/main.py` with `FastAPI()`,
-`@app.get("/")` returning `{"message": "Hello World"}` — plus a pinned
-`requirements.txt` (e.g. `fastapi[standard]==0.141.1`; 0.x MINOR may break,
-so a pin is required, not advised). Serve it locally with `fastapi dev`,
-then with `fastapi run` (production path, Uvicorn underneath), and show both
-`/` (Hello World payload) and `/docs` (Swagger UI) responding. The
-single-file `main.py` layout is an accepted one-line variant. One-line
-warnings, never nodes: `--proxy-headers` behind Nginx/Traefik, and the
-deprecated `tiangolo/uvicorn-gunicorn` base image (do not use).
+Build the canonical primer layout — `app/main.py` with `FastAPI()` and a root route returning a Hello World payload — plus a pinned `requirements.txt` (0.x MINOR may break, so a pin is required, not advised), serve it with `fastapi dev` and then `fastapi run`, and read its interactive docs.
 
-## Study pointers
+## Why this skill
 
-FastAPI Tutorial first-steps for the minimal app; the automatic-docs pages
-for `/docs`, `/redoc`, and `/openapi.json`; the versions page for the pinning
-rule. Scope stops at the official first-steps plus Docker floor — no
-dependencies, security, background tasks, or WebSockets here.
+Every agent that leaves a notebook needs an HTTP surface, and FastAPI is the serving wrapper this slice standardizes on. A learner who can serve, document, and pin this minimal app has the floor the Docker primer and the capstone both build on.
 
-## Source provenance
+## What passing requires
 
-Primary: FastAPI documentation, https://fastapi.tiangolo.com/ — first steps,
-interactive docs, version pinning. Regeneration key:
-`fastapi-0.141.1/minimal-app-01`. All references `reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the Tutorial first-steps pages, build the app, serve it locally with `fastapi dev`, then with `fastapi run` (the production path, Uvicorn underneath), and show both the root payload and `/docs` (Swagger UI) responding. The single-file `main.py` layout is an accepted one-line variant. Seed estimate: 60–120 minutes.
+
+## Resources
+
+- fastapi-docs (registry)
 
 ## Notes
 
-First half of the self-contained primer hard chain (this node, then the
-Docker build/run/smoke node). Portfolio track: the `app/` folder plus the
-two serve transcripts is the evidence artifact. Only new soft edges point
-into the primer pair; no hard edge enters from the framework nodes.
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight.
+
+First half of the self-contained primer hard chain (this node, then the Docker build/run/smoke node). Portfolio track: the `app/` folder plus the two serve transcripts is the evidence artifact. Only new soft edges point into the primer pair; no hard edge enters from the framework nodes. Scope stops at the official first-steps plus Docker floor — no dependencies, security, background tasks, or WebSockets here.
+
+One-line warnings, never nodes: `--proxy-headers` behind Nginx/Traefik, and the deprecated `tiangolo/uvicorn-gunicorn` base image (do not use). Primary source: FastAPI documentation — first steps, interactive docs, version pinning; regeneration key `fastapi-0.141.1/minimal-app-01`. All references `reference_only`. Aligned to the canonical node skeleton, 2026-09.

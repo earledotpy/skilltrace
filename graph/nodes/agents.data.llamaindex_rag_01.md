@@ -45,32 +45,30 @@ updated_at: 2026-09-05
 
 # Build a small RAG pipeline with LlamaIndex retrievers
 
-## Learning target
+## What this skill is
 
-Ingest a small document set (a dozen pages is plenty) into a LlamaIndex
-index, query it through a retriever plus query engine pair, and show one
-retrieval-augmented answer with its cited chunks. Then take one agentic turn:
-let a ReAct or function-calling agent over the same index decide when to
-retrieve. Write a half-page note comparing the plain pipeline answer with the
-agentic turn — what the agent decided that the pipeline could not.
+Ingest a small document set (a dozen pages is plenty) into a LlamaIndex index, query it through a retriever plus query engine pair, and show one retrieval-augmented answer with its cited chunks — then take one agentic turn, letting a ReAct or function-calling agent over the same index decide when to retrieve.
 
-## Study pointers
+## Why this skill
 
-LlamaIndex framework docs for documents/nodes/indices and ingestion; the RAG
-pipeline pages for retrievers and query engines; the agents pages for the
-agentic turn; HF Agents Course Unit 2.2 for framework framing and Unit 3 for
-the agentic-RAG use-case shape. LlamaCloud (Parse/Extract/Index) is a
-commercial pointer only — the pipeline here runs on the free OSS framework.
+Retrieval is how an agent's knowledge stops being whatever fits in the context window. A learner who can index, retrieve with citations, and hand the retriever to an agent can build the data half of any RAG system and tell a pipeline answer from an agentic one.
 
-## Source provenance
+## What passing requires
 
-Primary: LlamaIndex framework documentation,
-https://developers.llamaindex.ai/python/framework/ — ingestion, RAG pipeline,
-agents. Supporting: HF Agents Course Units 2.2 and 3. Regeneration key:
-`llamaindex-0.14.16/rag-pipeline-01`. All references `reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the documents/nodes/indices and RAG-pipeline pages, build the small pipeline, then run the agentic turn over the same index. Write a half-page note comparing the plain pipeline answer with the agentic turn — what the agent decided that the pipeline could not. Seed estimate: 90–180 minutes.
+
+## Resources
+
+- hf-agents-course (registry)
+- llamaindex-docs (registry)
+- mcp-spec (registry)
 
 ## Notes
 
-Data-centric node of the slice. Hard prerequisite is the fundamentals node
-only. The MCP tool package (`llama-index-tools-mcp`) is named as a pointer
-from the protocol node; it is not built here.
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight.
+
+Data-centric node of the slice. Hard prerequisite is the fundamentals node only. The MCP tool package (`llama-index-tools-mcp`) is named as a pointer from the protocol node; it is not built here. LlamaCloud (Parse/Extract/Index) is a commercial pointer only — the pipeline here runs on the free OSS framework. Primary source: LlamaIndex framework documentation — ingestion, RAG pipeline, agents; supporting: HF Agents Course Units 2.2 and 3; regeneration key `llamaindex-0.14.16/rag-pipeline-01`. All references `reference_only`. Aligned to the canonical node skeleton, 2026-09.

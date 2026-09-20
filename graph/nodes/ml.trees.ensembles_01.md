@@ -52,30 +52,31 @@ updated_at: 2026-09-05
 
 # Train tree ensembles and control overfitting
 
-## Learning target
+## What this skill is
 
-On one tabular dataset, train a decision tree, a random forest, and a gradient
-boosting model (sklearn), compare validation scores, and explain — with the
-depth/learning-rate/ subsample knobs you actually set — how each ensemble
-controls the bias-variance tradeoff you diagnosed in
-`ml.evaluation.validation_metrics_01`.
+On one tabular dataset, train a decision tree, a random forest, and a gradient boosting model with sklearn, compare validation scores, and explain — with the depth/learning-rate/subsample knobs you actually set — how each ensemble controls the bias-variance tradeoff.
 
-## Study pointers
+## Why this skill
 
-Google MLCC Trees + Ensembles modules for split/bagging/boosting intuition; Ng
-MLS Course 2 for the sklearn-level practice; ISLP Chapter 8 Python labs for the
-statistical reading (pruning, bagging, random forests, boosting); Kaggle Learn
-Intermediate XGBoost exercise for the competition-grade defaults.
+Tree ensembles are the tabular workhorse behind every competition-grade baseline, and their knobs are the clearest hands-on view of the bias-variance tradeoff. A learner who can tune and explain them can carry the technique into any later tabular problem.
 
-## Source provenance
+## What passing requires
 
-Primary: Google ML Crash Course — Trees + Ensembles modules. Regeneration key:
-`mlcc-2024-11-12/trees-ensembles-01`. Supporting: Ng MLS Course 2; ISLP
-Chapter 8; Kaggle Learn Intermediate. All references `reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the Trees + Ensembles modules for split/bagging/boosting intuition, the Ng MLS Course 2 material for sklearn-level practice, the ISLP Chapter 8 labs for the statistical reading (pruning, bagging, random forests, boosting), and the Kaggle Learn Intermediate XGBoost exercise for competition-grade defaults. Train the three models on one dataset and write the knob-level explanation. Seed estimate: 90–240 minutes.
+
+## Resources
+
+- mlcc-crash-course (registry)
+- ng-ml-specialization-python (registry)
+- islp-python-edition (registry)
+- kaggle-learn-ml (registry)
 
 ## Notes
 
-Tabular-data workhorse for the Phase 2 competitions; direct prerequisite of
-both practice nodes. No fast.ai dependency — v1.8 sources are the locked four
-only (fast.ai stays in `docs/roadmap/phase-2-classical-ml.md` as curriculum
-background, not a v1.8 seed source).
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight.
+
+Tabular-data workhorse for the Phase 2 competitions; direct prerequisite of both practice nodes. It applies the bias-variance diagnosis practiced in `ml.evaluation.validation_metrics_01`. No fast.ai dependency — v1.8 sources are the locked four only (fast.ai stays in `docs/roadmap/phase-2-classical-ml.md` as curriculum background, not a v1.8 seed source). Primary source: Google ML Crash Course — Trees + Ensembles modules; supporting: Ng MLS Course 2, ISLP Chapter 8, Kaggle Learn Intermediate; regeneration key `mlcc-2024-11-12/trees-ensembles-01`. All references `reference_only`. Aligned to the canonical node skeleton, 2026-09.

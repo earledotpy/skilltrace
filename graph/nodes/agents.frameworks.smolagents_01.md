@@ -44,34 +44,30 @@ updated_at: 2026-09-05
 
 # Build a first CodeAgent with smolagents and one custom tool
 
-## Learning target
+## What this skill is
 
-Run a smolagents `CodeAgent` end to end on a small task (model via
-`InferenceClientModel`, LiteLLM, local Transformers, or an OpenAI-compatible
-server — your choice), then author one custom tool following the tools
-in-depth guide and rerun the agent using it. Write a half-page comparison of
-`CodeAgent` versus `ToolCallingAgent`: what each one emits as an action, and
-which task shape favors which style.
+Run a smolagents `CodeAgent` end to end on a small task (model via `InferenceClientModel`, LiteLLM, local Transformers, or an OpenAI-compatible server — your choice), author one custom tool following the tools in-depth guide, rerun the agent using it, and compare `CodeAgent` with `ToolCallingAgent`.
 
-## Study pointers
+## Why this skill
 
-smolagents guided tour / quickstart for the first run; the CodeAgent versus
-ToolCallingAgent pages for the style comparison; the tools in-depth guide for
-authoring the custom tool; HF Agents Course Unit 2.1 for the framework-level
-framing. Secure code execution (E2B/Modal/Docker sandboxes) is background
-reading here — noted, not built.
+Code actions are the most composable agent style and the cheapest to prototype with. A learner who can write and use one custom tool can extend any agent in the slice, and can say which task shape favors emitting code versus calling tools.
 
-## Source provenance
+## What passing requires
 
-Primary: smolagents documentation, https://huggingface.co/docs/smolagents —
-quickstart, CodeAgent vs ToolCallingAgent, tools in-depth. Supporting: HF
-Agents Course Unit 2.1. Regeneration key:
-`smolagents-1.26.0/first-codeagent-01`. All references `reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the guided tour / quickstart and run the first agent; author the custom tool and rerun the agent with it. Write the half-page comparison: what each style emits as an action, and which task shape favors which. Seed estimate: 90–180 minutes.
+
+## Resources
+
+- hf-agents-course (registry)
+- smolagents-docs (registry)
+- mcp-spec (registry)
 
 ## Notes
 
-Prototyping-flavored framework node: code actions and composability first,
-production orchestration later (LangGraph). Hard prerequisite is the
-fundamentals node only — the agent/tool vocabulary is the incoherence test.
-MCP interop (`from_mcp`) is named here as a pointer; the protocol itself lives
-in its own node.
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight.
+
+Prototyping-flavored framework node: code actions and composability first, production orchestration later (LangGraph). Hard prerequisite is the fundamentals node only — the agent/tool vocabulary is the incoherence test. MCP interop (`from_mcp`) is named here as a pointer; the protocol itself lives in its own node. Secure code execution (E2B/Modal/Docker sandboxes) is background reading here — noted, not built. Primary source: smolagents documentation — quickstart, CodeAgent vs ToolCallingAgent, tools in-depth; supporting: HF Agents Course Unit 2.1; regeneration key `smolagents-1.26.0/first-codeagent-01`. All references `reference_only`. Aligned to the canonical node skeleton, 2026-09.

@@ -52,43 +52,35 @@ updated_at: 2026-09-05
 
 # Integrate the Phase 2 chain on Kaggle House Prices (capstone)
 
-## Learning target
+## What this skill is
 
-Deliver a `kaggle-house-prices/` folder that integrates the whole Phase 2
-chain on the House Prices competition: CSV load and clean, leakage-audited
-split, regularized regression baseline, tree/gradient-boosting comparison with
-cross-validated metric choice (RMSE, log scale), 3+ submissions with
-commit-message discipline, and a best-model analysis naming which source's
-technique (MLCC, Ng MLS, ISLP, Kaggle) moved the score at each step.
+Deliver a `kaggle-house-prices/` folder that integrates the whole Phase 2 chain on the Kaggle House Prices competition: CSV load and clean, leakage-audited split, regularized regression baseline, tree/gradient-boosting comparison with cross-validated metric choice (RMSE, log scale), repeated submissions with commit-message discipline, and a best-model analysis.
 
-## Study pointers
+## Why this skill
 
-Kaggle Learn Intermediate + House Prices pages for the competition loop; Google
-MLCC Regression/Evaluation/Trees modules for loss, metrics, and boosting; Ng
-MLS Courses 1–2 for regularization and bias/variance diagnosis; ISLP Chapters
-3/5/8 Python labs for the regression/resampling/trees reading.
+The capstone is where framing, regression, validation, and ensembles must cooperate on one real leaderboard problem. A learner who ships it can run a full tabular competition loop and account for every score movement with a named technique.
 
-## Source provenance
+## What passing requires
 
-Primary: Kaggle Learn + House Prices competition. Regeneration key:
-`kaggle-2026-08/house-prices-capstone-01`. Supporting sections: Google MLCC
-(Regression, Evaluation/Validation, Trees/Ensembles); Ng MLS Courses 1–2; ISLP
-Chapters 3, 5, 8. All references `reference_only` — this node *integrates*
-four sources without any anchor controlling locking.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
 
-## Capstone integration identification
+## How to work on it
 
-This node is the v1.8 ≥ 1 / ≥ 2-sources capstone. Prerequisites cite two
-source lineages (the Kaggle-anchored `ml.practice.titanic_baseline_01` chain
-and the MLCC/Ng/ISLP-anchored `ml.trees.ensembles_01` chain), and its
-supporting LearningResources cite three of the four v1.8 sources
-(`kaggle-learn-ml`, `islp-python-edition`, `mlcc-crash-course` — plus
-`ng-ml-specialization-python` via the ensemble prerequisite's resources). See
-the draft-branch note for the full criterion walk-through.
+Work the competition loop from the Kaggle Learn Intermediate pages and assemble the chain step by step. Close with a best-model analysis naming which source's technique (MLCC, Ng MLS, ISLP, Kaggle) moved the score at each step. Seed estimate: 240–480 minutes.
+
+## Resources
+
+- mlcc-crash-course (registry)
+- ng-ml-specialization-python (registry)
+- islp-python-edition (registry)
+- kaggle-learn-ml (registry)
 
 ## Notes
 
-Second half of the Phase 2 Kaggle checkpoint (House Prices RMSE discipline per
-the roadmap doc). Portfolio track: the folder plus best-model analysis is the
-evidence artifact. No FastAPI/Docker deployment preview — re-slotted to v1.9
-per `docs/POST_V1_ROADMAP.md`.
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight.
+
+Second half of the Phase 2 Kaggle checkpoint (House Prices RMSE discipline per the roadmap doc). Portfolio track: the folder plus best-model analysis is the evidence artifact. No FastAPI/Docker deployment preview — re-slotted to v1.9 per `docs/POST_V1_ROADMAP.md`.
+
+Capstone integration identification: this is the v1.8 >= 1 / >= 2-sources capstone. Prerequisites cite two source lineages (the Kaggle-anchored `ml.practice.titanic_baseline_01` chain and the MLCC/Ng/ISLP-anchored `ml.trees.ensembles_01` chain), and its supporting LearningResources cite three of the four v1.8 sources (`kaggle-learn-ml`, `islp-python-edition`, `mlcc-crash-course` — plus `ng-ml-specialization-python` via the ensemble prerequisite's resources).
+
+Primary source: Kaggle Learn + House Prices competition; supporting sections: Google MLCC (Regression, Evaluation/Validation, Trees/Ensembles), Ng MLS Courses 1–2, ISLP Chapters 3, 5, 8; regeneration key `kaggle-2026-08/house-prices-capstone-01`. All references `reference_only` — this node *integrates* four sources without any anchor controlling locking. Aligned to the canonical node skeleton, 2026-09.

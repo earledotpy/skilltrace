@@ -43,35 +43,29 @@ updated_at: 2026-09-05
 
 # Run an agent team with Microsoft Agent Framework workflows
 
-## Learning target
+## What this skill is
 
-Build one agent on the framework (Ollama-local is the free-first model
-choice; Azure OpenAI/OpenAI/Anthropic noted with their metered cost), give it
-one function tool and one MCP server as tools, and run a two-agent sequential
-workflow where the second agent consumes the first agent's output. Write a
-half-page note on the succession standing: what the migration guides say
-about moving from Semantic Kernel / AutoGen, and why AutoGen (maintenance
-mode, community-managed, no new features) is not the v1.9 target.
+Build one agent on Microsoft Agent Framework (Ollama-local is the free-first model choice; Azure OpenAI/OpenAI/Anthropic noted with their metered cost), give it one function tool and one MCP server as tools, and run a two-agent sequential workflow where the second agent consumes the first agent's output.
 
-## Study pointers
+## Why this skill
 
-The agents-overview pages for chat-client setup; the tools pages for function
-tools plus MCP servers as tools; the workflows pages for the sequential
-pattern (concurrent, handoff, and group collaboration as background);
-the migration guides for the AutoGen succession note. Session state,
-middleware/filters, and observability are pointers, not built here.
+Workflow-style multi-agent orchestration is the enterprise pattern the framework family converges on. A learner who can compose a sequential workflow and trace where each tool fires can read any handoff or collaboration pattern the framework adds later.
 
-## Source provenance
+## What passing requires
 
-Primary: Microsoft Agent Framework documentation,
-https://learn.microsoft.com/en-us/agent-framework/overview — agents, tools,
-workflows, migration guides. Regeneration key:
-`ms-agent-framework-rc1/workflows-01`. All references `reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the agents-overview, tools, and workflows pages; build the agent and the two-step workflow (concurrent, handoff, and group collaboration as background). Then write a half-page note on the succession standing: what the migration guides say about moving from Semantic Kernel / AutoGen, and why AutoGen (maintenance mode, community-managed, no new features) is not the v1.9 target. Seed estimate: 90–180 minutes.
+
+## Resources
+
+- mcp-spec (registry)
+- ms-agent-framework (registry)
 
 ## Notes
 
-Enterprise-workflow node of the slice. Hard prerequisite is the fundamentals
-node only; the MCP node is a soft ordering (tools-via-MCP lands faster with
-the protocol first, but the workflow runs without it). Framework is MIT
-OSS; model and hosting costs sit with third parties per the docs'
-Third-Party-Systems notice.
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight.
+
+Enterprise-workflow node of the slice. Hard prerequisite is the fundamentals node only; the MCP node is a soft ordering (tools-via-MCP lands faster with the protocol first, but the workflow runs without it). Framework is MIT OSS; model and hosting costs sit with third parties per the docs' Third-Party-Systems notice. Session state, middleware/filters, and observability are pointers, not built here. Primary source: Microsoft Agent Framework documentation — agents, tools, workflows, migration guides; regeneration key `ms-agent-framework-rc1/workflows-01`. All references `reference_only`. Aligned to the canonical node skeleton, 2026-09.

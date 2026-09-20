@@ -45,35 +45,29 @@ updated_at: 2026-09-05
 
 # Orchestrate a stateful graph with LangGraph and persistence
 
-## Learning target
+## What this skill is
 
-Build a small LangGraph graph (two or more nodes plus an edge) over explicit
-state with a reducer, rerun it from a sqlite checkpointer so a second
-invocation resumes rather than restarts, and run the prebuilt ReAct agent on
-one task with one tool. Write a half-page note: what the checkpointer
-remembers between runs, and where you would insert a human-in-the-loop step
-(streaming and Studio are pointers, not built here).
+Build a small LangGraph graph — two or more nodes plus an edge — over explicit state with a reducer, rerun it from a sqlite checkpointer so a second invocation resumes rather than restarts, and run the prebuilt ReAct agent on one task with one tool.
 
-## Study pointers
+## Why this skill
 
-LangGraph overview pages for graphs/state/reducers; the persistence pages for
-the checkpointer; the prebuilt ReAct agent page for the agent run; HF Agents
-Course Unit 2.3 for the framework framing. Platform deployment (APIs,
-threads, cron) and LangSmith evals are background pointers — the deployment
-story for this slice lives in the primer and capstone nodes.
+Stateful orchestration is the production backbone of the agentic slice: every multi-step agent eventually needs state, reducers, and persistence. A learner who can checkpoint and resume a graph can reason about what survives between runs — the question deployment and debugging both turn on.
 
-## Source provenance
+## What passing requires
 
-Primary: LangGraph documentation,
-https://docs.langchain.com/oss/python/langgraph/overview — graphs/state,
-persistence/checkpointing, prebuilt ReAct agent. Supporting: HF Agents Course
-Unit 2.3. Regeneration key: `langgraph-1.2.11/stateful-graph-01`. All
-references `reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the overview pages for graphs, state, and reducers, then build the small graph and rerun it from a checkpointer; finish with the prebuilt ReAct agent run. Write a half-page note: what the checkpointer remembers between runs, and where you would insert a human-in-the-loop step (streaming and Studio are pointers, not built here). Seed estimate: 120–240 minutes.
+
+## Resources
+
+- hf-agents-course (registry)
+- langgraph-docs (registry)
 
 ## Notes
 
-Production-orchestration node of the slice and one of the two hard-prerequisite
-lineages into the capstone (the other is the Docker-primer node). Hard
-prerequisite is the fundamentals node only. Library scope is the MIT-licensed
-OSS graph library; `langgraph-api` server / Platform hosting terms are
-commercial and are never part of acceptance here.
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight.
+
+Production-orchestration node of the slice and one of the two hard-prerequisite lineages into the capstone (the other is the Docker-primer node). Hard prerequisite is the fundamentals node only. Library scope is the MIT-licensed OSS graph library; `langgraph-api` server / Platform hosting terms are commercial and are never part of acceptance here. Platform deployment (APIs, threads, cron) and LangSmith evals stay background pointers. Primary source: LangGraph documentation — graphs/state, persistence/checkpointing, prebuilt ReAct agent; supporting: HF Agents Course Unit 2.3; regeneration key `langgraph-1.2.11/stateful-graph-01`. All references `reference_only`. Aligned to the canonical node skeleton, 2026-09.

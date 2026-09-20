@@ -52,28 +52,31 @@ updated_at: 2026-09-05
 
 # Validate models and diagnose bias-variance
 
-## Learning target
+## What this skill is
 
-On a provided overfit/underfit learning-curve pair, diagnose bias vs variance,
-prescribe the matching fix (more data, simpler model, L1/L2, early stopping,
-cross-validation), and state when to use accuracy vs F1 vs ROC-AUC vs RMSE with
-one real example each — the Phase 2 conceptual checkpoint wording.
+On a provided overfit/underfit learning-curve pair, diagnose bias versus variance, prescribe the matching fix (more data, simpler model, L1/L2, early stopping, cross-validation), and state when to use accuracy versus F1 versus ROC-AUC versus RMSE with one real example each.
 
-## Study pointers
+## Why this skill
 
-Google MLCC Evaluation + Validation modules for test-set discipline and
-metrics; Ng MLS Course 2 Week 3 for bias/variance diagnosis and regularization;
-ISLP Chapter 5 Python labs for cross-validation and bootstrap; Kaggle Learn
-Intermediate for pipeline-level validation practice.
+Evaluation discipline decides whether every later model comparison means anything; a mis-diagnosed curve or a leaked metric wastes the whole chain downstream. A learner who can diagnose and prescribe can trust — and defend — their numbers.
 
-## Source provenance
+## What passing requires
 
-Primary: Google ML Crash Course — Evaluation + Validation modules.
-Regeneration key: `mlcc-2024-11-12/validation-metrics-01`. Supporting: Ng MLS
-Course 2 Week 3; ISLP Chapter 5; Kaggle Learn Intermediate. All references
-`reference_only`.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the Evaluation + Validation modules for test-set discipline and metrics, and the bias/variance material for the diagnosis. Practice the curve diagnosis, then use the ISLP cross-validation and bootstrap labs and the Kaggle Learn Intermediate lessons for pipeline-level validation practice. Seed estimate: 90–180 minutes.
+
+## Resources
+
+- mlcc-crash-course (registry)
+- ng-ml-specialization-python (registry)
+- islp-python-edition (registry)
+- kaggle-learn-ml (registry)
 
 ## Notes
 
-Direct home of the Phase 2 conceptual checkpoint items (bias-variance curve,
-overfitting signs, test-set sacredness, leakage examples, metric choice).
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight.
+
+Direct home of the Phase 2 conceptual checkpoint items (bias-variance curve, overfitting signs, test-set sacredness, leakage examples, metric choice). Primary source: Google ML Crash Course — Evaluation + Validation modules; supporting: Ng MLS Course 2 Week 3, ISLP Chapter 5, Kaggle Learn Intermediate; regeneration key `mlcc-2024-11-12/validation-metrics-01`. All references `reference_only`. Aligned to the canonical node skeleton, 2026-09.

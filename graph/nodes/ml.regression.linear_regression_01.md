@@ -51,29 +51,30 @@ updated_at: 2026-09-05
 
 # Train and interpret linear regression
 
-## Learning target
+## What this skill is
 
-Implement linear regression in NumPy with gradient descent (compare to a
-sklearn `LinearRegression` baseline on the same split), plot or describe the
-loss trajectory, and explain in one paragraph what learning-rate-too-high vs
-too-low looks like and how L1/L2 regularization changes the weights.
+Train linear regression in NumPy with gradient descent, compare it to a sklearn `LinearRegression` baseline on the same split, and read the loss trajectory. The learner can also say in one paragraph what learning-rate-too-high versus too-low looks like and how L1/L2 regularization changes the weights.
 
-## Study pointers
+## Why this skill
 
-Google MLCC Linear Regression module for loss and gradient descent intuition;
-Ng MLS Course 1 for cost and vectorized gradient descent in Python; ISLP
-Chapter 3 Python labs for the statistical reading (coefficients, residuals);
-Kaggle Learn Intro for the train/validate loop in notebooks.
+Linear regression is the readable entry point to the whole classical-ML band: loss surfaces, gradients, and regularization all show up here in their simplest form. A learner who can train it from scratch and against a baseline can trust what every later model comparison means.
 
-## Source provenance
+## What passing requires
 
-Primary: Google ML Crash Course (2024 refresh) — Linear Regression module.
-Regeneration key: `mlcc-2024-11-12/linear-regression-01`. Supporting sections:
-Ng MLS Course 1; ISLP Chapter 3 (Python labs); Kaggle Learn Intro. All
-references are `reference_only` anchors.
+No artifact spec or validation gate exists for this node yet — nothing can be submitted or passed today. A spec and gate will be authored when this tranche enters active study (see Notes). The body states no thresholds, counts, file names, or acceptance text.
+
+## How to work on it
+
+Study the loss and gradient-descent intuition, then practice: implement gradient descent in NumPy, compare to the sklearn baseline on the same split, and plot or describe the loss trajectory. The ISLP labs give the statistical reading (coefficients, residuals) and the Kaggle Learn lesson gives the train/validate loop in notebooks. Seed estimate: 90–180 minutes.
+
+## Resources
+
+- mlcc-crash-course (registry)
+- ng-ml-specialization-python (registry)
+- islp-python-edition (registry)
 
 ## Notes
 
-NumPy from-scratch implementation is the Phase 2 checkpoint skill
-(`ml-from-scratch` in `docs/roadmap/phase-2-classical-ml.md`). Builds on the
-gradient intuition from `math.calculus.gradient_intuition_01` (soft edge only).
+Spec-pending: no artifact spec or validation gate exists yet; specs and gates are authored when this tranche enters active study. Deliberate sequencing per G-CurriculumDirection, not an oversight.
+
+NumPy from-scratch implementation is the Phase 2 checkpoint skill (`ml-from-scratch` in `docs/roadmap/phase-2-classical-ml.md`). Builds on the gradient intuition from `math.calculus.gradient_intuition_01` (soft edge only). Primary source: Google ML Crash Course (2024 refresh), Linear Regression module; supporting sections: Ng MLS Course 1, ISLP Chapter 3 (Python labs), Kaggle Learn Intro; regeneration key `mlcc-2024-11-12/linear-regression-01`. All references are `reference_only` anchors. Aligned to the canonical node skeleton, 2026-09.
