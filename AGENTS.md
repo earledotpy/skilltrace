@@ -13,7 +13,8 @@ enter only as seed data and policy values, never as engine code.
   plus the slot's `docs/spec-<slot>.md`.
 - `docs/skilltrace-application-roadmap.md` — frozen v1 history only.
 - `docs/adr/` — structural rationale (0001 progress store; 0002 superseded by
-  0007 interface sublayer; 0006 stdlib serve; 0008 JS posture).
+  0007 interface sublayer; 0006 stdlib serve; 0008 JS posture; 0009 web views
+  package + facade).
 
 ## Safety rules (hard boundaries — never violate, never work around)
 
