@@ -45,6 +45,15 @@ class Context:
     untouched; when set it lands in the single audit event's args beside the
     invocation arguments.
 
+    ``joined`` is an optional preloaded ``JoinedView``. Its sole setter is the
+    ``export html`` snapshot pipeline (``html_export.render_html``), which loads
+    one strict view and threads it through the read-report handlers it
+    nest-captures (``report progress`` / ``blockers`` / ``reviews`` /
+    ``evidence`` and ``resource report``) so every HTML section renders from
+    the same snapshot. Every other handler treats it as ``None`` and loads
+    ``load_context_lenient(root)`` itself; a mutating command is never
+    nest-dispatched with one (issue #313).
+
     ``clock`` is an optional wall-clock override for tests and fixtures.
     When ``None``, handlers that need a current timestamp fall back to
     ``datetime.now``. Tests that compare dates derived from the wall clock

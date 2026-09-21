@@ -31,11 +31,7 @@ def replace_resource(ctx: Context) -> CommandResult:
         return CommandResult(exit_code=1)
 
     today = utc_today(clock=ctx.clock)
-    window = (
-        ctx.joined.policy.resource_stale_after_days
-        if ctx.joined is not None
-        else stale_after_days(root)
-    )
+    window = stale_after_days(root)
 
     try:
         nodes = load_nodes(root)
