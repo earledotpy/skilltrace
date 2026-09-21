@@ -2,7 +2,7 @@
 
 The seven "is this review overdue?" call sites (`commands/today.py`,
 `commands/report.py`, `commands/listings.py`, `commands/suggest.py`,
-`analytics/derive.py`, `policy/advisory.py`, `web/views.py`) all answered
+`analytics/derive.py`, `policy/advisory.py`, `web/views/`) all answered
 the same question with slightly different shapes (string compare vs
 `date` compare) and slightly different sources of "today". This module
 is the canonical concept: **a scheduled review is overdue when its

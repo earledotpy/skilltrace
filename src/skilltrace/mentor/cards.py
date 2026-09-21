@@ -39,7 +39,7 @@ handler code because card boundaries are already explicit.
 ``lines_to_cards`` is the deprecated-compat parser for out-of-scope surfaces
 (health liveness, report exports) that still produce legacy lines. It owns
 the only remaining copy of the line-grammar heuristics, moved out of the web
-layer so ``views.py`` carries no regex. New code must construct cards
+layer so ``views/`` carries no regex. New code must construct cards
 directly instead of parsing lines.
 """
 

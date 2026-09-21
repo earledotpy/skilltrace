@@ -381,7 +381,7 @@ def _build_derived(view: JoinedView) -> None:
         specs_map.setdefault(spec.node_id, []).append(spec)
     view.specs_by_node = specs_map
     # Per-node gate lookup — collapses the eight `next(...)` linear
-    # scans in `web/views.py` and the CLI callers.
+    # scans in `web/views/` and the CLI callers.
     view.gates_by_node = {g.node_id: g for g in view.gates}
     # Per-node event index for the drill-down card. The rule
     # "events are never read to compute state" stays intact — this

@@ -1,7 +1,8 @@
 """Request routing for the local serve shell (Tier-1 slices T2/T3/T4+T5).
 
 The router is deliberately thin glue (ADR 0006): method + path dispatch, with
-the page bodies living in ``views.py``. Every read reloads truth fresh —
+the page bodies living in the ``views/`` package (ADR 0009). Every read
+reloads truth fresh —
 ``load_context_lenient(root)`` per request, no cache, no file-watch — so CLI
 and editor edits appear on refresh. Routes per the G3#67 table plus the T4
 write routes (G2#66 modals, G5#69 daily writes): reads are GET-only; writes
