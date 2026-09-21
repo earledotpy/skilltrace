@@ -49,24 +49,21 @@ from ..graph.state import ProgressStoreError
 from ..policy.advisory import analytics_warnings
 
 
-def _resolve_params(ctx: Context) -> AnalyticsParams:
+def _resolve_params(joined, args: argparse.Namespace) -> AnalyticsParams:
     """Resolve the single window/group/filter bundle from args + policy.
 
     The tuple clump is now one ``AnalyticsParams`` value that threads every
     ``derive_*`` call — a single source of truth for the rolling window
-    (T6 window/group/filter dedup).
+    (T6 window/group/filter dedup). ``joined`` is the already-loaded
+    ``JoinedView`` (analytics never consumes ``Context.joined`` — only the
+    ``export html`` snapshot sets that, and it never nests analytics; issue
+    #313). ``joined.policy.analytics_policy`` falls back to the documented
+    defaults when the policy file is missing or malformed.
     """
-    args = ctx.args
-    joined = ctx.joined
-    if joined is not None:
-        policy = joined.policy.analytics_policy
-        window_default = policy.default_window_days
-        group_by_default = policy.default_group_by
-        min_sessions = policy.min_sessions_for_full_data
-    else:
-        window_default = 30
-        group_by_default = "prefix"
-        min_sessions = 3
+    policy = joined.policy.analytics_policy
+    window_default = policy.default_window_days
+    group_by_default = policy.default_group_by
+    min_sessions = policy.min_sessions_for_full_data
 
     days = getattr(args, "days", None) or window_default
     group_by = getattr(args, "group_by", None) or group_by_default
@@ -211,14 +208,12 @@ def _load_view(ctx: Context) -> tuple[AnalyticsView | None, CommandResult | None
     success or (None, CommandResult) on failure."""
     root = ctx.root
     try:
-        joined = ctx.joined or load_context_lenient(root)
+        joined = load_context_lenient(root)
     except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
         print(f"analytics: FAILED -- {exc}")
         return None, CommandResult(exit_code=1)
 
-    params = _resolve_params(
-        Context(root=root, args=ctx.args, joined=joined, clock=ctx.clock)
-    )
+    params = _resolve_params(joined, ctx.args)
     today = utc_today(clock=ctx.clock)
 
     view = derive_analytics(
