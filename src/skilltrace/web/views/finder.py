@@ -17,6 +17,7 @@ from ._shared import (
     _esc,
     _flash_html,
     _slug,
+    plural,
 )
 from .shell import (
     _chrome,
@@ -140,8 +141,8 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
         cards = discover(view, raw)
         heading = (
             f'<h2 class="result-count">{len(cards)} '
-            f"skill{'s' if len(cards) != 1 else ''} "
-            f"{'match' if len(cards) != 1 else 'matches'} "
+            f"skill{plural(len(cards))} "
+            f"match{plural(len(cards), 'es', '')} "
             f"“{_esc(raw)}”</h2>\n"
         )
         if cards:

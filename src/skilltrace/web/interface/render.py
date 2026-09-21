@@ -6,15 +6,20 @@ the intent only (:func:`interface.affordances.intent_label`) — a binding's
 ``command`` string is the write path and is never rendered. ``state``
 carries the per-request :class:`interface.cards.ActiveViewState` whose
 flash renders as the page's banner block.
+
+Escaping is not this module's to define: every interpolated value goes
+through the one door in :mod:`interface.text` (imported as ``_esc``), so the
+renderer and every other web-side HTML producer share a single escaper
+(#315).
 """
 
 from __future__ import annotations
 
-import html
 import re
 
 from .cards import ActiveViewState, Card
 from .handoff import handoff_html
+from .text import esc as _esc
 
 # One banner kind map: the CLI's banner kinds (warning / error / advisory /
 # locked appendix) collapse onto the sublayer's semantic classes — the alias
@@ -26,11 +31,6 @@ BANNER_CLASSES: dict[str, str] = {
     "locked": "warn",
     "ok": "success",
 }
-
-
-def _esc(value: object) -> str:
-    """Escape every interpolated value — the one door into page HTML."""
-    return html.escape(str(value), quote=True)
 
 
 def _slug(text: str) -> str:

@@ -31,6 +31,7 @@ from ._shared import (
     _esc,
     _flash_html,
     _normalize_pill_label,
+    plural,
 )
 from .shell import (
     _chrome,
@@ -80,7 +81,7 @@ def _hero_why(next_model, focus_id: str | None) -> str:
     if rec.leverage:
         why += (
             f", and it opens {rec.leverage} skill"
-            f"{'s' if rec.leverage != 1 else ''} beyond it"
+            f"{plural(rec.leverage)} beyond it"
         )
     return why + "."
 
@@ -182,7 +183,7 @@ def _queue_card(view: JoinedView, model, next_model) -> str:
                 continue
             node = view.node_map[rec.node_id]
             leverage = (
-                f"opens {rec.leverage} skill{'s' if rec.leverage != 1 else ''}"
+                f"opens {rec.leverage} skill{plural(rec.leverage)}"
                 if rec.leverage
                 else ""
             )
@@ -226,13 +227,9 @@ def _pressure_card(view: JoinedView, model) -> str:
         )
     bits: list[str] = []
     if overdue:
-        bits.append(
-            f"{len(overdue)} review{'s' if len(overdue) != 1 else ''} past due"
-        )
+        bits.append(f"{len(overdue)} review{plural(len(overdue))} past due")
     if blockers:
-        bits.append(
-            f"{len(blockers)} open blocker{'s' if len(blockers) != 1 else ''}"
-        )
+        bits.append(f"{len(blockers)} open blocker{plural(len(blockers))}")
     linked: list[str] = []
     seen: set[str] = set()
     for record in (*overdue, *blockers):
@@ -374,7 +371,7 @@ def _week_card(view: JoinedView, model) -> str:
     if total:
         parts.append(
             f"<p class=\"mut\">You've studied on {total} day"
-            f"{'s' if total != 1 else ''} so far.</p>\n"
+            f"{plural(total)} so far.</p>\n"
         )
     else:
         parts.append("<p class=\"mut\">Nothing logged yet.</p>\n")
@@ -388,8 +385,8 @@ def _week_card(view: JoinedView, model) -> str:
     if week_reviews:
         parts.append(
             f"<p class=\"mut\">{len(week_reviews)} review"
-            f"{'s' if len(week_reviews) != 1 else ''} fall"
-            f"{'s' if len(week_reviews) == 1 else ''} due this week.</p>\n"
+            f"{plural(len(week_reviews))} fall"
+            f"{plural(len(week_reviews), 's', '')} due this week.</p>\n"
         )
     parts.append('<p class="mut"><a href="/analytics">See the log &rarr;</a></p>\n')
     parts.append("</div>\n")
@@ -446,7 +443,7 @@ def _history_card(view: JoinedView) -> str:
         extra = len(completed) - 3
         more = (
             f"<p class=\"mut\">And {extra} earlier session"
-            f"{'s' if extra != 1 else ''}.</p>\n"
+            f"{plural(extra)}.</p>\n"
         )
     return (
         '<div class="bento-card history">\n'

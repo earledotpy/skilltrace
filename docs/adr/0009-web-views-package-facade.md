@@ -145,3 +145,16 @@ gate), #312 (snapshot harness, the unblocking proof), #314 (this work), #315,
 #316, #317, #318, #319, #320 (successors), `docs/spec-tier1-serve.md`,
 `docs/spec-v2.4-interface-sublayer.md`.
 
+## Addendum — #315 follow-through
+
+The single escape door
+([#315 — Single escape door and shared web micro-utilities](https://github.com/earledotpy/skilltrace/issues/315))
+landed as `web/interface/text.py`: one `esc()` that every web-side HTML
+producer imports, the interface renderer and the handoff copy included (a
+fourth copy the "Explicitly NOT in scope" count of three above had missed),
+plus the one `plural()` agreement helper that replaced sixteen inline
+agreement ternaries (the `'s' if n != 1 else ''` family, the *match/matches*
+pair included). The renderer still escapes through that door; the door simply
+lives in a leaf module, because the renderer imports the handoff copy and a
+copy that imports the renderer back would be a cycle.
+
