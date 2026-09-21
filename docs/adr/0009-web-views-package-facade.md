@@ -67,8 +67,9 @@ the twenty-one names `web/handler.py` uses (twenty imported plus `not_found_body
 read as a module attribute), the `cards_html`, `page` and `render_cards` that
 `export/html_export.py` imports, and the private names the test suite calls
 directly (`_STYLE`, `_finish_write`, `_status_page`, `_flash_html`) plus the
-incidental `utc_today` re-export. A structural test pins that surface, so a
-later module move cannot silently drop a re-export.
+incidental `utc_today` re-export. A structural test
+(`tests/web/test_views_facade.py`) pins that surface, so a later module move
+cannot silently drop a re-export.
 
 Handler, export path and test imports stay byte-identical. The split is
 mechanical and changes no behavior, no copy and no CSS.
@@ -81,6 +82,11 @@ load-bearing (constraint 3). Count-based gates keep counting over the
 concatenation, so their exact semantics are preserved rather than relaxed.
 Pointing the gates at the tree instead of one file also means the successor
 issues never repoint them again.
+
+One errata from when the split landed: SA5's translation-seam import literal
+moved one relative level deeper with the page layer (`from .interface import
+banners` → `from ..interface import banners`) — the same assertion over the
+same seam, not a relaxation.
 
 ### What stays where, and why
 

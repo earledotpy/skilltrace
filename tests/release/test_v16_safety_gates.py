@@ -227,7 +227,9 @@ def test_sa4_analytics_registry_kinds():
 
 def test_sa4_serve_export_delegates_to_the_cli_command():
     """``POST /analytics/export`` nest-dispatches ``analytics export`` (one path)."""
-    text = (SRC / "web" / "views.py").read_text(encoding="utf-8")
+    from _web_source import web_source_text
+
+    text = web_source_text()
     assert '"analytics export"' in text, (
         "Serve export route must dispatch the canonical 'analytics export' "
         "command (no second write path)"

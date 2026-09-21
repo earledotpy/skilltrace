@@ -159,9 +159,9 @@ def test_every_data_intent_is_in_the_closed_set():
 
 
 def test_the_deprecated_part_map_is_reachable_only_through_cards_html():
-    source = (REPO_ROOT / "src" / "skilltrace" / "web" / "views.py").read_text(
-        encoding="utf-8"
-    )
+    from _web_source import web_source_text
+
+    source = web_source_text()
     render_calls = len(re.findall(r"\brender_cards\(", source))
     inner_calls = len(re.findall(r"\b_render_card_inner\(", source))
     assert render_calls == 2, "render_cards must appear only in its def + cards_html"

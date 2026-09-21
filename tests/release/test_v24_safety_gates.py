@@ -67,7 +67,9 @@ def test_sa2_sublayer_never_imports_the_progress_writer():
 
 
 def test_sa2_the_only_web_mutation_path_is_nest_dispatch():
-    views_text = (SRC / "web" / "views.py").read_text(encoding="utf-8")
+    from _web_source import web_source_text
+
+    views_text = web_source_text()
     assert "dispatch(command, ctx)" in views_text or "dispatch(" in views_text
     # and the sublayer never dispatches
     for path in _py_sources(SUBLAYER):
@@ -91,7 +93,9 @@ def test_sa3_the_sublayer_is_python_only():
 
 
 def test_sa4_structurally_walled_actions_are_omitted_not_disabled():
-    views_text = (SRC / "web" / "views.py").read_text(encoding="utf-8")
+    from _web_source import web_source_text
+
+    views_text = web_source_text()
     # The pass control is omitted on a locked node...
     assert 'if state != "locked"' in views_text
     # ...and master is omitted until passed.
@@ -104,8 +108,12 @@ def test_sa4_structurally_walled_actions_are_omitted_not_disabled():
 
 
 def test_sa5_page_banners_flow_through_the_translation_seam():
-    views_text = (SRC / "web" / "views.py").read_text(encoding="utf-8")
-    assert "from .interface import banners" in views_text
+    from _web_source import web_source_text
+
+    # The page layer now lives in the web/views/ package (ADR 0009), so the
+    # translation-seam import is one level deeper than when views was a file.
+    views_text = web_source_text()
+    assert "from ..interface import banners" in views_text
     # the raw CLI banner kinds are never f-string-rendered by the page layer
     assert not re.search(r'banner \{_esc\(part\.kind\)\}', views_text) or (
         # the only permitted use is the mentor-card part map (engine voice
