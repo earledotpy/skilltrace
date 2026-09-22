@@ -5,13 +5,17 @@ here; nothing else turns a Card into HTML. The affordance renders from
 the intent only (:func:`interface.affordances.intent_label`) — a binding's
 ``command`` string is the write path and is never rendered. ``state``
 carries the per-request :class:`interface.cards.ActiveViewState` whose
-flash renders as the page's banner block.
+flash renders as the page's banner block. Non-Card card producers exist:
+the blessed, hand-rolled ones are named and justified in
+:data:`SANCTIONED_CARD_PRODUCERS` (#317) — the middle state of
+unowned hand-rolled card markup ends there on the analytics page.
 """
 
 from __future__ import annotations
 
 import html
 import re
+from dataclasses import dataclass
 
 from .cards import ActiveViewState, Card
 from .handoff import handoff_html
@@ -90,6 +94,52 @@ def render_rich_cards(
             _card_html(card, index, extras, affordance_html, affordance_mode, classes)
         )
     return "".join(parts)
+
+
+@dataclass(frozen=True)
+class SanctionedProducer:
+    """A hand-rolled card producer that the renderer module blesses (#317)."""
+
+    name: str
+    surface: str
+    reason: str
+
+
+
+# The sanctioned non-Card producers (#317) — the renderer module names every
+# legitimate HTML producer on the analytics page, so a hand-rolled
+# ``<div class="card">`` there either composes :class:`interface.cards.Card`
+# through :func:`render_rich_cards` or is blessed here. Verdict for the
+# analytics page's per-theme cards: **blessed, not migrated** — see
+# ``SANCTIONED_CARD_PRODUCERS`` below. (The deprecated compat serializer
+# ``views.compat.render_cards`` stays out of this registry: it is grep-gated
+# and retires whole-file in #320; other view groups keep their own migration
+# slots in #315/#318/#319.)
+SANCTIONED_CARD_PRODUCERS: dict[str, "SanctionedProducer"] = {
+    entry.name: entry
+    for entry in (
+        SanctionedProducer(
+            name="views.analytics._analytics_card",
+            surface="/analytics",
+            reason=(
+                "blessed, not migrated (#317): the theme card embeds raw "
+                "chart SVG (sparkline_svg) at a position the Richer-Card "
+                "anatomy has no slot for, and this is the §E escape boundary "
+                "for exploration-result surfaces"
+            ),
+        ),
+        SanctionedProducer(
+            name="views.analytics._analytics_controls",
+            surface="/analytics",
+            reason=(
+                "blessed, not migrated (#317): the controls card is page "
+                "chrome — a GET form plus theme-toggle links, not engine "
+                "content; the Card affordance model binds dispatcher write "
+                "commands (GET controls are #315's scope)"
+            ),
+        ),
+    )
+}
 
 
 def _card_html(
