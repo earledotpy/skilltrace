@@ -25,12 +25,10 @@ from ..interface.translate import (
 from ._shared import (
     _degraded_banner,
     _esc,
-    _flash_html,
     _table,
 )
 from .shell import (
-    _chrome,
-    _fresh_join,
+    _page_head,
     _status_page,
 )
 from .forms import (
@@ -52,9 +50,11 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
     page carries the single mono use. Nothing is marked current on node
     pages (T4 §H): the chrome renders with no active view.
     """
-    view, failure = _fresh_join(root)
-    if view is None:
-        return "Error", failure[0], failure[1]
+    view, head, failure = _page_head(
+        root, query, dismiss_path=f"/nodes/{node_id}"
+    )
+    if failure is not None:
+        return failure
 
     model = derive_node_detail(view, node_id)
     if model is None:
@@ -64,13 +64,11 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
     actions = _node_actions_card(view, node_id)
     drill = _drill_down_card(node_id, view, Path(root), model)
     title = view.node_map[node_id].title
-    header_html = _chrome(root)
 
     secondary_id = f'<p class="small mut">{_esc(node_id)}</p>\n'
     cards, banners = _rich_cards_from_model(model.cards, titles=view.titles)
     body = (
-        header_html
-        + _flash_html(query or {}, f"/nodes/{node_id}")
+        head
         + _degraded_banner(view)
         + secondary_id
         + render_rich_cards(

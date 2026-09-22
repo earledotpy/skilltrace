@@ -10,13 +10,10 @@ from ..health import (
     derive_study_guidance,
     render_guidance_html,
 )
-from .shell import (
-    _chrome,
-    _fresh_join,
-)
+from .shell import _page_head
 
 
-def health_body(root) -> tuple[str, str, int]:
+def health_body(root, query: dict | None = None) -> tuple[str, str, int]:
     """GET `/health` — the study-guidance roll-up (§C-ter, build #311).
 
     Five cards in the locked hierarchy (Stuck right now → Due for review →
@@ -26,13 +23,12 @@ def health_body(root) -> tuple[str, str, int]:
     `skilltrace health`. Not a nav stop: health reaches only through the
     header pill strip + ``Health`` pointer.
     """
-    view, failure = _fresh_join(root)
-    if view is None:
-        return "Error", failure[0], failure[1]
+    view, head, failure = _page_head(root, query, dismiss_path="/health")
+    if failure is not None:
+        return failure
     guidance = derive_study_guidance(view, utc_today())
-    header_html = _chrome(root)
     body = (
-        header_html
+        head
         + '<div class="card guidance">\n'
         + '<div class="kicker">Health roll-up</div>\n'
         + '<p class="big">Your study guidance for today.</p>\n'

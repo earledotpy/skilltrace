@@ -20,8 +20,9 @@ from ._shared import (
     _table,
 )
 from .shell import (
-    _fresh_join,
+    _modal_dismiss,
     _modal_shell,
+    _page_head,
     _status_page,
 )
 
@@ -44,9 +45,11 @@ def pass_modal_body(
     no longer supports. Copy states what changes, its side effects, and no
     engine internals (specs by human title, never raw spec ids).
     """
-    view, failure = _fresh_join(root)
-    if view is None:
-        return "Error", failure[0], failure[1]
+    view, head, failure = _page_head(
+        root, query, dismiss_path=_modal_dismiss(node_id, "Confirm pass")
+    )
+    if failure is not None:
+        return failure
     if node_id not in view.node_map:
         body, status = _status_page(404, f"Unknown node {node_id}.", root)
         return "Not found", body, status
@@ -129,7 +132,7 @@ def pass_modal_body(
         f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
         "</div></form>"
     )
-    return _modal_shell(view, node_id, "Confirm pass", inner, query, root)
+    return _modal_shell(view, node_id, "Confirm pass", inner, head=head)
 
 
 def _mastery_facts_html(view: JoinedView, node_id: str) -> tuple[str, str]:
@@ -179,9 +182,11 @@ def master_body(
     root, node_id: str, query: dict | None = None
 ) -> tuple[str, str, int]:
     """GET `/nodes/{id}/master` — step 1 of 2: mastery facts (T5 §B+§F+P4.1)."""
-    view, failure = _fresh_join(root)
-    if view is None:
-        return "Error", failure[0], failure[1]
+    view, head, failure = _page_head(
+        root, query, dismiss_path=_modal_dismiss(node_id, "Step 1 — Mastery facts")
+    )
+    if failure is not None:
+        return failure
     if node_id not in view.node_map:
         body, status = _status_page(404, f"Unknown node {node_id}.", root)
         return "Not found", body, status
@@ -230,16 +235,18 @@ def master_body(
         + wall_note
         + actions
     )
-    return _modal_shell(view, node_id, "Step 1 — Mastery facts", inner, query, root)
+    return _modal_shell(view, node_id, "Step 1 — Mastery facts", inner, head=head)
 
 
 def master_confirm_body(
     root, node_id: str, query: dict | None = None
 ) -> tuple[str, str, int]:
     """GET `/nodes/{id}/master/confirm` — step 2 of 2: permanence (T5 §B+§F+P4.4)."""
-    view, failure = _fresh_join(root)
-    if view is None:
-        return "Error", failure[0], failure[1]
+    view, head, failure = _page_head(
+        root, query, dismiss_path=_modal_dismiss(node_id, "Step 2 — This is permanent")
+    )
+    if failure is not None:
+        return failure
     if node_id not in view.node_map:
         body, status = _status_page(404, f"Unknown node {node_id}.", root)
         return "Not found", body, status
@@ -261,5 +268,5 @@ def master_confirm_body(
         f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/master">Back</a>'
         "</div></form>"
     )
-    return _modal_shell(view, node_id, "Step 2 — This is permanent", inner, query, root)
+    return _modal_shell(view, node_id, "Step 2 — This is permanent", inner, head=head)
 

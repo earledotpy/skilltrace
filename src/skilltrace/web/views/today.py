@@ -29,14 +29,10 @@ from ...mentor.cards import (
 from ._shared import (
     _degraded_banner,
     _esc,
-    _flash_html,
     _normalize_pill_label,
     plural,
 )
-from .shell import (
-    _chrome,
-    _fresh_join,
-)
+from .shell import _page_head
 from .forms import (
     _start_confirm_form,
 )
@@ -507,9 +503,9 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
 
     Returns ``(page_title, body_html, http_status)``.
     """
-    view, failure = _fresh_join(root)
-    if view is None:
-        return "Error", failure[0], failure[1]
+    view, head, failure = _page_head(root, query, current_view="today")
+    if failure is not None:
+        return failure
 
     model = derive_today(view, Path(root), minutes=30)
     try:
@@ -517,11 +513,8 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
     except Exception:  # advisory preview only — never blocks the page
         next_model = None
 
-    header_html = _chrome(root, current_view="today")
-
     body = (
-        header_html
-        + _flash_html(query or {}, "/")
+        head
         + _degraded_banner(view)
         + '<div class="home-rich">\n<div class="bento">\n'
         + _hero_block(view, model, next_model)
