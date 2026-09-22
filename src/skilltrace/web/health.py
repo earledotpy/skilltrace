@@ -16,8 +16,9 @@ advisory over already-computed facts.
 All derivation reads the lenient ``JoinedView`` — one fresh join per request,
 the same seam as every other GET page. Policy values (the resources staleness
 window) come off the joined view's ``policy`` accessor, exactly as the node
-drill-down reads them — never a second read of the policy seed. HTML leaving
-this module escapes through the sublayer's one door (``interface.text``, #315).
+drill-down reads them — never a second read of the policy seed. The five cards
+leave this module as interface ``Card`` compositions (#318); the page layer
+renders them through the one Card-to-HTML map, so nothing here owns markup.
 """
 
 from __future__ import annotations
@@ -29,7 +30,8 @@ from ..context import JoinedView
 from ..execution.days import days_practiced
 from ..execution.overdue import parse_date
 from ..resources.status import VerificationStatus, derive_status
-from .interface import esc, plural
+from .interface import plural
+from .interface.cards import Affordance, Card
 
 # The empty-copy contract (§C-ter) — locked wording, one source.
 STUCK_EMPTY = "No open blockers — smooth sailing."
@@ -40,6 +42,15 @@ RESOURCES_HEALTHY = "All supporting materials for your current skills are verifi
 
 # Rhythm framing: the days-practiced mirror, never a metronome.
 RHYTHM_MIRROR = "Days practiced is a mirror, not a metronome."
+
+# A guidance card is a read-only mirror: no node state or affordance of its
+# own, so the Richer-Card minimum fields ride neutral values the guidance
+# anatomy never renders (#318).
+_GUIDANCE_STATE = "active"
+_GUIDANCE_RESOURCE = (
+    "Study guidance — full prose and ranking live at the link targets."
+)
+_GUIDANCE_INTENT = "explore"
 
 WINDOW_DAYS_FALLBACK = 30
 
@@ -260,25 +271,39 @@ def derive_study_guidance(view: JoinedView, today: date) -> StudyGuidance:
     return StudyGuidance(cards=cards, limited_data_line=limited)
 
 
-def render_guidance_html(guidance: StudyGuidance) -> str:
-    """The five cards as server-side HTML — order is the §C-ter hierarchy.
+def guidance_page_cards(
+    guidance: StudyGuidance,
+) -> tuple[list[Card], tuple[str, str] | None]:
+    """The five guidance cards as Richer Cards, plus the banner, if any.
 
-    Every interpolated value escapes through the sublayer's one door
-    (``esc``, imported from ``interface.text``).
+    The §C-ter guidance anatomy — the ``guidance`` card shape, kicker,
+    one-line why, page-target links, muted notes — is not the Richer-Card
+    anatomy (the guidance card is a read-only mirror: no node state of its
+    own, and a bundle of links, not one next action). So each card's links
+    and notes travel with the page (``web.views.health._card_chrome``) and
+    ride the renderer's per-card attachment channel (``chromes``); the
+    derivation record stays untouched.
+
+    Returns ``(cards, banner)``; ``banner`` is the limited-data advisory
+    pair (``("advisory", line)``) or ``None``. Escaping happens once — in
+    the interface renderer and the page's one attachment composer — this
+    module only composes.
     """
-    parts: list[str] = []
-    if guidance.limited_data_line:
-        parts.append(f'<p class="banner advisory">{esc(guidance.limited_data_line)}</p>\n')
+    cards: list[Card] = []
     for card in guidance.cards:
-        parts.append('<div class="card guidance">\n')
-        parts.append(f'<div class="kicker">{esc(card.title)}</div>\n')
-        parts.append(f'<p class="big">{esc(card.why)}</p>\n')
-        if card.links:
-            parts.append('<ul class="guidance-links">\n')
-            for label, href in card.links:
-                parts.append(f'<li><a href="{esc(href)}">{esc(label)}</a></li>\n')
-            parts.append("</ul>\n")
-        for note in card.notes:
-            parts.append(f'<p class="mut">{esc(note)}</p>\n')
-        parts.append("</div>\n")
-    return "".join(parts)
+        cards.append(
+            Card(
+                state=_GUIDANCE_STATE,
+                title=card.title,
+                why=card.why,
+                resources=[_GUIDANCE_RESOURCE],
+                affordances=(Affordance.from_intent(_GUIDANCE_INTENT),),
+                kicker=card.title,
+            )
+        )
+    banner = (
+        ("advisory", guidance.limited_data_line)
+        if guidance.limited_data_line
+        else None
+    )
+    return cards, banner

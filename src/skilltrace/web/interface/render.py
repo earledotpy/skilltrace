@@ -10,7 +10,8 @@ flash renders as the page's banner block.
 Escaping is not this module's to define: every interpolated value goes
 through the one door in :mod:`interface.text` (imported as ``_esc``), so the
 renderer and every other web-side HTML producer share a single escaper
-(#315).
+(#315). The Health guidance cards render here too (#318) — the §C-ter
+anatomy is the map's guidance variant, not a page-side producer.
 """
 
 from __future__ import annotations
@@ -142,5 +143,45 @@ def _card_html(
         lines.append(f'<div class="sub">{_esc(card.disclosure)}</div>\n')
     if extras and index in extras:
         lines.append(extras[index])
+    lines.append("</div>\n")
+    return "".join(lines)
+
+
+def render_guidance_cards(
+    cards: list[Card],
+    chromes: dict[int, str] | None = None,
+    banner: str | None = None,
+) -> str:
+    """The Health study-guidance cards (§C-ter) as page HTML (#318).
+
+    The guidance anatomy is its own locked shape — ``card guidance`` div,
+    kicker, one-line why, links list, muted notes — and it renders here,
+    inside the one Card-to-HTML map, so no page-side producer owns card
+    markup. The §C-ter guidance card is a read-only mirror: it has no state
+    pill, resources section, or next action of its own, so the Richer-Card
+    minimum fields its composition carries (:func:`web.health.guidance_page_cards`
+    turns the pure derivation into :class:`interface.cards.Card` objects)
+    render nowhere. ``chromes`` is the per-card links/notes attachment the
+    page composes (escaped through the one door at the page layer); the
+    limited-data advisory banner, when present, renders ahead of the cards
+    under the locked §C-ter class — ``banner advisory`` is the contract's
+    own class, pinned by the guidance tests, not a P5.4 alias.
+    """
+    parts: list[str] = []
+    if banner:
+        parts.append(f'<p class="banner advisory">{_esc(banner)}</p>\n')
+    for index, card in enumerate(cards):
+        parts.append(_guidance_card_html(card, index, chromes))
+    return "".join(parts)
+
+
+def _guidance_card_html(card: Card, index: int, chromes: dict[int, str] | None) -> str:
+    """One §C-ter guidance card: kicker + one-line why + the attachment."""
+    lines: list[str] = ['<div class="card guidance">\n']
+    if card.kicker:
+        lines.append(f'<div class="kicker">{_esc(sentence_case(card.kicker))}</div>\n')
+    lines.append(f'<p class="big">{_esc(card.why)}</p>\n')
+    if chromes and index in chromes:
+        lines.append(chromes[index])
     lines.append("</div>\n")
     return "".join(lines)

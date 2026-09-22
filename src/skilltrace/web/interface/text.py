@@ -2,11 +2,11 @@
 
 Two conventions that used to be copied around the web tree live here once:
 
-* :func:`esc` — the **one door** into page HTML. The interface renderer, the
-  handoff copy, the page layer and the Health guidance renderer all escape
-  through this function, so a fix here is a fix on every web surface. No other
-  web module defines an escaper (``tests/web/test_micro_utilities.py`` is the
-  gate that keeps it that way).
+* :func:`esc` — the **one door** into page HTML. The interface renderer (the
+  Richer Card map and the Health guidance anatomy), the handoff copy and the
+  page layer all escape through this function, so a fix here is a fix on
+  every web surface. No other web module defines an escaper
+  (``tests/web/test_micro_utilities.py`` is the gate that keeps it that way).
 * :func:`plural` — the **one agreement helper**: the inflection that makes a
   noun agree with its count, instead of an inline ``'s' if n != 1 else ''``
   written out again at every call site.
