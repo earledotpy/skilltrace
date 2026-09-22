@@ -71,11 +71,11 @@ from ..discovery import (
     card_for,
     discover,
 )
-from ..health import derive_study_guidance, render_guidance_html
+from ..health import derive_study_guidance, guidance_page_cards
 from ..interface.affordances import intent_label
 from ..interface.cards import ActiveViewState, Affordance, Card, view_by_name
 from ..interface.handoff import handoff_html
-from ..interface.render import render_rich_cards
+from ..interface.render import render_guidance_cards, render_rich_cards
 from ..interface.translate import rich_cards as _rich_cards_from_model
 from ...analytics.derive import derive_analytics
 from ...analytics.models import AnalyticsParams
@@ -189,6 +189,9 @@ from .node import (  # noqa: F401
     node_body,
 )
 from .health import (  # noqa: F401
+    _ROLLUP_CARD,
+    _ROLLUP_CHROME,
+    _card_chrome,
     health_body,
 )
 from .analytics import (  # noqa: F401

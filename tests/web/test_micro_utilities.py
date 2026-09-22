@@ -85,7 +85,6 @@ def test_every_web_producer_escapes_through_the_same_object():
     assert render._esc is text.esc  # the interface renderer
     assert handoff._esc is text.esc  # the handoff copy
     assert views._esc is text.esc  # the page layer (via _shared's re-export)
-    assert web_health.esc is text.esc  # the Health guidance renderer
 
 
 def test_the_door_escapes_every_kind_of_value_totally():
