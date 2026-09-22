@@ -11,7 +11,9 @@ not engine stemming, and the web-only discovery surface reads the engine
 Ranking: score first, then available before active before passed/mastered,
 locked last — ambiguous queries show every match, never a silent top-1.
 Nothing here mutates anything: a discovery card links to the node view and
-never implicitly starts, passes, or opens a session.
+never implicitly starts, passes, or opens a session. The cards leave this
+module as interface ``Card`` compositions (#319); the page layer renders
+them through the one Card-to-HTML map, so nothing here owns markup.
 """
 
 from __future__ import annotations
@@ -19,11 +21,14 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from .interface.cards import Affordance, Card
+
 __all__ = [
     "ENTRY_NODES",
     "DiscoveryCard",
     "SUBJECT_LABELS",
     "discover",
+    "discovery_page_cards",
     "subject_label",
     "subject_of",
 ]
@@ -81,15 +86,11 @@ ENTRY_NODES: tuple[str, ...] = (
     "programming.python.variables_01",
 )
 
-# The state chip pairs the canonical state word (P3.4) with its plain-language
-# discovery label — no glossary fork (spec §C-bis "Card anatomy").
-CHIP_LABELS: dict[str, str] = {
-    "available": "Ready to start",
-    "active": "In progress",
-    "locked": "Locked",
-    "passed": "Passed",
-    "mastered": "Mastered",
-}
+# The state chip's plain-language label (spec §C-bis "Card anatomy") is
+# presentation vocabulary, so it lives with the five canonical words it pairs
+# — `interface.cards.CHIP_LABELS` — and the discovery anatomy in
+# `interface.render` reads it there (#319). This module carries the canonical
+# `state` only.
 
 # Ranking order within one score band: available first, locked last.
 _STATE_ORDER = {"available": 0, "active": 1, "passed": 2, "mastered": 3, "locked": 9}
@@ -120,10 +121,6 @@ class DiscoveryCard:
     entry: bool
     blocked_by_id: str | None = None
     blocked_by_title: str | None = None
-
-    @property
-    def chip(self) -> str:
-        return CHIP_LABELS.get(self.state, self.state.capitalize())
 
     @property
     def locked(self) -> bool:
@@ -279,3 +276,51 @@ def browse_subjects(view) -> list[tuple[str, str, int]]:
         (subject, SUBJECT_LABELS.get(subject, subject.capitalize()), counts[subject])
         for subject in ordered
     ]
+
+
+# A discovery card is a navigate-only result (selection never starts, passes,
+# or opens a session), so it renders no resources section or next action of
+# its own — the Richer-Card minimum fields ride neutral values the §C-bis
+# anatomy never renders (#319, the #318 precedent).
+_DISCOVERY_RESOURCE = (
+    "Discovery result — the skill page carries the full prose and evidence form."
+)
+_DISCOVERY_INTENT = "explore"
+_PENDING_MARKER = "description pending"
+
+
+def _stub_why(node_id: str) -> str:
+    """The foundations-stub fallback line (spec §C-bis: never bare)."""
+    return f"{subject_label(node_id)} foundations — beginner entry"
+
+
+def discovery_page_cards(cards: list[DiscoveryCard]) -> list[Card]:
+    """The discovery cards as Richer Cards (#319).
+
+    The §C-bis result anatomy — title link, state chip, description,
+    secondary id, blocked-prerequisite tail — is not the Richer-Card
+    anatomy: a result carries no resources list and no next action of its
+    own (selection navigates only), and the foundations-stub fallback
+    keeps the description line never bare. So each record composes into a
+    :class:`interface.cards.Card` whose ``state``/``title``/``node_id``
+    render from the record, whose ``why`` carries the description (or the
+    spec's stub line), and whose ``disclosure`` carries the pending marker;
+    the neutral ``resources`` and single ``explore`` affordance are the
+    construction minimums the anatomy never renders. Escaping happens once —
+    in the interface renderer and the page's one attachment composer — this
+    module only composes.
+    """
+    cards_out: list[Card] = []
+    for card in cards:
+        cards_out.append(
+            Card(
+                state=card.state,
+                title=card.title,
+                why=card.description or _stub_why(card.node_id),
+                resources=[_DISCOVERY_RESOURCE],
+                affordances=(Affordance.from_intent(_DISCOVERY_INTENT),),
+                disclosure=_PENDING_MARKER if card.description_pending else None,
+                node_id=card.node_id,
+            )
+        )
+    return cards_out

@@ -139,6 +139,10 @@ def _all_route_bodies() -> list[tuple[str, str]]:
         ("node", views.node_body(repo, node_id)[1]),
         ("health", views.health_body(repo)[1]),
         ("analytics", views.analytics_body(repo, {})[1]),
+        # #319: the discovery surface owes the same guarantees — its cards
+        # compose through the Card seam, so the gates hold by construction.
+        ("finder", views.finder_body(repo, {})[1]),
+        ("finder query", views.finder_body(repo, {"q": ["order of operations"]})[1]),
     ]
 
 

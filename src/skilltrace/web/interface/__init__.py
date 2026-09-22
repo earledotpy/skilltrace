@@ -19,7 +19,7 @@ from .affordances import COMMAND_AFFORDANCE_LABELS, intent_label
 from .cards import CANONICAL_STATES, ActiveViewState, Affordance, VIEWS, Card, SublayerError, View, view_by_name
 from .handoff import handoff_html
 from .validate import FROZEN_ROUTES
-from .render import banner_html, render_guidance_cards, render_rich_cards
+from .render import banner_html, render_discovery_cards, render_guidance_cards, render_rich_cards
 from .text import esc, plural
 from .translate import (
     banners,
@@ -48,6 +48,7 @@ __all__ = [
     "handoff_html",
     "intent_label",
     "plural",
+    "render_discovery_cards",
     "render_guidance_cards",
     "render_rich_cards",
     "rich_cards",

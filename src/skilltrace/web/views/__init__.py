@@ -70,12 +70,13 @@ from ..discovery import (
     browse_subjects,
     card_for,
     discover,
+    discovery_page_cards,
 )
 from ..health import derive_study_guidance, guidance_page_cards
 from ..interface.affordances import intent_label
 from ..interface.cards import ActiveViewState, Affordance, Card, view_by_name
 from ..interface.handoff import handoff_html
-from ..interface.render import render_guidance_cards, render_rich_cards
+from ..interface.render import render_discovery_cards, render_guidance_cards, render_rich_cards
 from ..interface.translate import rich_cards as _rich_cards_from_model
 from ...analytics.derive import derive_analytics
 from ...analytics.models import AnalyticsParams
@@ -179,8 +180,9 @@ from .next import (  # noqa: F401
 )
 from .finder import (  # noqa: F401
     _browse_html,
-    _discovery_card_html,
+    _discovery_chrome,
     _no_results_html,
+    _render_results,
     finder_body,
 )
 from .node import (  # noqa: F401
