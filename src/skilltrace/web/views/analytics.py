@@ -17,20 +17,15 @@ from ...execution.overdue import utc_today
 from ...policy.advisory import analytics_warnings
 from ._shared import (
     _esc,
-    _flash_html,
     _table,
 )
 from .shell import (
-    _chrome,
-    _fresh_join,
+    _page_head,
     _status_page,
 )
 
 
-def _analytics_view(root: Path, query: dict) -> tuple[object | None, tuple[str, str, int] | None]:
-    view, failure = _fresh_join(root)
-    if view is None:
-        return None, ("Error", failure[0], failure[1])
+def _analytics_view(view, query: dict, root) -> tuple[object | None, tuple[str, str, int] | None]:
     policy = view.policy.analytics_policy
     default_days = policy.default_window_days
     raw_days = (query.get("days") or [str(default_days)])[0]
@@ -101,7 +96,12 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
     sparkline, just the labeled summary).
     """
     query = query or {}
-    model, failure = _analytics_view(Path(root), query)
+    view, head, failure = _page_head(
+        root, query, dismiss_path="/analytics", current_view="analytics"
+    )
+    if failure is not None:
+        return failure
+    model, failure = _analytics_view(view, query, Path(root))
     if model is None:
         return failure
 
@@ -224,8 +224,7 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
     # no executable markup (per-route budget, ADR 0008).
     tooltip = tooltip_script() if (theme == "velocity" and velocity_interactive) else ""
     body = (
-        _chrome(root, current_view="analytics")
-        + _flash_html(query, "/analytics")
+        head
         + overdue
         + limited
         + advisory

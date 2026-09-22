@@ -19,12 +19,10 @@ from ..interface.translate import (
 )
 from ._shared import (
     _esc,
-    _flash_html,
     _parse_int,
 )
 from .shell import (
-    _chrome,
-    _fresh_join,
+    _page_head,
     _status_page,
 )
 
@@ -45,9 +43,11 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
         body, status = _status_page(400, "Minutes and options must be numbers.", root)
         return "Next", body, status
 
-    view, failure = _fresh_join(root)
-    if view is None:
-        return "Error", failure[0], failure[1]
+    view, head, failure = _page_head(
+        root, query, dismiss_path="/next", current_view="next"
+    )
+    if failure is not None:
+        return failure
 
     # T4 §H: the locked half is the "Not ready yet — and why" card rather
     # than a flag, so the derivation always carries the locked candidates
@@ -70,12 +70,9 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
 
     locked_section = _not_ready_card(model, view)
 
-    header_html = _chrome(root, current_view='next')
-
     return (
         "Next",
-        header_html
-        + _flash_html(query, "/next")
+        head
         + filters
         + _candidate_stack(view, model)
         + locked_section,

@@ -140,6 +140,19 @@ caller changes whether the code is one file or twelve. Reversal is inlining the
 modules back into a single `views.py` and restoring the five gates' single-file
 reads. Snapshot output is unaffected either way.
 
+## Addendum — #316 follow-through
+
+The shared route preamble
+([#316 — Extract the shared route preamble (join → chrome → flash)](https://github.com/earledotpy/skilltrace/issues/316))
+landed as `views/shell.py::_page_head`: the one fresh lenient join, its
+failure branch, the chrome header, and the one flash rendering, so every GET
+route body and every pass/master step body builds its page through one call
+shape. The confirmation-panel shell splits into the chrome-free
+`_modal_card` plus `_modal_dismiss` (the panel's own flash-dismiss URL), and
+step bodies pass the already-built head into `_modal_shell` — the legacy
+call shape without a head rebuilds it for direct callers. All 15 golden
+snapshots stay byte-identical; that diff is the change's evidence.
+
 See: ADR 0006 (package name), ADR 0007 (sublayer, untouched), ADR 0008 (DD6
 gate), #312 (snapshot harness, the unblocking proof), #314 (this work), #315,
 #316, #317, #318, #319, #320 (successors), `docs/spec-tier1-serve.md`,

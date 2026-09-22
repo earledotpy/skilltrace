@@ -15,13 +15,9 @@ from ..discovery import (
 )
 from ._shared import (
     _esc,
-    _flash_html,
     _slug,
 )
-from .shell import (
-    _chrome,
-    _fresh_join,
-)
+from .shell import _page_head
 
 
 def _discovery_card_html(card: DiscoveryCard) -> str:
@@ -118,9 +114,9 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
     live-filter). Selection navigates only. Nothing is marked current here
     (header form only).
     """
-    view, failure = _fresh_join(root)
-    if view is None:
-        return "Error", failure[0], failure[1]
+    view, head, failure = _page_head(root, query, dismiss_path="/nodes/jump")
+    if failure is not None:
+        return failure
 
     raw = ""
     if query:
@@ -150,10 +146,9 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
         else:
             parts.append(_no_results_html(view, raw))
     parts.append(_browse_html(view))
-    header_html = _chrome(root)
     return (
         "Find a skill",
-        header_html + _flash_html(query or {}, "/nodes/jump") + "".join(parts),
+        head + "".join(parts),
         200,
     )
 

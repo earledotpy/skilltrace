@@ -1,7 +1,8 @@
 """
 The page shell (ADR 0009): the locked §B stylesheet, chrome and
-nav, error/status bodies, the lenient-join preamble, and the
-confirmation-panel shell.
+nav, error/status bodies, the one shared route preamble
+(:func:`_page_head`: fresh lenient join, its failure branch, chrome
+header, the one flash rendering), and the confirmation-panel shell.
 
 """
 
@@ -395,22 +396,50 @@ def _fresh_join(root) -> tuple[JoinedView | None, tuple[str, int] | None]:
         return None, (body, 500)
 
 
-def _modal_shell(
+def _page_head(
+    root,
+    query: dict | None = None,
+    *,
+    dismiss_path: str = "/",
+    current_view: str = "",
+) -> tuple[JoinedView | None, str, tuple[str, str, int] | None]:
+    """The one shared route preamble — join, its failure branch, chrome, flash.
+
+    Every GET route body and every pass/master step body builds its page
+    through this helper, so the fresh-join failure contract and the single
+    flash call shape exist in exactly one place. On a join failure it returns
+    ``(None, "", ("Error", body, status))``; on success it returns
+    ``(view, head_html, None)`` where ``head_html`` is the chrome header plus
+    the one flash rendering for ``query`` (dismissed to ``dismiss_path``).
+    Bodies append only their page-specific content after the head.
+    """
+    query = query or {}
+    view, failure = _fresh_join(root)
+    if view is None:
+        assert failure is not None  # noqa: S101 — _fresh_join pairs them
+        return None, "", ("Error", failure[0], failure[1])
+    head = _chrome(root, current_view=current_view) + _flash_html(query, dismiss_path)
+    return view, head, None
+
+
+def _modal_dismiss(node_id: str, heading: str) -> str:
+    """The flash-dismiss path for a pass/master panel — the panel's own URL."""
+    if heading.startswith("Step 1"):
+        return f"/nodes/{node_id}/master"
+    if heading.startswith("Step 2"):
+        return f"/nodes/{node_id}/master/confirm"
+    if heading.startswith("Confirm pass"):
+        return f"/nodes/{node_id}/pass"
+    return f"/nodes/{node_id}"
+
+
+def _modal_card(
     view: JoinedView,
     node_id: str,
     heading: str,
     inner: str,
-    query: dict | None = None,
-    root=None,
-) -> tuple[str, str, int]:
-    """The page-level safety panel enclosing a pass/master body (T5 §B+§F).
-
-    Safety color rides the card's border via the locked tokens: pass
-    ``--accent``, master step 1 ``--warn``, step 2 ``--err`` — the old
-    unstyled ``.modal`` divergence is gone; panels render as cards with
-    panel padding at the locked card band. No overlay: no dialog, no
-    popover, no backdrop. Server-fresh per request; writes are 303+flash-only.
-    """
+) -> tuple[str, str]:
+    """The safety panel card — title plus card HTML, no chrome or flash."""
     node = view.node_map[node_id]
     state = view.store.state_of(node_id)
     safety_class = (
@@ -418,13 +447,6 @@ def _modal_shell(
         if heading.startswith("Step 1")
         else "safety-err" if heading.startswith("Step 2") else "safety-accent"
     )
-    dismiss_path = f"/nodes/{node_id}"
-    if heading.startswith("Step 1"):
-        dismiss_path = f"/nodes/{node_id}/master"
-    elif heading.startswith("Step 2"):
-        dismiss_path = f"/nodes/{node_id}/master/confirm"
-    elif heading.startswith("Confirm pass"):
-        dismiss_path = f"/nodes/{node_id}/pass"
     modal = (
         '<div class="card safety '
         f'{safety_class}">'
@@ -434,13 +456,36 @@ def _modal_shell(
         f"{inner}"
         "</div>"
     )
-    header_html = _chrome(root)
+    return node.title, modal
 
-    body = (
-        header_html
-        + _flash_html(query or {}, dismiss_path)
-        + _degraded_banner(view)
-        + modal
-    )
-    return node.title, body, 200
+
+def _modal_shell(
+    view: JoinedView,
+    node_id: str,
+    heading: str,
+    inner: str,
+    query: dict | None = None,
+    root=None,
+    *,
+    head: str | None = None,
+) -> tuple[str, str, int]:
+    """The page-level safety panel enclosing a pass/master body (T5 §B+§F).
+
+    Safety color rides the card's border via the locked tokens: pass
+    ``--accent``, master step 1 ``--warn``, step 2 ``--err`` — the old
+    unstyled ``.modal`` divergence is gone; panels render as cards with
+    panel padding at the locked card band. No overlay: no dialog, no
+    popover, no backdrop. Server-fresh per request; writes are 303+flash-only.
+
+    Step bodies build their page through the shared preamble helper, so they
+    pass the already-built ``head`` (chrome plus the one flash rendering);
+    the legacy call shape without ``head`` rebuilds it for direct callers.
+    """
+    title, modal = _modal_card(view, node_id, heading, inner)
+    if head is None:
+        head = _chrome(root) + _flash_html(
+            query or {}, _modal_dismiss(node_id, heading)
+        )
+    body = head + _degraded_banner(view) + modal
+    return title, body, 200
 

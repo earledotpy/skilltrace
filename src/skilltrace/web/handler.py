@@ -132,7 +132,7 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
             else:
                 title, body, status = node_body(self.server.root, node_id, query)
         elif path == "/health":
-            title, body, status = health_body(self.server.root)
+            title, body, status = health_body(self.server.root, query)
         elif path == "/analytics":
             title, body, status = analytics_body(self.server.root, query)
         else:
