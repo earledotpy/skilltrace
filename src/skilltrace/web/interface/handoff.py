@@ -12,12 +12,7 @@ side is always "your terminal", never the bare word "CLI".
 
 from __future__ import annotations
 
-import html
-
-
-def _esc(value: object) -> str:
-    """Escape every interpolated value — the one door into page HTML."""
-    return html.escape(str(value), quote=True)
+from .text import esc as _esc  # the one door — never a local escaper (#315)
 
 
 def handoff_html(verb: str, title: str | None = None) -> str:

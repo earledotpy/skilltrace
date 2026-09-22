@@ -23,6 +23,7 @@ from ._shared import (
     _flash_html,
     _normalize_pill_label,
     _slug,
+    plural,
 )
 
 
@@ -312,12 +313,12 @@ def _nav_html(current_view: str = "", health=None) -> str:
         if failed:
             pills = (
                 '<span class="pill attention">Needs attention — '
-                f"{len(failed)} layer{'s' if len(failed) != 1 else ''} failing</span>"
+                f"{len(failed)} layer{plural(len(failed))} failing</span>"
             )
         elif warnings:
             pills = (
                 '<span class="pill attention">Needs attention — '
-                f"{warnings} warning{'s' if warnings != 1 else ''}</span>"
+                f"{warnings} warning{plural(warnings)}</span>"
             )
         else:
             pills = '<span class="mut calm">Everything looks good.</span>'

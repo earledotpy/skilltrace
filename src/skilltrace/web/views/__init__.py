@@ -33,7 +33,6 @@ the lenient ``JoinedView`` fresh per request.
 """
 
 from __future__ import annotations
-import html
 import re
 from argparse import Namespace
 from contextlib import redirect_stdout
@@ -108,6 +107,7 @@ from ._shared import (  # noqa: F401
     _sentence_case,
     _slug,
     _table,
+    plural,
 )
 from .shell import (  # noqa: F401
     _STYLE,

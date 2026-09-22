@@ -14,7 +14,10 @@ nothing here blocks or implies blocking — every card is a read-only mirror or
 advisory over already-computed facts.
 
 All derivation reads the lenient ``JoinedView`` — one fresh join per request,
-the same seam as every other GET page.
+the same seam as every other GET page. Policy values (the resources staleness
+window) come off the joined view's ``policy`` accessor, exactly as the node
+drill-down reads them — never a second read of the policy seed. HTML leaving
+this module escapes through the sublayer's one door (``interface.text``, #315).
 """
 
 from __future__ import annotations
@@ -24,7 +27,9 @@ from datetime import date
 
 from ..context import JoinedView
 from ..execution.days import days_practiced
-from ..resources.status import DEFAULT_STALE_AFTER_DAYS, VerificationStatus, derive_status
+from ..execution.overdue import parse_date
+from ..resources.status import VerificationStatus, derive_status
+from .interface import esc, plural
 
 # The empty-copy contract (§C-ter) — locked wording, one source.
 STUCK_EMPTY = "No open blockers — smooth sailing."
@@ -55,16 +60,6 @@ class StudyGuidance:
 
     cards: tuple[GuidanceCard, ...] = field(default_factory=tuple)
     limited_data_line: str | None = None
-
-
-def _as_date(value: object) -> date | None:
-    """Parse the leading ISO date out of a record timestamp, or None."""
-    if not isinstance(value, str) or len(value) < 10:
-        return None
-    try:
-        return date.fromisoformat(value[:10])
-    except ValueError:
-        return None
 
 
 def _node_links(view: JoinedView, node_ids: list[str]) -> tuple[tuple[str, str], ...]:
@@ -102,8 +97,8 @@ def _stuck_card(view: JoinedView) -> GuidanceCard:
             notes=tuple(notes) if notes else (STUCK_EMPTY_HOWTO,),
         )
     why = (
-        f"{len(open_blockers)} open blocker"
-        f"{'s' if len(open_blockers) != 1 else ''} holding up work."
+        f"{len(open_blockers)} open blocker{plural(len(open_blockers))} "
+        "holding up work."
     )
     return GuidanceCard(
         title="Stuck right now",
@@ -122,7 +117,7 @@ def _due_card(view: JoinedView, today: date) -> GuidanceCard:
     links to, never duplicated here.
     """
     scheduled = [r for r in view.reviews if r.status == "scheduled"]
-    dated = [(r, _as_date(r.scheduled_for)) for r in scheduled]
+    dated = [(r, parse_date(r.scheduled_for)) for r in scheduled]
     overdue = [r for r, d in dated if d is not None and d < today]
     due_now = [r for r, d in dated if d == today]
     upcoming = sorted(
@@ -152,8 +147,8 @@ def _gaps_card(view: JoinedView) -> GuidanceCard:
     if not missing:
         return GuidanceCard(title="Evidence gaps", why=EVIDENCE_EMPTY)
     why = (
-        f"{len(missing)} active skill"
-        f"{'s' if len(missing) != 1 else ''} still missing proof to pass."
+        f"{len(missing)} active skill{plural(len(missing))} "
+        "still missing proof to pass."
     )
     return GuidanceCard(
         title="Evidence gaps",
@@ -178,10 +173,10 @@ def _rhythm_card(view: JoinedView, today: date) -> tuple[GuidanceCard, str | Non
     min_sessions = policy.min_sessions_for_full_data
     cutoff = date.fromordinal(today.toordinal() - window_days)
     sessions_in_window = [
-        s for s in view.sessions if (_as_date(s.started_at) or date.min) >= cutoff
+        s for s in view.sessions if (parse_date(s.started_at) or date.min) >= cutoff
     ]
     work_in_window = [
-        w for w in view.work if (_as_date(w.created_at) or date.min) >= cutoff
+        w for w in view.work if (parse_date(w.created_at) or date.min) >= cutoff
     ]
     if len(sessions_in_window) < min_sessions:
         limited = (
@@ -191,8 +186,8 @@ def _rhythm_card(view: JoinedView, today: date) -> tuple[GuidanceCard, str | Non
     else:
         limited = None
     why = (
-        f"Logged {len(work_in_window)} work item"
-        f"{'s' if len(work_in_window) != 1 else ''} this window."
+        f"Logged {len(work_in_window)} work item{plural(len(work_in_window))} "
+        "this window."
     )
     return (
         GuidanceCard(
@@ -216,11 +211,10 @@ def _resources_card(view: JoinedView, today: date) -> GuidanceCard:
     current_nodes = {
         n.id for n in view.nodes if view.store.state_of(n.id) in {"active", "available"}
     }
-    stale_after = DEFAULT_STALE_AFTER_DAYS
-    seed = view.policies.get("resource_verification.yaml") or {}
-    raw_window = seed.get("stale_after_days")
-    if isinstance(raw_window, int) and not isinstance(raw_window, bool) and raw_window >= 1:
-        stale_after = raw_window
+    # The staleness window is policy — read through the joined view's policy
+    # accessor, exactly as the node drill-down reads it (#315), never a second
+    # read of the policy seed.
+    stale_after = view.policy.resource_stale_after_days
 
     flagged_by_node: dict[str, list[str]] = {}
     total = 0
@@ -242,8 +236,8 @@ def _resources_card(view: JoinedView, today: date) -> GuidanceCard:
     if flagged == 0:
         return GuidanceCard(title="Study resources", why=RESOURCES_HEALTHY)
     why = (
-        f"{flagged} of {total} supporting material"
-        f"{'s' if total != 1 else ''} need re-checking (broken or stale)."
+        f"{flagged} of {total} supporting material{plural(total)} "
+        "need re-checking (broken or stale)."
     )
     return GuidanceCard(
         title="Study resources",
@@ -267,12 +261,11 @@ def derive_study_guidance(view: JoinedView, today: date) -> StudyGuidance:
 
 
 def render_guidance_html(guidance: StudyGuidance) -> str:
-    """The five cards as server-side HTML — order is the §C-ter hierarchy."""
-    import html
+    """The five cards as server-side HTML — order is the §C-ter hierarchy.
 
-    def esc(value: str) -> str:
-        return html.escape(value, quote=True)
-
+    Every interpolated value escapes through the sublayer's one door
+    (``esc``, imported from ``interface.text``).
+    """
     parts: list[str] = []
     if guidance.limited_data_line:
         parts.append(f'<p class="banner advisory">{esc(guidance.limited_data_line)}</p>\n')

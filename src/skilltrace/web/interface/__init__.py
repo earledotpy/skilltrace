@@ -20,6 +20,7 @@ from .cards import CANONICAL_STATES, ActiveViewState, Affordance, VIEWS, Card, S
 from .handoff import handoff_html
 from .validate import FROZEN_ROUTES
 from .render import banner_html, render_rich_cards
+from .text import esc, plural
 from .translate import (
     banners,
     forbidden_in_lines,
@@ -41,10 +42,12 @@ __all__ = [
     "VIEWS",
     "banner_html",
     "banners",
+    "esc",
     "forbidden_in_lines",
     "forbidden_matches",
     "handoff_html",
     "intent_label",
+    "plural",
     "render_rich_cards",
     "rich_cards",
     "translate",

@@ -2,19 +2,18 @@
 Cross-cutting page primitives (ADR 0009): escaping, field
 parsing, tables, the shared banner, and GET-side flash rendering.
 
+``_esc`` and ``plural`` are re-exported from the sublayer's text
+micro-utilities (``interface.text``, #315) rather than defined here: the page
+layer has no escaper of its own, so every page body in this package escapes
+through the one door.
 """
 
 from __future__ import annotations
 
-import html
 import re
 
 from ...context import JoinedView
-
-
-def _esc(value: object) -> str:
-    """Escape every interpolated value — the one door into page HTML."""
-    return html.escape(str(value), quote=True)
+from ..interface import esc as _esc, plural
 
 
 def _output_banners(lines: list[str], *, default_class: str = "advisory") -> str:
