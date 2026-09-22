@@ -2,6 +2,12 @@
 GET ``/analytics`` — one read-only analytics theme per page
 (ADR 0009), plus the granted tooltip-script budget (ADR 0008).
 
+Card ownership (#317): this module's two ``card`` producers —
+``_analytics_card`` (the theme card) and ``_analytics_controls`` (the
+window/group-by chrome) — are blessed non-Card producers, named and
+justified in ``web/interface/render.SANCTIONED_CARD_PRODUCERS``; they do
+not compose :class:`interface.cards.Card`.
+
 """
 
 from __future__ import annotations
@@ -72,10 +78,47 @@ def _analytics_export_form(days: int, group_by: str, theme: str) -> str:
     )
 
 
+def _analytics_controls(days: int, group_by: str, theme: str) -> str:
+    """The controls panel — the window/group-by chrome, blessed (#317).
+
+    Page chrome, not a card of engine facts: one GET form plus plain
+    theme-toggle links, named and justified in
+    ``interface.render.SANCTIONED_CARD_PRODUCERS``. The window is a select
+    and the grouping two plain links, both keeping the visible theme, so a
+    control never has to be recounted by hand and the page stays tier-0.
+    """
+    options = "".join(
+        f'<option value="{n}" {"selected" if n == days else ""}>{label}</option>'
+        for n, label in ((7, "Last 7 days"), (30, "Last 30 days"), (90, "Last 90 days"))
+    )
+    return (
+        '<div class="card analytics-controls"><form method="get" action="/analytics">'
+        '<div class="form-row"><label>'
+        "Date range</label>"
+        f'<select name="days">{options}'
+        f'<option value="{days}" {"selected" if days not in (7, 30, 90) else ""}>Policy default ({days}d)</option>'
+        f'</select><input type="hidden" name="group-by" value="{_esc(group_by)}">'
+        f'<input type="hidden" name="theme" value="{_esc(theme)}">'
+        '<p class="small mut">Which window the charts cover.</p>'
+        '<button class="btn secondary" type="submit">Apply</button></div></form>'
+        '<div class="form-row"><label>Group by</label>'
+        '<p class="small mut">How sessions are bucketed in the charts.</p>'
+        f'<a class="btn {"secondary" if group_by == "track" else ""}" href="/analytics?days={days}&amp;group-by=prefix&amp;theme={_esc(theme)}">Prefix</a> '
+        f'<a class="btn {"secondary" if group_by == "prefix" else ""}" href="/analytics?days={days}&amp;group-by=track&amp;theme={_esc(theme)}">Track</a></div>'
+        "</div>"
+    )
+
+
 def _analytics_card(
     title: str, summary: str, derivation: str, svg: str, detail: str, view, theme: str
 ) -> str:
-    """One theme's page (T4 §H): a plain card; tables collapsed (P2.2)."""
+    """One theme's page (T4 §H): a plain card; tables collapsed (P2.2).
+
+    A chart panel, blessed in ``interface.render.SANCTIONED_CARD_PRODUCERS``
+    (#317) rather than migrated: the chart SVG and the export form have no
+    Richer-Card slot, and the panel's fact shape — one theme's numbers — is
+    not a skill card's.
+    """
     return (
         f'<div class="card analytics-card"><p class="lead">{_esc(title)}</p>'
         f'<p class="big">{_esc(summary)}</p><p class="mut">{_esc(derivation)}</p>{svg}'
@@ -124,26 +167,7 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         limited = f'<p class="banner advisory">{_esc(sentence)}</p>'
     days = model.window_days
     group_by = model.group_by
-    options = "".join(
-        f'<option value="{n}" {"selected" if n == days else ""}>{label}</option>'
-        for n, label in ((7, "Last 7 days"), (30, "Last 30 days"), (90, "Last 90 days"))
-    )
-    controls = (
-        '<div class="card analytics-controls"><form method="get" action="/analytics">'
-        '<div class="form-row"><label>'
-        "Date range</label>"
-        f'<select name="days">{options}'
-        f'<option value="{days}" {"selected" if days not in (7, 30, 90) else ""}>Policy default ({days}d)</option>'
-        f'</select><input type="hidden" name="group-by" value="{_esc(group_by)}">'
-        f'<input type="hidden" name="theme" value="{_esc(theme)}">'
-        '<p class="small mut">Which window the charts cover.</p>'
-        '<button class="btn secondary" type="submit">Apply</button></div></form>'
-        '<div class="form-row"><label>Group by</label>'
-        '<p class="small mut">How sessions are bucketed in the charts.</p>'
-        f'<a class="btn {"secondary" if group_by == "track" else ""}" href="/analytics?days={days}&amp;group-by=prefix&amp;theme={theme}">Prefix</a> '
-        f'<a class="btn {"secondary" if group_by == "prefix" else ""}" href="/analytics?days={days}&amp;group-by=track&amp;theme={theme}">Track</a></div>'
-        '</div>'
-    )
+    controls = _analytics_controls(days, group_by, theme)
     advisory = "".join(
         f'<p class="banner advisory">{_esc(warning)}</p>' for warning in warnings
     )

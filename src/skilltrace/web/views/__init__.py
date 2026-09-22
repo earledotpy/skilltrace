@@ -196,6 +196,7 @@ from .health import (  # noqa: F401
 )
 from .analytics import (  # noqa: F401
     _analytics_card,
+    _analytics_controls,
     _analytics_export_form,
     _analytics_view,
     analytics_body,

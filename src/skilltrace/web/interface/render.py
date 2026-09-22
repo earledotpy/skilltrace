@@ -7,6 +7,13 @@ the intent only (:func:`interface.affordances.intent_label`) — a binding's
 carries the per-request :class:`interface.cards.ActiveViewState` whose
 flash renders as the page's banner block.
 
+Not every legitimate producer is a Card composition. The blessed hand-rolled
+ones are named and justified in :data:`SANCTIONED_CARD_PRODUCERS` (#317) — the
+middle state of unowned card markup ends there: in a blessed page module, a
+``<div class="card">`` either composes :class:`interface.cards.Card` through
+this map or appears in that registry, so "nobody owns it" is no longer a
+reachable state for those pages.
+
 Escaping is not this module's to define: every interpolated value goes
 through the one door in :mod:`interface.text` (imported as ``_esc``), so the
 renderer and every other web-side HTML producer share a single escaper
@@ -17,6 +24,7 @@ anatomy is the map's guidance variant, not a page-side producer.
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 
 from .cards import ActiveViewState, Card
 from .handoff import handoff_html
@@ -91,6 +99,70 @@ def render_rich_cards(
             _card_html(card, index, extras, affordance_html, affordance_mode, classes)
         )
     return "".join(parts)
+
+
+@dataclass(frozen=True)
+class SanctionedProducer:
+    """A hand-rolled card producer the map blesses instead of absorbing (#317).
+
+    ``name`` is the ``module.attribute`` path of the producer, ``surface`` the
+    route it serves, ``reason`` the written verdict for why it is not a
+    :class:`interface.cards.Card` composition — the justification a reader
+    gets instead of a silent exception to the map.
+    """
+
+    name: str
+    surface: str
+    reason: str
+
+
+# The sanctioned non-Card producers (#317) — the map names every card-class
+# producer the analytics page module hand-rolls, so the middle state
+# (hand-rolled card markup nobody owns) ends there: a page-side
+# ``<div class="card">`` in ``views/analytics.py`` either composes an
+# :class:`interface.cards.Card` through :func:`render_rich_cards` or is
+# blessed below with its reason. Verdict for the analytics page's per-theme
+# cards: **blessed, not migrated**.
+#
+# Scope: entries name page-layer producers (``views.*``) of one surface, and
+# the gate in ``tests/web/test_sanctioned_card_producers.py`` keeps that a
+# closed world — an unlisted producer of card markup in the analytics module
+# fails there, and a listed producer that stops producing markup fails too.
+# Deliberately outside this claim: shared shell chrome (the error and modal
+# cards in ``views.shell``, which render on every route), the other page
+# modules' producers (the discovery surface's are #319's migration), and the
+# deprecated compat serializer (``views.compat.render_cards``), which is
+# pinned by its own grep gate and retires whole-file in #320.
+SANCTIONED_CARD_PRODUCERS: dict[str, SanctionedProducer] = {
+    entry.name: entry
+    for entry in (
+        SanctionedProducer(
+            name="views.analytics._analytics_card",
+            surface="/analytics",
+            reason=(
+                "blessed, not migrated (#317): the theme card is a chart "
+                "panel — the engine's chart SVG, one theme's derived numbers "
+                "and an export form, with no node behind them. A Card's state "
+                "is one of the five canonical node-state words, so composing "
+                "one here would assert a node state (and one next action) "
+                "that do not exist, and the seam's guarantees — closed "
+                "intents, no command strings — are vacuous for a panel with "
+                "no affordance."
+            ),
+        ),
+        SanctionedProducer(
+            name="views.analytics._analytics_controls",
+            surface="/analytics",
+            reason=(
+                "blessed, not migrated (#317): the controls card is page "
+                "chrome — one GET form plus plain theme-toggle links, not "
+                "engine content. A Card affordance binds a dispatcher write "
+                "command, so composing one here would invent a write intent "
+                "the panel does not have."
+            ),
+        ),
+    )
+}
 
 
 def _card_html(
