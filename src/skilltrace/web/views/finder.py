@@ -90,11 +90,11 @@ def _browse_html(view: JoinedView) -> str:
         "</div>\n",
     ]
     for subject, label, _count in subjects:
-        cards_html = _render_results(browse_cards(view, subject))
+        subject_cards = _render_results(browse_cards(view, subject))
         parts.append(
             f'<div class="card" id="subject-{_esc(subject)}">\n'
             f'<div class="kicker">{_esc(label)}</div>\n'
-            f"{cards_html}"
+            f"{subject_cards}"
             "</div>\n"
         )
     return "".join(parts)

@@ -2,13 +2,11 @@
 
 The GET routes (`/`, `/next`, `/nodes/{id}`, `/health`) compose
 :class:`web.interface.cards.Card` objects — the Richer Card vocabulary
-(v2.4 §E) — and render them through ``interface.render.render_rich_cards``.
-Derived ``MentorCard`` lists cross into Cards only through the one
-translation seam (``interface.translate.rich_cards``); the old part-to-HTML
-map (:func:`render_cards`) survives solely as the deprecated-compat
-serializer behind :func:`cards_html` for out-of-scope line producers
-(health liveness, report exports) — no route body composes MentorCards
-directly any more.
+(v2.4 §E) — and render them through ``interface.render`` (``render_rich_cards``,
+``render_guidance_cards``, ``render_discovery_cards``). Derived ``MentorCard``
+lists cross into Cards only through the one translation seam
+(``interface.translate.rich_cards``); the interface renderer is the only
+Card-to-HTML map (#320: the deprecated compat serializer is retired).
 
 The write routes (T4+T5, G2#66 + G5#69) are thin glue over the *same* registry the
 CLI dispatches through: a confirmed action builds ``Context(root, args,
@@ -49,7 +47,9 @@ from ...commands.node_detail import (
 )
 from ...commands.recommend import derive_next
 from ...commands.today import derive_today
-from ...mentor.cards import (
+from ...context import JoinedView, load_context_lenient
+from ...dispatch import Context, dispatch
+from ...mentor.cards import (  # noqa: F401 — re-exported for view modules/tests
     Banner,
     Kicker,
     Label,
@@ -59,10 +59,7 @@ from ...mentor.cards import (
     Pill,
     Sub,
     Title,
-    lines_to_cards,
 )
-from ...context import JoinedView, load_context_lenient
-from ...dispatch import Context, dispatch
 from ..discovery import (
     ENTRY_NODES,
     DiscoveryCard,
@@ -123,12 +120,6 @@ from .shell import (  # noqa: F401
     _status_page,
     not_found_body,
     page,
-)
-from .compat import (  # noqa: F401
-    _render_card_inner,
-    _render_part,
-    cards_html,
-    render_cards,
 )
 from .forms import (  # noqa: F401
     _evidence_submit_form,

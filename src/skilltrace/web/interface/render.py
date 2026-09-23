@@ -136,9 +136,9 @@ class SanctionedProducer:
 # chrome — the search-form card, the no-results pattern, and the browse
 # index/subject containers (#319 migrated the discovery *node* cards through
 # :func:`render_discovery_cards`; the chrome has no node or state behind it,
-# same verdict as the shell's); and the deprecated compat serializer
-# (``views.compat.render_cards``), which is pinned by its own grep gate and
-# retires whole-file in #320.
+# same verdict as the shell's); and the static export snapshot helper
+# (``html_export._lines_html``), which renders captured report lines as
+# escaped paragraphs on a disposable page — never an interface ``Card``.
 SANCTIONED_CARD_PRODUCERS: dict[str, SanctionedProducer] = {
     entry.name: entry
     for entry in (

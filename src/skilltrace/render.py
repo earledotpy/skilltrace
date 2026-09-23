@@ -93,8 +93,8 @@ def section_context(text: str) -> list[str]:
 # --- Structured cards -> legacy lines (issue #171) ---------------------------
 # The sole owner of the legacy line shape. CLI handlers produce
 # ``list[MentorCard]``; terminals print ``cards_to_lines(cards)`` verbatim,
-# while the web layer consumes the same cards via ``views.render_cards``
-# without serializing. Blank-line and ``---`` placement mirrors the retired
+# while the web layer consumes the same cards as interface ``Card`` objects
+# through the translation seam without serializing. Blank-line and ``---``
 # per-handler line builders exactly so terminal output does not change.
 
 
