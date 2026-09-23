@@ -4,9 +4,9 @@ Third MUTATING sibling of `export markdown` / `export sqlite` (the #33
 reasoning extended by G4#68): a single-page five-layer review roll-up rendered
 as a self-contained `data/export.html` (one inline `<style>` block, zero JS, no
 external assets). It reuses the *same* read derivations the terminal reports
-print and the *same* structured card pipeline the serve pages use
-(`web.views.cards_html` / `page`) — no second vocabulary (ADR 0006 / G3#67
-escalation path).
+print and the serve shell's `page` wrapper — report lines render as escaped
+paragraphs through the local `_lines_html` helper (#320: never through the
+web Card map, which renders interface `Card` objects only).
 
 Whole-file rewrite from YAML/Markdown truth on demand. A generated-at stamp and
 a "snapshot, not live — run `skilltrace ui`" banner mark it as a frozen view. It
@@ -55,6 +55,16 @@ def _capture(func, ctx) -> list[str]:
     return buffer.getvalue().splitlines()
 
 
+def _lines_html(lines: list[str]) -> str:
+    """Captured report lines as escaped paragraphs (#320).
+
+    The export is a frozen snapshot, not a served page: its lines carry no
+    node, state, or next action behind them, so they never compose interface
+    ``Card`` objects and never flow through the web Card-to-HTML map.
+    """
+    return "".join(f"<p>{html.escape(line)}</p>\n" for line in lines if line.strip())
+
+
 def _banner_card(generated_at: str) -> str:
     return (
         '<div class="card">\n'
@@ -71,8 +81,6 @@ def _health_strip_card(root: Path, *, clock=None) -> str:
     ``clock`` is the dispatcher's test/fixture override, threaded through so
     a simulated-day export derives liveness from the simulation.
     """
-    from .web.views import cards_html
-
     report = health_report(Path(root), clock=clock)
     pills = "".join(
         f'<span class="pill {"verified" if layer.ok else "broken"}">'
@@ -83,7 +91,7 @@ def _health_strip_card(root: Path, *, clock=None) -> str:
     body = (
         '<div class="kicker">HEALTH STRIP</div>\n'
         f"<p>{pills}</p>\n"
-        + cards_html(report.liveness_lines)
+        + _lines_html(report.liveness_lines)
         + f'<p class="banner {verdict_class}">{html.escape(report.verdict())}</p>\n'
     )
     return f'<div class="card">\n{body}</div>\n'
@@ -91,7 +99,7 @@ def _health_strip_card(root: Path, *, clock=None) -> str:
 
 def render_html(ctx) -> str:
     """Build the full self-contained HTML page from the captured report lines."""
-    from .web.views import cards_html, page
+    from .web.views import page
 
     snapshot = load_context_strict(ctx.root)
     if not snapshot.ok:
@@ -105,7 +113,7 @@ def render_html(ctx) -> str:
     sections_html = ""
     for title, handler in _SECTIONS:
         lines = _capture(handler, report_ctx)
-        inner = cards_html(lines) if lines else '<p class="mut">No data.</p>'
+        inner = _lines_html(lines) if lines else '<p class="mut">No data.</p>'
         sections_html += (
             f"<section>\n<h2>{html.escape(title)}</h2>\n{inner}\n</section>\n"
         )

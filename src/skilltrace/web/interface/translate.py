@@ -9,7 +9,8 @@ Rule split:
 
 * page composers never emit banned vocabulary (source truth);
 * captured command stdout is *flash copy* — it flows through
-  :func:`translate` at the one ``render_cards`` seam no surface bypasses;
+  :func:`translate` before it reaches a flash (``views.writes``) or a page
+  banner (``views._shared``); no write or read surface bypasses it;
 * :func:`forbidden_matches` is the detector the tests and doc gates run to
   prove nothing leaked.
 
@@ -76,8 +77,6 @@ _PREFIX_REWRITES: tuple[tuple[re.Pattern[str], str], ...] = tuple(
         ("check-automation:", "The automated check"),
     )
 )
-
-_TRANSLATE_SEAM = "render_cards"
 
 # Gate/writer refusal shapes that carry the CLI verb inside the body (e.g.
 # ``master blocked: node x is locked`` flowing through ``pass: FAILED — ...``),

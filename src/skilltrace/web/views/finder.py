@@ -12,43 +12,43 @@ from ..discovery import (
     browse_cards,
     browse_subjects,
     discover,
+    discovery_page_cards,
 )
+from ..interface.render import render_discovery_cards
 from ._shared import (
     _esc,
-    _slug,
     plural,
 )
 from .shell import _page_head
 
 
-def _discovery_card_html(card: DiscoveryCard) -> str:
-    """One discovery card — the §C-bis anatomy.
+def _discovery_chrome(card: DiscoveryCard) -> str:
+    """One locked card's blocked-prerequisite tail — the page attachment (#319).
 
-    Available/active cards link to the node view (selection navigates only —
-    never implicitly starts, passes, or opens a session). A locked card is
-    greyed and never a link into the node as available: it names and links
-    its blocking prerequisite instead — locked stays the only wall.
+    The §C-bis anatomy's tail (the wall's name + link) travels with the
+    page and rides the renderer's per-card attachment channel, exactly as
+    the Health guidance links do (#318). Values escape through the one
+    door here; locked stays the only wall — this names it, never overrides.
     """
-    cls = "card result" + (" locked" if card.locked else "")
-    title_html = _esc(card.title)
-    if not card.locked:
-        title_html = f'<a href="/nodes/{_esc(card.node_id)}">{title_html}</a>'
-    lines = [f'<div class="{cls}">\n']
-    lines.append(
-        f'<p class="lead">{title_html} '
-        f'<span class="pill {_esc(_slug(card.chip))}">{_esc(card.chip)}</span></p>\n'
+    if not (card.locked and card.blocked_by_id):
+        return ""
+    return (
+        f'<p class="sub">Blocked by <a href="/nodes/{_esc(card.blocked_by_id)}">'
+        f"{_esc(card.blocked_by_title)}</a> — pass it first.</p>\n"
     )
-    lines.append(f'<p class="big">{_esc(card.description)}</p>\n')
-    if card.description_pending:
-        lines.append('<p class="mut">description pending</p>\n')
-    lines.append(f'<p class="mut ref">{_esc(card.node_id)}</p>\n')
-    if card.locked and card.blocked_by_id:
-        lines.append(
-            f'<p class="sub">Blocked by <a href="/nodes/{_esc(card.blocked_by_id)}">'
-            f"{_esc(card.blocked_by_title)}</a> — pass it first.</p>\n"
-        )
-    lines.append("</div>\n")
-    return "".join(lines)
+
+
+def _render_results(cards: list[DiscoveryCard]) -> str:
+    """Discovery records as page HTML: compose Cards, attach, render (#319).
+
+    The §C-bis cards leave this page module as interface ``Card`` objects
+    through the one Card-to-HTML map; this composer adds only the page's
+    per-card tail attachment and owns no markup itself.
+    """
+    return render_discovery_cards(
+        discovery_page_cards(cards),
+        {index: _discovery_chrome(card) for index, card in enumerate(cards)},
+    )
 
 
 def _no_results_html(view: JoinedView, raw: str) -> str:
@@ -90,11 +90,11 @@ def _browse_html(view: JoinedView) -> str:
         "</div>\n",
     ]
     for subject, label, _count in subjects:
-        cards_html = "".join(_discovery_card_html(card) for card in browse_cards(view, subject))
+        subject_cards = _render_results(browse_cards(view, subject))
         parts.append(
             f'<div class="card" id="subject-{_esc(subject)}">\n'
             f'<div class="kicker">{_esc(label)}</div>\n'
-            f"{cards_html}"
+            f"{subject_cards}"
             "</div>\n"
         )
     return "".join(parts)
@@ -143,7 +143,7 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
         )
         if cards:
             parts.append(heading)
-            parts.extend(_discovery_card_html(card) for card in cards)
+            parts.append(_render_results(cards))
         else:
             parts.append(_no_results_html(view, raw))
     parts.append(_browse_html(view))

@@ -2,10 +2,8 @@
 
 The five content gates that used to read ``web/views.py`` as a single file
 now read the whole page layer instead: the concatenation of every
-``web/**/*.py`` except ``web/interface/``. The exclusion is load-bearing —
-the sublayer mentions ``render_cards`` twice in prose and code, which would
-inflate a count-based gate from 2 to 4. Count-based gates keep counting over
-the concatenation, so their exact semantics are preserved rather than
+``web/**/*.py`` except ``web/interface/``. Count-based gates keep counting
+over the concatenation, so their exact semantics are preserved rather than
 relaxed, and successor work never repoints them again.
 """
 

@@ -20,7 +20,6 @@ from skilltrace.mentor.cards import (
     Pill,
     Sub,
     Title,
-    lines_to_cards,
 )
 
 
@@ -238,31 +237,3 @@ def test_banner_and_appendix_cards_use_blank_separators():
         "Locked (1):",
         "  a.b_01 — blocked by: c.d_01",
     ]
-
-
-# --- lines_to_cards: compat parser for out-of-scope line producers -------------
-
-
-def test_compat_parser_recovers_typed_parts():
-    cards = lines_to_cards(
-        [
-            "OPTION 1 — X",
-            "Some Skill Title",
-            "  [Ready to start]",
-            "",
-            "Where to learn",
-            "  A resource line",
-            "---",
-            "OPTION 2 — Y",
-            "[advisory] note",
-        ]
-    )
-    assert len(cards) == 3
-    kinds = [type(part) for part in cards[0].parts]
-    assert kinds == [Kicker, Lead, Pill, Label, Sub]
-    assert cards[0].parts[0] == Kicker(text="OPTION 1 — X")
-    assert cards[0].parts[1] == Lead(text="Some Skill Title")
-    assert cards[0].parts[2] == Pill(label="Ready to start")
-    assert cards[1].parts == (Kicker(text="OPTION 2 — Y"),)
-    assert cards[2].kind == "advisory"
-    assert cards[2].parts == (Banner(kind="advisory", text="note"),)

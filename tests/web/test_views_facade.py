@@ -7,7 +7,7 @@ re-export:
   module resolves on the facade — the union is the surface;
 * the frozen consumer surface resolves: the names ``web/handler.py``
   imports from ``views`` plus every ``views.<name>`` attribute it reads,
-  and the ``cards_html`` / ``page`` that ``html_export.py`` imports.
+  and the ``page`` that ``html_export.py`` imports.
 """
 
 from __future__ import annotations
@@ -82,8 +82,6 @@ def test_the_frozen_consumer_surface_resolves_on_the_facade():
         "_status_page",
         "_flash_html",
         "utc_today",
-        "render_cards",
-        "cards_html",
         "page",
     }
     missing = sorted(n for n in frozen if not hasattr(views, n))

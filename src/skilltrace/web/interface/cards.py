@@ -35,6 +35,19 @@ CANONICAL_STATES: frozenset[str] = frozenset(
     {"locked", "available", "active", "passed", "mastered"}
 )
 
+# The state chip pairing (P3.4 + spec §C-bis "Card anatomy"): the canonical
+# state word with its plain-language discovery label — one map beside the
+# words it pairs, no glossary fork. The discovery anatomy in ``render`` reads
+# it for the pill (#319), so the label has exactly one home and the chip can
+# never drift from the five canonical words.
+CHIP_LABELS: dict[str, str] = {
+    "available": "Ready to start",
+    "active": "In progress",
+    "locked": "Locked",
+    "passed": "Passed",
+    "mastered": "Mastered",
+}
+
 
 class SublayerError(Exception):
     """The sublayer is inconsistent; serve refuses to start.

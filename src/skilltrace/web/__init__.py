@@ -13,7 +13,7 @@ surface:
   registry and handlers as the CLI, so there is exactly one write path.
 
 Captured command output flows through the sublayer's forbidden-vocabulary
-translation (P3.1) at the ``render_cards``/flash boundary; no surface
+translation (P3.1) before it reaches a flash or a page banner; no surface
 bypasses it. The sublayer emits no ``<script>`` — a release-tested gate.
 
 Importing this package has no side effects; only ``serve`` starts a server.

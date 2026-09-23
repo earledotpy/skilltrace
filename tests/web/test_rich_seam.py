@@ -7,9 +7,9 @@ What only the enforced seam can show:
 * every rendered affordance traces to an intent — the label comes from the
   intent's affordance vocabulary, never from a ``binding.command`` string,
   and no raw command string reaches page HTML;
-* the page layer composes Cards: the deprecated part-map serializer is
-  reachable only through ``cards_html`` (no route body composes
-  ``MentorCard``s directly — no parallel composition path).
+* the interface renderer is the only Card-to-HTML map (#320: the deprecated
+  part-map serializer and its ``cards_html`` entry point are retired — no
+  route body or helper composes ``MentorCard``s directly).
 """
 
 from __future__ import annotations
@@ -139,6 +139,10 @@ def _all_route_bodies() -> list[tuple[str, str]]:
         ("node", views.node_body(repo, node_id)[1]),
         ("health", views.health_body(repo)[1]),
         ("analytics", views.analytics_body(repo, {})[1]),
+        # #319: the discovery surface owes the same guarantees — its cards
+        # compose through the Card seam, so the gates hold by construction.
+        ("finder", views.finder_body(repo, {})[1]),
+        ("finder query", views.finder_body(repo, {"q": ["order of operations"]})[1]),
     ]
 
 
@@ -155,16 +159,28 @@ def test_every_data_intent_is_in_the_closed_set():
             assert intent in closed, f"{name}: unknown intent {intent!r}"
 
 
-# --- The page layer composes Cards — no parallel composition path ---------------------
+# --- The interface renderer is the only Card-to-HTML map (#320) ------------------
 
 
-def test_the_deprecated_part_map_is_reachable_only_through_cards_html():
+def test_the_deprecated_part_map_serializer_is_gone():
     from _web_source import web_source_text
 
     source = web_source_text()
-    render_calls = len(re.findall(r"\brender_cards\(", source))
-    inner_calls = len(re.findall(r"\b_render_card_inner\(", source))
-    assert render_calls == 2, "render_cards must appear only in its def + cards_html"
-    assert inner_calls == 2, (
-        "_render_card_inner must appear only inside the compat serializer"
+    for token in (
+        "render_cards",
+        "_render_card_inner",
+        "_render_part",
+        "cards_html",
+        "lines_to_cards",
+        "views.compat",
+    ):
+        assert token not in source, f"deprecated compat survivor: {token}"
+    assert (
+        sorted(
+            Path(__file__)
+            .resolve()
+            .parents[2]
+            .glob("src/skilltrace/web/views/compat*")
+        )
+        == []
     )
