@@ -11,6 +11,7 @@ and the G5 daily writes round-trip through their forms with redirect-after-POST.
 
 from __future__ import annotations
 
+import re
 import shutil
 import urllib.error
 import urllib.request
@@ -331,6 +332,56 @@ def test_work_bad_minutes_is_a_warning_flash(repo):
     assert "minutes must be an integer." in notice
 
 
+# --- #343: the Log work form carries the canonical node id ----------------------
+
+
+def _work_form_of(body: str) -> str:
+    """The rendered Log work form — the exact markup the learner submits."""
+    match = re.search(r'<form method="post" action="/work">.*?</form>', body, re.S)
+    assert match is not None, "node page renders no /work form"
+    return match.group(0)
+
+
+def test_rendered_log_work_form_carries_the_canonical_node_id(repo):
+    """#343: the id rides a hidden input — the learner never infers or types it."""
+    _, body, _ = views.node_body(repo, NODE, {})
+    form = _work_form_of(body)
+    assert f'<input type="hidden" name="node_id" value="{NODE}">' in form
+
+
+def test_work_missing_node_id_refuses_without_writing(repo):
+    """#343: no node id → warning flash, no SessionWork row, no event."""
+    _set_state(repo, NODE, "available")
+    views.post_start(repo, NODE, _form())
+    work_before = _read_yaml(repo, "execution/session_work.yaml").get("session_work") or []
+
+    result = views.post_work(repo, _form(notes="x", minutes="5", next=f"/nodes/{NODE}"))
+
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+    assert "node id" in notice
+    work_after = _read_yaml(repo, "execution/session_work.yaml").get("session_work") or []
+    assert len(work_after) == len(work_before)
+    assert [e["command"] for e in _events(repo)] == ["start"]
+
+
+def test_work_unknown_node_id_refuses_without_writing(repo):
+    """#343: an id the graph does not know refuses through the dispatcher, no write."""
+    _set_state(repo, NODE, "available")
+    views.post_start(repo, NODE, _form())
+    work_before = _read_yaml(repo, "execution/session_work.yaml").get("session_work") or []
+
+    result = views.post_work(repo, _form(node_id="no.such.node", notes="x"))
+
+    assert isinstance(result, Redirect)
+    _, kind = _notice_of(result)
+    assert kind == "warning"
+    work_after = _read_yaml(repo, "execution/session_work.yaml").get("session_work") or []
+    assert len(work_after) == len(work_before)
+    assert [e["command"] for e in _events(repo)] == ["start"]
+
+
 def test_session_close_honest_end_refuses_future(repo):
     _set_state(repo, NODE, "available")
     views.post_start(repo, NODE, _form())
@@ -599,3 +650,63 @@ def test_http_refusal_redirects_to_step_without_an_event(running_server):
     assert status == 303
     assert location.startswith(f"/nodes/{other}/pass?")
     assert _events(root) == []
+
+
+def _submitted_fields(form_html: str) -> dict:
+    """The fields a browser would submit for ``form_html`` — rendered values only.
+
+    Inputs contribute their ``value`` (absent ``value`` → empty string, so a
+    blank minutes field posts blank); an unchecked checkbox is omitted; a
+    textarea contributes its rendered text content.
+    """
+    fields: dict = {}
+    for tag in re.findall(r"<input\b[^>]*>", form_html):
+        name = re.search(r'name="([^"]+)"', tag)
+        if name is None:
+            continue
+        if 'type="checkbox"' in tag and "checked" not in tag:
+            continue
+        value = re.search(r'value="([^"]*)"', tag)
+        fields[name.group(1)] = value.group(1) if value else ""
+    for name, text in re.findall(
+        r'<textarea name="([^"]+)">(.*?)</textarea>', form_html, re.S
+    ):
+        fields[name] = text
+    return fields
+
+
+def test_http_rendered_log_work_form_round_trips_into_session_work(running_server):
+    """#343: submit the *rendered* Log work form — SessionWork lands via the dispatcher.
+
+    The route-level write tests hand ``post_work`` a node id; this one proves
+    the rendered form contract itself: GET the node page, take the fields the
+    learner would actually submit, POST them, and find the work row (plus the
+    ``work`` audit event with ``source: web``) in the seeded repo.
+    """
+    server, root = running_server
+    base = f"http://127.0.0.1:{server.server_port}"
+
+    status, location, _ = _http_post(base + f"/nodes/{NODE}/start", {"next": f"/nodes/{NODE}"})
+    assert status == 303
+
+    status, body = _http_get(base + f"/nodes/{NODE}")
+    assert status == 200
+    form = _work_form_of(body)
+    fields = _submitted_fields(form)
+    assert fields.get("node_id") == NODE  # the canonical id, never typed by the learner
+
+    fields["notes"] = "rendered-form round trip"
+    fields["minutes"] = "15"
+    status, location, _ = _http_post(base + "/work", fields)
+    assert status == 303
+    assert location.startswith(f"/nodes/{NODE}")
+
+    work_rows = _read_yaml(root, "execution/session_work.yaml").get("session_work") or []
+    assert work_rows[-1]["node_id"] == NODE
+    assert work_rows[-1]["notes"] == "rendered-form round trip"
+    assert work_rows[-1]["minutes"] == 15
+
+    events = _events(root)
+    assert events[-1]["command"] == "work"
+    assert events[-1]["args"]["source"] == "web"
+    assert events[-1]["args"]["node_id"] == NODE

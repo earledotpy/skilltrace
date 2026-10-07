@@ -133,6 +133,7 @@ def _node_actions_card(view: JoinedView, node_id: str) -> str:
         "<details><summary>Log work</summary>"
         '<form method="post" action="/work">'
         f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
+        f'<input type="hidden" name="node_id" value="{_esc(node_id)}">'
         f"{_work_form_fields()}"
         '<button type="submit" class="btn secondary">Add work item</button></form></details>\n'
         "<details><summary>I'm stuck — create a blocker</summary>"
