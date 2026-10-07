@@ -5,19 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from _builders import write_node as _shared_write_node
 
 from skilltrace.context import JoinedView, Loaders, load_context_lenient, load_context_strict
 from skilltrace.evidence._schema import EvidenceLoadError
-from skilltrace.evidence.evidence import EvidenceRecords, ValidationGate, ArtifactSpec
-from skilltrace.execution._store import ExecutionLoadError
+from skilltrace.evidence.evidence import ArtifactSpec, EvidenceRecords, ValidationGate
 from skilltrace.execution.records import ExecutionRecords
 from skilltrace.graph.nodes import NodeLoadError, SkillNode
 from skilltrace.graph.state import ProgressStore, ProgressStoreError
 from skilltrace.resources.registry import ResourceLoadError
 from skilltrace.resources.status import DEFAULT_STALE_AFTER_DAYS
-
 
 # -- helpers --
 

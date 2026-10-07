@@ -132,7 +132,7 @@ def test_reason_without_broken_is_an_error(resources_repo, capsys):
         ["verify-resource", "some-resource", "--reason", "stray reason"],
         root=resources_repo,
     )
-    out = capsys.readouterr().out
+    capsys.readouterr()  # surfaced output read; the assertions below bind rc + registry
     assert rc == 1
     entry = resource_named(read_registry(resources_repo), "some-resource")
     assert "last_verified" not in entry

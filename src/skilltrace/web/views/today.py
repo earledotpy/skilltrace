@@ -7,9 +7,9 @@ viewport plus the six-card bento.
 from __future__ import annotations
 
 from datetime import (
-    timezone,
     datetime,
     timedelta,
+    timezone,
 )
 from pathlib import Path
 
@@ -17,25 +17,25 @@ from ...commands.recommend import derive_next
 from ...commands.today import derive_today
 from ...context import JoinedView
 from ...execution.overdue import (
-    utc_today,
     parse_date,
+    utc_today,
 )
 from ...execution.records import open_session
-from ..interface.handoff import handoff_html
 from ...mentor.cards import (
-    Sub,
     Label,
+    Sub,
 )
+from ..interface.handoff import handoff_html
 from ._shared import (
     _degraded_banner,
     _esc,
     _normalize_pill_label,
     plural,
 )
-from .shell import _page_head
 from .forms import (
     _start_confirm_form,
 )
+from .shell import _page_head
 
 
 def _focus_resources(model) -> list[str]:

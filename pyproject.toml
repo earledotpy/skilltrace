@@ -14,13 +14,36 @@ skilltrace = "skilltrace.cli:main"
 st = "skilltrace.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "ruff>=0.16"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+# Conservative first gate: pycodestyle errors + pyflakes + import order.
+# No formatter/UP/C4 breadth yet — widen once this baseline is green.
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = [
+    # Long HTML/f-string lines are idiomatic in this codebase (77 remain even
+    # at 120, mostly one-line markup in web/views/shell.py). The render layer
+    # pins byte-exact snapshots; rewrapping markup strings is churn with no
+    # behavioural gain. Revisit if a formatter is ever adopted.
+    "E501",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# ADR 0009 package facades re-export view/model names on purpose; ruff cannot
+# see cross-module re-export consumers.
+"__init__.py" = ["F401"]
+# The stdlib-only entry point must install the UTF-8 stdout/stderr wrappers
+# before importing the CLI — the import is deliberately not at the top.
+"src/skilltrace/__main__.py" = ["E402"]
 
 [tool.skill_graph]
 primary_interface = "cli"

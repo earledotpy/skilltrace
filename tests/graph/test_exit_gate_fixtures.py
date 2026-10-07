@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from skilltrace.graph.validation import load_and_validate
 
-
 # --- Happy path: minimal valid graph loads and validates ---------------------
 
 def test_minimal_valid_graph_validates_clean(graph_builder):

@@ -13,15 +13,15 @@ write_node copies collapse to one shared helper is added.
 
 from __future__ import annotations
 
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 _TESTS_DIR = Path(__file__).resolve().parent
 if str(_TESTS_DIR) not in sys.path:
     sys.path.insert(0, str(_TESTS_DIR))
 
-import os
-import tempfile
 if os.name == "nt":
     local_temp = os.environ.get("LOCALAPPDATA")
     if local_temp:

@@ -20,8 +20,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import yaml
-
 from skilltrace import cli
 from skilltrace.events import load_events
 from skilltrace.resources.registry import load_resources

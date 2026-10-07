@@ -8,8 +8,8 @@ import pytest
 
 from skilltrace.dispatch import (
     Command,
-    Context,
     CommandResult,
+    Context,
     Kind,
     Registry,
     dispatch,

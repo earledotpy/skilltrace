@@ -22,7 +22,6 @@ from skilltrace.mentor.cards import (
     Title,
 )
 
-
 # --- Model constructors --------------------------------------------------------
 
 

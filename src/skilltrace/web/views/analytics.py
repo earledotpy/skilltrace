@@ -18,9 +18,9 @@ from ...analytics.derive import derive_analytics
 from ...analytics.models import AnalyticsParams
 from ...analytics.policy import limited_data_sentence
 from ...analytics.sparkline import sparkline_svg
-from ..analytics_tooltip import tooltip_script
 from ...execution.overdue import utc_today
 from ...policy.advisory import analytics_warnings
+from ..analytics_tooltip import tooltip_script
 from ._shared import (
     _esc,
     _table,

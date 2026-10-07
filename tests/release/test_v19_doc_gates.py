@@ -70,7 +70,7 @@ def test_dg2_context_names_broken_marker_enrichment_fields():
 
 def test_dg2_context_has_no_agents_primer_engine_vocabulary():
     """CONTEXT.md has no agents/primer engine vocabulary added in v1.9."""
-    text = (REPO_ROOT / "CONTEXT.md").read_text(encoding="utf-8")
+    _text = (REPO_ROOT / "CONTEXT.md").read_text(encoding="utf-8")
     # Per spec §8, these are curriculum seed wording, not engine vocabulary
     forbidden_terms = (
         "Agent",

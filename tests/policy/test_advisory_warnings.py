@@ -9,7 +9,16 @@ human-initiated action).
 from __future__ import annotations
 
 from skilltrace import cli
+from skilltrace.analytics.models import (
+    AnalyticsView,
+    BlockersResult,
+    EvidenceResult,
+    ReviewsResult,
+    VelocityResult,
+    WeekBucket,
+)
 from skilltrace.events import load_events
+from skilltrace.policy.advisory import analytics_warnings
 
 from .conftest import NODE, _write_yaml
 
@@ -111,18 +120,6 @@ def test_missing_policy_seeds_degrade_to_silence(mastery_repo, capsys):
 # analytics_warnings() — threshold math, empty inputs, PolicyLoadError path
 # (T-TestArch D2 + D5, issue #129)
 # ---------------------------------------------------------------------------
-
-from datetime import date
-
-from skilltrace.analytics.models import (
-    AnalyticsView,
-    BlockersResult,
-    EvidenceResult,
-    ReviewsResult,
-    VelocityResult,
-    WeekBucket,
-)
-from skilltrace.policy.advisory import analytics_warnings
 
 
 # --- Helpers -----------------------------------------------------------------

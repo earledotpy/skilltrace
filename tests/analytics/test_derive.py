@@ -22,11 +22,6 @@ from types import SimpleNamespace
 import pytest
 
 from skilltrace.analytics.derive import (
-    derive_blockers,
-    derive_evidence,
-    derive_reviews,
-    derive_theme,
-    derive_velocity,
     _blockers_aggregate,
     _blockers_build_row,
     _blockers_filter,
@@ -43,8 +38,12 @@ from skilltrace.analytics.derive import (
     _velocity_build_row,
     _velocity_filter,
     _window_start,
+    derive_blockers,
+    derive_evidence,
+    derive_reviews,
+    derive_theme,
+    derive_velocity,
 )
-
 
 # ---------------------------------------------------------------------------
 # Minimal stubs

@@ -17,9 +17,9 @@ import argparse
 
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution.overdue import utc_today
+from ..resources.polite_sweep import check_urls
 from ..resources.registry import ResourceLoadError, load_resources
 from ..resources.status import VerificationStatus, derive_status, stale_after_days
-from ..resources.polite_sweep import check_urls
 from ..resources.web_check import resolve_web_verification_policy
 
 

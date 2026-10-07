@@ -17,7 +17,6 @@ from skilltrace.web import interface
 from skilltrace.web.interface.cards import Affordance, Card, View, view_by_name
 from skilltrace.web.interface.validate import SublayerError
 
-
 # --- frozen route table (G-RouteSurface) ------------------------------------------
 
 

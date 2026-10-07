@@ -31,7 +31,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution.overdue import utc_today
 from ..graph.nodes import NodeLoadError, load_nodes
 from ..resources.registry import (

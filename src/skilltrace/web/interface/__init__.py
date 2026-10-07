@@ -16,9 +16,8 @@ sublayer refuses to start.
 from __future__ import annotations
 
 from .affordances import COMMAND_AFFORDANCE_LABELS, intent_label
-from .cards import CANONICAL_STATES, ActiveViewState, Affordance, VIEWS, Card, SublayerError, View, view_by_name
+from .cards import CANONICAL_STATES, VIEWS, ActiveViewState, Affordance, Card, SublayerError, View, view_by_name
 from .handoff import handoff_html
-from .validate import FROZEN_ROUTES
 from .render import banner_html, render_discovery_cards, render_guidance_cards, render_rich_cards
 from .text import esc, plural
 from .translate import (
@@ -29,6 +28,7 @@ from .translate import (
     translate,
     translate_lines,
 )
+from .validate import FROZEN_ROUTES
 
 __all__ = [
     "CANONICAL_STATES",

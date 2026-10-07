@@ -13,10 +13,10 @@ hash/file path is pinned in test_artifacts.py.
 from __future__ import annotations
 
 from skilltrace.evidence.evidence import (
-    AssessmentAttempt,
-    ValidationGate,
-    EvidenceRecord,
     ArtifactSpec,
+    AssessmentAttempt,
+    EvidenceRecord,
+    ValidationGate,
 )
 from skilltrace.evidence.validation import EvidenceValidationResult, check_evidence
 

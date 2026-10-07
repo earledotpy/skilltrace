@@ -9,11 +9,9 @@ through the `check_urls` seam with an injected fake opener.
 
 from __future__ import annotations
 
-import urllib.error
-
 from skilltrace.resources.polite_sweep import WebCheckResult, check_urls
 
-from .test_polite_sweep import _MockResponse, _http_error, _opener_for, _plain_kwargs
+from .test_polite_sweep import _http_error, _MockResponse, _opener_for, _plain_kwargs
 
 
 def test_plain_mode_head_ok_pins_exact_fields_in_order():

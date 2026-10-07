@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import argparse
 
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..graph.edges import EdgeLoadError, GraphEdge, load_edges
 from ..graph.nodes import NodeLoadError, load_nodes
 from ..graph.readiness import SyncResult, sync_readiness

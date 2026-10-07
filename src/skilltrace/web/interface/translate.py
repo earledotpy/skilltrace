@@ -261,8 +261,7 @@ def rich_cards(
     content card missing the minimum — e.g. the empty state) ride the
     banner channel with P3.1-cleaned, titlefied text.
     """
-    from ...mentor.cards import Banner, Kicker, NextAction, Para, Pill, Sub, Title
-    from .cards import Affordance, Card
+    from ...mentor.cards import Banner
 
     titles = titles or {}
     cards: list = []

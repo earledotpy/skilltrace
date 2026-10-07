@@ -13,12 +13,9 @@ from __future__ import annotations
 
 import argparse
 
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
-from ._common import now_iso as _now_iso, report_plan as _report
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution._store import ExecutionLoadError
-from ..execution.base_plan import BasePlan
 from ..execution.overdue import utc_today
-from ..execution.session_planning import SessionPlan, plan_close, plan_start, plan_work
 from ..execution.records import (
     Session,
     append_session,
@@ -30,6 +27,7 @@ from ..execution.records import (
     load_sessions,
     open_session,
 )
+from ..execution.session_planning import SessionPlan, plan_close, plan_start, plan_work
 from ..execution.staleness import stale_session_hours, stale_warning
 from ..execution.templates import known_templates
 from ..graph.state import ProgressStoreError, load_state, save_state
@@ -39,6 +37,8 @@ from ..policy.advisory import (
     overdue_review_count,
     start_warnings,
 )
+from ._common import now_iso as _now_iso
+from ._common import report_plan as _report
 
 
 def _apply(root, plan: SessionPlan, store, *, now: str) -> CommandResult:

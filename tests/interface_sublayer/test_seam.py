@@ -21,7 +21,7 @@ from dataclasses import dataclass
 
 from skilltrace import render
 from skilltrace.execution.days import days_practiced, practiced_days
-from skilltrace.mentor.cards import Kicker, MentorCard, NextAction, Sub
+from skilltrace.mentor.cards import Kicker, MentorCard, Sub
 from skilltrace.mentor.prose import NodeFacts, NodeState, next_action_for
 from skilltrace.web.interface import (
     banners,
@@ -29,7 +29,6 @@ from skilltrace.web.interface import (
     translate,
     translate_lines,
 )
-
 
 # --- fixtures -------------------------------------------------------------------
 

@@ -16,11 +16,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from ..evidence.evidence import ArtifactSpec, EvidenceRecord
 from ..execution.records import Blocker
 from ..graph.nodes import SkillNode
+
+if TYPE_CHECKING:
+    from .cards import NextAction
 
 
 class NodeState(str, Enum):

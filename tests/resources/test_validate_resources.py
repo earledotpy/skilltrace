@@ -8,13 +8,10 @@ files on disk. The registry lives in the curriculum area (`graph/resources.yaml`
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from skilltrace import cli
 from skilltrace.events import load_events
 
 from .conftest import REPO_ROOT, write_node, write_registry
-
 
 # --- Criterion 1 & 6: shipped repo is empty-but-valid, registry is curriculum ---
 

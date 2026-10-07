@@ -15,7 +15,7 @@ from __future__ import annotations
 import argparse
 
 from ..context import load_context_strict
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution.overdue import utc_today
 from ..export_data import ExportData, load_export_data
 from ..html_export import HTML_EXPORT_RELPATH, render_html

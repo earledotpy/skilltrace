@@ -15,9 +15,9 @@ from __future__ import annotations
 
 import argparse
 
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..evidence._schema import EvidenceLoadError
-from ..evidence.evidence import load_evidence_records, load_artifact_specs
+from ..evidence.evidence import load_artifact_specs, load_evidence_records
 from ..execution._store import ExecutionLoadError
 from ..execution.records import load_reviews
 from ..graph.nodes import NodeLoadError, load_nodes
@@ -28,8 +28,8 @@ from ..policy.mastery import (
     load_mastery_values,
     plan_master,
 )
-from .eligibility import passed_at_of
 from ._common import now_iso
+from .eligibility import passed_at_of
 
 
 def master_node(ctx: Context) -> CommandResult:

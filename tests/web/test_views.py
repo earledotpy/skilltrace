@@ -18,7 +18,6 @@ from pathlib import Path
 
 import pytest
 import yaml
-
 from _builders import write_node as _shared_write_node
 
 from skilltrace.context import load_context_lenient, load_context_strict

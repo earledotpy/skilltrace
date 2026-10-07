@@ -13,7 +13,6 @@ from pathlib import Path
 
 import pytest
 import yaml
-
 from _builders import write_node
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

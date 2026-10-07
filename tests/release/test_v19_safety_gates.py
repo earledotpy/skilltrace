@@ -375,7 +375,7 @@ def test_sa8_new_seed_content_touches_no_engine_path():
     # The edges additions are in graph/edges.yaml only (appended)
     # The resources additions are in graph/resources.yaml only (appended)
     # No new files under src/skilltrace/
-    src_files = set(path.relative_to(REPO_ROOT).as_posix() for path in SRC.rglob("*.py"))
+    _src_files = set(path.relative_to(REPO_ROOT).as_posix() for path in SRC.rglob("*.py"))
     
     # This test documents the content-only corollary by asserting no new
     # engine modules were added in this release (the src/ tree structure

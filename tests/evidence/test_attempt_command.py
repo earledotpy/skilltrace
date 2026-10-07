@@ -17,8 +17,8 @@ from pathlib import Path
 import yaml
 
 from skilltrace import cli
-from skilltrace.evidence.evidence import load_assessment_attempts, load_evidence_records
 from skilltrace.events import load_events
+from skilltrace.evidence.evidence import load_assessment_attempts, load_evidence_records
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

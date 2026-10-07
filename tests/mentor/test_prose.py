@@ -17,14 +17,12 @@ from skilltrace.evidence.evidence import ArtifactSpec
 from skilltrace.execution.records import Blocker
 from skilltrace.graph.nodes import SkillNode
 from skilltrace.mentor.prose import (
-    MentorSection,
     NodeFacts,
     NodeState,
     brief_for,
     resource_lines,
     state_phrase,
 )
-from skilltrace.resources.registry import LearningResource
 
 
 def _node(id: str = "math.arithmetic.x_01", title: str = "Apply X") -> SkillNode:

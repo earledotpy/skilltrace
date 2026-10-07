@@ -27,13 +27,13 @@ from datetime import datetime, timezone
 from typing import Callable
 
 from ..automation import check_automation
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..evidence._schema import EvidenceLoadError
 from ..evidence.eligibility import compute_eligibility
 from ..evidence.evidence import (
-    load_validation_gates,
-    load_evidence_records,
     load_artifact_specs,
+    load_evidence_records,
+    load_validation_gates,
 )
 from ..evidence.passing import PassOutcome, plan_pass
 from ..execution._store import ExecutionLoadError

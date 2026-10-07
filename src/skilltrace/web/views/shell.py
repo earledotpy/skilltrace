@@ -27,7 +27,6 @@ from ._shared import (
     plural,
 )
 
-
 _STYLE = """
   /* v2.4 T1 locked §B design tokens (P5.4): every hex lives in :root; one accent.
      Muted semantics for exactly the five node states plus attention/warn/err;

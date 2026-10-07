@@ -15,8 +15,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-
-from _builders import write_node
+from _builders import write_node as write_node  # re-exported for sibling test modules
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

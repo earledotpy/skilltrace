@@ -15,8 +15,6 @@ sublayer refuses to start.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from .cards import SublayerError  # re-exported: the one sublayer error type
 
 __all__ = ["FROZEN_ROUTES", "SublayerError", "validate_structure", "validate_interface"]
@@ -39,16 +37,16 @@ FROZEN_ROUTES: dict[str, str] = {
 
 def validate_structure() -> None:
     """Internal consistency (import time). Raises :class:`SublayerError`."""
+    from typing import get_args
+
+    # Every fact intent carries a human affordance label (the rendered
+    # vocabulary — a fact's ``command`` string is never web-rendered).
+    from ...mentor.cards import Intent
     from .affordances import (
         COMMAND_AFFORDANCE_LABELS,
         FACT_AFFORDANCE_LABELS,
     )
     from .cards import VIEWS
-
-    # Every fact intent carries a human affordance label (the rendered
-    # vocabulary — a fact's ``command`` string is never web-rendered).
-    from ...mentor.cards import Intent
-    from typing import get_args
 
     for intent in get_args(Intent):
         if intent not in FACT_AFFORDANCE_LABELS:

@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 
 from ..automation import check_automation
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 
 
 def check_automation_command(ctx: Context) -> CommandResult:

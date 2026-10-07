@@ -25,6 +25,20 @@ from datetime import date
 from pathlib import Path
 
 from .. import render
+from ..context import load_context_lenient
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
+from ..execution.overdue import utc_today
+from ..execution.records import open_session
+from ..graph.edges import EdgeLoadError
+from ..graph.nodes import NodeLoadError, SkillNode
+from ..graph.recommendation import (
+    LockedCandidate,
+    Recommendation,
+    RecommendationResult,
+    recommend,
+)
+from ..graph.recommendation_prep import prepare
+from ..graph.state import ProgressStoreError
 from ..mentor.cards import (
     CardPart,
     Kicker,
@@ -37,24 +51,9 @@ from ..mentor.cards import (
     Sub,
     Title,
 )
-from ..context import load_context_lenient
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
-from ..execution.overdue import utc_today
-from ..execution.records import open_session
-from ..graph.edges import EdgeLoadError, GraphEdge
-from ..graph.nodes import NodeLoadError, SkillNode
-from ..graph.recommendation import (
-    LockedCandidate,
-    Recommendation,
-    RecommendationResult,
-    recommend,
-)
-from ..graph.recommendation_prep import prepare
-from ..graph.state import ProgressStoreError
 from ..mentor.prose import NodeState, resource_lines, state_phrase
 from ..policy.remediation_edges import ActiveRemediation
 from ..resources.registry import LearningResource
-
 
 # --- Mentor-voice prose helpers -----------------------------------------------
 

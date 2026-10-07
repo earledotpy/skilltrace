@@ -9,8 +9,7 @@ from __future__ import annotations
 
 from skilltrace import cli
 from skilltrace.events import load_events
-from skilltrace.execution.records import load_blockers
-from skilltrace.execution.records import load_remediation_actions
+from skilltrace.execution.records import load_blockers, load_remediation_actions
 from skilltrace.graph.state import load_state
 
 NODE = "testing.execution.rescue_target_01"

@@ -23,7 +23,6 @@ from typing import Any
 
 import pytest
 import yaml
-
 from _builders import write_node as _write_node_impl
 
 

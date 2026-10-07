@@ -25,7 +25,6 @@ registry loads clean; this function performs the surgical edit and persists it.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 

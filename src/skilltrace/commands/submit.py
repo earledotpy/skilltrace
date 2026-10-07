@@ -32,17 +32,16 @@ from pathlib import Path
 
 import yaml
 
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..evidence._schema import EvidenceLoadError, read_yaml_list
 from ..evidence.artifacts import hash_artifact
 from ..evidence.evidence import (
-    load_validation_gates,
-    load_evidence_records,
     load_artifact_specs,
+    load_evidence_records,
+    load_validation_gates,
 )
 from ..evidence.submission import (
     GateInfo,
-    GateUnrunnable,
     SubmitOutcome,
     plan_submit,
 )
@@ -67,7 +66,8 @@ def _run_gate(command: str):
     scripts; streaming (`Popen` pump loops) is explicitly rejected for v2.2.
     Returns a `GateRunResult` (the planner's seam value).
     """
-    from ..evidence.submission import GateRunResult, GateUnrunnable as _Unrunnable
+    from ..evidence.submission import GateRunResult
+    from ..evidence.submission import GateUnrunnable as _Unrunnable
 
     argv = shlex.split(command)
     if not argv:

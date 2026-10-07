@@ -33,12 +33,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .eligibility import live_accepted_count as _live_accepted_count
-from .evidence import EvidenceRecord, ArtifactSpec
+from .evidence import ArtifactSpec, EvidenceRecord
 from .gate_receipt import (
-    EXIT_FAILED as _FAILED,
-    EXIT_PASSED as _PASSED,
-    HASH_PREFIX as _HASH_PREFIX,
+    EXIT_FAILED as _FAILED,  # noqa: F401 — documented re-export (see note above `_unpack_run`)
+)
+from .gate_receipt import (
+    EXIT_PASSED as _PASSED,  # noqa: F401 — documented re-export (see note above `_unpack_run`)
+)
+from .gate_receipt import (
     build as _receipt_build,
+)
+from .gate_receipt import (
     hash_stream as _receipt_hash_stream,
 )
 from .ids import allocate_evidence_id

@@ -31,6 +31,13 @@ import argparse
 from dataclasses import dataclass
 
 from .. import render
+from ..context import JoinedView, load_context_lenient
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
+from ..evidence.eligibility import compute_eligibility, live_accepted_count
+from ..execution.records import Blocker, open_session
+from ..graph.edges import EdgeLoadError, GraphEdge
+from ..graph.nodes import NodeLoadError, SkillNode
+from ..graph.state import ProgressStoreError
 from ..mentor.cards import (
     CardPart,
     Kicker,
@@ -42,13 +49,6 @@ from ..mentor.cards import (
     Sub,
     Title,
 )
-from ..context import JoinedView, load_context_lenient
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
-from ..evidence.eligibility import compute_eligibility, live_accepted_count
-from ..execution.records import Blocker, open_session
-from ..graph.edges import EdgeLoadError, GraphEdge
-from ..graph.nodes import NodeLoadError, SkillNode
-from ..graph.state import ProgressStoreError
 from ..mentor.prose import (
     MentorSection,
     NodeFacts,

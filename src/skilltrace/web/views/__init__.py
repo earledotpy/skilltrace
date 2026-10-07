@@ -31,6 +31,7 @@ the lenient ``JoinedView`` fresh per request.
 """
 
 from __future__ import annotations
+
 import re
 from argparse import Namespace
 from contextlib import redirect_stdout
@@ -39,16 +40,27 @@ from datetime import datetime, timedelta, timezone
 from io import StringIO
 from pathlib import Path
 from urllib.parse import urlencode
+
+from ...analytics.derive import derive_analytics
+from ...analytics.models import AnalyticsParams
+from ...analytics.policy import limited_data_sentence
+from ...analytics.sparkline import sparkline_svg
 from ...commands.eligibility import passed_at_of
 from ...commands.health import health_report
 from ...commands.node_detail import (
-    derive_node_drilldown,
     derive_node_detail,
+    derive_node_drilldown,
 )
 from ...commands.recommend import derive_next
 from ...commands.today import derive_today
 from ...context import JoinedView, load_context_lenient
 from ...dispatch import Context, dispatch
+from ...evidence.eligibility import compute_eligibility, live_accepted_count
+from ...execution.overdue import parse_date, utc_today
+from ...execution.records import open_session
+from ...graph.edges import EdgeLoadError
+from ...graph.nodes import NodeLoadError
+from ...graph.state import ProgressStoreError
 from ...mentor.cards import (  # noqa: F401 — re-exported for view modules/tests
     Banner,
     Kicker,
@@ -60,6 +72,10 @@ from ...mentor.cards import (  # noqa: F401 — re-exported for view modules/tes
     Sub,
     Title,
 )
+from ...policy.advisory import analytics_warnings
+from ...policy.mastery import compute_mastery_eligibility
+from ...resources.status import VerificationStatus
+from ..analytics_tooltip import tooltip_script
 from ..discovery import (
     ENTRY_NODES,
     DiscoveryCard,
@@ -75,21 +91,6 @@ from ..interface.cards import ActiveViewState, Affordance, Card, view_by_name
 from ..interface.handoff import handoff_html
 from ..interface.render import render_discovery_cards, render_guidance_cards, render_rich_cards
 from ..interface.translate import rich_cards as _rich_cards_from_model
-from ...analytics.derive import derive_analytics
-from ...analytics.models import AnalyticsParams
-from ...analytics.policy import limited_data_sentence
-from ...analytics.sparkline import sparkline_svg
-from ..analytics_tooltip import tooltip_script
-from ...evidence.eligibility import compute_eligibility, live_accepted_count
-from ...execution.overdue import parse_date, utc_today
-from ...execution.records import open_session
-from ...graph.edges import EdgeLoadError
-from ...graph.nodes import NodeLoadError
-from ...graph.state import ProgressStoreError
-from ...policy.mastery import compute_mastery_eligibility
-from ...policy.advisory import analytics_warnings
-from ...resources.status import VerificationStatus
-
 from ._shared import (  # noqa: F401
     _CANONICAL_STATE_LABELS,
     _degraded_banner,
@@ -107,6 +108,45 @@ from ._shared import (  # noqa: F401
     _table,
     plural,
 )
+from .analytics import (  # noqa: F401
+    _analytics_card,
+    _analytics_controls,
+    _analytics_export_form,
+    _analytics_view,
+    analytics_body,
+)
+from .finder import (  # noqa: F401
+    _browse_html,
+    _discovery_chrome,
+    _no_results_html,
+    _render_results,
+    finder_body,
+)
+from .forms import (  # noqa: F401
+    _evidence_submit_form,
+    _resolve_blocker_form,
+    _start_confirm_form,
+    _template_select,
+    _work_form_fields,
+)
+from .health import (  # noqa: F401
+    _ROLLUP_CARD,
+    _ROLLUP_CHROME,
+    _card_chrome,
+    health_body,
+)
+from .next import (  # noqa: F401
+    _candidate_stack,
+    _not_ready_card,
+    _not_ready_list,
+    _why_details,
+    next_body,
+)
+from .node import (  # noqa: F401
+    _drill_down_card,
+    _node_actions_card,
+    node_body,
+)
 from .shell import (  # noqa: F401
     _STYLE,
     _chrome,
@@ -121,28 +161,12 @@ from .shell import (  # noqa: F401
     not_found_body,
     page,
 )
-from .forms import (  # noqa: F401
-    _evidence_submit_form,
-    _resolve_blocker_form,
-    _start_confirm_form,
-    _template_select,
-    _work_form_fields,
-)
-from .writes import (  # noqa: F401
-    Redirect,
-    _dispatch_web,
-    _finish_write,
-    _redirect_with_notice,
-    _safe_next,
-    post_analytics_export,
-    post_blocker_create,
-    post_blocker_resolve,
-    post_evidence,
-    post_master_confirm,
-    post_pass,
-    post_session_close,
-    post_start,
-    post_work,
+from .steps import (  # noqa: F401
+    _STATUS_PILL_CLASSES,
+    _mastery_facts_html,
+    master_body,
+    master_confirm_body,
+    pass_modal_body,
 )
 from .today import (  # noqa: F401
     _MONTH_ABBREVS,
@@ -162,42 +186,19 @@ from .today import (  # noqa: F401
     _week_card,
     home_body,
 )
-from .next import (  # noqa: F401
-    _candidate_stack,
-    _not_ready_card,
-    _not_ready_list,
-    _why_details,
-    next_body,
-)
-from .finder import (  # noqa: F401
-    _browse_html,
-    _discovery_chrome,
-    _no_results_html,
-    _render_results,
-    finder_body,
-)
-from .node import (  # noqa: F401
-    _drill_down_card,
-    _node_actions_card,
-    node_body,
-)
-from .health import (  # noqa: F401
-    _ROLLUP_CARD,
-    _ROLLUP_CHROME,
-    _card_chrome,
-    health_body,
-)
-from .analytics import (  # noqa: F401
-    _analytics_card,
-    _analytics_controls,
-    _analytics_export_form,
-    _analytics_view,
-    analytics_body,
-)
-from .steps import (  # noqa: F401
-    _STATUS_PILL_CLASSES,
-    _mastery_facts_html,
-    master_body,
-    master_confirm_body,
-    pass_modal_body,
+from .writes import (  # noqa: F401
+    Redirect,
+    _dispatch_web,
+    _finish_write,
+    _redirect_with_notice,
+    _safe_next,
+    post_analytics_export,
+    post_blocker_create,
+    post_blocker_resolve,
+    post_evidence,
+    post_master_confirm,
+    post_pass,
+    post_session_close,
+    post_start,
+    post_work,
 )

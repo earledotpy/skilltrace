@@ -13,7 +13,6 @@ from pathlib import Path
 
 import pytest
 import yaml
-
 from _builders import write_node as _write_node
 
 from skilltrace import cli
@@ -122,7 +121,7 @@ def test_today_picks_up_the_open_session_as_focus(today_repo, capsys):
 
 
 def test_today_reports_overdue_review_pressure(today_repo, capsys):
-    from datetime import date, datetime, timedelta, timezone
+    from datetime import datetime, timedelta, timezone
 
     due = (datetime.now(timezone.utc).date() - timedelta(days=3)).isoformat()
     _write_yaml(
@@ -249,7 +248,6 @@ def test_today_analytics_warning_appears_in_pressure_paragraph(today_repo, capsy
 def test_today_analytics_bits_capped_at_two(today_repo, capsys):
     """Even when all four analytics thresholds fire, at most 2 analytics bits
     appear in the today pressure paragraph (cap per G6 resolution)."""
-    from datetime import datetime, timezone
 
     # Trip all four thresholds:
     # - velocity: no sessions → 0 avg/week < 2

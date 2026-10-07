@@ -26,7 +26,6 @@ from .shell import (
     _status_page,
 )
 
-
 _STATUS_PILL_CLASSES = {
     VerificationStatus.BROKEN.value: "broken",
     VerificationStatus.STALE.value: "stale",

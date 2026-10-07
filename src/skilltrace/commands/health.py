@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .. import render
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..evidence.validation import EvidenceValidationResult, load_and_validate_evidence
 from ..execution._store import ExecutionLoadError
 from ..execution.overdue import utc_today

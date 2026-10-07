@@ -26,6 +26,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .. import render
+from ..analytics.derive import derive_analytics
+from ..context import load_context_lenient
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
+from ..evidence.eligibility import compute_eligibility, live_accepted_count
+from ..evidence.evidence import ArtifactSpec
+from ..execution.days import days_practiced
+from ..execution.overdue import overdue_reviews, utc_today
+from ..execution.records import Blocker, open_session
+from ..graph.edges import EdgeLoadError
+from ..graph.nodes import NodeLoadError, SkillNode
+from ..graph.recommendation import recommend
+from ..graph.recommendation_prep import prepare
+from ..graph.state import ProgressStoreError
 from ..mentor.cards import (
     CardPart,
     Kicker,
@@ -36,23 +49,8 @@ from ..mentor.cards import (
     Para,
     Sub,
 )
-from ..analytics.derive import derive_analytics
-from ..context import load_context_lenient
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
-from ..evidence.eligibility import compute_eligibility, live_accepted_count
-from ..evidence.evidence import ArtifactSpec
-from ..execution.overdue import overdue_reviews, utc_today
-from ..execution.days import days_practiced
-from ..execution.records import Blocker, open_session
-from ..graph.edges import EdgeLoadError
-from ..graph.nodes import NodeLoadError, SkillNode
-from ..graph.recommendation import recommend
-from ..graph.recommendation_prep import prepare
-from ..graph.state import ProgressStoreError
 from ..mentor.prose import resource_lines
 from ..policy.advisory import analytics_warnings
-from ..resources.registry import LearningResource
-
 
 # --- Small loaders and helpers -------------------------------------------------
 

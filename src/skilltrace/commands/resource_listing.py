@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import argparse
 
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..graph.nodes import NodeLoadError, load_nodes
 from ..resources.registry import (
     LearningResource,

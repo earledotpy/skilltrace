@@ -23,7 +23,7 @@ from pathlib import Path
 
 import yaml
 
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..evidence._schema import EvidenceLoadError, read_yaml_list
 from ..evidence.attempt_recording import AttemptOutcome, plan_attempt
 from ..evidence.evidence import load_assessment_attempts, load_validation_gates

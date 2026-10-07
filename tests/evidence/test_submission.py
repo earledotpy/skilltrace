@@ -14,9 +14,7 @@ import dataclasses
 import hashlib
 from pathlib import Path
 
-import pytest
-
-from skilltrace.evidence.evidence import EvidenceRecord, ArtifactSpec
+from skilltrace.evidence.evidence import ArtifactSpec, EvidenceRecord
 from skilltrace.evidence.submission import (
     GateInfo,
     GateRunResult,

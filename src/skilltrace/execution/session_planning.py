@@ -9,7 +9,7 @@ is the intent.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 
 from .base_plan import BasePlan

@@ -12,13 +12,12 @@ import shutil
 from pathlib import Path
 
 import yaml
+from _builders import write_node
 
 from skilltrace import cli
-from skilltrace.policy.weights import load_track_weights
 from skilltrace.events import load_events
 from skilltrace.graph.nodes import load_nodes
-
-from _builders import write_node
+from skilltrace.policy.weights import load_track_weights
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

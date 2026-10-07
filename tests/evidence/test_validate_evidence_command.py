@@ -14,9 +14,9 @@ import shutil
 from pathlib import Path
 
 from skilltrace import cli
+from skilltrace.events import load_events
 from skilltrace.evidence.artifacts import hash_artifact
 from skilltrace.evidence.validation import load_and_validate_evidence
-from skilltrace.events import load_events
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

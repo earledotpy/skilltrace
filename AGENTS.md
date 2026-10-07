@@ -100,6 +100,10 @@ wall clock. Coverage, and what stays wall-clock, is listed in
 - Active direction: `docs/POST_V2_ROADMAP.md` slot table + linked
   `docs/spec-<slot>.md`. Last shipped: see `docs/RELEASE_NOTES.md` top entry
   (no version number cached here). Follow the slot sequence.
+- Lint: `ruff check src tests` (config in `pyproject.toml`; install via
+  `pip install -e .[dev]`). Run it before committing — it is a gate, not a
+  suggestion. The rule set is deliberately conservative (`E`, `F`, `I`, no
+  `E501`); widen it in its own change, never inline with feature work.
 - Tests: `pytest` (per-layer suites under `tests/<layer>`). Every slot's spec
   §7 + safety/doc gates must pass on the merged tree.
 - When a domain term is added or changed, update `CONTEXT.md` in the same

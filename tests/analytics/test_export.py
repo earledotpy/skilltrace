@@ -332,8 +332,9 @@ def _seed_multipoint_velocity(tmp_path: Path) -> Path:
     (7+ days apart), so the velocity series is a real multi-point trend with
     actual data — not just all-zero window buckets.
     """
-    from skilltrace.execution.overdue import utc_today
     from datetime import timedelta
+
+    from skilltrace.execution.overdue import utc_today
 
     root = _seed_repo(tmp_path)
     days = [utc_today() - timedelta(days=n) for n in (20, 9, 2)]
@@ -732,8 +733,7 @@ class TestExportRefusal:
             )
         rc = cli.run(["analytics", "export", "--format", "md"], root=root)
         assert rc != 0
-        out = capsys.readouterr().out + capsys.readouterr().err
-        # Either a FAILED message or an exception was surfaced
+        capsys.readouterr()  # surfaced output: a FAILED message or an exception
         assert rc == 1
 
     def test_refusal_does_not_write_partial_file(self, tmp_path):

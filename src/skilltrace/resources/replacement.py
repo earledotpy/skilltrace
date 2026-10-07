@@ -14,7 +14,6 @@ Edits both target entries in place in raw YAML:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 import yaml
 

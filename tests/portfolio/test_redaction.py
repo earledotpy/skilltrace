@@ -6,7 +6,7 @@ deny-all defaults and per-dimension overrides.
 
 from __future__ import annotations
 
-from skilltrace.portfolio.models import SelectionOptions
+from skilltrace.portfolio.models import SelectedEvidence, SelectedNode, SelectionOptions
 from skilltrace.portfolio.redaction import (
     REDACTED,
     block_to_report_dict,
@@ -17,7 +17,6 @@ from skilltrace.portfolio.redaction import (
     visible_receipt,
     visible_url,
 )
-from skilltrace.portfolio.models import SelectedEvidence, SelectedNode
 
 
 def _block() -> dict:

@@ -20,7 +20,7 @@ import yaml
 from skilltrace.context import load_context_lenient
 from skilltrace.web import views
 from skilltrace.web.interface import forbidden_matches
-from skilltrace.web.views import Redirect, _STYLE
+from skilltrace.web.views import _STYLE, Redirect
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 NODE = "math.arithmetic.order_operations_01"

@@ -14,8 +14,8 @@ from ...commands.node_detail import (
 )
 from ...context import JoinedView
 from ..interface.cards import (
-    view_by_name,
     ActiveViewState,
+    view_by_name,
 )
 from ..interface.handoff import handoff_html
 from ..interface.render import render_rich_cards
@@ -27,15 +27,15 @@ from ._shared import (
     _esc,
     _table,
 )
-from .shell import (
-    _page_head,
-    _status_page,
-)
 from .forms import (
     _evidence_submit_form,
     _resolve_blocker_form,
     _start_confirm_form,
     _work_form_fields,
+)
+from .shell import (
+    _page_head,
+    _status_page,
 )
 from .steps import (
     _STATUS_PILL_CLASSES,

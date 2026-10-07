@@ -15,9 +15,8 @@ from __future__ import annotations
 import argparse
 import errno
 import webbrowser
-from pathlib import Path
-
 from http.server import ThreadingHTTPServer
+from pathlib import Path
 
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from .handler import SkillTraceHandler

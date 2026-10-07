@@ -23,10 +23,10 @@ from pathlib import Path
 
 from .context import JoinedView, load_context_strict
 from .evidence.evidence import (
-    AssessmentAttempt,
-    ValidationGate,
-    EvidenceRecord,
     ArtifactSpec,
+    AssessmentAttempt,
+    EvidenceRecord,
+    ValidationGate,
 )
 from .execution.records import Blocker, RemediationAction, Review, Session, SessionWork
 from .graph.edges import GraphEdge

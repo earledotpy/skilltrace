@@ -13,7 +13,8 @@ from __future__ import annotations
 import re
 
 from ...context import JoinedView
-from ..interface import esc as _esc, plural
+from ..interface import esc as _esc
+from ..interface import plural as plural  # explicit re-export (PEP 484) — see docstring
 
 
 def _output_banners(lines: list[str], *, default_class: str = "advisory") -> str:

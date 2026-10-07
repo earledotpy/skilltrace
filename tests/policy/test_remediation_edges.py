@@ -97,7 +97,7 @@ def test_open_blocker_activates_the_edge(policy_repo, capsys):
     root = _remediation_repo(policy_repo, blocker_status="open")
 
     out = _next_output(root, capsys)
-    advisories = [l for l in out.splitlines() if "remediation" in l]
+    advisories = [line for line in out.splitlines() if "remediation" in line]
     assert any(REM in a and TARGET in a for a in advisories)
     # Activation never locks the target — it stays a ranked candidate.
     # Mentor-voice output (issue #44): TARGET appears in its DO THIS NEXT action line.
@@ -107,13 +107,13 @@ def test_open_blocker_activates_the_edge(policy_repo, capsys):
 def test_failed_attempt_threshold_activates_the_edge(policy_repo, capsys):
     root = _remediation_repo(policy_repo, failed_attempts=3)
     out = _next_output(root, capsys)
-    assert any(REM in l and "remediation" in l for l in out.splitlines())
+    assert any(REM in line and "remediation" in line for line in out.splitlines())
 
 
 def test_below_threshold_with_resolved_blocker_stays_inactive(policy_repo, capsys):
     root = _remediation_repo(policy_repo, blocker_status="resolved", failed_attempts=2)
     out = _next_output(root, capsys)
-    assert not any(REM in l and "remediation" in l for l in out.splitlines())
+    assert not any(REM in line and "remediation" in line for line in out.splitlines())
 
 
 def test_passing_the_remediation_node_deactivates_the_edge(policy_repo, capsys):
@@ -121,16 +121,16 @@ def test_passing_the_remediation_node_deactivates_the_edge(policy_repo, capsys):
         policy_repo, blocker_status="open", remediation_state="passed"
     )
     out = _next_output(root, capsys)
-    assert not any(REM in l and "remediation" in l for l in out.splitlines())
+    assert not any(REM in line and "remediation" in line for line in out.splitlines())
 
 
 def test_passing_the_target_clears_the_attempt_trigger(policy_repo, capsys):
     root = _remediation_repo(policy_repo, failed_attempts=3, target_state="passed")
     out = _next_output(root, capsys)
-    assert not any(REM in l and "remediation" in l for l in out.splitlines())
+    assert not any(REM in line and "remediation" in line for line in out.splitlines())
 
 
 def test_a_retired_edge_never_activates(policy_repo, capsys):
     root = _remediation_repo(policy_repo, blocker_status="open", edge_active=False)
     out = _next_output(root, capsys)
-    assert not any(REM in l and "remediation" in l for l in out.splitlines())
+    assert not any(REM in line and "remediation" in line for line in out.splitlines())

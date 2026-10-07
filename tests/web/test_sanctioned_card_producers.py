@@ -32,8 +32,7 @@ import importlib
 from dataclasses import dataclass
 from pathlib import Path
 
-from skilltrace.web.interface import forbidden_matches
-from skilltrace.web.interface import render
+from skilltrace.web.interface import forbidden_matches, render
 from skilltrace.web.views import analytics as analytics_view
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

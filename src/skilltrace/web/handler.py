@@ -24,16 +24,17 @@ from urllib.parse import parse_qs, unquote
 from . import views
 from .views import (
     Redirect,
+    analytics_body,
     finder_body,
     health_body,
     home_body,
-    analytics_body,
     master_body,
     master_confirm_body,
     next_body,
     node_body,
     page,
     pass_modal_body,
+    post_analytics_export,
     post_blocker_create,
     post_blocker_resolve,
     post_evidence,
@@ -42,7 +43,6 @@ from .views import (
     post_session_close,
     post_start,
     post_work,
-    post_analytics_export,
 )
 
 _NODE_PASS_RE = re.compile(r"^/nodes/(.+?)/pass$")

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import argparse
 
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..evidence.validation import (
     EvidenceValidationResult,
     load_and_validate_evidence,

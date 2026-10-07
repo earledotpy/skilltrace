@@ -11,8 +11,8 @@ from __future__ import annotations
 import argparse
 
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
-from ..resources.registry import ResourceLoadError, load_resources
 from ..resources.polite_sweep import check_urls
+from ..resources.registry import ResourceLoadError, load_resources
 from ..resources.web_check import resolve_web_verification_policy
 
 
@@ -38,7 +38,7 @@ def check_resource(ctx: Context) -> CommandResult:
 
     policy = resolve_web_verification_policy(root)
     if not policy.enabled:
-        print(f"check-resource: FAILED — web check is disabled by policy.")
+        print("check-resource: FAILED — web check is disabled by policy.")
         return CommandResult(exit_code=1)
 
     try:

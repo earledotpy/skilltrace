@@ -8,8 +8,6 @@ deterministically with no disk and no git. The wired `graph impact` command
 
 from __future__ import annotations
 
-import pytest
-
 from skilltrace.graph.edges import GraphEdge
 from skilltrace.graph.impact import compute_impact
 from skilltrace.graph.nodes import SkillNode

@@ -25,22 +25,19 @@ data, no audit events logged, never reads event log for state).
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
 from ..context import load_context_lenient
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution.overdue import (
     days_overdue,
     is_overdue,
-    overdue_reviews,
     parse_date,
     utc_today,
 )
 from ..graph.edges import EdgeLoadError
-from ..graph.nodes import NodeLoadError, SkillNode
+from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
 from .resource_report import resource_report
-
 
 # ==========================================
 # 1. REPORT: PROGRESS
@@ -168,9 +165,7 @@ def report_blockers(ctx: Context) -> CommandResult:
     except (NodeLoadError, EdgeLoadError, ProgressStoreError) as exc:
         print(f"report blockers: FAILED -- {exc}")
         return CommandResult(exit_code=1)
-    nodes = joined.nodes
     edges = joined.edges
-    store = joined.store
     blockers = joined.blockers
     actions = joined.remediations
     titles = joined.titles
@@ -264,7 +259,6 @@ def report_reviews(ctx: Context) -> CommandResult:
     except (NodeLoadError, ProgressStoreError) as exc:
         print(f"report reviews: FAILED -- {exc}")
         return CommandResult(exit_code=1)
-    nodes = joined.nodes
     store = joined.store
     reviews = joined.reviews
     titles = joined.titles
@@ -351,7 +345,6 @@ def report_evidence(ctx: Context) -> CommandResult:
         return CommandResult(exit_code=1)
     nodes = joined.nodes
     store = joined.store
-    specs = joined.specs
     records = joined.records
 
     node_map = joined.node_map

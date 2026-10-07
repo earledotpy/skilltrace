@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..execution.overdue import utc_today

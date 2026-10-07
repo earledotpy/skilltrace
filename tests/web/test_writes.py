@@ -603,8 +603,9 @@ def _http_get(url: str) -> tuple[int, str]:
 
 @pytest.fixture
 def running_server(tmp_path):
-    from skilltrace.web.server import make_server
     import threading
+
+    from skilltrace.web.server import make_server
 
     for dirname in ("graph", "evidence", "policy"):
         shutil.copytree(REPO_ROOT / dirname, tmp_path / dirname)

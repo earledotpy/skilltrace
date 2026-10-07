@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from ...context import JoinedView
 from ..discovery import (
-    DiscoveryCard,
     ENTRY_NODES,
+    DiscoveryCard,
     browse_cards,
     browse_subjects,
     discover,

@@ -145,13 +145,13 @@ def test_activation_never_locks_the_target(tmp_path, capsys):
     # ...and the target still ranks as a candidate (has a score line), never
     # appearing in the locked section the `--show-locked` tail would print.
     lines = out.splitlines()
-    split = next((i for i, l in enumerate(lines) if l.startswith("locked (")), len(lines))
+    split = next((i for i, ln in enumerate(lines) if ln.startswith("locked (")), len(lines))
     ranked, locked_lines = "\n".join(lines[:split]), lines[split:]
     assert AVAILABLE_TARGET in ranked and "score" in ranked, out
     # The target must not be a *locked entry* itself. It may still appear in the
     # locked tail as another node's unmet-prerequisite reason ("blocked by: ..."),
     # so match the entry form (`  <node> - `) rather than a bare substring.
     locked_entry = f"  {AVAILABLE_TARGET} - "
-    assert not any(l.startswith(locked_entry) for l in locked_lines), (
+    assert not any(ln.startswith(locked_entry) for ln in locked_lines), (
         "an active remediation edge must not lock its target"
     )

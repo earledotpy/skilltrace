@@ -29,7 +29,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from .cards import ActiveViewState, Card, CHIP_LABELS
+from .cards import CHIP_LABELS, ActiveViewState, Card
 from .handoff import handoff_html
 from .text import esc as _esc
 

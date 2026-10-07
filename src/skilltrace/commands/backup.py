@@ -12,7 +12,7 @@ import argparse
 from datetime import datetime
 
 from ..backup import create_backup
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 
 
 def _backup_moment(clock) -> datetime | None:

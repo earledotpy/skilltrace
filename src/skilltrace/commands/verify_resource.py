@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import argparse
 
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..resources.polite_sweep import check_urls
 from ..resources.registry import ResourceLoadError, load_resources
 from ..resources.verification import record_verification, today_iso
@@ -80,7 +80,7 @@ def verify_resource(ctx: Context) -> CommandResult:
         policy = resolve_web_verification_policy(root)
         if not policy.enabled:
             print(
-                f"verify-resource: FAILED — web check is disabled by policy."
+                "verify-resource: FAILED — web check is disabled by policy."
             )
             return CommandResult(exit_code=1)
 

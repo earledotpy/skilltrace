@@ -120,8 +120,8 @@ def test_sa3_receipt_attached_only_on_the_objective_path():
     for lineno, _line in hits:
         before = text.splitlines()[: lineno - 1]
         enclosing = [
-            i for i, l in enumerate(before)
-            if l.strip() == 'if gate.authority == "objective":'
+            i for i, text_line in enumerate(before)
+            if text_line.strip() == 'if gate.authority == "objective":'
         ]
         assert enclosing, f"gate_run write at line {lineno} not inside objective branch"
         assert enclosing[-1] < lineno
@@ -222,7 +222,7 @@ def test_sa6_doc_gate_section7_command_list_verbatim():
         "skilltrace validate graph\n"
         "skilltrace health\n"
     )
-    for line in (l.strip() for l in required.splitlines() if l.strip()):
+    for line in (ln.strip() for ln in required.splitlines() if ln.strip()):
         assert line in SPEC, f"spec §7 missing verbatim command: {line!r}"
 
 

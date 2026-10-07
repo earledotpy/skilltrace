@@ -19,13 +19,13 @@ from __future__ import annotations
 
 import argparse
 
-from ..dispatch import Command, Context, CommandResult, Kind, Registry
+from ..dispatch import Command, CommandResult, Context, Kind, Registry
 from ..evidence._schema import EvidenceLoadError
 from ..evidence.eligibility import EligibilityResult, compute_eligibility
 from ..evidence.evidence import (
-    load_validation_gates,
-    load_evidence_records,
     load_artifact_specs,
+    load_evidence_records,
+    load_validation_gates,
 )
 from ..execution._store import ExecutionLoadError
 from ..execution.records import load_reviews

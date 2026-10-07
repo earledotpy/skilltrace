@@ -14,7 +14,6 @@ from skilltrace.events import load_events
 
 from .conftest import write_node, write_registry
 
-
 # --- Lists resources naming the node, with pointer and claims --------------
 
 

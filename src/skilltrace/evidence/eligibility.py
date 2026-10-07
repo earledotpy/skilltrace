@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .evidence import EvidenceRecord, ArtifactSpec
+from .evidence import ArtifactSpec, EvidenceRecord
 
 # The two asserted states that are a *pass* — the ones a lost-backing discrepancy
 # is worth surfacing against. `active` is asserted progress but not a pass, so a

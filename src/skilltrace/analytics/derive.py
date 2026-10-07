@@ -35,7 +35,8 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Any, Callable
 
-from ..execution.overdue import days_overdue as _days_overdue, is_overdue as _is_overdue, parse_date
+from ..execution.overdue import days_overdue as _days_overdue
+from ..execution.overdue import parse_date
 from .models import (
     AnalyticsParams,
     AnalyticsView,

@@ -21,7 +21,7 @@ from datetime import date, timedelta
 
 from ..context import load_context_lenient
 from ..dispatch import Command, CommandResult, Context, Kind, Registry
-from ..execution.overdue import is_overdue, parse_date, utc_today
+from ..execution.overdue import parse_date, utc_today
 from ..graph.edges import EdgeLoadError
 from ..graph.nodes import NodeLoadError
 from ..graph.state import ProgressStoreError
@@ -169,13 +169,11 @@ def suggest_reviews(ctx: Context) -> CommandResult:
         else:
             upcoming += 1
 
-    calendar_header_printed = False
     if not due:
         print(f"suggest reviews: nothing due — {upcoming} scheduled ahead.")
     else:
         print("suggest reviews: Calendar-due reviews")
         print("suggest reviews: ---------------------")
-        calendar_header_printed = True
         grace = _grace_days(view)
         for scheduled, review_id, node_id in sorted(due):
             overdue_days = (today - scheduled).days

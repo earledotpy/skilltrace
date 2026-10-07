@@ -34,6 +34,9 @@ from typing import Any, Callable
 
 from ..graph.nodes import is_valid_node_id
 from ._schema import EvidenceLoadError, check_shape, read_yaml_list, where_prefix
+from .gate_receipt import GATE_RUN_KEY
+from .gate_receipt import HASH_PREFIX as _RECEIPT_HASH_PREFIX
+from .gate_receipt import validate as _validate_receipt
 from .ids import is_valid_evidence_id, split_attempt_id
 
 # ---------------------------------------------------------------------------
@@ -67,15 +70,6 @@ ACCEPTED_BY_VALUES: frozenset[str] = frozenset({"objective_gate", "learner_manua
 
 # The two — and only two — outcomes. No scores, no third "partial".
 OUTCOMES: frozenset[str] = frozenset({"passed", "failed"})
-
-from .gate_receipt import (
-    EXIT_CLASSES,
-    GATE_RUN_ALLOWED,
-    GATE_RUN_KEY,
-    GATE_RUN_REQUIRED,
-    HASH_PREFIX as _RECEIPT_HASH_PREFIX,
-)
-from .gate_receipt import validate as _validate_receipt
 
 _HASH_PREFIX = _RECEIPT_HASH_PREFIX
 

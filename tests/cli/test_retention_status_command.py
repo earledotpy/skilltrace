@@ -11,7 +11,6 @@ import shutil
 from datetime import date, timedelta
 from pathlib import Path
 
-import pytest
 import yaml
 
 from skilltrace import cli

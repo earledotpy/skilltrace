@@ -231,7 +231,7 @@ def render_html(
     """
     link_map = links or {}
     parts = [
-        f"<h1>Portfolio</h1>",
+        "<h1>Portfolio</h1>",
         f"<p>Generated: {html.escape(view.generated_at)}</p>",
         (
             "<p>Selection: "

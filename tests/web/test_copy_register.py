@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import re
 import shutil
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -340,7 +340,6 @@ def test_no_raw_record_ids_on_all_routes(repo):
     ]
     for route_name, html in routes:
         prose = _prose_outside_code(html)
-        matches = _RAW_ID_PATTERN.findall(prose)
         # The drill-down table renders ids in table cells — that is an
         # intentional, audit-facing fact display and is within the spec's
         # allowance for the read-only drill-down section. We only ban ids
@@ -393,7 +392,7 @@ def test_e_affordance_mark_passed_label_in_write_actions(repo):
     node_title = view.node_map[node_id].title
     _, body, _ = views.node_body(repo, node_id)
     assert f"Mark {node_title} passed" in body, (
-        f"§E affordance 'Mark <title> passed' absent from node write-actions"
+        "§E affordance 'Mark <title> passed' absent from node write-actions"
     )
 
 
@@ -405,7 +404,7 @@ def test_e_affordance_mark_mastered_label_in_master_confirm(repo):
     # Structurally render the confirm modal directly (no pre-condition on state).
     _, body, _ = views.master_confirm_body(repo, node_id)
     assert f"Mark {node_title} mastered" in body, (
-        f"§E affordance 'Mark <title> mastered' absent from master confirm modal"
+        "§E affordance 'Mark <title> mastered' absent from master confirm modal"
     )
 
 

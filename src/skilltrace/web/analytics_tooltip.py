@@ -21,7 +21,6 @@ a triple-quoted literal would hide the tag from the budget count.
 
 from __future__ import annotations
 
-
 _TOOLTIP_SCRIPT = (
     "<script>(function(){var tip=null;"
     "function hide(){if(tip&&tip.parentNode){tip.parentNode.removeChild(tip);}tip=null;}"

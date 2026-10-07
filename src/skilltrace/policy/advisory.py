@@ -18,6 +18,7 @@ from .loading import PolicyLoadError, load_policy_doc
 
 if TYPE_CHECKING:
     from ..analytics.models import AnalyticsView
+    from ..execution.records import Review
 
 
 @dataclass
