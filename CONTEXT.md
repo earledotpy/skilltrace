@@ -127,16 +127,18 @@ that must stay manual: no AI-only pass, no automatic mastery, no automatic
 deletion, no hard-prerequisite override. *Automation* means an action firing
 as a side effect of another command (e.g. review scheduling on pass); an
 explicit learner command — issued at the terminal or by confirming in a
-confirmation modal — is by definition manual, so every action is either
+confirmation panel — is by definition manual, so every action is either
 automatable or manual-only — there is no middle "with confirmation" tier.
 
-**Confirmation modal** — the browser form of an explicit learner command: a
-dialog that presents the eligibility facts behind an intended pass or mastery
-assertion and completes only on an explicit confirming click. Page load,
-prefetching, or script execution never constitutes assertion. Mastery confirms
-twice — the second click exists because mastery is permanent. A modal
-confirmation asserts exactly what the equivalent terminal command asserts — it
-informs, never adds or relaxes an engine rule.
+**Confirmation panel** — the browser form of an explicit learner command: a
+server-rendered surface that presents the eligibility facts behind an intended
+pass or mastery assertion and completes only on an explicit confirming click.
+Page load, prefetching, or script execution never constitutes assertion.
+Mastery confirms twice — the second click exists because mastery is permanent.
+A confirmation panel asserts exactly what the equivalent terminal command
+asserts — it informs, never adds or relaxes an engine rule. It is rendered as
+a full-page safety panel; the overlay *confirmation modal* is the earlier Tier 1
+form it replaces.
 
 **Advisory policy** — a policy that reorders recommendations or prints
 warnings (workload, review cadence, remediation pressure). Advisory policies

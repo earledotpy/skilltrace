@@ -177,6 +177,42 @@ Ratified in [#220](https://github.com/earledotpy/skilltrace/issues/220)
 (G-RouteSurface). ADR 0008 remains reserved for the JavaScript-budget
 decision (G-JS); nothing in this amendment claims it.
 
+## Amendment 2026-09-25 — v3 route-surface gate
+
+The **downward-only restructure gate** no longer describes the product being
+specified, and the v3 study-day map (#327) asks for exactly what it forbids:
+an Operations home, graph, evidence, reviews, portfolio, and a study cockpit,
+on the strength of verdicts the gate's own text asks for (one audit verdict
+plus one locked preference row — the row half is tracked by
+[G-PreferenceReopen #346](https://github.com/earledotpy/skilltrace/issues/346)).
+
+1. **Gate replacement.** New top-level views are permitted only where the
+   v3 UI/UX specification's route table names them. Until that
+   specification is accepted, `docs/spec-tier1-serve.md` §C remains the
+   normative table and the downward-only gate stands for the Tier 1
+   surface; on acceptance §C keeps its history with a pointer to the v3
+   table, and the v3 table becomes normative.
+2. **What does not move.** The decision itself is untouched: Python-derived
+   View/Card/Command/active-view vocabulary, import-time and request-time
+   validation, one audit event per action, `criterion.layers.present`
+   stays 5, and no `criterion.web.interface.valid` check is added. The
+   "Explicitly NOT in scope" list above keeps every other entry.
+3. **Enforcement is repointed, not weakened.** The frozen-table gates —
+   SA6 (`tests/release/test_v24_safety_gates.py`), the sublayer scaffold's
+   `test_no_new_top_level_view_beyond_the_frozen_table`, and
+   `FROZEN_ROUTES` — plus the two spec-text gates that pin §C's "no new
+   top-level view" line are repointed to the v3 route table in the same
+   change that adopts it, each keeping its exact assertion over the new
+   table (the ADR 0009 discipline).
+
+Decided on map [#327](https://github.com/earledotpy/skilltrace/issues/327) in
+[G-ArchitectureConsequences — decide which structural choices must change](https://github.com/earledotpy/skilltrace/issues/341).
+Reopen trigger:
+[G-FinalValidationVerdict](https://github.com/earledotpy/skilltrace/issues/345)
+— if a requirement this gate replacement rests on is revised or rejected
+there, the requirement-to-architecture trace behind it is re-run before the
+route table is adopted.
+
 ## Reversal cost
 
 Reversing this decision is local: revert 0007's companion edits
