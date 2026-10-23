@@ -1,0 +1,46 @@
+{
+  "tool": "axe-core",
+  "axeVersion": "4.14.0",
+  "browser": "Microsoft Edge (headless), via puppeteer-core",
+  "executedBy": "agent (Cline) on behalf of T-ValidationExecution #344 — machine scan only; manual and screen-reader checks remain with the learner",
+  "date": "2026-10-12T04:09:42.735Z",
+  "emulationNote": "200% zoom emulated as a 640px viewport (1280/2); 320px run covers reflow.",
+  "runs": [
+    {
+      "page": "p-core-journey.html (Guided)",
+      "viewport": "1280px (desktop, 100%)",
+      "violationCount": 0,
+      "violations": []
+    },
+    {
+      "page": "p-core-journey.html (Guided)",
+      "viewport": "640px (approximates 200% zoom)",
+      "violationCount": 0,
+      "violations": []
+    },
+    {
+      "page": "p-core-journey.html (Guided)",
+      "viewport": "320px (reflow)",
+      "violationCount": 0,
+      "violations": []
+    },
+    {
+      "page": "p-operations-workspace.html (Operations)",
+      "viewport": "1280px (desktop, 100%)",
+      "violationCount": 0,
+      "violations": []
+    },
+    {
+      "page": "p-operations-workspace.html (Operations)",
+      "viewport": "640px (approximates 200% zoom)",
+      "violationCount": 0,
+      "violations": []
+    },
+    {
+      "page": "p-operations-workspace.html (Operations)",
+      "viewport": "320px (reflow)",
+      "violationCount": 0,
+      "violations": []
+    }
+  ]
+}
