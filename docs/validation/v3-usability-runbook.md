@@ -1,9 +1,9 @@
-# v3 moderated validation runbook
+# v3 single-learner validation runbook
 
 **Ticket:** [T-ValidationExecution — run the moderated usability and accessibility contract](https://github.com/earledotpy/skilltrace/issues/344) (wayfinder map #327)
-**Contract:** [G-ValidationContract — define moderated usability and accessibility validation](https://github.com/earledotpy/skilltrace/issues/339) — this runbook operationalises it; where the two differ, the contract wins.
+**Contract:** [G-ValidationContract — define moderated usability and accessibility validation](https://github.com/earledotpy/skilltrace/issues/339), re-scoped by [G-SingleLearnerValidation — re-scope the validation gate to single-learner structured self-evaluation](https://github.com/earledotpy/skilltrace/issues/347) — this runbook operationalises it; where the two differ, the re-scope wins.
 **Feeds:** [G-FinalValidationVerdict — decide the final product direction from observed evidence](https://github.com/earledotpy/skilltrace/issues/345) via `docs/validation/v3-observation-report.md`.
-**Status:** prepared by the agent; sessions are moderated by the human driver. HITL — this document is not the evidence; the filled observation report is.
+**Status:** single-learner self-evaluation. One learner wears every hat (moderator, evaluator, accessibility checker) and records which hat produced each entry. HITL — this document is not the evidence; the filled observation report is.
 
 Assets under test (throwaway decision aids, in-memory, no engine writes):
 
@@ -14,71 +14,55 @@ Known constraints inherited from the prototype resolutions (recorded, not re-lit
 
 ---
 
-## 1. Roles
+## 1. Roles (hats worn by the one learner)
 
 - **Moderator** — runs the script, keeps time, never rescues before the recovery measure is recorded, logs probes only after task completion.
 - **Evaluator** — records the authoritative learner-visible result for each scenario and whether the learner could recover without CLI vocabulary.
-- **Accessibility specialist** — owns §11; may be the same person as the evaluator, but both hats are recorded as worn.
+- **Accessibility checker** — owns §11.
 
-Participant preference, compliments, or prior tool familiarity are never acceptance signals.
+Preference, compliments, or prior tool familiarity are never acceptance signals.
 
 ## 2. Setup
 
 - Two evergreen browser windows (or profiles), each opening one prototype file directly by path. No server required.
 - Browser devtools with axe-core (axe DevTools extension or Lighthouse) for the automated pass; run against the file URL at 100%, 200% zoom, and a 320 px-wide responsive viewport.
-- Screen reader for the SR participant (NVDA + Firefox or VoiceOver + Safari on the participant's own platform — record which).
+- Screen reader for the SR pass (NVDA + Firefox or VoiceOver + Safari — record which).
 - Viewport presets: desktop (≥1280 px), narrow (≤480 px, plus 320 px reflow spot-check).
-- Recording: per-participant consent note, screen capture or notes (participant's choice), stopwatch per task.
-- Between participants: close all tabs and reopen the prototype files fresh (state is a page-lifetime JS variable; a reload is a full reset).
+- Recording: screen capture or notes, stopwatch per task.
+- Between passes: close all tabs and reopen the prototype files fresh (state is a page-lifetime JS variable; a reload is a full reset).
 
-## 3. Participants
+## 3. The learner
 
-5–7 participants matching the target learner profile: someone studying the seed curriculum who benefits from an evidence-gated study loop, with ordinary web-app literacy and **no requirement of SkillTrace CLI knowledge**. Prior SkillTrace exposure is recorded per participant and, if present, the evaluator notes it in the comprehension column — familiarity must not be mistaken for comprehension.
+One learner — the repo owner, the only actual SkillTrace learner — runs every pass. Prior SkillTrace exposure is inherent and recorded; it is never mistaken for comprehension, so comprehension probes are still answered verbatim and classified against the domain contract.
 
-Mandatory coverage across the cohort:
+The learner runs three passes over the task set:
 
-- ≥1 **keyboard-only** participant (no pointer for the whole session; record any moment they reach for one).
-- ≥1 **screen-reader** participant (SR used for at least the representative states in §11).
-- Remaining participants: typical mouse + keyboard.
+- **Pointer pass** — ordinary mouse + keyboard.
+- **Keyboard-only pass** — no pointer for the whole pass; record any moment a pointer is reached for.
+- **Screen-reader pass** — SR used for at least the representative states in §11 (NVDA/Firefox or VoiceOver/Safari — record which).
 
-Fill per participant:
+## 4. Pass order and fixture assignment
 
-| ID | Profile / background | Prior SkillTrace exposure | Keyboard-only | Screen reader | Consent noted |
-|----|----------------------|---------------------------|---------------|---------------|---------------|
-| P1 |  |  |  |  |  |
-| P2 |  |  |  |  |  |
-| P3 |  |  |  |  |  |
-| P4 |  |  |  |  |  |
-| P5 |  |  |  |  |  |
-| P6 (opt) |  |  |  |  |  |
-| P7 (opt) |  |  |  |  |  |
+Within-learner, counterbalanced across the two prototypes: the pointer pass runs Guided first then Operations; the keyboard-only and screen-reader passes run Operations first then Guided, so no single confound (pointer vs keyboard-only vs screen-reader) tracks one mode.
 
-## 4. Counterbalancing and fixture assignment
+| Pass | Order 1 | Order 2 |
+|------|---------|---------|
+| Pointer | Guided | Operations |
+| Keyboard-only | Operations | Guided |
+| Screen-reader | Operations | Guided |
 
-Within-person, counterbalanced: half the cohort runs Guided first, half Operations first.
-
-| Participant | Order 1 | Order 2 |
-|-------------|---------|---------|
-| P1 | Guided | Operations |
-| P2 | Operations | Guided |
-| P3 | Guided | Operations |
-| P4 | Operations | Guided |
-| P5 | Guided | Operations |
-| P6 | Operations | Guided |
-| P7 | Guided | Operations |
-
-Adjust to the actual cohort size (5–7) keeping the alternation, and assign the keyboard-only and screen-reader participants to **different** order halves so neither confound tracks one mode.
+Cross-participant counterbalance (half a cohort Guided-first, half Operations-first) is **insufficient evidence / deferred** — there is no cohort. Recorded, never fabricated.
 
 Equivalent fixture states per mode — the modes never share a mutated state:
 
 - **Guided** runs on the pinned **active** fixture (`RESET_ACTIVE`: open Session `ses.snapshot.001`, one work item, open Blocker `blk.snapshot.001`, overdue Review `rvw.snapshot.001`); the cold fixture (`RESET_COLD`) is reserved for cold-start/empty tasks.
 - **Operations** runs on the **seeded** fixture (100 nodes, 49 available, 51 locked, 8 sessions, 12 evidence records, 3 reviews — same richness band as Guided's active state); the **limited** fixture (3 nodes, 1 available, 0 evidence) is reserved for empty/limited-data tasks.
 
-Because Guided mutates in-memory state and Operations has no write actions, each participant's second mode still starts from an untouched fixture — only a reload is needed between modes.
+Because Guided mutates in-memory state and Operations has no write actions, each pass's second mode still starts from an untouched fixture — only a reload is needed between modes.
 
-## 5. Fixture reset procedure (per scenario, per participant)
+## 5. Fixture reset procedure (per scenario, per pass)
 
-**Guided — hard reset between participants:** reload the file. Verify the result panel reads *"Prototype ready"* and the state table matches the expected baseline for the fixture in use.
+**Guided — hard reset between passes:** reload the file. Verify the result panel reads *"Prototype ready"* and the state table matches the expected baseline for the fixture in use.
 
 **Guided — soft reset between scenarios:** click the scenario button (it dispatches the scenario's own reset: `RESET_COLD` or `RESET_ACTIVE`) *or* press **Reset active fixture** / **Reset cold fixture** in Free play. Verify:
 
@@ -87,22 +71,22 @@ Because Guided mutates in-memory state and Operations has no write actions, each
 
 **Operations — reset:** reload the file, then set the fixture toggle (**Seeded fixture** / **Limited fixture**) and confirm the header state label (`seeded` / `limited`) and the count cards match: seeded → 100/49/51, 8 sessions, 12 evidence, 3 reviews; limited → 3 nodes, 1 available, 2 locked, 1 session, 0 evidence, 0 reviews.
 
-Record in the report §1 that every scenario row names the reset used and that its baseline check passed *before* the participant acted. A scenario started from a dirty state is void and rerun.
+Record in the report §1 that every scenario row names the reset used and that its baseline check passed *before* the learner acted. A scenario started from a dirty state is void and rerun.
 
 ## 6. Session script
 
-1. **Orientation (5 min).** Consent confirm; explain think-aloud ("say what you're trying, expecting, and noticing"); state that this tests the prototype, not the participant; no CLI vocabulary is needed or expected; the moderator will not demonstrate until the task is over.
-2. **Task performance (think-aloud).** Moderator reads the task goal verbatim (§7/§8), starts the stopwatch, and stays silent. On visible struggle the moderator notes time/errors and may, **after** the recovery measurement point, offer the runbook's hint ladder in order (§7.3) — hints are recorded as errors-with-assist.
+1. **Orientation (5 min).** State the think-aloud rule ("say what you're trying, expecting, and noticing") and hold to it; this tests the prototype, not the learner; no CLI vocabulary is needed or expected.
+2. **Task performance (think-aloud).** Read the task goal verbatim (§7/§8), start the stopwatch, stay silent. On visible struggle note time/errors and may, **after** the recovery measurement point, use the hint ladder in order (§7.3) — hints are recorded as errors-with-assist.
 3. **Probes after task completion only.** Use the comprehension probe bank (§7.4); never probe mid-task.
-4. **Retrospective (10 min).** What confused, what they trusted, what they'd fear doing wrong; accessibility comfort (SR/keyboard users: where the experience broke); final open comments.
+4. **Retrospective (10 min).** What confused, what was trusted, what would be feared doing wrong; accessibility comfort (keyboard/SR passes: where the experience broke); final open comments.
 
-Same script and task order within each prototype for every participant; only the across-mode order counterbalances.
+Same script and task order within each prototype for every pass; only the across-mode order counterbalances (see §4).
 
 ## 7. Task script — Guided (`p-core-journey.html`)
 
 ### 7.1 Driving rule
 
-Participants drive **free play** with the task goal as the prompt; the "Guided walkthroughs" panel is moderator-held scaffolding only — ask the participant to ignore it, and treat its step list as the hint ladder if free play fails. Scenario buttons are used by the moderator for resets (§5), not by the participant to reveal steps. This keeps time-to-completion and first-attempt measures meaningful.
+The learner drives **free play** with the task goal as the prompt; the "Guided walkthroughs" panel is held scaffolding only — ignore it, and treat its step list as the hint ladder if free play fails. Scenario buttons are used for resets (§5), not to reveal steps. This keeps time-to-completion and first-attempt measures meaningful.
 
 ### 7.2 Tasks (map to the 8 built-in scenarios)
 
@@ -118,7 +102,7 @@ Participants drive **free play** with the task goal as the prompt; the "Guided w
 | G8 | "Deliberately do three wrong things: start a second Session, close in the future, and submit to a gate that can't run. Then close the Session honestly." | Failure & empty recovery | `RESET_ACTIVE` | refusals, operational failure, honest close |
 | G9* | "Mastery is a separate, deliberate act after passing. Show how you would master this node." | **No prototype surface** | — | master (two-step) |
 
-G9 is run as an **unaided intent probe only**: no buttons exist, so record what the participant expects to do and what they find instead. Never fake a mastery action. (Prototype limitation, §14.)
+G9 is run as an **unaided intent probe only**: no buttons exist, so record what the learner expects to do and what they find instead. Never fake a mastery action. (Prototype limitation, §14.)
 
 ### 7.3 Hint ladder (free play failures, in order; each level logged)
 
@@ -154,31 +138,31 @@ O9 is an expectation probe only; absence is recorded as a prototype limitation, 
 
 ## 9. State-variant coverage matrix
 
-The contract requires empty, limited-data, could-not-compute, operational-failure, stale, and narrow-window variants plus representative accessibility states. Coverage below is per cohort, not per participant; every *critical path* task (G1–G8, O1–O7) runs for every participant.
+The contract requires empty, limited-data, could-not-compute, operational-failure, stale, and narrow-window variants plus representative accessibility states. Coverage below is per pass; every *critical path* task (G1–G8, O1–O7) runs in every pass.
 
 | Variant | Where exercised | Minimum coverage |
 |---------|-----------------|------------------|
-| Empty / cold start | G1 (cold fixture) | every participant |
-| Limited data | O8 (limited fixture) | ≥2 participants |
-| Operational failure | G8 gate-unrunnable step | every participant |
-| Stale / SERVER_CHANGED | G6 stale-confirmation step; G8 honest close | every participant |
-| Refusal & recovery | G6 | every participant |
-| Could-not-compute | O9 probe | ≥2 participants (expectation + recorded absence) |
-| Narrow window (≤480 px) | one Guided block + one Operations block per session, see §11 | every participant |
-| Mastery absent | G9 probe | ≥3 participants |
+| Empty / cold start | G1 (cold fixture) | every pass |
+| Limited data | O8 (limited fixture) | every pass |
+| Operational failure | G8 gate-unrunnable step | every pass |
+| Stale / SERVER_CHANGED | G6 stale-confirmation step; G8 honest close | every pass |
+| Refusal & recovery | G6 | every pass |
+| Could-not-compute | O9 probe | every pass (expectation + recorded absence) |
+| Narrow window (≤480 px) | one Guided block + one Operations block per pass, see §11 | every pass |
+| Mastery absent | G9 probe | every pass |
 
 ## 10. Measures and recording
 
-One row per participant × scenario, into the observation report §3:
+One row per pass × scenario, into the observation report §3:
 
 - **Outcome:** completed / completed-with-hint / failed (+ verbatim slip).
-- **Time (s)** from goal read to participant-declared done.
+- **Time (s)** from goal read to learner-declared done.
 - **Errors:** count + description (wrong control, wrong mental model, dead end, CLI-vocabulary guess).
 - **Recovery:** none needed / self-recovered / recovered at hint level N; and whether recovery needed CLI vocabulary (yes/no).
 - **Comprehension:** probe answers verbatim (§7.4), classified correct / partial / incorrect against the domain contract.
 - **Accessibility defects:** observable breakage during the task (focus loss, unnamed control, contrast, reflow, SR announcement failure) + severity.
 
-**Thresholds (from the contract):** critical learner actions ≥80% first-attempt completion; ≥90% recovery after refusal/failure; *every* critical action successful for *every* participant before acceptance; **zero** critical safety or domain-boundary violations. Accessibility is a mandatory gate: every mandatory criterion passes or acceptance is blocked. Insufficient evidence is recorded explicitly and is never a pass.
+**Thresholds (from the contract, as re-scoped):** critical learner actions ≥80% first-attempt completion; ≥90% recovery after refusal/failure; *every* critical action successful in *every* pass before acceptance; **zero** critical safety or domain-boundary violations. Accessibility is a mandatory gate: every mandatory criterion passes or acceptance is blocked. The cross-participant reading of "every participant" is insufficient evidence / deferred (there is no cohort) — recorded explicitly, never a pass.
 
 ## 11. Accessibility checks
 
@@ -192,9 +176,9 @@ Walk representative states: cold start, active Session (Guided), a refusal resul
 
 | Check | Method | Pass criteria |
 |-------|--------|---------------|
-| Keyboard-only operation | Whole session, keyboard-only participant + evaluator spot-check | every action reachable, logical order, no trap except modal with Escape + close |
+| Keyboard-only operation | Whole pass, keyboard-only pass + checker spot-check | every action reachable, logical order, no trap except modal with Escape + close |
 | Focus behaviour | Tab/activate through tasks | visible focus, focus lands on outcome/result panel after actions |
-| Screen reader | SR participant + evaluator pass | landmarks/headings navigate; status changes announced (`aria-live`); counts and states readable |
+| Screen reader | SR pass + checker pass | landmarks/headings navigate; status changes announced (`aria-live`); counts and states readable |
 | Contrast | axe + spot-check of tokens | WCAG 2.2 AA for text, controls, focus, status graphics; status never colour-only |
 | 200% zoom / reflow | Zoom each representative state | content and actions usable; horizontal scroll only for true 2-D data |
 | Reduced motion | OS/ emulation | nonessential animation removed; nothing motion-dependent |
@@ -232,7 +216,7 @@ A limitation that leaves a contract-required claim untested ⇒ **insufficient e
 
 ## 15. After the sessions
 
-1. Fill `docs/validation/v3-observation-report.md` completely (fixture procedure as executed, participants, order, scenario results, raw measurements, a11y findings, findings register).
+1. Fill `docs/validation/v3-observation-report.md` completely (fixture procedure as executed, learner profile, pass order, scenario results, raw measurements, a11y findings, findings register).
 2. Keep the three-way distinction intact: observed learner outcomes | evaluator judgments | prototype limitations.
 3. Post the report (or link) as the resolution comment on **T-ValidationExecution** and close it — that unblocks **G-FinalValidationVerdict**, which produces the claim-by-claim accept/revise/reject matrix for **G-ProductHandoff**.
 4. Do not carry thresholds, verdicts, or spec edits anywhere else: a decision lives in its ticket; the map only indexes its gist.
