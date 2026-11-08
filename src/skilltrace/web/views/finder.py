@@ -56,23 +56,32 @@ STATE_FILTERS: tuple[str, ...] = (
 )
 
 
-def _discovery_chrome(card: DiscoveryCard) -> str:
+def _discovery_chrome(card: DiscoveryCard, view=None) -> str:
     """One locked card's blocked-prerequisite tail — the page attachment (#319).
 
     The §C-bis anatomy's tail (the wall's name + link) travels with the
     page and rides the renderer's per-card attachment channel, exactly as
     the Health guidance links do (#318). Values escape through the one
     door here; locked stays the only wall — this names it, never overrides.
+
+    A wall that is itself locked is named, never linked: a locked skill is
+    explanation, never a selectable target (HB-4). With no view to consult
+    the tail keeps its canonical shape.
     """
     if not (card.locked and card.blocked_by_id):
         return ""
-    return (
-        f'<p class="sub">Blocked by <a href="/nodes/{_esc(card.blocked_by_id)}">'
-        f"{_esc(card.blocked_by_title)}</a> — pass it first.</p>\n"
-    )
+    title = _esc(card.blocked_by_title)
+    if view is not None and view.store.state_of(card.blocked_by_id) == "locked":
+        tail = f"{title}, which is itself waiting on another skill"
+    else:
+        tail = (
+            f'<a href="/nodes/{_esc(card.blocked_by_id)}">{title}</a>'
+            " — pass it first"
+        )
+    return f'<p class="sub">Blocked by {tail}.</p>\n'
 
 
-def _render_results(cards: list[DiscoveryCard]) -> str:
+def _render_results(cards: list[DiscoveryCard], view=None) -> str:
     """Discovery records as page HTML: compose Cards, attach, render (#319).
 
     The §C-bis cards leave this page module as interface ``Card`` objects
@@ -81,7 +90,7 @@ def _render_results(cards: list[DiscoveryCard]) -> str:
     """
     return render_discovery_cards(
         discovery_page_cards(cards),
-        {index: _discovery_chrome(card) for index, card in enumerate(cards)},
+        {index: _discovery_chrome(card, view) for index, card in enumerate(cards)},
     )
 
 
@@ -155,7 +164,7 @@ def _browse_html(view: JoinedView, *, sections: bool = True) -> str:
     if not sections:
         return "".join(parts)
     for subject, label, count in subjects:
-        subject_cards = _render_results(browse_cards(view, subject))
+        subject_cards = _render_results(browse_cards(view, subject), view)
         parts.append(
             f'<section class="section" id="subject-{_esc(subject)}">\n'
             '<div class="section-head">\n'
@@ -317,7 +326,7 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
                 "is shown in grey under each skill, for reference.</p>\n"
                 "</div>\n"
                 f"{limits}"
-                f"{_render_results(shown)}"
+                f"{_render_results(shown, view)}"
                 "</section>\n"
             )
         else:

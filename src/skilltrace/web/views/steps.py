@@ -293,7 +293,7 @@ def master_body(
         '<div class="kicker">Mastery facts</div>'
         '<p class="big">Mastering is a separate, later step from passing. '
         "This panel is about mastery only — passing has its own journey, and "
-        "the two are never combined.</p>"
+        "mastering is never combined with passing.</p>"
         + facts_table
         + "<p><strong>Eligibility</strong></p>"
         + verdict_html

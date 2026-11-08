@@ -170,12 +170,18 @@ def _suggestions_section(view, today) -> str:
     rows = []
     for state in suggestions:
         node_id = getattr(state, "node_id", "")
+        suggested = getattr(state, "suggested_next_review", None)
+        when = (
+            suggested.isoformat()
+            if hasattr(suggested, "isoformat")
+            else _esc(str(suggested or ""))
+        )
         rows.append(
             [
                 f'<a href="/nodes/{_esc(node_id)}">'
                 f"{_esc(view.titles.get(node_id) or node_id)}</a>",
-                _esc(str(getattr(state, "memory_state", ""))),
-                _esc(str(getattr(state, "confidence", ""))),
+                "fading — a check is suggested",
+                _esc(when),
                 _schedule_form(node_id),
             ]
         )
@@ -185,7 +191,7 @@ def _suggestions_section(view, today) -> str:
         '<p class="section-meta">Advisory only. Nothing here is scheduled or '
         "overdue, and nothing here creates a record — scheduling a check is "
         "always your explicit action.</p>\n"
-        + _table(["Skill", "Retention status", "Confidence", "Schedule"], rows)
+        + _table(["Skill", "Retention status", "Suggested for", "Schedule"], rows)
         + "</section>\n"
     )
 

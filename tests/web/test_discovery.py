@@ -329,6 +329,15 @@ def test_find_locked_results_are_explanation_not_targets(repo):
     assert f'href="/nodes/{SELECT_BASICS}">' in card
 
 
+def test_find_never_links_a_locked_skill(repo):
+    """A locked skill is explanation everywhere — never a selectable target."""
+    body = _find(repo, q="deployed agent integration")
+    # The capstone waits on a skill that is itself locked: it is named, and
+    # the copy says why it is not a link.
+    assert "which is itself waiting on another skill" in body
+    assert 'href="/nodes/agents.deploy.docker_engine_build_run_01"' not in body
+
+
 def test_find_shows_the_readable_title_not_the_identifier(repo):
     body = _find(repo, q="order of operations")
     card = re.findall(r'<div class="card result[^"]*">.*?</div>', body, re.S)[0]
