@@ -1,5 +1,5 @@
 """
-GET ``/nodes/jump`` — the title-first jump finder (ADR 0009).
+GET ``/find`` — the Find a skill destination (spec-v3-study-day §10.3).
 
 """
 
@@ -101,7 +101,7 @@ def _browse_html(view: JoinedView) -> str:
 
 
 def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
-    """GET `/nodes/jump` — the discovery combination surface (§C-bis, #310).
+    """GET `/find` — the Find a skill destination (spec-v3-study-day §10.3).
 
     The v2.4 S4 title-first list, upgraded to the locked discovery contract:
     a text input plus server-rendered result cards on submit — subject/track
@@ -115,7 +115,9 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
     live-filter). Selection navigates only. Nothing is marked current here
     (header form only).
     """
-    view, head, failure = _page_head(root, query, dismiss_path="/nodes/jump")
+    view, head, failure = _page_head(
+        root, query, dismiss_path="/find", current_view="find", path="/find"
+    )
     if failure is not None:
         return failure
 
@@ -127,7 +129,7 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
     parts = [
         '<div class="card">\n',
         '<div class="kicker">Find a skill</div>\n',
-        '<form class="finder" method="get" action="/nodes/jump">'
+        '<form class="finder" method="get" action="/find">'
         f'<label>Search skills <input type="text" name="q" value="{_esc(raw)}" placeholder="Type a skill name" aria-label="search skills by title" size="32"></label>'
         '<button type="submit">Search</button>'
         "</form>\n",

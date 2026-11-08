@@ -44,7 +44,11 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
         return "Next", body, status
 
     view, head, failure = _page_head(
-        root, query, dismiss_path="/next", current_view="next"
+        root,
+        query,
+        dismiss_path="/next",
+        current_view="next",
+        path="/next",
     )
     if failure is not None:
         return failure

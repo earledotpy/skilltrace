@@ -148,7 +148,19 @@ def _parse_int(query: dict, key: str, default: int) -> int | None:
 
 
 def _table(headers: list[str], rows: list[list[str]]) -> str:
-    head = "".join(f"<th>{h}</th>" for h in headers)
-    body = "".join("<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>" for row in rows)
-    return f'<table class="dense"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
+    """A data table with a caption and header cells (AX-4).
+
+    Every table keeps its row/column association: the header cells are
+    real ``<th>`` elements and the caption names what the table is, so
+    the meaning survives a screen reader and a 200% zoom.
+    """
+    head = "".join(f'<th scope="col">{h}</th>' for h in headers)
+    body = "".join(
+        "<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>" for row in rows
+    )
+    caption = f"<caption>{_esc(' / '.join(headers))}</caption>"
+    return (
+        f'<table class="data">{caption}'
+        f"<thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
+    )
 

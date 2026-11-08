@@ -51,7 +51,11 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
     pages (T4 §H): the chrome renders with no active view.
     """
     view, head, failure = _page_head(
-        root, query, dismiss_path=f"/nodes/{node_id}"
+        root,
+        query,
+        dismiss_path=f"/nodes/{node_id}",
+        current_view="node",
+        path=f"/nodes/{node_id}",
     )
     if failure is not None:
         return failure

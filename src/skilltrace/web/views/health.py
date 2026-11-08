@@ -28,7 +28,14 @@ def health_body(root, query: dict | None = None) -> tuple[str, str, int]:
     `skilltrace health`. Not a nav stop: health reaches only through the
     header pill strip + ``Health`` pointer.
     """
-    view, head, failure = _page_head(root, query, dismiss_path="/health")
+    view, head, failure = _page_head(
+        root,
+        query,
+        dismiss_path="/health",
+        current_view="health",
+        default_mode="operations",
+        path="/health",
+    )
     if failure is not None:
         return failure
     guidance = derive_study_guidance(view, utc_today())

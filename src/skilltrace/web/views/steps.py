@@ -45,7 +45,11 @@ def pass_modal_body(
     engine internals (specs by human title, never raw spec ids).
     """
     view, head, failure = _page_head(
-        root, query, dismiss_path=_modal_dismiss(node_id, "Confirm pass")
+        root,
+        query,
+        dismiss_path=_modal_dismiss(node_id, "Confirm pass"),
+        current_view="node-pass",
+        path=f"/nodes/{node_id}/pass",
     )
     if failure is not None:
         return failure
@@ -182,7 +186,11 @@ def master_body(
 ) -> tuple[str, str, int]:
     """GET `/nodes/{id}/master` — step 1 of 2: mastery facts (T5 §B+§F+P4.1)."""
     view, head, failure = _page_head(
-        root, query, dismiss_path=_modal_dismiss(node_id, "Step 1 — Mastery facts")
+        root,
+        query,
+        dismiss_path=_modal_dismiss(node_id, "Step 1 — Mastery facts"),
+        current_view="node-master",
+        path=f"/nodes/{node_id}/master",
     )
     if failure is not None:
         return failure
@@ -242,7 +250,11 @@ def master_confirm_body(
 ) -> tuple[str, str, int]:
     """GET `/nodes/{id}/master/confirm` — step 2 of 2: permanence (T5 §B+§F+P4.4)."""
     view, head, failure = _page_head(
-        root, query, dismiss_path=_modal_dismiss(node_id, "Step 2 — This is permanent")
+        root,
+        query,
+        dismiss_path=_modal_dismiss(node_id, "Step 2 — This is permanent"),
+        current_view="master-confirm",
+        path=f"/nodes/{node_id}/master/confirm",
     )
     if failure is not None:
         return failure
