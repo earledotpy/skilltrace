@@ -118,7 +118,7 @@ def _candidate_stack(
         """
         facts: list[str] = []
         if rec.is_active:
-            facts.append("You have already started this one, so it comes first.")
+            facts.append("You have already started it, so it comes first.")
         if minutes <= 30:
             if rec.fits_session:
                 facts.append(f"It fits a {minutes}-minute session.")
@@ -139,19 +139,25 @@ def _candidate_stack(
         if waiting:
             facts.append(
                 f"{waiting} other skill{plural(waiting)} "
-                f'{"is" if waiting == 1 else "are"} waiting on this one.'
+                f'{"is" if waiting == 1 else "are"} waiting on it.'
             )
         return facts
 
     def reason_for(rec, facts: list[str]) -> str:
         """One honest sentence: why this skill sits where it does."""
-        if not facts:
-            if only_candidate:
+        lead = (
+            "You have already started it"
+            if rec.is_active
+            else "It is available now"
+        )
+        others = [
+            fact for fact in facts if not fact.startswith("You have already started")
+        ]
+        if not others:
+            if only_candidate and not rec.is_active:
                 return "It is the only skill available to start right now."
-            return "It is available now and nothing is holding it up."
-        if len(facts) == 1:
-            return facts[0]
-        return f"{facts[0]} {facts[-1]}"
+            return f"{lead} and nothing is holding it up."
+        return f"{lead}, and " + ", and ".join(others) + "."
 
     items: list[str] = []
     for index, rec in enumerate(model.recommendations[:limit]):

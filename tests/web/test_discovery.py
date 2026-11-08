@@ -68,8 +68,19 @@ def _find(root: Path, **query: str) -> str:
 
 
 def _queue_items(body: str) -> list[str]:
-    """The ranked queue items, in rank order."""
-    return re.findall(r'<li class="queue-item[^"]*">.*?</li>', body, re.S)
+    """The ranked queue items, in rank order.
+
+    The items are split on the item marker rather than on ``</li>``, because a
+    ``Why this?`` disclosure carries its own list of facts.
+    """
+    marker = '<ul class="queue">'
+    if marker not in body:
+        return []
+    chunk = body[body.index(marker) :]
+    end = chunk.find("</section>")
+    if end != -1:
+        chunk = chunk[:end]
+    return ['<li class="queue-item' + part for part in chunk.split('<li class="queue-item')[1:]]
 
 
 def _section(body: str, title: str) -> str:
@@ -344,8 +355,8 @@ def test_find_full_function_with_script_absent(repo):
 
 def test_golden_next_populated(repo):
     body = _next(repo)
-    queue = body[body.index('<ul class="queue">') : body.index("</ul>")]
-    first = queue[: queue.index("</li>")]
+    first = _queue_items(body)[0]
+    first = first[: first.index('<details class="disclosure">')]
     assert re.search(
         r'<li class="queue-item dominant">\n'
         r'<p class="queue-title"><a href="/nodes/[^"]+">[^<]+</a> '
