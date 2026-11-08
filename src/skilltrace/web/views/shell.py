@@ -321,6 +321,21 @@ def _modal_dismiss(node_id: str, heading: str) -> str:
     return f"/nodes/{node_id}"
 
 
+def _panel_status(heading: str) -> str:
+    """The panel's status word — the text that carries the meaning.
+
+    The colour is the accent of the status token; this word is what makes
+    the state legible without colour (AX-1, VS-3).
+    """
+    if heading.startswith("Step 1"):
+        return "Advisory attention"
+    if heading.startswith("Step 2"):
+        return "Permanent — check before continuing"
+    if heading.startswith("Passed"):
+        return "Passed"
+    return "Confirmation"
+
+
 def _modal_card(
     view: JoinedView,
     node_id: str,
@@ -339,7 +354,8 @@ def _modal_card(
         '<section class="card">\n'
         f'<p class="kicker">{_esc(heading)}</p>\n'
         f'<p class="lead">{_esc(node.title)}</p>\n'
-        f'<p><span class="pill {_esc(_slug(state))}">{_esc(_normalize_pill_label(state))}</span></p>\n'
+        f'<p><span class="pill {_esc(_slug(state))}">{_esc(_normalize_pill_label(state))}</span> '
+        f'<span class="{_esc(safety_class)}">{_esc(_panel_status(heading))}</span></p>\n'
         f"{inner}"
         "</section>\n"
     )

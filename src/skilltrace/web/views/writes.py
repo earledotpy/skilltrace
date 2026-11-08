@@ -108,11 +108,18 @@ def _finish_write(
 
 
 def post_pass(root, node_id: str, form: dict):
-    """POST `/nodes/{id}/pass` — always 303 (T5 §D1): ok to the node page,
-    refusal back to the pass step as a warning flash, failure with /health."""
+    """POST `/nodes/{id}/pass` — always 303 (T5 §D1).
+
+    A successful pass returns to the **pass panel**, which then renders
+    the *result*: what changed, and the visible Review-state consequence
+    (R3). Redirecting straight to the node page would hide that
+    consequence behind a flash the learner has to remember — the spec
+    requires the pass result to show the Review change, not merely to
+    have caused one.
+    """
     exit_code, lines = _dispatch_web(root, "pass", node_id=node_id)
     return _finish_write(
-        f"/nodes/{node_id}",
+        f"/nodes/{node_id}/pass",
         lines,
         exit_code,
         refusal_url=f"/nodes/{node_id}/pass",
