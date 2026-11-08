@@ -54,27 +54,21 @@ WCAG_AA_TAGS = ("wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa")
 # The findings file: the named debt this gate records rather than hides.
 FINDINGS = Path(__file__).resolve().parent / "A11Y_FINDINGS.md"
 
-# The routes whose bodies cannot render at all today, and the reason.
+# The routes whose bodies cannot render at all, and the reason.
 # A route that cannot render is *not checked* — it is reported, never
 # counted as clean. See tests/web/A11Y_FINDINGS.md.
-UNRENDERABLE: dict[str, str] = {
-    "node-evidence": (
-        "AttributeError: 'ArtifactSpec' object has no attribute "
-        "'accepted_count' — src/skilltrace/web/views/evidence.py reads a "
-        "field the ArtifactSpec record does not carry"
-    ),
-}
+#
+# The map is empty: every route in the normative table renders. It stays
+# because the gate that consumes it must fail loudly if a route ever
+# breaks again — an unrenderable route has to be *named* to exist, never
+# quietly skipped.
+UNRENDERABLE: dict[str, str] = {}
 
 # The routes with recorded blocking findings, and the rule ids axe reports
 # for them today. Each is recorded in tests/web/A11Y_FINDINGS.md; the
 # test asserts the recorded set is exactly what axe reports, so the
 # waiver can never widen unnoticed.
-RECORDED_FINDINGS: dict[str, frozenset[str]] = {
-    "node": frozenset({"select-name"}),
-    "evidence-index": frozenset({"select-name"}),
-    "analytics": frozenset({"select-name"}),
-    "portfolio": frozenset({"label", "select-name"}),
-}
+RECORDED_FINDINGS: dict[str, frozenset[str]] = {}
 
 
 @pytest.fixture(scope="module")

@@ -57,8 +57,10 @@ def _selection_form(query: dict | None) -> str:
     )
     return (
         '<form method="get" action="/portfolio">\n'
-        '<div class="form-row"><label>Track (optional)</label>'
-        f'<input type="text" name="track" value="{_esc(track)}"></div>\n'
+        '<div class="form-row">'
+        '<label for="portfolio-track">Track (optional)</label>'
+        f'<input type="text" name="track" id="portfolio-track" '
+        f'value="{_esc(track)}"></div>\n'
         '<div class="form-row">'
         '<label for="portfolio-format">Format</label>'
         f'<select name="format" id="portfolio-format">'
