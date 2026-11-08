@@ -356,7 +356,6 @@ def test_find_full_function_with_script_absent(repo):
 def test_golden_next_populated(repo):
     body = _next(repo)
     first = _queue_items(body)[0]
-    first = first[: first.index('<details class="disclosure">')]
     assert re.search(
         r'<li class="queue-item dominant">\n'
         r'<p class="queue-title"><a href="/nodes/[^"]+">[^<]+</a> '

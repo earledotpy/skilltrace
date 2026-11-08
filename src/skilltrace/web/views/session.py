@@ -43,6 +43,92 @@ def _session_rows(view, session) -> str:
     return _table(["Skill", "Minutes", "What happened", "Notes"], rows)
 
 
+def _blocked_work(view, session) -> str:
+    """The blocked work of this Session — a session-scoped observation.
+
+    Blocked work is **never** a Blocker (IC-10): it is what happened
+    inside one session and it disappears with the session. A Blocker is
+    the explicit persistent-stuckness record, shown separately below.
+    """
+    blocked = [
+        w
+        for w in view.work
+        if w.session_id == session.id and w.blocked
+    ]
+    if not blocked:
+        return ""
+    rows = [
+        [
+            _esc(view.titles.get(item.node_id) or item.node_id),
+            _esc(item.notes or "—"),
+            _esc(str(item.created_at or "")),
+        ]
+        for item in blocked
+    ]
+    return (
+        '<section class="section">\n'
+        '<h2 class="section-title">Blocked work</h2>\n'
+        '<p class="section-meta">Work that ended stuck inside this session. '
+        "It is an observation about one session — it is not a blocker, and "
+        "it creates no record of its own.</p>\n"
+        + _table(["Skill", "What you noted", "When"], rows)
+        + "</section>\n"
+    )
+
+
+def _create_blocker_offer(view, session) -> str:
+    """After persistent blocked work, offer to record a Blocker.
+
+    The offer is explicit and never a side effect: blocked work on its
+    own creates nothing. A second open Blocker warns about likely
+    duplication but is not forbidden.
+    """
+    blocked_nodes = {
+        w.node_id for w in view.work if w.session_id == session.id and w.blocked
+    }
+    if not blocked_nodes:
+        return ""
+    already_open = {
+        b.node_id for b in view.blockers if b.status == "open"
+    }
+    parts = []
+    for node_id in sorted(blocked_nodes):
+        title = view.titles.get(node_id) or node_id
+        duplicate = (
+            '<p class="banner advisory">A blocker is already open on this '
+            "skill. Another one is allowed, but you may be recording the "
+            "same stuckness twice.</p>\n"
+            if node_id in already_open
+            else ""
+        )
+        parts.append(
+            '<details class="disclosure">\n'
+            "<summary>Record a blocker for "
+            f"{_esc(title)}</summary>\n"
+            + duplicate
+            + f'<form method="post" action="/nodes/{_esc(node_id)}/blockers">\n'
+            '<input type="hidden" name="next" value="/session">\n'
+            '<div class="form-row"><label>What is in the way</label>\n'
+            '<input type="text" name="description" required></div>\n'
+            '<p class="small mut">A blocker records persistent stuckness. It '
+            "never resolves itself, never marks work complete and never "
+            "passes a skill.</p>\n"
+            '<button type="submit" class="btn secondary">Record this blocker'
+            "</button>\n"
+            "</form>\n"
+            "</details>\n"
+        )
+    return (
+        '<section class="section">\n'
+        "<h2 class=\"section-title\">Still stuck?</h2>\n"
+        '<p class="section-meta">If this keeps happening across sessions, '
+        "record it as a blocker so it survives the session. Recording one is "
+        "your explicit action.</p>\n"
+        + "".join(parts)
+        + "</section>\n"
+    )
+
+
 def _open_blockers(view) -> str:
     """The open Blockers of the Session's nodes — explicit records, not work."""
     open_blockers = [b for b in view.blockers if b.status == "open"]
@@ -103,6 +189,8 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
     node_title = view.titles.get(node_id) or node_id
     work_rows = _session_rows(view, session)
     blockers = _open_blockers(view)
+    blocked_work = _blocked_work(view, session)
+    create_blocker = _create_blocker_offer(view, session)
 
     body = (
         head
@@ -121,6 +209,10 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
         + "</section>\n"
         + '<section class="section">\n'
         + '<h2 class="section-title">Work in this session</h2>\n'
+        + '<p class="section-meta">Recording work saves the minutes and the '
+        "notes you type, against this skill and this session. Nothing else "
+        "is written: the timer never records, and looking at another skill "
+        "never records anything either.</p>\n"
         + '<form method="post" action="/work">\n'
         + f'<input type="hidden" name="node_id" value="{_esc(node_id)}">\n'
         + f'<input type="hidden" name="next" value="/session">\n'
@@ -132,8 +224,13 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
         + '<h2 class="section-title">Session work</h2>\n'
         + f"{work_rows}"
         + "</section>\n"
+        + f"{blocked_work}"
+        + f"{create_blocker}"
         + '<section class="section">\n'
         + '<h2 class="section-title">Blockers</h2>\n'
+        + '<p class="section-meta">A blocker is persistent stuckness you '
+        "recorded deliberately. It is a different thing from blocked work "
+        "above.</p>\n"
         + f"{blockers}"
         + "</section>\n"
     )
