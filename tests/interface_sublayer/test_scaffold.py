@@ -24,23 +24,37 @@ def test_every_declared_view_has_route_title_and_group():
     for view in interface.VIEWS.values():
         assert view.route.startswith("/")
         assert view.title
-        assert view.group in ("daily", "periodic", None)
+        assert view.group in ("guided", "operations", None)
+        assert view.default_mode in ("guided", "operations")
 
 
 def test_no_new_top_level_view_beyond_the_frozen_table():
-    # G-RouteSurface: downward-only restructure. The declared top-level set
-    # is the Tier-1 surface minus retired entries plus the finder re-place
-    # plus the master-confirm acceptance step (T4 §H).
+    """The declared top-level set is exactly the normative route table.
+
+    Repointed from the v2.4 §C table to ``docs/spec-v3-study-day.md`` §6
+    (ARC-7): the assertion keeps its exact shape — the declared set is
+    the normative table, one for one — and the table it names is now the
+    v3 one. A view outside the table is a new top-level surface, which
+    ADR 0007's amendment permits only where §6 names it.
+    """
     assert set(interface.VIEWS) == {
         "today",
         "next",
+        "find",
         "node",
-        "finder",
+        "session",
+        "session-close",
+        "node-pass",
+        "node-master",
+        "master-confirm",
+        "evidence",
+        "evidence-index",
+        "reviews",
+        "operations",
+        "graph",
         "health",
         "analytics",
-        "node pass",
-        "node master",
-        "master-confirm",
+        "portfolio",
     }
 
 
@@ -50,18 +64,33 @@ def test_view_by_name_raises_on_unknown_names():
 
 
 def test_frozen_routes_match_the_normative_table():
+    """The frozen route table is the v3 normative table, verbatim.
+
+    Repointed from the v2.4 §C table to ``docs/spec-v3-study-day.md`` §6
+    (ARC-7): the assertion keeps its exact shape — the frozen constant
+    equals the normative table, and every declared view's route matches
+    it — and the paths are now the flat, mode-neutral v3 paths.
+    """
     from skilltrace.web.interface.validate import FROZEN_ROUTES
 
     assert FROZEN_ROUTES == {
         "today": "/",
         "next": "/next",
-        "finder": "/nodes/jump",
+        "find": "/find",
         "node": "/nodes/{id}",
-        "node pass": "/nodes/{id}/pass",
-        "node master": "/nodes/{id}/master",
+        "session": "/session",
+        "session-close": "/session/close",
+        "node-pass": "/nodes/{id}/pass",
+        "node-master": "/nodes/{id}/master",
         "master-confirm": "/nodes/{id}/master/confirm",
+        "evidence": "/nodes/{id}/evidence",
+        "evidence-index": "/evidence",
+        "reviews": "/reviews",
+        "operations": "/operations",
+        "graph": "/graph",
         "health": "/health",
         "analytics": "/analytics",
+        "portfolio": "/portfolio",
     }
     for name, route in FROZEN_ROUTES.items():
         assert interface.VIEWS[name].route == route

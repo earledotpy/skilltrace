@@ -14,6 +14,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 TIER1_SPEC = (REPO_ROOT / "docs" / "spec-tier1-serve.md").read_text(encoding="utf-8")
+V3_SPEC = (REPO_ROOT / "docs" / "spec-v3-study-day.md").read_text(encoding="utf-8")
 
 
 def test_discovery_amendment_names_its_sources():
@@ -88,5 +89,19 @@ def test_discovery_adr0008_refusal_is_recorded():
 
 
 def test_discovery_amendment_changes_no_release_criterion_or_route():
+    """The route surface is closed by the normative table, and no criterion changed.
+
+    Repointed from the v2.4 §C line to §6 of the v3 contract (ARC-7): the
+    assertion keeps its exact shape — the normative spec says no new
+    top-level view and no new route outside its table, and no
+    release-criterion change — and now names the table that is actually
+    in force. The v2.4 spec file keeps its history and is not edited
+    (spec §20 SUP-2).
+    """
     assert "No release-criterion change" in TIER1_SPEC
     assert "no new top-level view" in TIER1_SPEC or "no new route" in TIER1_SPEC
+
+    assert "new top-level views are permitted **only** where this table names them" in (
+        V3_SPEC
+    )
+    assert "criterion.layers.present` stays 5" in V3_SPEC

@@ -135,23 +135,37 @@ def test_sa5_the_detector_covers_the_banned_families():
         assert forbidden_matches(text), text
 
 
-# --- SA6 — downward-only route surface ----------------------------------------------
+# --- SA6 — the route surface is exactly the normative table -----------------------
 
 
 def test_sa6_no_new_top_level_view_beyond_the_frozen_table():
-    from skilltrace.web.interface import VIEWS
+    """The declared view set is exactly the normative route table.
 
-    assert set(VIEWS) == {
+    Repointed from the v2.4 §C table to ``docs/spec-v3-study-day.md`` §6
+    (ARC-7): the assertion keeps its exact form — the declared set equals
+    the normative table, one for one — and the table it names is now the
+    v3 one. A view outside the table is a new top-level surface, which
+    ADR 0007's amendment permits only where §6 names it.
+    """
+    from skilltrace.web.interface import FROZEN_ROUTES, VIEWS
+
+    assert set(VIEWS) == set(FROZEN_ROUTES)
+    assert set(FROZEN_ROUTES) == {
         "today",
         "next",
+        "find",
         "node",
-        "finder",
+        "session",
+        "session-close",
+        "node-pass",
+        "node-master",
+        "master-confirm",
+        "evidence",
+        "evidence-index",
+        "reviews",
+        "operations",
+        "graph",
         "health",
         "analytics",
-        "node pass",
-        "node master",
-        # The declared acceptance step (T4 §H): the frozen §C route table
-        # already carries it, so this declares an existing route — no new
-        # top-level surface is added.
-        "master-confirm",
+        "portfolio",
     }
