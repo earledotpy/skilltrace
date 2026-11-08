@@ -443,9 +443,11 @@ def _metadata_section(view, node_id: str, *, operations: bool) -> str:
             )
         )
     for anchor in node.roadmap_anchors or ():
-        label = anchor.get("phase_label") or anchor.get("phase") or ""
-        months = anchor.get("month_range") or ""
-        topic = anchor.get("roadmap_topic") or ""
+        # An anchor is a mapping whose values may be numbers or lists; the
+        # page renders the words, so every part is stringified first.
+        label = str(anchor.get("phase_label") or anchor.get("phase") or "")
+        months = str(anchor.get("month_range") or "")
+        topic = str(anchor.get("roadmap_topic") or "")
         facts.append(
             (
                 "Roadmap anchor (reference only)",
