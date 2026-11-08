@@ -164,3 +164,19 @@ def _table(headers: list[str], rows: list[list[str]]) -> str:
         f"<thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
     )
 
+
+
+def _session_node_id(view, session) -> str:
+    """The SkillNode an open Session is bound to.
+
+    A ``Session`` record carries no node id of its own: the bound node is
+    the one the session's work was logged against. Every surface that
+    shows the open Session derives it here, so Today and the Study
+    cockpit cannot drift apart — and with no work logged, there is no
+    bound node yet, which is the honest answer rather than a guess.
+    """
+    items = [w for w in view.work if w.session_id == session.id]
+    for item in reversed(items):
+        if item.node_id in view.node_map:
+            return item.node_id
+    return ""

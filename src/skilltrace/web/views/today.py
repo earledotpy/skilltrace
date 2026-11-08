@@ -34,7 +34,7 @@ from ...commands.today import derive_today
 from ...evidence.eligibility import compute_eligibility
 from ...execution.overdue import is_overdue, utc_today
 from ...execution.records import open_session
-from ._shared import _esc, plural
+from ._shared import _esc, _session_node_id, plural
 from .forms import _start_confirm_form
 from .shell import _page_head
 
@@ -114,10 +114,11 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
 
     # 1 — resume the open Session.
     if session is not None:
-        title = view.titles.get(session.node_id) or session.node_id
+        node_id = _session_node_id(view, session)
+        title = view.titles.get(node_id) or node_id
         actions = (
             f'<a class="btn primary" href="/session">Resume your session</a>'
-            f'<a class="btn secondary" href="/nodes/{_esc(session.node_id)}">'
+            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">'
             "Open this skill</a>"
         )
         items.append(

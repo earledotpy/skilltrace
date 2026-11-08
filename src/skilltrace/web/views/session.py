@@ -14,23 +14,9 @@ from pathlib import Path
 
 from ...execution.overdue import utc_today
 from ...execution.records import open_session
-from ._shared import _esc, _table
+from ._shared import _esc, _session_node_id, _table
 from .forms import _resolve_blocker_form, _work_form_fields
 from .shell import _page_head
-
-
-def _session_node_id(view, session) -> str:
-    """The SkillNode the open Session is bound to.
-
-    A ``Session`` record carries no node id of its own: the bound node is
-    the one the session's work was logged against. Deriving it here keeps
-    the cockpit honest — with no work logged, there is no bound node yet.
-    """
-    items = [w for w in view.work if w.session_id == session.id]
-    for item in reversed(items):
-        if item.node_id in view.node_map:
-            return item.node_id
-    return ""
 
 
 def _session_rows(view, session) -> str:

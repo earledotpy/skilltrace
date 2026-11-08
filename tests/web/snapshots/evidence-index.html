@@ -1,0 +1,13 @@
+<header><div class="shell"><h1 class="brand"><a href="/">SkillTrace</a></h1><nav class="nav operations" aria-label="Operations"><span class="section-nav-label">Operations</span><a href="/operations">Operations</a><a href="/graph">Graph</a><a href="/evidence" aria-current="page">Evidence</a><a href="/reviews">Reviews</a><a href="/health">Health</a><a href="/analytics">Analytics</a><a href="/portfolio">Portfolio</a><span class="mode-switch"><span class="nav-label">Mode</span><a href="/evidence?mode=guided">Guided</a><a href="/evidence?mode=operations" aria-current="true">Operations</a></span></nav></div></header>
+<section class="section">
+<form class="filters" method="get" action="/evidence">
+<div class="form-row"><label for="evidence-node">Skill</label><select name="node" id="evidence-node"><option value="">Every skill</option></select></div>
+<div class="form-row"><label for="evidence-outcome">Outcome</label><select name="outcome" id="evidence-outcome"><option value="">Any outcome</option><option value="True">accepted</option><option value="False">rejected</option></select></div>
+<div class="form-row"><label for="evidence-standing">Standing</label><select name="standing" id="evidence-standing"><option value="">Any standing</option><option value="live">live</option><option value="superseded">superseded</option></select></div>
+<button type="submit">Apply filters</button>
+</form>
+<div class="state state-empty">
+<p class="state-title">No evidence records</p>
+<p class="state-body">Nothing has been submitted against this filter yet. A requirement being unmet is a fact about the curriculum, not a problem with you.</p>
+</div>
+</section>

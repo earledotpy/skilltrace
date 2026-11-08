@@ -27,7 +27,15 @@ route                   case
 ======================  ==============================================
 ``GET /``               ``home``
 ``GET /next``           ``next``, ``next-locked`` (``?locked=1``)
-``GET /nodes/jump``     ``finder``, ``finder-query`` (``?q=…``)
+``GET /find``          ``finder``, ``finder-query`` (``?q=…``)
+``GET /session``       ``session``
+``GET /session/close`` ``session-close``
+``GET /nodes/{id}/evidence``  ``node-evidence``
+``GET /evidence``      ``evidence-index``
+``GET /reviews``       ``reviews``
+``GET /operations``    ``operations``
+``GET /graph``         ``graph``
+``GET /portfolio``     ``portfolio``
 ``GET /nodes/{id}``     ``node``
 ``GET /health``         ``health``
 ``GET /analytics``      ``analytics-velocity``, ``-blockers``, ``-reviews``,
@@ -38,8 +46,9 @@ route                   case
 anything else           ``error-404`` (the one unified error body)
 ======================  ==============================================
 
-The ``/nodes/jump?node_id=…`` jump and every POST are redirects or write
-routes, not rendered bodies — they are pinned by the write suites instead.
+The ``/nodes/jump`` path is retired — the discovery destination is
+``/find`` — and every POST is a write route, not a rendered body; the
+writes are pinned by the write suites instead.
 ``next`` and ``next-locked`` render the same bytes today (the locked half is a
 card, not a flag); both are pinned so the flag's behavior stays on record.
 
@@ -354,14 +363,70 @@ CASES: tuple[RouteCase, ...] = (
         lambda r: views.node_body(r, NODE_ACTIVE, {}),
     ),
     RouteCase(
-        "finder", "GET /nodes/jump", "Find a skill", 200, lambda r: views.finder_body(r, {})
+        "finder", "GET /find", "Find a skill", 200, lambda r: views.finder_body(r, {})
     ),
     RouteCase(
         "finder-query",
-        "GET /nodes/jump?q=pandas",
+        "GET /find?q=pandas",
         "Find a skill",
         200,
         lambda r: views.finder_body(r, {"q": ["pandas"]}),
+    ),
+    RouteCase(
+        "session",
+        "GET /session",
+        "Study",
+        200,
+        lambda r: views.session_body(r, {}),
+    ),
+    RouteCase(
+        "session-close",
+        "GET /session/close",
+        "Close session",
+        200,
+        lambda r: views.session_close_body(r, {}),
+    ),
+    RouteCase(
+        "node-evidence",
+        f"GET /nodes/{NODE_ACTIVE}/evidence",
+        "Evidence",
+        200,
+        lambda r: views.node_evidence_body(r, NODE_ACTIVE, {}),
+    ),
+    RouteCase(
+        "evidence-index",
+        "GET /evidence",
+        "Evidence",
+        200,
+        lambda r: views.evidence_index_body(r, {}),
+    ),
+    RouteCase(
+        "reviews",
+        "GET /reviews",
+        "Reviews",
+        200,
+        lambda r: views.reviews_body(r, {}),
+    ),
+    RouteCase(
+        "operations",
+        "GET /operations",
+        "Operations",
+        200,
+        lambda r: views.operations_body(r, {}),
+    ),
+    RouteCase(
+        "graph",
+        "GET /graph",
+        "Graph",
+        200,
+        lambda r: views.graph_body(r, {}),
+    ),
+    RouteCase(
+        "portfolio",
+        "GET /portfolio",
+        "Portfolio",
+        200,
+        lambda r: views.portfolio_body(r, {}),
     ),
     RouteCase("health", "GET /health", "Health", 200, views.health_body),
     RouteCase(
