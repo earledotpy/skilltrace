@@ -74,6 +74,28 @@ def _mode_from(query: dict | None, default: str = "guided") -> str:
     return default if default in MODES else "guided"
 
 
+def route_default_mode(path: str) -> str:
+    """The presentation mode a bare deep link on this path renders.
+
+    The default comes from the declared view seam, so the chrome and the
+    document's body class can never disagree about which presentation a
+    link without a mode lands on. A path the table does not name falls
+    back to Guided.
+    """
+    from ..interface import VIEWS
+
+    normalized = path.rstrip("/") or "/"
+    for view in VIEWS.values():
+        if "{" in view.route:
+            prefix = view.route.split("{")[0].rstrip("/")
+            if normalized.startswith(prefix + "/"):
+                return view.default_mode
+            continue
+        if view.route == normalized:
+            return view.default_mode
+    return "guided"
+
+
 def _mode_link(path: str, query: dict | None, mode: str) -> str:
     """The same destination in the other mode, keeping its query context.
 

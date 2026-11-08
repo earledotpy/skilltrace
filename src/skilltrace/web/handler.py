@@ -142,7 +142,7 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
         else:
             title, body, status = self._not_found()
 
-        self._send(page(title, body, mode=self._mode(query)), status=status)
+        self._send(page(title, body, mode=self._mode(query, path)), status=status)
 
     def do_POST(self) -> None:  # noqa: N802 — stdlib contract
         length = int(self.headers.get("Content-Length") or 0)
@@ -156,7 +156,7 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
             self._redirect(result.location)
         else:
             title, body, status = result
-            self._send(page(title, body, mode=self._mode(form)), status=status)
+            self._send(page(title, body, mode=self._mode(form, path)), status=status)
 
     def _route_post(self, path: str, form: dict):
         root = self.server.root
@@ -209,11 +209,15 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
         return path[len("/nodes/"):]
 
     @staticmethod
-    def _mode(params: dict) -> str:
-        """The presentation mode a request asked for, if any."""
-        from .views.shell import _mode_from
+    def _mode(params: dict, path: str) -> str:
+        """The presentation mode a request asked for, or the route's default.
 
-        return _mode_from(params)
+        The default comes from the declared view seam, so the document's
+        body class and the chrome always agree about the presentation.
+        """
+        from .views.shell import _mode_from, route_default_mode
+
+        return _mode_from(params, route_default_mode(path))
 
     def _not_found(self) -> tuple[str, str, int]:
         """Every non-route answers with the one unified error body (T4 §H)."""
