@@ -111,7 +111,11 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
         elif path == "/portfolio":
             title, body, status = portfolio_body(self.server.root, query)
         elif path == "/portfolio/preview":
-            title, body, status = portfolio_body(self.server.root, query)
+            # The preview is the configurator with the preview rendered: the
+            # same page, the same selection, and nothing written.
+            title, body, status = portfolio_body(
+                self.server.root, {**query, "preview": ["1"]}
+            )
         elif review_action is not None:
             # The review action routes are write paths; a GET renders the
             # reviews destination so a stray link is never a dead end.

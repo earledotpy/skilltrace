@@ -56,7 +56,7 @@ def _selection_form(query: dict | None) -> str:
         for value in ("md", "html", "json")
     )
     return (
-        '<form method="get" action="/portfolio">\n'
+        '<form method="get" action="/portfolio/preview">\n'
         '<div class="form-row">'
         '<label for="portfolio-track">Track (optional)</label>'
         f'<input type="text" name="track" id="portfolio-track" '
@@ -74,7 +74,13 @@ def _selection_form(query: dict | None) -> str:
 
 
 def portfolio_body(root, query: dict | None = None) -> tuple[str, str, int]:
-    """GET `/portfolio` — the export configurator; `/portfolio/preview` too."""
+    """GET `/portfolio` — the export configurator.
+
+    ``/portfolio/preview`` is the same page with the preview rendered: the
+    exact output the export would produce, through the export's own
+    selection, redaction and rendering pipeline, and **without writing
+    anything** (spec-v3-study-day §11.7).
+    """
     view, head, failure = _page_head(
         root,
         query,
@@ -135,5 +141,72 @@ def portfolio_body(root, query: dict | None = None) -> tuple[str, str, int]:
         "</div></div>\n"
         + "</form>\n"
         + "</section>\n"
+        + _preview_section(root, query, enabled)
     )
     return "Portfolio", body, 200
+
+
+def _preview_section(root, query: dict, enabled) -> str:
+    """The preview — the exact output, rendered without writing anything.
+
+    The preview shares the export's selection, redaction and rendering
+    pipeline, so what it shows is what would leave. It writes nothing: the
+    preview command is read-only, and no bundle is created.
+    """
+    if not (query or {}).get("preview"):
+        return ""
+    fmt = (query.get("format") or ["md"])[0]
+    if fmt not in {"md", "html", "json"}:
+        fmt = "md"
+
+    from ...context import load_context_strict
+    from ...execution.overdue import utc_today
+    from ...portfolio.export import PortfolioExportError, render_preview
+    from ...portfolio.models import SelectionOptions
+    from ...portfolio.pipeline import build_portfolio
+
+    options = SelectionOptions(
+        nodes=tuple(query.get("node") or ()),
+        track=(query.get("track") or [None])[0],
+        include_active=bool(query.get("include_active")),
+        include_rejected=bool(query.get("include_rejected")),
+        include_superseded=bool(query.get("include_superseded")),
+        include_paths=bool(query.get("include_paths")),
+        include_notes=bool(query.get("include_notes")),
+        include_blockers=bool(query.get("include_blockers")),
+        include_reviews=bool(query.get("include_reviews")),
+        include_free_text=bool(query.get("include_free_text")),
+        include_urls=bool(query.get("include_urls")),
+    )
+    try:
+        joined = load_context_strict(root)
+        if not joined.ok:
+            raise PortfolioExportError("data load failed")
+        rendered = render_preview(
+            build_portfolio(joined, options, today=utc_today()),
+            options,
+            fmt=fmt,
+        )
+    except Exception as exc:  # noqa: BLE001 — a failure writes nothing
+        return (
+            '<section class="section">\n'
+            "<h2 class=\"section-title\">Preview</h2>\n"
+            '<div class="state state-failure">\n'
+            '<p class="state-title">The preview could not be built</p>\n'
+            '<p class="state-body">Nothing was written and your selection '
+            "is preserved — fix the cause and try again.</p>\n"
+            f'<p class="state-body">{_esc(str(exc))}</p>\n'
+            "</div>\n"
+            "</section>\n"
+        )
+
+    return (
+        '<section class="section">\n'
+        '<div class="section-head">\n'
+        "<h2 class=\"section-title\">Preview</h2>\n"
+        '<p class="section-meta">Exactly what the export would contain. '
+        "Nothing was written — this preview creates no bundle.</p>\n"
+        "</div>\n"
+        f'<pre class="mono">{_esc(rendered)}</pre>'
+        "</section>\n"
+    )
