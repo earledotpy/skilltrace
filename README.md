@@ -8,7 +8,7 @@ Everything runs on your own computer. There are no accounts, no cloud sync, no t
 
 ---
 
-## What's inside (v2.0.0)
+## What's inside
 
 - **A ready-made curriculum of 100 skills** — math foundations, Python programming, data analysis, classical machine learning, and building with AI agents — supported by 45 curated learning resources.
 - **A daily dashboard** (`st today`) that shows your top recommendation, anything due for review, and current obstacles.
@@ -17,7 +17,7 @@ Everything runs on your own computer. There are no accounts, no cloud sync, no t
 - **Memory-aware reviews** — spaced check-ins keep older skills fresh, with reminders when something starts to fade.
 - **Study analytics** — simple views of your pace, obstacles, review habits, and coverage over time.
 - **A portfolio builder** — turn your finished work into a clean Markdown, web, or data bundle you can share, with privacy controls that keep your private notes private unless you choose to include them.
-- **A local web dashboard** (`st ui`) if you prefer working in a browser instead of the terminal.
+- **A local web dashboard** (`./start.sh`, or `st serve`) if you prefer working in a browser instead of the terminal.
 
 ---
 
@@ -48,6 +48,17 @@ pip install -e .
 
 This gives you the `skilltrace` command and its short alias `st`.
 
+### Start it
+
+```bash
+./start.sh
+```
+
+That is the whole path from here on. It serves **this** repository, opens your
+browser at `http://127.0.0.1:8341` (or the next free port), reuses a copy that
+is already running for this repository instead of colliding with it, and stops
+on Ctrl+C. It never installs anything and never remembers anything.
+
 ### Check that it works
 
 ```bash
@@ -57,8 +68,8 @@ st health
 # 2. See your daily dashboard
 st today
 
-# 3. Open the browser dashboard (optional)
-st ui
+# 3. Serve the browser dashboard yourself, if you would rather use the terminal
+st serve        # `st ui` is the same command
 ```
 
 ---
@@ -93,7 +104,7 @@ Over time, `st reviews` and `st retention status` keep earlier skills fresh, and
 | Record or clear an obstacle | `st blocker create` / `st blocker resolve` |
 | Progress, obstacle, and evidence reports | `st report progress` (also: `blockers`, `reviews`, `evidence`) |
 | Study pace and coverage charts | `st analytics` |
-| Browser dashboard | `st ui` |
+| Browser dashboard | `./start.sh`, or `st serve` (`st ui` is an alias) |
 | Share your finished work | `st portfolio preview` / `st portfolio export` |
 | Whole-system health check | `st health` |
 | Back up your data | `st backup` |

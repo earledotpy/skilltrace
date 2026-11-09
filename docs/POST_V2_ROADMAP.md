@@ -281,6 +281,31 @@ single-learner-by-design; a second learner forks the curriculum
 without the progress store). Naming it again in the post-v2
 doc would restate a glossary ruling, not add a new one.
 
+*Non-slot tooling (decided work that adds no engine capability):*
+
+- **`./start.sh` launcher** — the single launch program for the web
+  UI ([#366](https://github.com/earledotpy/skilltrace/issues/366)): a
+  Linux bash shim plus `src/skilltrace/web/launch.py`, which pins the
+  root to the repository the shim lives in, reuses an instance already
+  serving that root, and otherwise walks past a busy port. Ruled a
+  **tooling task, not a slot**: it adds no engine capability, so it does
+  not score against the ROI rubric and does not enter the slot table
+  above. It registers no dispatcher command (`st --help` never learns
+  it), touches no `serve` trait (ADR 0006 stands unamended), and
+  remembers nothing — no port memory, no root memory, no PID file.
+  Windows/macOS shims, a `.desktop` / `--install-shortcut` shortcut, and
+  any persistence are deferred with named triggers recorded on the
+  ticket. It also carries the `find_root()` fail-loud fix
+  (`RootNotFound`), which is an engine change and landed first.
+- **Docs still describe a CLI-first product** — `README.md`'s feature
+  list and `docs/USER_GUIDE.md`'s web section predate the v3 study-day
+  product whose contract is
+  [`docs/spec-v3-study-day.md`](./spec-v3-study-day.md). Deferred to a
+  doc-currency effort of its own
+  ([#367](https://github.com/earledotpy/skilltrace/issues/367)) so that
+  product voice is written against that spec rather than inside a
+  tooling change; the launch-path corrections above are already in.
+
 ## References
 
 - [`docs/spec-tier1-serve.md`](./spec-tier1-serve.md) (v1.4 spec)
