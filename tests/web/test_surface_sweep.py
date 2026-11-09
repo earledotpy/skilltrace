@@ -184,7 +184,6 @@ def test_shell_skip_link_focus_ring_and_main_target(repo):
     html = views.page("t", "<header></header><p>x</p>")
     assert html.index('class="skip" href="#content"') < html.index("<header>")
     assert '<main class="shell" id="content">' in html
-    node_id = _first_node_id(repo, state="available")
     for name, body in (
         ("home", views.home_body(repo)[1]),
         ("next", views.next_body(repo, {})[1]),

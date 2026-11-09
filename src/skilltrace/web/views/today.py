@@ -76,7 +76,7 @@ def _overdue_reviews(view, today) -> list:
     ]
 
 
-def _open_blockers(view) -> list:
+def _open_blocker_records(view) -> list:
     return [b for b in view.blockers if b.status == "open"]
 
 
@@ -95,7 +95,7 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
     today = utc_today()
     session = open_session(view.sessions)
     overdue = _overdue_reviews(view, today)
-    blockers = _open_blockers(view)
+    blockers = _open_blocker_records(view)
 
     try:
         next_model = derive_next(view, Path(root), minutes=60, limit=6)

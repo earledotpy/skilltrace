@@ -126,7 +126,7 @@ def _create_blocker_offer(view, session) -> str:
     )
 
 
-def _open_blockers(view) -> str:
+def _blocker_section(view) -> str:
     """The open Blockers of the Session's nodes — explicit records, not work."""
     open_blockers = [b for b in view.blockers if b.status == "open"]
     if not open_blockers:
@@ -185,7 +185,7 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
     node_id = _session_node_id(view, session)
     node_title = view.titles.get(node_id) or node_id
     work_rows = _session_rows(view, session)
-    blockers = _open_blockers(view)
+    blockers = _blocker_section(view)
     blocked_work = _blocked_work(view, session)
     create_blocker = _create_blocker_offer(view, session)
 
