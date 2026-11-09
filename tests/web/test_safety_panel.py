@@ -92,26 +92,35 @@ def test_no_modal_style_survives_and_no_overlay_or_script(repo):
     assert "<script" not in pass_body.lower()
 
 
-def test_panel_borders_resolve_to_locked_tokens():
-    assert re.search(
-        r"\.safety-accent\s*\{\s*border-left:[^;]*var\(--accent\)", _STYLE
-    )
-    assert re.search(
-        r"\.safety-warn\s*\{\s*border-left:[^;]*var\(--warn\)", _STYLE
-    )
-    assert re.search(
-        r"\.safety-err\s*\{\s*border-left:[^;]*var\(--err\)", _STYLE
-    )
-    assert re.search(r"\.safety\s*\{\s*padding:\s*var\(--card-pad\)", _STYLE)
+def test_panel_status_resolves_to_locked_tokens():
+    """The panels' status rides the locked status tokens, not ad-hoc hues.
+
+    The v2.4 panel classes (``safety-accent``/``safety-warn``/
+    ``safety-err`` and their ``--warn``/``--err`` hues) are superseded by
+    the v3 semantic status tokens: the pass panel is an *information*
+    panel, mastery step 1 an *advisory attention* one, and the permanent
+    confirmation a *failure-risk* one — each carrying its text label, so
+    the meaning never rests on colour alone (AX-1, VS-3).
+    """
+    for selector, token in (
+        (".status-label.info", "--status-info"),
+        (".status-label.warning", "--status-warning"),
+        (".status-label.failure", "--status-failure"),
+    ):
+        assert re.search(
+            rf"{re.escape(selector)}\s*\{{[^}}]*border-color:var\({re.escape(token)}\)",
+            _STYLE,
+        ), selector
+    assert re.search(r"\.card\s*\{[^}]*padding:\s*var\(--space-4\)", _STYLE)
 
 
-def test_pass_panel_uses_accent_master_steps_use_warn_err(repo):
+def test_pass_panel_is_information_master_steps_are_warning_and_failure(repo):
     _, pass_body, _ = views.pass_modal_body(repo, NODE)
-    assert "safety-accent" in pass_body
+    assert "status-label info" in pass_body
     _, step1, _ = views.master_body(repo, NODE)
-    assert "safety-warn" in step1
+    assert "status-label warning" in step1
     _, step2, _ = views.master_confirm_body(repo, NODE)
-    assert "safety-err" in step2
+    assert "status-label failure" in step2
 
 
 def test_panels_carry_flash_dismissal_link(repo):
@@ -145,7 +154,7 @@ def test_master_step_two_states_permanence_and_rerenders_facts(repo):
     for fact in ("Passed on", "Live proof accepted", "Review spacing"):
         assert fact in step1
         assert fact in step2
-    assert "safety-err" in step2
+    assert "status-label failure" in step2
 
 
 def test_master_step_one_omits_continue_on_structural_wall(repo):
@@ -232,7 +241,17 @@ def test_operational_failure_points_at_health(repo):
 
 
 def test_friction_free_writes_stay_single_step(repo):
+    """The learner reaches each write in one step from the skill page.
+
+    The v3 node page *links* to the destinations that own the writes — the
+    evidence workspace, the pass panel, the mastery panel — and the
+    cockpit's work form appears only while a session is open (R6, IC-3).
+    The v2.4 page embedded all three forms at once; that is superseded.
+    """
     _, body, _ = views.node_body(repo, NODE, {})
-    assert 'action="/work"' in body
-    assert 'action="/nodes/' in body and "/blockers" in body
-    assert 'action="/nodes/' in body and "/evidence" in body
+    assert f'href="/nodes/{NODE}/evidence"' in body
+    assert f'href="/nodes/{NODE}/pass"' in body
+    assert f'href="/nodes/{NODE}/master"' in body
+    assert 'href="/reviews"' in body
+    # No work form without an open session.
+    assert 'action="/work"' not in body

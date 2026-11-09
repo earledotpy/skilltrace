@@ -150,28 +150,33 @@ class Card:
 class View:
     """A declared page: frozen route, title, affordance set, nav group.
 
-    ``group`` is one of the two §C/§H nav groups — ``daily`` (the daily
-    loop) or ``periodic`` (the separated retrospective stop) — or ``None``
-    for pages that are not nav stops (node detail, the finder, health,
-    the pass/master panels).
+    ``group`` is the section the destination is a nav stop of — ``guided``
+    (the task-led study day) or ``operations`` (the capability directory)
+    — or ``None`` for pages that are not nav stops (node detail, the
+    session cockpit, the safety panels).
+
+    ``default_mode`` is the presentation mode a **bare deep link** renders
+    (spec-v3-study-day IA-1): mode rides a URL parameter, so a link
+    without one must still land on a sensible presentation.
     """
 
     name: str
     route: str
     title: str
-    group: Literal["daily", "periodic"] | None
+    group: Literal["guided", "operations"] | None
     affordances: tuple[str, ...] = ()
+    default_mode: Literal["guided", "operations"] = "guided"
 
 
-# The frozen route table (G-RouteSurface): declared views with their routes.
-# Each view's ``affordances`` name the registered dispatcher commands its
-# page's write paths nest-dispatch — validated at serve boot (a dead write
-# path refuses to start).
+# The frozen route table (spec-v3-study-day §6, normative): declared views
+# with their routes. Paths are frozen verbatim — a view whose route drifts
+# from this table is a boot failure, not a silent 404. The table is flat and
+# mode-neutral: a destination exists once, and mode is presentation context
+# carried by a URL parameter, never by a path prefix.
 #
-# Groups are the two §C/§H nav groups: ``daily`` (the daily loop) and
-# ``periodic`` (the separated retrospective stop). Health carries ``None`` —
-# it is not a nav stop (T4 §H): the chrome reaches it only through the
-# header pill strip + ``Full roll-up`` pointer.
+# The view *name* is the screen identity; the route is where it lives. The
+# name is never derived from the path and the path is never derived from the
+# name.
 VIEWS: dict[str, View] = {
     view.name: view
     for view in (
@@ -179,29 +184,49 @@ VIEWS: dict[str, View] = {
             name="today",
             route="/",
             title="Today",
-            group="daily",
-            affordances=("start", "work", "session close"),
+            group="guided",
+            affordances=("start",),
         ),
-        View(name="next", route="/next", title="Next", group="daily"),
+        View(name="next", route="/next", title="Next", group="guided"),
+        View(name="find", route="/find", title="Find a skill", group="guided"),
+        View(
+            name="reviews",
+            route="/reviews",
+            title="Reviews",
+            group="guided",
+            affordances=("review schedule", "review complete", "review cancel"),
+        ),
         View(name="node", route="/nodes/{id}", title="This skill", group=None),
-        View(name="finder", route="/nodes/jump", title="Jump to a skill", group=None),
         View(
-            name="health",
-            route="/health",
-            title="Health",
+            name="session",
+            route="/session",
+            title="Study",
             group=None,
-            affordances=("sync",),
+            affordances=(
+                "start",
+                "work",
+                "session close",
+                "blocker create",
+                "blocker resolve",
+                "evidence submit",
+            ),
         ),
-        View(name="analytics", route="/analytics", title="Analytics", group="periodic"),
         View(
-            name="node pass",
+            name="session-close",
+            route="/session/close",
+            title="Close session",
+            group=None,
+            affordances=("session close",),
+        ),
+        View(
+            name="node-pass",
             route="/nodes/{id}/pass",
             title="Mark passed",
             group=None,
             affordances=("pass",),
         ),
         View(
-            name="node master",
+            name="node-master",
             route="/nodes/{id}/master",
             title="Mark mastered",
             group=None,
@@ -213,6 +238,58 @@ VIEWS: dict[str, View] = {
             title="Confirm mastery",
             group=None,
             affordances=("master",),
+        ),
+        View(
+            name="evidence",
+            route="/nodes/{id}/evidence",
+            title="Evidence",
+            group=None,
+            affordances=("evidence submit",),
+        ),
+        View(
+            name="evidence-index",
+            route="/evidence",
+            title="Evidence",
+            group="operations",
+            default_mode="operations",
+        ),
+        View(
+            name="operations",
+            route="/operations",
+            title="Operations",
+            group="operations",
+            default_mode="operations",
+        ),
+        View(
+            name="graph",
+            route="/graph",
+            title="Graph",
+            group="operations",
+            default_mode="operations",
+        ),
+        View(
+            name="health",
+            route="/health",
+            title="Health",
+            group="operations",
+            affordances=("sync",),
+            default_mode="operations",
+        ),
+        View(
+            name="analytics",
+            route="/analytics",
+            title="Analytics",
+            group="operations",
+            affordances=("analytics export",),
+            default_mode="operations",
+        ),
+        View(
+            name="portfolio",
+            route="/portfolio",
+            title="Portfolio",
+            group="operations",
+            affordances=("portfolio export",),
+            default_mode="operations",
         ),
     )
 }

@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from skilltrace.execution.overdue import utc_today
 from skilltrace.web import views
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -46,7 +47,14 @@ def repo(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def today() -> date:
-    return date(2026, 9, 19)
+    """The date the study-rhythm window is measured against.
+
+    The guidance derivation reads the wall clock (the web layer has no
+    ``Context.clock`` seam), so the fixture's records are dated relative
+    to the real today. A pinned date would put the seeded records outside
+    the window and the assertions would measure nothing.
+    """
+    return utc_today()
 
 
 def _seed_activity(repo: Path, today: date) -> None:
@@ -133,7 +141,6 @@ def test_hierarchy_order_and_card_contract(repo, today):
     assert "1 open blocker holding up work." in body
     assert f'href="/nodes/{NODE_A}"' in body
     assert f'href="/nodes/{NODE_B}"' in body  # overdue review links its node
-    assert "0 due today, 1 overdue" in body
     assert "suggestions" in body and "recomputed on each run" in body
     assert "Logged 1 work item this window." in body
     assert "Days practiced: 1." in body
@@ -149,27 +156,64 @@ def test_empty_copy_contract(repo, today):
 def test_limited_data_prefix_under_soft_threshold(repo, today):
     _seed_activity(repo, today)  # 1 session < min_sessions_for_full_data (3)
     _, body, _ = views.health_body(repo)
-    assert "Limited data (1 sessions) — " in body
+    assert "limited data (1 session" in body.lower()
 
 
-def test_zero_diagnostics_presence(repo, today):
+def test_health_is_exactly_two_named_projections(repo, today):
+    """Two projections, both named, neither an aggregate (VS-10).
+
+    The v2.4 page carried one roll-up and no diagnostics at all; the v3
+    contract splits the surface so that a learner fact never reads as a
+    repository fault and neither can block the learner.
+    """
     _seed_activity(repo, today)
     _, body, _ = views.health_body(repo)
-    for banned in ("<table>", "FAILED", "health:", "states:", "verified=",
-                   "Full roll-up", "graph impact", "validate evidence"):
-        assert banned not in body, banned
+    assert "Study guidance" in body
+    assert "Repository diagnostics" in body
+    # The guidance section comes first: the learner before the repository.
+    assert body.index("Study guidance") < body.index("Repository diagnostics")
 
 
-def test_guardrails_no_score_streak_or_blocking(repo, today):
+def test_the_two_projections_are_declared_independent(repo, today):
+    """Each projection says what it is about, and that it blocks nothing."""
+    _seed_activity(repo, today)
+    _, body, _ = views.health_body(repo)
+    assert "not your progress" in body
+    assert "never block" in body
+
+
+def test_the_guardrails_hold(repo, today):
+    """No composite score, no streak, no blocking language (VS-10).
+
+    The page may *say* it has no overall score — the ban is on a score
+    being reported, not on the word appearing in a disclaimer.
+    """
     _seed_activity(repo, today)
     _, body, _ = views.health_body(repo)
     lowered = body.lower()
-    for banned in ("score", "streak", "must complete", "blocked until"):
+    for banned in ("streak", "must complete", "blocked until"):
         assert banned not in lowered, banned
+    # No composite figure is reported: the only numbers are per-layer
+    # counts and per-projection facts.
+    assert "overall score" in lowered  # the disclaimer, not a figure
+    assert "health score" not in lowered
+    assert "composite" not in lowered
 
 
-def test_header_pointer_renamed_without_a_route(repo, today):
+def test_diagnostics_are_a_separate_table_not_a_mixed_one(repo, today):
+    """The diagnostics table lists layers, and holds no learner facts."""
     _seed_activity(repo, today)
     _, body, _ = views.health_body(repo)
-    assert "Full roll-up" not in body
-    assert "Health →" in body  # header affordance, same single route
+    guidance, _, diagnostics = body.partition("Repository diagnostics")
+    assert "<table" in diagnostics
+    assert "<table" not in guidance
+    # A layer's standing is its own; the guidance never carries one.
+    for banned in ("Layer", "OK", "FAILED"):
+        assert banned not in guidance, banned
+
+
+def test_health_is_reachable_from_the_operations_navigation(repo, today):
+    """Health is an Operations capability — reachable, not a stray link."""
+    _seed_activity(repo, today)
+    _, body, _ = views.operations_body(repo)
+    assert 'href="/health"' in body

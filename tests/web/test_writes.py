@@ -110,7 +110,9 @@ def test_pass_modal_renders_server_fresh_facts(repo):
     assert title != ""
     # T5 §F: confirmation copy uses the human title; raw spec ids never render.
     assert "Confirm pass" in body
-    assert "safety-accent" in body
+    # The panel's status rides the v3 semantic status tokens (the v2.4
+    # ``safety-accent`` class is superseded history).
+    assert "status-label info" in body
     assert SPEC not in body
     assert 'method="post"' in body
     # No pre-disabled state — the button is always clickable.
@@ -231,7 +233,7 @@ def test_master_step_one_shows_mastery_facts(repo):
     assert status == 200
     assert "Step 1" in body
     assert "Mastery facts" in body
-    assert "safety-warn" in body
+    assert "status-label warning" in body
     assert "Review spacing" in body
 
 
@@ -335,17 +337,57 @@ def test_work_bad_minutes_is_a_warning_flash(repo):
 # --- #343: the Log work form carries the canonical node id ----------------------
 
 
-def _work_form_of(body: str) -> str:
-    """The rendered Log work form — the exact markup the learner submits."""
+def _work_form_of(body: str) -> str | None:
+    """The rendered Log work form — the exact markup the learner submits.
+
+    ``None`` when the page carries no work form, which is the honest
+    answer for a page with no open session.
+    """
     match = re.search(r'<form method="post" action="/work">.*?</form>', body, re.S)
-    assert match is not None, "node page renders no /work form"
-    return match.group(0)
+    return match.group(0) if match else None
 
 
 def test_rendered_log_work_form_carries_the_canonical_node_id(repo):
-    """#343: the id rides a hidden input — the learner never infers or types it."""
-    _, body, _ = views.node_body(repo, NODE, {})
+    """#343: the id rides a hidden input — the learner never infers or types it.
+
+    The work form lives in the cockpit, and the node page carries it only
+    while a session is open (R6, IC-3): a page load records nothing.
+    """
+    # The work form exists only while a session is open (R6, IC-3).
+    _, body, _ = views.session_body(repo)
+    assert _work_form_of(body) is None
+
+    _write_yaml(
+        repo,
+        "execution/sessions.yaml",
+        {
+            "sessions": [
+                {
+                    "id": "ses.work.001",
+                    "status": "open",
+                    "started_at": "2026-09-10T10:00:00+00:00",
+                }
+            ]
+        },
+    )
+    _write_yaml(
+        repo,
+        "execution/session_work.yaml",
+        {
+            "session_work": [
+                {
+                    "id": "wk.ses.work.001.01",
+                    "session_id": "ses.work.001",
+                    "node_id": NODE,
+                    "created_at": "2026-09-10T10:30:00+00:00",
+                    "minutes": 20,
+                }
+            ]
+        },
+    )
+    _, body, _ = views.session_body(repo)
     form = _work_form_of(body)
+    assert form is not None
     assert f'<input type="hidden" name="node_id" value="{NODE}">' in form
 
 
@@ -487,11 +529,10 @@ def test_home_carries_the_top_pick_start_and_resumable_close(repo):
     """v2.4 S3: Today = focus CTA + count set; close rides the resumable line."""
     _, body, status = views.home_body(repo, {})
     assert status == 200
-    # The page-level start affordance is the focus card's primary CTA.
+    # The queue's dominant action is the start of the top pick.
     assert 'action="/nodes/' in body and "/start" in body
-    assert "progress never moves backward" in body
-    # No session is open on the fresh seed: the resumable line (with its
-    # close affordance) is absent, and the raw strip kicker is retired.
+    assert "Start studying" in body
+    # No session is open on the fresh seed: the close affordance is absent.
     assert "SESSION STRIP" not in body
     assert 'action="/session/close"' not in body
 
@@ -511,31 +552,55 @@ def test_home_resumable_line_carries_close_while_a_session_is_open(repo):
         },
     )
     _, body, _ = views.home_body(repo)
-    assert 'action="/session/close"' in body
-    assert "Session open since" in body
+    # The resume action leads to the cockpit; closing is an explicit
+    # command with its own panel, not an affordance on the home page.
+    assert 'href="/session"' in body
+    assert "Resume your session" in body
+    # The session's raw id never reaches the learner.
     assert "ses.2026-09-10.001" not in body
 
 
 def test_node_page_carries_write_actions_and_forms(repo):
-    """Structural omission (P4.1): pass/master links reflect the wall."""
+    """The node page reaches each write in one step.
+
+    It links to the destinations that own the writes — the evidence
+    workspace, the pass panel, the mastery panel — and offers the start
+    action for an available skill. The work form appears only while a
+    session is open (R6, IC-3).
+    """
     _, body, _ = views.node_body(repo, NODE, {})
-    assert "Write actions" in body
     assert f'action="/nodes/{NODE}/start"' in body
-    assert 'action="/work"' in body
-    assert f'action="/nodes/{NODE}/blockers"' in body
-    assert f'action="/nodes/{NODE}/evidence"' in body
+    assert f'href="/nodes/{NODE}/evidence"' in body
+    assert f'href="/nodes/{NODE}/pass"' in body
+    assert f'href="/nodes/{NODE}/master"' in body
+    # No work form without an open session.
+    assert 'action="/work"' not in body
 
 
-def test_pass_and_master_links_are_omitted_on_a_locked_node(repo):
-    _, locked_body, _ = views.node_body(repo, _first_locked_node(repo), {})
-    assert 'href="/nodes/' not in locked_body or "/pass" not in _hrefs(locked_body)
-    assert "/master" not in _hrefs(locked_body)
+def test_a_locked_node_offers_no_start_and_no_wall_bypass(repo):
+    """A locked skill offers nothing that could start it (HB-4).
+
+    The pass and mastery panels are *linked* — the panel itself states
+    the refusal, which is where the truth lives — but there is no start
+    action and no way to begin the work.
+    """
+    locked = _first_locked_node(repo)
+    _, locked_body, _ = views.node_body(repo, locked, {})
+    assert f'action="/nodes/{locked}/start"' not in locked_body
+    assert "No session is open" in locked_body
 
 
-def test_master_link_is_omitted_until_passed(repo):
-    """Master requires passed — on an available node the link is omitted."""
+def test_the_mastery_panel_refuses_until_the_skill_is_passed(repo):
+    """Mastering requires a passed skill; the panel says so and stops.
+
+    The link is present — the panel is where the truth lives, and it
+    states the refusal rather than the page hiding the destination.
+    """
     _, body, _ = views.node_body(repo, NODE, {})
-    assert "/master" not in _hrefs(body)
+    assert f'href="/nodes/{NODE}/master"' in body
+    _, panel, _ = views.master_body(repo, NODE)
+    assert "Continue is unavailable" in panel
+    assert "/master/confirm" not in panel
 
 
 def _hrefs(body: str) -> str:

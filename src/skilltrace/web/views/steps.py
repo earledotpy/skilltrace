@@ -45,7 +45,11 @@ def pass_modal_body(
     engine internals (specs by human title, never raw spec ids).
     """
     view, head, failure = _page_head(
-        root, query, dismiss_path=_modal_dismiss(node_id, "Confirm pass")
+        root,
+        query,
+        dismiss_path=_modal_dismiss(node_id, "Confirm pass"),
+        current_view="node-pass",
+        path=f"/nodes/{node_id}/pass",
     )
     if failure is not None:
         return failure
@@ -116,9 +120,29 @@ def pass_modal_body(
         )
 
     node_title = view.node_map[node_id].title
+    if state in ("passed", "mastered"):
+        # The pass already happened: this page is now the **result**, and it
+        # must show the visible Review-state consequence (R3) — the scheduled
+        # Reviews that appeared, or the explicit statement that policy leaves
+        # scheduling manual, with the action offered.
+        inner = (
+            f"<p>How this is checked: {authority_line}</p>"
+            f"{spec_table}"
+            f"{not_backed}"
+            + _review_consequence(view, node_id)
+            + f'<div class="actions">'
+            f'<a class="btn primary" href="/nodes/{_esc(node_id)}">'
+            "Back to the skill</a>"
+            f'<a class="btn secondary" href="/reviews">See all reviews</a>'
+            "</div>"
+        )
+        return _modal_shell(view, node_id, "Passed", inner, head=head)
+
     inner = (
         f"<p>How this is checked: {authority_line}</p>"
         f"{spec_table}"
+        '<p class="big">This panel is about passing only. Mastering is a '
+        "separate, later journey and is never combined with passing.</p>"
         "<p><strong>Eligibility</strong></p>"
         f"{verdict_html}"
         f"{not_backed}"
@@ -132,6 +156,41 @@ def pass_modal_body(
         "</div></form>"
     )
     return _modal_shell(view, node_id, "Confirm pass", inner, head=head)
+
+
+def _review_consequence(view, node_id: str) -> str:
+    """What passing did to the Review state — shown on the pass result.
+
+    Passing visibly changes the Review state (R3): either scheduled
+    Reviews appear, or the page says plainly that policy leaves scheduling
+    manual and offers the action. Either way the learner sees the
+    consequence rather than having it happen silently.
+    """
+    scheduled = [
+        r for r in view.reviews if r.node_id == node_id and r.status == "scheduled"
+    ]
+    if scheduled:
+        rows = [
+            [_esc(r.scheduled_for), "scheduled"] for r in sorted(
+                scheduled, key=lambda r: r.scheduled_for
+            )
+        ]
+        return (
+            "<p><strong>What passing changed</strong></p>"
+            '<p class="big">These checks are now scheduled for this skill:</p>'
+            + _table(["Due", "State"], rows)
+            + '<p class="small mut">A check only becomes overdue once its '
+            "date has passed. Completing or cancelling one stays your own "
+            "action.</p>"
+        )
+    return (
+        "<p><strong>What passing changed</strong></p>"
+        '<p class="big">No checks were scheduled automatically — policy '
+        "leaves scheduling manual for this skill.</p>"
+        '<div class="command-bar"><div class="actions">'
+        '<a class="btn secondary" href="/reviews">Schedule a check</a>'
+        "</div></div>"
+    )
 
 
 def _mastery_facts_html(view: JoinedView, node_id: str) -> tuple[str, str]:
@@ -182,7 +241,11 @@ def master_body(
 ) -> tuple[str, str, int]:
     """GET `/nodes/{id}/master` — step 1 of 2: mastery facts (T5 §B+§F+P4.1)."""
     view, head, failure = _page_head(
-        root, query, dismiss_path=_modal_dismiss(node_id, "Step 1 — Mastery facts")
+        root,
+        query,
+        dismiss_path=_modal_dismiss(node_id, "Step 1 — Mastery facts"),
+        current_view="node-master",
+        path=f"/nodes/{node_id}/master",
     )
     if failure is not None:
         return failure
@@ -228,6 +291,9 @@ def master_body(
 
     inner = (
         '<div class="kicker">Mastery facts</div>'
+        '<p class="big">Mastering is a separate, later step from passing. '
+        "This panel is about mastery only — passing has its own journey, and "
+        "mastering is never combined with passing.</p>"
         + facts_table
         + "<p><strong>Eligibility</strong></p>"
         + verdict_html
@@ -242,7 +308,11 @@ def master_confirm_body(
 ) -> tuple[str, str, int]:
     """GET `/nodes/{id}/master/confirm` — step 2 of 2: permanence (T5 §B+§F+P4.4)."""
     view, head, failure = _page_head(
-        root, query, dismiss_path=_modal_dismiss(node_id, "Step 2 — This is permanent")
+        root,
+        query,
+        dismiss_path=_modal_dismiss(node_id, "Step 2 — This is permanent"),
+        current_view="master-confirm",
+        path=f"/nodes/{node_id}/master/confirm",
     )
     if failure is not None:
         return failure
@@ -254,6 +324,9 @@ def master_confirm_body(
     facts_table, verdict_html = _mastery_facts_html(view, node_id)
     inner = (
         '<div class="kicker">Mastery facts — checked again just now</div>'
+        '<p class="big">Mastering is permanent. This is not passing: '
+        "passing has its own journey, and mastering is never offered as part "
+        "of it.</p>"
         + facts_table
         + verdict_html
         + '<p class="banner warning"><strong>This is permanent.</strong> '

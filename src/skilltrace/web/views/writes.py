@@ -108,11 +108,18 @@ def _finish_write(
 
 
 def post_pass(root, node_id: str, form: dict):
-    """POST `/nodes/{id}/pass` — always 303 (T5 §D1): ok to the node page,
-    refusal back to the pass step as a warning flash, failure with /health."""
+    """POST `/nodes/{id}/pass` — always 303 (T5 §D1).
+
+    A successful pass returns to the **pass panel**, which then renders
+    the *result*: what changed, and the visible Review-state consequence
+    (R3). Redirecting straight to the node page would hide that
+    consequence behind a flash the learner has to remember — the spec
+    requires the pass result to show the Review change, not merely to
+    have caused one.
+    """
     exit_code, lines = _dispatch_web(root, "pass", node_id=node_id)
     return _finish_write(
-        f"/nodes/{node_id}",
+        f"/nodes/{node_id}/pass",
         lines,
         exit_code,
         refusal_url=f"/nodes/{node_id}/pass",
@@ -201,6 +208,108 @@ def post_evidence(root, node_id: str, form: dict):
         supersedes=_field(form, "supersedes"),
         reason=_field(form, "reason"),
     )
+    return _finish_write(next_url, lines, exit_code)
+
+
+def post_review_schedule(root, form: dict):
+    """POST `/reviews/schedule` — the explicit scheduling action.
+
+    A Review is scheduled **only** here: a retention suggestion may offer
+    this action but never appears as already scheduled or overdue. The
+    dispatcher's exit class is the outcome; a refusal writes no record.
+    """
+    next_url = _safe_next(form, "/reviews")
+    node_id = _field(form, "node_id")
+    date = _field(form, "date")
+    if not node_id:
+        return _redirect_with_notice(
+            next_url, ["Scheduling a review needs a skill."], "warning"
+        )
+    if not date:
+        return _redirect_with_notice(
+            next_url, ["Scheduling a review needs a date."], "warning"
+        )
+    exit_code, lines = _dispatch_web(
+        root, "review schedule", node_id=node_id, date=date
+    )
+    return _finish_write(next_url, lines, exit_code)
+
+
+def post_review_complete(root, review_id: str, form: dict):
+    """POST `/reviews/{id}/complete` — an explicit outcome plus a summary.
+
+    Completing a Review is independent of the Session that started it. It
+    never demotes asserted progress and never masters a node: an
+    unsatisfactory outcome creates pressure only.
+    """
+    next_url = _safe_next(form, "/reviews")
+    outcome = _field(form, "outcome")
+    summary = _field(form, "summary")
+    if outcome not in ("satisfactory", "unsatisfactory"):
+        return _redirect_with_notice(
+            next_url,
+            ["Completing a review needs an explicit outcome."],
+            "warning",
+        )
+    if not summary:
+        return _redirect_with_notice(
+            next_url,
+            ["Completing a review needs a result summary."],
+            "warning",
+        )
+    exit_code, lines = _dispatch_web(
+        root,
+        "review complete",
+        review_id=review_id,
+        outcome=outcome,
+        summary=summary,
+    )
+    return _finish_write(next_url, lines, exit_code)
+
+
+def post_review_cancel(root, review_id: str, form: dict):
+    """POST `/reviews/{id}/cancel` — a reason is required; history is kept."""
+    next_url = _safe_next(form, "/reviews")
+    reason = _field(form, "reason")
+    if not reason:
+        return _redirect_with_notice(
+            next_url, ["Cancelling a review needs a reason."], "warning"
+        )
+    exit_code, lines = _dispatch_web(
+        root, "review cancel", review_id=review_id, reason=reason
+    )
+    return _finish_write(next_url, lines, exit_code)
+
+
+def post_portfolio_export(root, form: dict):
+    """POST `/portfolio/export` — the explicit export action.
+
+    The export writes a dated disposable bundle; the preview beside it is
+    non-writing. A refusal or failure writes no partial destination and
+    preserves the selection for recovery.
+    """
+    next_url = _safe_next(form, "/portfolio")
+    fmt = _field(form, "format") or "md"
+    if fmt not in {"md", "html", "json"}:
+        return _redirect_with_notice(
+            "/portfolio", ["That export format is not available."], "warning"
+        )
+    options = {
+        "node": form.get("node") or None,
+        "track": _field(form, "track"),
+        "include_active": "include_active" in form,
+        "include_rejected": "include_rejected" in form,
+        "include_superseded": "include_superseded" in form,
+        "include_paths": "include_paths" in form,
+        "include_notes": "include_notes" in form,
+        "include_blockers": "include_blockers" in form,
+        "include_reviews": "include_reviews" in form,
+        "include_free_text": "include_free_text" in form,
+        "include_urls": "include_urls" in form,
+        "format": fmt,
+        "output": None,
+    }
+    exit_code, lines = _dispatch_web(root, "portfolio export", **options)
     return _finish_write(next_url, lines, exit_code)
 
 

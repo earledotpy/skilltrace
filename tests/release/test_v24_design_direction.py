@@ -37,34 +37,68 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC = REPO_ROOT / "src" / "skilltrace"
 SUBLAYER = SRC / "web" / "interface"
 
-LOCKED_HEXES = {
-    "--bg": "#fbf7f0",
-    "--fg": "#2b2622",
-    "--muted": "#7a6f63",
-    "--border": "#ece2d3",
-    "--accent": "#b0562c",
-    "--warn": "#faf0d7",
-    "--err": "#f6ded4",
-    "--ok": "#e7f3ec",
-    "--advisory": "#e7eef5",
-}
-
 _HEX = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 
 
+def _root_blocks() -> list[str]:
+    """Every ``:root`` block in the served stylesheet.
+
+    The v3 token system declares the dark palette in one ``:root`` block
+    and its light companion in another (inside a ``prefers-color-scheme``
+    query). A read that only took the first block would see the light
+    values as if they were component literals — so the release gate
+    reads them all, exactly as the accessibility harness does.
+    """
+    blocks: list[str] = []
+    for match in re.finditer(r":root\s*\{", views._STYLE):
+        start = match.end() - 1
+        depth = 0
+        for index in range(start, len(views._STYLE)):
+            if views._STYLE[index] == "{":
+                depth += 1
+            elif views._STYLE[index] == "}":
+                depth -= 1
+                if depth == 0:
+                    blocks.append(views._STYLE[start : index + 1])
+                    break
+    return blocks
+
+
 def _root_block() -> str:
-    start = views._STYLE.index(":root {")
-    return views._STYLE[start : views._STYLE.index("}", start) + 1]
+    """The dark token block — the first ``:root`` in the served stylesheet."""
+    return _root_blocks()[0]
 
 
 # --- DD1 — locked :root hexes -------------------------------------------------
 
 
 def test_dd1_locked_root_hexes():
-    root = _root_block()
-    for token, hex_value in LOCKED_HEXES.items():
-        assert re.search(rf"{re.escape(token)}:\s*{re.escape(hex_value)}", root), (
-            f"{token}:{hex_value} missing from :root"
+    """Every declared token is present in the served ``:root`` block.
+
+    Repointed from the v2.4 light-first §B palette to the v3 dark-first
+    token table (ARC-7): the assertion keeps its exact form — every
+    declared token appears with its declared value — and the table it
+    names is now the semantic-role table in ``web/tokens.py``. The v2.4
+    nine hexes are superseded history (spec §20 SUP-5).
+    """
+    from skilltrace.web.tokens import DARK_TOKENS, LIGHT_TOKENS, SCALE_TOKENS
+
+    blocks = _root_blocks()
+    assert len(blocks) == 2, (
+        f"expected the dark palette and its light companion, got {len(blocks)}"
+    )
+    dark_root, light_root = blocks
+    for token, hex_value in DARK_TOKENS.items():
+        assert re.search(rf"{re.escape(token)}:\s*{re.escape(hex_value)}", dark_root), (
+            f"{token}:{hex_value} missing from the dark :root block"
+        )
+    for token, hex_value in LIGHT_TOKENS.items():
+        assert re.search(rf"{re.escape(token)}:\s*{re.escape(hex_value)}", light_root), (
+            f"{token}:{hex_value} missing from the light :root block"
+        )
+    for token, value in SCALE_TOKENS.items():
+        assert re.search(rf"{re.escape(token)}:\s*{re.escape(value)}", dark_root), (
+            f"{token}:{value} missing from :root"
         )
 
 
@@ -72,40 +106,59 @@ def test_dd1_locked_root_hexes():
 
 
 def test_dd2_no_hex_outside_root():
-    root_end = views._STYLE.index("}", views._STYLE.index(":root {")) + 1
-    outside = views._STYLE[root_end:]
-    assert _HEX.findall(outside) == [], (
-        f"hex literals outside :root: {_HEX.findall(outside)}"
+    """Every hex literal lives in a ``:root`` block — the palette is one table.
+
+    A colour declared at a component is a colour that can drift from the
+    theme; the v3 token system exists so that cannot happen.
+    """
+    without = views._STYLE
+    for block in _root_blocks():
+        without = without.replace(block, "")
+    assert _HEX.findall(without) == [], (
+        f"hex literals outside :root: {_HEX.findall(without)}"
     )
 
 
 # --- DD3 — type scale, spacing bands, shells ------------------------------------
 
 def test_dd3_type_scale_spacing_shells():
-    # Airy daily register (non-home daily surfaces)
-    assert "--base:16px" in views._STYLE
-    m = re.search(r"--card-pad:\s*([0-9.]+)px", views._STYLE)
-    assert m, "--card-pad not declared"
-    # Airy band: card padding 24-32px
-    assert 24 <= float(m.group(1)) <= 32
-    assert "--shell:1040px" in views._STYLE
-    assert "--loop:720px" in views._STYLE
-    assert "max-width:var(--shell)" in views._STYLE
-    assert "@media(max-width:960px)" in views._STYLE
-    # One layout breakpoint plus the locked P-DenseTrust accessibility guard
-    # (map #258): the reduced-motion query is not a second breakpoint — the
-    # web layer's own gate (tests/web/test_style_tokens.py) pins this same
-    # pair, so the release gate mirrors it rather than re-locking tier-0.
-    assert views._STYLE.count("@media(max-width:") == 1
-    assert "@media(prefers-reduced-motion:reduce)" in views._STYLE
-    assert views._STYLE.count("@media(") == 2
-    # Dense diagnostics register (rich home, /health detail, /analytics tables, node drill-down)
-    # These are locked literal values for the dense band
-    assert "--card-pad-dense:20px" in views._STYLE
-    assert "--section-gap-dense:28px" in views._STYLE
-    assert "--intra-gap-dense:14px" in views._STYLE
-    assert "--bento-gutter-dense:20px" in views._STYLE
-    assert "--shell-rich:1120px" in views._STYLE
+    """The type scale, the spacing rhythm and the shells are the v3 ones.
+
+    Repointed from the v2.4 §B registers to the v3 token system
+    (ARC-7): the v2.4 nine radii, the 1040px shell, the single 960px
+    desktop-only breakpoint and the serif/sans split are superseded
+    history (spec §20 SUP-5). What is asserted now is the v3 contract:
+    a 4px spacing rhythm, a type scale that never drops below the 14px
+    desktop base target, restrained 4-8px radii, one shell width, and
+    the narrow-window degradation query plus the reduced-motion guard.
+    """
+    from skilltrace.web.tokens import SCALE_TOKENS
+
+    style = views._STYLE
+    # The 4px spacing rhythm (VS-5): every spacing step is a multiple of 4.
+    for name, value in SCALE_TOKENS.items():
+        if name.startswith("space-"):
+            pixels = int(value.removesuffix("px"))
+            assert pixels % 4 == 0, f"{name}={value} breaks the 4px rhythm"
+
+    # The type scale never shrinks below the 14px desktop base target (VS-4).
+    assert int(SCALE_TOKENS["text-base"].removesuffix("px")) >= 14
+    assert "--text-base:14px" in style
+    assert "--measure:70ch" in style
+
+    # Restrained radii: 4-8px for surfaces, a pill for status labels (VS-5).
+    assert SCALE_TOKENS["radius-sm"] == "4px"
+    assert SCALE_TOKENS["radius-md"] == "8px"
+    assert int(SCALE_TOKENS["radius-pill"].removesuffix("px")) > 100
+
+    # One shell width, and the narrow-window degradation query (AX-10).
+    assert "--shell:1180px" in style
+    assert "max-width:var(--shell)" in style
+    assert "@media (max-width: 640px)" in style
+
+    # The reduced-motion guard is not a breakpoint (AX-6, VS-9).
+    assert "@media (prefers-reduced-motion: reduce)" in style
+    assert style.count("@media (") == 3  # narrow window, light companion, motion
 
 
 # --- DD4 — no uppercase heading treatment ----------------------------------------

@@ -93,9 +93,9 @@ def _analytics_controls(days: int, group_by: str, theme: str) -> str:
     )
     return (
         '<div class="card analytics-controls"><form method="get" action="/analytics">'
-        '<div class="form-row"><label>'
-        "Date range</label>"
-        f'<select name="days">{options}'
+        '<div class="form-row">'
+        '<label for="analytics-days">Date range</label>'
+        f'<select name="days" id="analytics-days">{options}'
         f'<option value="{days}" {"selected" if days not in (7, 30, 90) else ""}>Policy default ({days}d)</option>'
         f'</select><input type="hidden" name="group-by" value="{_esc(group_by)}">'
         f'<input type="hidden" name="theme" value="{_esc(theme)}">'
@@ -140,7 +140,12 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
     """
     query = query or {}
     view, head, failure = _page_head(
-        root, query, dismiss_path="/analytics", current_view="analytics"
+        root,
+        query,
+        dismiss_path="/analytics",
+        current_view="analytics",
+        default_mode="operations",
+        path="/analytics",
     )
     if failure is not None:
         return failure

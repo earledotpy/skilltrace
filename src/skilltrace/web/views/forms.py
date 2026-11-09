@@ -16,7 +16,8 @@ from ._shared import (
 def _template_select(templates: set[str], empty_label: str) -> str:
     options = "".join(f'<option value="{_esc(t)}">{_esc(t)}</option>' for t in sorted(templates))
     return (
-        f'<select name="template"><option value="">{_esc(empty_label)}</option>{options}</select>'
+        '<select name="template" id="session-template">'
+        f'<option value="">{_esc(empty_label)}</option>{options}</select>'
     )
 
 
@@ -43,7 +44,8 @@ def _start_confirm_form(
         )
     button_label = button_label or "Start this session"
     return (
-        '<div class="form-row"><label>Session template</label>'
+        '<div class="form-row">'
+        '<label for="session-template">Session template</label>'
         f"{_template_select(view.policy.session_templates, '(none)')}"
         '<p class="small mut">A preset session shape — (none) starts a blank session.</p></div>'
         f"{advisory}"
@@ -108,8 +110,9 @@ def _evidence_submit_form(view: JoinedView, node_id: str) -> str:
             f'<option value="{_esc(s.id)}">{_esc(s.title or s.id)}</option>' for s in specs
         )
         spec_field = (
-            '<div class="form-row"><label>Artifact spec</label>'
-            f'<select name="spec">{options}</select>'
+            '<div class="form-row">'
+            '<label for="evidence-spec">Artifact spec</label>'
+            f'<select name="spec" id="evidence-spec">{options}</select>'
             '<p class="small mut">Which artifact definition this proof satisfies.</p></div>'
         )
 

@@ -2,17 +2,21 @@
 
 The router is deliberately thin glue (ADR 0006): method + path dispatch, with
 the page bodies living in the ``views/`` package (ADR 0009). Every read
-reloads truth fresh —
-``load_context_lenient(root)`` per request, no cache, no file-watch — so CLI
-and editor edits appear on refresh. Routes per the G3#67 table plus the T4
-write routes (G2#66 modals, G5#69 daily writes): reads are GET-only; writes
-are standard form POSTs that nest-dispatch through the registry in-process and
-answer 303 + translated flash in every case (ok, refusal as a warning flash
-back to the acceptance step, operational failure as an error flash pointing
-at the health roll-up). Escaping discipline
-is owned by the view layer's card renderer (every interpolated value passes
-through ``_esc``). There is no static-file routing at all; styling is the one
-inline ``<style>`` block. ``data/*`` exports are never read.
+reloads truth fresh — ``load_context_lenient(root)`` per request, no cache,
+no file-watch — so CLI and editor edits appear on refresh.
+
+The route table is **flat and mode-neutral** (docs/spec-v3-study-day.md §6):
+seventeen destinations, each existing exactly once. Mode is presentation
+context carried by a URL parameter, never by a path prefix; the contextual
+inspector has no route of its own and its selected context rides a
+parameter of the route that owns it. Reads are GET-only; writes are standard
+form POSTs that nest-dispatch through the registry in-process and answer
+303 + translated flash in every case (ok, refusal as a warning flash back
+to the acceptance step, operational failure as an error flash pointing at
+the health roll-up). Escaping discipline is owned by the view layer's card
+renderer (every interpolated value passes through ``_esc``). There is no
+static-file routing at all; styling is the one inline ``<style>`` block.
+``data/*`` exports are never read.
 """
 
 from __future__ import annotations
@@ -25,24 +29,36 @@ from . import views
 from .views import (
     Redirect,
     analytics_body,
+    evidence_index_body,
     finder_body,
+    graph_body,
     health_body,
     home_body,
     master_body,
     master_confirm_body,
     next_body,
     node_body,
+    node_evidence_body,
+    operations_body,
     page,
     pass_modal_body,
+    portfolio_body,
     post_analytics_export,
     post_blocker_create,
     post_blocker_resolve,
     post_evidence,
     post_master_confirm,
     post_pass,
+    post_portfolio_export,
+    post_review_cancel,
+    post_review_complete,
+    post_review_schedule,
     post_session_close,
     post_start,
     post_work,
+    reviews_body,
+    session_body,
+    session_close_body,
 )
 
 _NODE_PASS_RE = re.compile(r"^/nodes/(.+?)/pass$")
@@ -52,6 +68,8 @@ _NODE_START_RE = re.compile(r"^/nodes/(.+?)/start$")
 _NODE_BLOCKERS_RE = re.compile(r"^/nodes/(.+?)/blockers$")
 _BLOCKER_RESOLVE_RE = re.compile(r"^/blockers/(.+?)/resolve$")
 _NODE_EVIDENCE_RE = re.compile(r"^/nodes/(.+?)/evidence$")
+_GRAPH_NODE_RE = re.compile(r"^/graph/(.+)$")
+_REVIEW_ID_RE = re.compile(r"^/reviews/(.+?)/(complete|cancel)$")
 
 
 class SkillTraceHandler(BaseHTTPRequestHandler):
@@ -65,54 +83,43 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
         master_confirm = _NODE_MASTER_CONFIRM_RE.match(path)
         master_step = _NODE_MASTER_RE.match(path)
         pass_modal = _NODE_PASS_RE.match(path)
+        node_evidence = _NODE_EVIDENCE_RE.match(path)
+        graph_node = _GRAPH_NODE_RE.match(path)
+        review_action = _REVIEW_ID_RE.match(path)
         if path == "/":
             title, body, status = home_body(self.server.root, query)
         elif path == "/next":
             title, body, status = next_body(self.server.root, query)
-        elif path == "/nodes/jump":
-            node_id = (query.get("node_id") or [""])[0].strip()
-            if not node_id:
-                title, body, status = finder_body(self.server.root, query)
-                self._send(page(title, body), status=status)
-                return
-            # Title-first finder (v2.4 S4): a title match (case-insensitive)
-            # wins, an id match (exact or prefix) follows — the learner
-            # types words, not engine ids.
-            from urllib.parse import quote as _quote
-
-            from ..context import load_context_lenient
-
-            resolved: str | None = None
-            try:
-                joined = load_context_lenient(self.server.root)
-            except Exception:
-                joined = None
-            if joined is not None:
-                needle = node_id.lower()
-                by_title = [
-                    node.id
-                    for node in joined.nodes
-                    if node.title.lower() == needle
-                ]
-                by_title_prefix = [
-                    node.id
-                    for node in joined.nodes
-                    if node.title.lower().startswith(needle)
-                ]
-                by_id = [
-                    node.id
-                    for node in joined.nodes
-                    if node.id.lower() == needle
-                    or node.id.lower().startswith(needle)
-                ]
-                for candidates in (by_title, by_title_prefix, by_id):
-                    if candidates:
-                        resolved = sorted(candidates)[0]
-                        break
-            target = resolved or node_id
-            # No JS jump — redirect to GET /nodes/{id} (escaping handled by _esc on render)
-            self._redirect(f"/nodes/{_quote(target, safe='._-')}")
-            return
+        elif path == "/find":
+            title, body, status = finder_body(self.server.root, query)
+        elif path == "/session":
+            title, body, status = session_body(self.server.root, query)
+        elif path == "/session/close":
+            title, body, status = session_close_body(self.server.root, query)
+        elif path == "/evidence":
+            title, body, status = evidence_index_body(self.server.root, query)
+        elif path == "/reviews":
+            title, body, status = reviews_body(self.server.root, query)
+        elif path == "/operations":
+            title, body, status = operations_body(self.server.root, query)
+        elif path == "/graph":
+            title, body, status = graph_body(self.server.root, query)
+        elif path == "/health":
+            title, body, status = health_body(self.server.root, query)
+        elif path == "/analytics":
+            title, body, status = analytics_body(self.server.root, query)
+        elif path == "/portfolio":
+            title, body, status = portfolio_body(self.server.root, query)
+        elif path == "/portfolio/preview":
+            # The preview is the configurator with the preview rendered: the
+            # same page, the same selection, and nothing written.
+            title, body, status = portfolio_body(
+                self.server.root, {**query, "preview": ["1"]}
+            )
+        elif review_action is not None:
+            # The review action routes are write paths; a GET renders the
+            # reviews destination so a stray link is never a dead end.
+            title, body, status = reviews_body(self.server.root, query)
         elif master_confirm is not None:
             title, body, status = master_confirm_body(
                 self.server.root, unquote(master_confirm.group(1)), query
@@ -125,20 +132,21 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
             title, body, status = pass_modal_body(
                 self.server.root, unquote(pass_modal.group(1)), query
             )
+        elif node_evidence is not None:
+            title, body, status = node_evidence_body(
+                self.server.root, unquote(node_evidence.group(1)), query
+            )
+        elif graph_node is not None:
+            title, body, status = graph_body(
+                self.server.root, query, node_id=unquote(graph_node.group(1))
+            )
         elif path.startswith("/nodes/"):
-            node_id = unquote(self._node_id_from_detail(path))
-            if "/" in node_id:
-                title, body, status = self._not_found()
-            else:
-                title, body, status = node_body(self.server.root, node_id, query)
-        elif path == "/health":
-            title, body, status = health_body(self.server.root, query)
-        elif path == "/analytics":
-            title, body, status = analytics_body(self.server.root, query)
+            node_id = self._node_id_from_detail(path)
+            title, body, status = node_body(self.server.root, node_id, query)
         else:
             title, body, status = self._not_found()
 
-        self._send(page(title, body), status=status)
+        self._send(page(title, body, mode=self._mode(query, path)), status=status)
 
     def do_POST(self) -> None:  # noqa: N802 — stdlib contract
         length = int(self.headers.get("Content-Length") or 0)
@@ -152,7 +160,7 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
             self._redirect(result.location)
         else:
             title, body, status = result
-            self._send(page(title, body), status=status)
+            self._send(page(title, body, mode=self._mode(form, path)), status=status)
 
     def _route_post(self, path: str, form: dict):
         root = self.server.root
@@ -162,6 +170,16 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
             return post_session_close(root, form)
         if path == "/analytics/export":
             return post_analytics_export(root, form)
+        if path == "/portfolio/export":
+            return post_portfolio_export(root, form)
+        if path == "/reviews/schedule":
+            return post_review_schedule(root, form)
+        review_action = _REVIEW_ID_RE.match(path)
+        if review_action is not None:
+            review_id = unquote(review_action.group(1))
+            if review_action.group(2) == "complete":
+                return post_review_complete(root, review_id, form)
+            return post_review_cancel(root, review_id, form)
         start_match = _NODE_START_RE.match(path)
         if start_match is not None:
             return post_start(root, unquote(start_match.group(1)), form)
@@ -193,6 +211,17 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
     @staticmethod
     def _node_id_from_detail(path: str) -> str:
         return path[len("/nodes/"):]
+
+    @staticmethod
+    def _mode(params: dict, path: str) -> str:
+        """The presentation mode a request asked for, or the route's default.
+
+        The default comes from the declared view seam, so the document's
+        body class and the chrome always agree about the presentation.
+        """
+        from .views.shell import _mode_from, route_default_mode
+
+        return _mode_from(params, route_default_mode(path))
 
     def _not_found(self) -> tuple[str, str, int]:
         """Every non-route answers with the one unified error body (T4 §H)."""

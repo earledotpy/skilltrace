@@ -234,8 +234,16 @@ def test_node_route_serves_detail_and_unknown_is_404(running_server):
     node_id = sorted(view.nodes, key=lambda n: n.id)[0].id
     status, _, body = _get(f"http://127.0.0.1:{server.server_port}/nodes/{node_id}")
     assert status == 200
-    assert "This skill" in body  # sentence-case kicker (P3.6, T2 #233)
-    assert "Drill-down" in body
+    # The v3 node page leads with the readable title and gives each record
+    # type its own section (the v2.4 kicker and "Drill-down" card are
+    # superseded — spec §10.4).
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(root)
+    assert view.node_map[node_id].title in body
+    assert "Progress record" in body
+    assert "Evidence wanted" in body
+    assert "Evidence recorded" in body
     status, _, _ = _get(f"http://127.0.0.1:{server.server_port}/nodes/no.such_node_99")
     assert status == 404
 

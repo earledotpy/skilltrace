@@ -91,7 +91,12 @@ from ..interface.cards import ActiveViewState, Affordance, Card, view_by_name
 from ..interface.handoff import handoff_html
 from ..interface.render import render_discovery_cards, render_guidance_cards, render_rich_cards
 from ..interface.translate import rich_cards as _rich_cards_from_model
-from ._shared import (  # noqa: F401
+
+# The package's union surface (ADR 0009): every module's own names
+# resolve on the facade, so a consumer never has to reach into a
+# module to find one. The private helpers are re-exported for the same
+# reason the public ones are — the union is the surface.
+from ._shared import (  # noqa: F401  # noqa: F401
     _CANONICAL_STATE_LABELS,
     _degraded_banner,
     _esc,
@@ -104,6 +109,7 @@ from ._shared import (  # noqa: F401
     _output_banners,
     _parse_int,
     _sentence_case,
+    _session_node_id,
     _slug,
     _table,
     plural,
@@ -114,6 +120,18 @@ from .analytics import (  # noqa: F401
     _analytics_export_form,
     _analytics_view,
     analytics_body,
+)
+from .evidence import (  # noqa: F401  # noqa: F401
+    _recorded_rows,
+    _wanted_rows,
+    node_evidence_body,
+)
+from .evidence_index import (  # noqa: F401  # noqa: F401
+    _filter_form,
+    _matches,
+    _standing,
+    _superseded_ids,
+    evidence_index_body,
 )
 from .finder import (  # noqa: F401
     _browse_html,
@@ -129,25 +147,99 @@ from .forms import (  # noqa: F401
     _template_select,
     _work_form_fields,
 )
-from .health import (  # noqa: F401
+from .graph import (  # noqa: F401  # noqa: F401
+    _ancestors,
+    _edge_rows,
+    _edges_for,
+    _node_rows,
+    graph_body,
+)
+from .health import (  # noqa: F401  # noqa: F401
     _ROLLUP_CARD,
     _ROLLUP_CHROME,
     _card_chrome,
+    _diagnostics_section,
+    _guidance_section,
+    _layer_headline,
+    _plain_counts,
     health_body,
 )
-from .next import (  # noqa: F401
+from .next import (  # noqa: F401  # noqa: F401
+    MAX_EXPLAINED,
+    MAX_OPTIONS,
     _candidate_stack,
     _not_ready_card,
     _not_ready_list,
     _why_details,
     next_body,
 )
-from .node import (  # noqa: F401
+from .node import (  # noqa: F401  # noqa: F401
+    _EDGE_WORDS,
+    _STATE_WORDS,
+    _attempts_section,
+    _blockers_section,
+    _brief_section,
+    _degraded_notice,
     _drill_down_card,
+    _empty,
+    _events_section,
+    _evidence_figures,
+    _failure,
+    _gate_section,
+    _limited,
+    _metadata_section,
     _node_actions_card,
+    _node_records,
+    _node_specs,
+    _progress_section,
+    _records_section,
+    _relationships_section,
+    _remediation_section,
+    _resources_section,
+    _reviews_section,
+    _row,
+    _rows,
+    _schedule_review_form,
+    _section,
+    _specs_section,
+    _state_label,
+    _state_word,
+    _technical,
+    _unmet_specs,
+    derive_status,  # noqa: F401
     node_body,
 )
-from .shell import (  # noqa: F401
+from .operations import (  # noqa: F401  # noqa: F401
+    _capability_counts,
+    operations_body,
+)
+from .portfolio import (  # noqa: F401  # noqa: F401
+    _preview_section,
+    _selection_form,
+    portfolio_body,
+)
+from .reviews import (  # noqa: F401  # noqa: F401
+    _history_section,
+    _overdue_section,
+    _retention_suggestions,
+    _review_actions,
+    _schedule_form,
+    _scheduled_section,
+    _suggestions_section,
+    is_overdue,  # noqa: F401
+    reviews_body,
+)
+from .session import (  # noqa: F401  # noqa: F401
+    _blocked_work,
+    _blocker_section,
+    _create_blocker_offer,
+    _session_rows,
+    session_body,
+    session_close_body,
+)
+from .shell import (  # noqa: F401  # noqa: F401
+    _GUIDED_ORDER,
+    _OPERATIONS_ORDER,
     _STYLE,
     _chrome,
     _error_body,
@@ -155,35 +247,35 @@ from .shell import (  # noqa: F401
     _modal_card,
     _modal_dismiss,
     _modal_shell,
+    _mode_from,
+    _mode_link,
     _nav_html,
+    _nav_links,
     _page_head,
+    _panel_status,
     _status_page,
     not_found_body,
     page,
+    route_default_mode,
 )
-from .steps import (  # noqa: F401
+from .steps import (  # noqa: F401  # noqa: F401
     _STATUS_PILL_CLASSES,
     _mastery_facts_html,
+    _review_consequence,
     master_body,
     master_confirm_body,
     pass_modal_body,
 )
-from .today import (  # noqa: F401
-    _MONTH_ABBREVS,
-    _STATE_REASONS,
-    _WEEKDAY_NAMES,
-    _browse_card,
-    _continue_cta,
-    _date_label,
-    _focus_resources,
-    _hero_block,
-    _hero_why,
-    _history_card,
-    _pressure_card,
-    _queue_card,
-    _spine_card,
-    _utc_day,
-    _week_card,
+from .styles import (  # noqa: F401
+    _COMPONENT_RULES,
+    root_blocks,
+)
+from .today import (  # noqa: F401  # noqa: F401
+    _open_blocker_records,
+    _overdue_reviews,
+    _pass_eligible_node,
+    _queue_item,
+    _queue_section,
     home_body,
 )
 from .writes import (  # noqa: F401
@@ -198,7 +290,143 @@ from .writes import (  # noqa: F401
     post_evidence,
     post_master_confirm,
     post_pass,
+    post_portfolio_export,
+    post_review_cancel,
+    post_review_complete,
+    post_review_schedule,
     post_session_close,
     post_start,
     post_work,
+)
+
+# The package's public surface. The union of every module's names
+# resolves on the facade (ADR 0009), and this list names the public
+# half of it: the names a consumer may import, and the private
+# helpers the package's own modules share.
+__all__ = [
+    "Affordance",
+    "AnalyticsParams",
+    "BARE",
+    "Card",
+    "Context",
+    "DiscoveryCard",
+    "EMPTY",
+    "ENTRY_NODES",
+    "EdgeLoadError",
+    "FAILURE",
+    "HEAD",
+    "INLINE",
+    "JoinedView",
+    "LIMITED",
+    "MAX_EXPLAINED",
+    "MAX_OPTIONS",
+    "Markup",
+    "NONE",
+    "Namespace",
+    "NodeLoadError",
+    "Path",
+    "ProgressStoreError",
+    "RECOVERY",
+    "REFUSAL",
+    "Redirect",
+    "Rows",
+    "STATES",
+    "Section",
+    "State",
+    "StringIO",
+    "Table",
+    "VerificationStatus",
+    "analytics_body",
+    "analytics_warnings",
+    "annotations",
+    "browse_cards",
+    "browse_subjects",
+    "compute_eligibility",
+    "compute_mastery_eligibility",
+    "dataclass",
+    "derive_analytics",
+    "derive_next",
+    "derive_status",
+    "derive_study_guidance",
+    "discover",
+    "discovery_page_cards",
+    "dispatch",
+    "evidence_index_body",
+    "field",
+    "finder_body",
+    "graph_body",
+    "guidance_page_cards",
+    "health_body",
+    "health_report",
+    "home_body",
+    "is_overdue",
+    "limited_data_sentence",
+    "live_accepted_count",
+    "load_context_lenient",
+    "master_body",
+    "master_confirm_body",
+    "next_body",
+    "node_body",
+    "node_evidence_body",
+    "not_found_body",
+    "open_session",
+    "operations_body",
+    "page",
+    "pass_modal_body",
+    "passed_at_of",
+    "plural",
+    "portfolio_body",
+    "post_analytics_export",
+    "post_blocker_create",
+    "post_blocker_resolve",
+    "post_evidence",
+    "post_master_confirm",
+    "post_pass",
+    "post_portfolio_export",
+    "post_review_cancel",
+    "post_review_complete",
+    "post_review_schedule",
+    "post_session_close",
+    "post_start",
+    "post_work",
+    "re",
+    "redirect_stdout",
+    "render",
+    "render_discovery_cards",
+    "render_guidance_cards",
+    "reviews_body",
+    "root_blocks",
+    "route_default_mode",
+    "section",
+    "session_body",
+    "session_close_body",
+    "sparkline_svg",
+    "tooltip_script",
+    "urlencode",
+    "utc_today",
+]
+
+# The structured section data the pages render from (ADR 0006
+# escalation 1). Its names resolve on the facade with the rest of the
+# union.
+from dataclasses import field  # noqa: F401 — the sections module's own import
+
+from .sections import (  # noqa: F401
+    BARE,
+    EMPTY,
+    FAILURE,
+    HEAD,
+    INLINE,
+    LIMITED,
+    NONE,
+    RECOVERY,
+    REFUSAL,
+    STATES,
+    Markup,
+    Rows,
+    Section,
+    State,
+    Table,
+    render,
+    section,
 )

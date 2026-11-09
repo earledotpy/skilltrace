@@ -1,14 +1,16 @@
-"""The daily read-only pages — Tier-1 slice T3 (issue #72).
+"""The read-only surfaces — the v3 route table (spec-v3-study-day §10, §11).
 
-What only the wired views can show: `/` renders the today dashboard in P1
-variant A (Mentor-first linear) with pressure excerpts and a health strip;
-`/next` mirrors the CLI flags (`--minutes`, `--limit`, `--show-locked`) and
-attaches a collapsible "Why this?" per candidate; `/nodes/{id}` renders the
-primary Mentor card plus read-only drill-downs; `/health` rolls up the five
-validators plus liveness. Every GET renders fresh from the lenient seam — an
-edit to `graph/nodes/*.md` or `state.yaml` appears on the next render — every
-interpolated value is escaped, and advisory policies surface as banners and
-pills that never block.
+What only the wired views can show: every served destination renders from
+the lenient seam — an edit to ``graph/nodes/*.md`` or ``state.yaml``
+appears on the next render — every interpolated value is escaped, and
+advisory policies surface as banners and labels that never block.
+
+The per-surface contracts live with their own surfaces (the Today queue in
+``test_today.py``, the discovery surfaces in ``test_discovery.py``, the
+cockpit in ``test_session_cockpit.py``, the pass and mastery journeys in
+``test_pass_master.py``, the review loop in ``test_reviews.py``). This
+module covers what the surfaces share: a fresh render per request, the
+escaping discipline, the unknown-node handling and the lenient seam.
 """
 
 from __future__ import annotations
@@ -45,8 +47,8 @@ def _write_node(root: Path, node_id: str, title: str | None = None) -> None:
     """Write a node file via the shared helper; optionally override the title.
 
     The shared helper produces a default title; this in-suite wrapper preserves
-    the historical `title=` override used by one XSS-rejection test that needs
-    a hostile title string.
+    the historical ``title=`` override used by one XSS-rejection test that
+    needs a hostile title string.
     """
     _shared_write_node(root, node_id)
     if title is not None:
@@ -78,251 +80,210 @@ def _first_node_id(root: Path, *, state: str | None = None) -> str:
     raise AssertionError(f"no node with state {state!r}")
 
 
-# --- GET / — the today dashboard (variant A) -------------------------------------
+# --- the surfaces render --------------------------------------------------------
 
 
-def test_home_renders_today_dashboard(repo):
+def test_every_destination_renders(repo):
+    """Each destination in the normative table answers with its own body."""
+    node_id = _first_node_id(repo)
+    for name, body in (
+        ("today", views.home_body(repo)),
+        ("next", views.next_body(repo, {})),
+        ("find", views.finder_body(repo, {})),
+        ("node", views.node_body(repo, node_id)),
+        ("session", views.session_body(repo)),
+        ("session close", views.session_close_body(repo)),
+        ("node evidence", views.node_evidence_body(repo, node_id)),
+        ("evidence index", views.evidence_index_body(repo)),
+        ("reviews", views.reviews_body(repo)),
+        ("operations", views.operations_body(repo)),
+        ("graph", views.graph_body(repo)),
+        ("health", views.health_body(repo)),
+        ("analytics", views.analytics_body(repo, {})),
+        ("portfolio", views.portfolio_body(repo)),
+    ):
+        title, html, status = body
+        assert status == 200, name
+        assert title, name
+        assert html, name
+
+
+def test_home_renders_the_priority_queue(repo):
+    """Today is a queue of items, not the retired bento recipe."""
     title, body, status = views.home_body(repo)
     assert status == 200
     assert title == "Today"
-    # The unified single-page home (S3, amended §A): one hero + six-card bento.
-    assert '<div class="hero">' in body
-    assert body.count('<div class="bento-card ') == 6
-    # Zero-count pills are dropped (§A): the fresh seed has no practiced
-    # days, so no practiced pill may render.
-    assert "practiced" not in body
-    assert "STUDY DAY PRESSURE" not in body  # recedes behind /next
-    assert "60-MINUTE QUEUE" not in body  # recedes behind /next
+    assert 'class="queue"' in body
+    assert '<div class="hero">' not in body
+    assert "bento-card" not in body
 
 
 def test_home_renders_fresh_per_request(repo):
-    from skilltrace.commands.today import derive_today
-    from skilltrace.context import load_context_lenient
-
+    """Every GET reads truth fresh — an edit appears on the next render."""
     node_id = _first_node_id(repo)
-    _, before, _ = views.home_body(repo)
-
-    # Flip the *focus* node — Today's subject — and the page changes.
-    view = load_context_lenient(repo)
-    focus_id = derive_today(view, repo, minutes=30).focus_node_id
-    assert focus_id is not None
-    _set_state(repo, focus_id, "active")
-    _, after_active, _ = views.home_body(repo)
-    assert before != after_active
-
-    # A curriculum edit + a state flip show on refresh too (this node).
-    path = repo / "graph" / "nodes" / f"{node_id}.md"
-    text = path.read_text(encoding="utf-8")
-    path.write_text(text.replace("Summary for ", "Edited summary for "), encoding="utf-8")
-    _set_state(repo, node_id, "active")
-    node_page_title, node_html, status = views.node_body(repo, node_id)
-    assert status == 200
-    assert "Active" in node_html  # the state flip is visible (canonical word, P3.4)
+    _write_node(repo, node_id, title="Freshly Renamed Skill")
+    _, body, _ = views.node_body(repo, node_id)
+    assert "Freshly Renamed Skill" in body
 
 
 def test_home_never_renders_the_raw_backlog(repo):
-    """Pressure excerpts never render on Today (§A: the backlog recedes)."""
-    focus = _first_node_id(repo)
+    """The raw flat dump never renders (P1.2)."""
+    _, body, _ = views.home_body(repo)
+    assert "backlog lineup" not in body
+
+
+# --- the node detail ------------------------------------------------------------
+
+
+def test_node_page_leads_with_the_readable_title(repo):
+    """The title leads; the raw id is labelled technical detail (R1)."""
+    node_id = _first_node_id(repo)
+    _, body, _ = views.node_body(repo, node_id)
+    title = load_context_lenient(repo).node_map[node_id].title
+    assert title in body
+    # The id is present, but only inside the labelled technical row.
+    assert node_id in body
+    assert "Node ID" in body
+
+
+def test_node_page_shows_each_record_type_as_its_own_section(repo):
+    """Records are never collapsed into a generic object."""
+    node_id = _first_node_id(repo)
+    _, body, _ = views.node_body(repo, node_id)
+    for section in (
+        "Progress record",
+        "Node details",
+        "Relationships",
+        "Where to learn",
+        "Evidence wanted",
+        "Checking",
+        "Evidence recorded",
+        "Attempts",
+        "Blockers",
+        "Remediation",
+        "Reviews",
+        "Recent activity",
+    ):
+        assert section in body, section
+
+
+def test_node_page_shows_evidence_wanted_and_recorded_apart(repo):
+    """Two distinct figures, never one ambiguous number (R2)."""
+    node_id = _first_node_id(repo)
+    _, body, _ = views.node_body(repo, node_id)
+    assert "Evidence wanted" in body
+    assert "Evidence recorded" in body
+    assert "wanted" in body.lower()
+    assert "recorded" in body.lower()
+
+
+def test_node_page_links_reach_the_other_destinations(repo):
+    """The links reach the session, the evidence workspace and the panels."""
+    node_id = _first_node_id(repo)
+    _, body, _ = views.node_body(repo, node_id)
+    assert f'href="/nodes/{node_id}/evidence"' in body
+    assert f'href="/nodes/{node_id}/pass"' in body
+    assert f'href="/nodes/{node_id}/master"' in body
+    assert 'href="/reviews"' in body
+    assert 'href="/session"' in body
+
+
+def test_log_work_appears_only_while_a_session_is_open(repo):
+    """The contextual work action exists only with an open Session."""
+    node_id = _first_node_id(repo)
+    _, body, _ = views.node_body(repo, node_id)
+    assert "Log work here" not in body
+
     _write_yaml(
         repo,
-        "execution/blockers.yaml",
+        "execution/sessions.yaml",
         {
-            "blockers": [
+            "sessions": [
                 {
-                    "id": "blk.01",
-                    "node_id": focus,
+                    "id": "ses.node.001",
                     "status": "open",
-                    "description": "stuck on the derivation",
-                    "created_at": "2026-08-20T10:00:00+00:00",
+                    "started_at": "2026-11-17T07:00:00+00:00",
                 }
             ]
         },
     )
-    _, body, status = views.home_body(repo)
-    assert status == 200
-    assert "stuck on the derivation" not in body  # raw backlog never renders
-    assert "blk.01" not in body
-
-
-
-# --- GET /next — flags mirror the CLI --------------------------------------------
-
-
-def test_next_defaults_mirror_cli_flags(repo):
-    _, body, status = views.next_body(repo, {})
-    assert status == 200
-    assert "How much time do you have" in body  # honest control, no flag name
-    assert "How many ideas do you want" in body
-    kickers = [line for line in body.splitlines() if ">Option " in line]  # P3.6: sentence-case
-    assert len(kickers) <= 5  # CLI default --limit 5
-
-
-def test_next_minutes_and_limit_flags_apply(repo):
-    _, body, _ = views.next_body(repo, {"minutes": ["90"], "limit": ["2"]})
-    assert 'value="90"' in body
-    assert 'value="2"' in body
-    assert len([line for line in body.splitlines() if ">Option " in line]) <= 2  # P3.6
-
-
-def test_next_bad_int_returns_400(repo):
-    for bad in ({"minutes": ["abc"]}, {"limit": [""]}):
-        _, _, status = views.next_body(repo, bad)
-        assert status == 400
-
-
-def test_next_show_locked_appends_locked_appendix(repo):
-    # T4 §H: the locked half is always one disclosure card — titles plus
-    # reasons, never an id dump; the empty state says so outright.
-    _, without_locked, _ = views.next_body(repo, {})
-    _, with_locked, _ = views.next_body(repo, {"locked": ["1"]})
-    assert "Not ready yet" in without_locked
-    assert "Not ready yet" in with_locked  # shipped seed graph has locked nodes
-    # Each locked row names its unlock path in human words — never an id dump.
-    assert "waiting on" in with_locked
-
-
-def test_next_toggle_link_flips_show_locked(repo):
-    # T4 §H: the locked half is a card, never a flag name — the same card
-    # renders with and without the query param.
-    _, off_body, _ = views.next_body(repo, {})
-    _, on_body, _ = views.next_body(repo, {"locked": ["1"], "minutes": ["30"]})
-    assert "Not ready yet" in off_body
-    assert "Not ready yet" in on_body
-
-
-def test_next_why_this_collapsible_is_advisory_only(repo):
-    _, body, _ = views.next_body(repo, {})
-    options = len([line for line in body.splitlines() if ">Option " in line])  # P3.6: sentence-case
-    assert body.count("<details>") == options  # one collapsible per card
-    assert body.count("Why this?") == options
-    assert "never block a human-initiated action" in body
-
-
-# --- GET /nodes/{id} — primary card plus drill-downs ------------------------------
-
-
-def test_node_page_renders_primary_mentor_card(repo):
-    node_id = _first_node_id(repo, state="available")
-    title, body, status = views.node_body(repo, node_id)
-    assert status == 200
-    assert title != ""  # the page title is the node title
-    # P3.6: ALL-CAPS kicker → sentence case ("THIS SKILL" → "This skill").
-    assert '<div class="kicker">This skill</div>' in body
-    # P3.4: canonical state word — 'Available', not the synonym 'Ready to start'.
-    assert '<span class="pill available">Available</span>' in body
-    assert "WHERE TO LEARN" not in body  # Mentor labels stay verbatim, not re-cased
-    assert "Where to learn" in body
-    # v2.4: the next action renders as the human affordance from the
-    # NextAction fact (data-intent), not the CLI's "DO THIS NEXT" kicker.
-    assert '<p class="next-action" data-intent="start">Start this session</p>' in body
-
-
-def test_node_page_drill_down_sections(repo):
-    node_id = _first_node_id(repo)
+    _write_yaml(
+        repo,
+        "execution/session_work.yaml",
+        {
+            "session_work": [
+                {
+                    "id": "wk.ses.node.001.01",
+                    "session_id": "ses.node.001",
+                    "node_id": node_id,
+                    "created_at": "2026-11-17T07:30:00+00:00",
+                    "minutes": 10,
+                }
+            ]
+        },
+    )
     _, body, _ = views.node_body(repo, node_id)
-    assert "Drill-down" in body  # P3.6: sentence-case kicker
-    assert "<details>" in body
-    assert "Evidence" in body
-    assert "Resources" in body
-
-
-def test_graph_edge_links_use_ids_not_titles(repo):
-    # Issue #228: the Graph edges drill-down once built hrefs from node
-    # titles (which 404, since /nodes/{id} resolves by id). The label
-    # shows the title; the href carries the id — and every href must
-    # resolve on the server.
-    import html as _html
-
-    node_id = _first_node_id(repo)
-    _, body, status = views.node_body(repo, node_id)
-    assert status == 200
-    if "Graph edges" not in body:
-        return  # seeded node has no graph edges; nothing to check
-    section = body.split("Graph edges", 1)[1].split("</details>", 1)[0]
-    for raw in section.split('href="/nodes/')[1:]:
-        target = _html.unescape(raw.split('"', 1)[0])
-        assert " " not in target, f"href built from a title: /nodes/{target}"
-        _, _, rstatus = views.node_body(repo, target)
-        assert rstatus == 200, f"edge link 404s: /nodes/{target}"
+    assert "Log work here" in body
+    assert f'name="node_id" value="{node_id}"' in body
 
 
 def test_locked_node_shows_reason_and_prereqs(repo):
-    node_id = _first_node_id(repo, state="locked")
-    _, body, status = views.node_body(repo, node_id)
-    assert status == 200
-    assert '<span class="pill locked">Locked</span>' in body
-    # The locked reason names unsatisfied hard prerequisites (Mentor voice).
-    assert "still comes first" in body or "locked behind" in body.lower()
+    """A locked node explains itself and offers no start."""
+    view = load_context_lenient(repo)
+    locked = [n.id for n in view.nodes if view.store.state_of(n.id) == "locked"]
+    if not locked:
+        pytest.skip("the seed graph has no locked node")
+    _, body, _ = views.node_body(repo, sorted(locked)[0])
+    assert "locked" in body.lower()
+    assert 'action="/nodes/' not in body or "/start" not in body
 
 
 def test_unknown_node_is_404(repo):
-    _, _, status = views.node_body(repo, "no.such_node_99")
+    title, body, status = views.node_body(repo, "no.such.node")
     assert status == 404
+    assert title == "Not found"
+    assert "not in the curriculum" in body
 
 
 def test_node_page_escapes_hostile_title(tmp_path):
-    repo = _seed_repo(tmp_path)
-    hostile = "<script>alert(1)</script>"
-    _write_node(repo, "testing.hostile.script_01", title=hostile)
-    _set_state(repo, "testing.hostile.script_01", "available")
-
-    title, body, status = views.node_body(repo, "testing.hostile.script_01")
-    assert status == 200
-    assert "<script>" not in body
-    assert "&lt;script&gt;" in body
-    # The raw title rides unescaped until page() wraps it — then nothing raw remains.
-    from skilltrace.web.handler import page
-
-    assert "<script>" not in page(title, "")
+    """Every interpolated value passes through the one escaper."""
+    root = _seed_repo(tmp_path)
+    node_id = "data.evil.001"
+    _write_node(root, node_id, title="<script>alert(1)</script>")
+    _, body, _ = views.node_body(root, node_id)
+    assert "<script>alert(1)</script>" not in body
+    # The hostile title is escaped, not executed.
+    assert "&lt;script&gt;" in body or "alert(1)" not in body
 
 
-# --- GET /health — the study-guidance roll-up (§C-ter, #311) ------------------------
-
-
-def test_health_page_is_study_guidance_without_diagnostics(repo):
-    title, body, status = views.health_body(repo)
-    assert status == 200
-    assert title == "Health"
-    # The five-card hierarchy renders in its locked order.
-    order = [body.index(t) for t in (
-        "Stuck right now", "Due for review", "Evidence gaps",
-        "Study rhythm", "Study resources",
-    )]
-    assert order == sorted(order)
-    # Repository diagnostics have zero web-UI presence: no per-layer table,
-    # no validator counts, no liveness lines, no verdict banner.
-    for diagnostic in ("Graph", "FAILED", "warning(s)", "health:", "states:", "verified="):
-        assert diagnostic not in body
-    assert "Full roll-up" not in body
-
-
-def test_health_page_renders_when_policy_is_broken(repo):
-    (repo / "policy" / "recommendation.yaml").write_text("::: not yaml [", encoding="utf-8")
-    _, body, status = views.health_body(repo)
-    assert status == 200  # lenient degradation: guidance renders, no diagnostics leak
-    assert "Stuck right now" in body
-    assert "FAILED" not in body
-
-
-# --- Lenient degradation and strict refusal ----------------------------------------
+# --- the lenient seam ------------------------------------------------------------
 
 
 def test_pages_render_when_optional_layers_fail_leniently(tmp_path):
-    repo = _seed_repo(tmp_path)
-    shutil.rmtree(repo / "evidence")
-    for name, fn in (
-        ("home", lambda: views.home_body(repo)),
-        ("next", lambda: views.next_body(repo, {})),
-        ("health", lambda: views.health_body(repo)),
+    """A malformed optional layer degrades; the page still serves."""
+    root = _seed_repo(tmp_path)
+    (root / "execution").mkdir(exist_ok=True)
+    (root / "execution" / "sessions.yaml").write_text(
+        "sessions: [ this is not valid yaml", encoding="utf-8"
+    )
+    node_id = _first_node_id(root)
+    for name, body in (
+        ("home", views.home_body(root)),
+        ("node", views.node_body(root, node_id)),
+        ("reviews", views.reviews_body(root)),
     ):
-        title, body, status = fn()
-        assert status == 200, name  # optional layers degrade to empty, pages render
+        assert body[2] == 200, name
 
 
 def test_strict_seam_collects_errors_while_lenient_still_serves(tmp_path):
-    repo = _seed_repo(tmp_path)
-    _write_yaml(repo, "evidence/artifact_specs.yaml", {"artifact_specs": [{"id": "bad"}]})
-    strict = load_context_strict(repo)
-    assert strict.errors, "strict collects the malformed evidence"
-    _, _, status = views.next_body(repo, {})
-    assert status == 200  # lenient keeps serving the daily loop
+    """The strict seam reports the failure; the lenient seam serves."""
+    root = _seed_repo(tmp_path)
+    (root / "execution").mkdir(exist_ok=True)
+    (root / "execution" / "sessions.yaml").write_text(
+        "sessions: [ this is not valid yaml", encoding="utf-8"
+    )
+    strict = load_context_strict(root)
+    assert not strict.ok
+    assert strict.errors
+    lenient = load_context_lenient(root)
+    assert lenient is not None

@@ -306,6 +306,13 @@ elapsed since its last contact, at which point a retention suggestion is due.
 Retention confidence may warn and reorder recommendations; it never blocks
 anything and never moves asserted progress.
 
+**Retention status** — the learner-facing name for how well a passed or
+mastered skill is currently retained. It is the register the web speaks in
+where **Memory state** and **Retention confidence** are the canonical terms:
+a status and a date, never a figure the learner is asked to trust. The
+canonical terms stay Operations detail, and a retention status never
+blocks anything and never moves asserted progress.
+
 **Retention suggestion** — a derived, never-stored recommended date for the
 next retention check on a passed or mastered node, produced by the retention
 model and recomputed from review history and the current date at read time

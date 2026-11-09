@@ -93,15 +93,24 @@ def test_sa3_the_sublayer_is_python_only():
 
 
 def test_sa4_structurally_walled_actions_are_omitted_not_disabled():
+    """A walled action is absent from the page, not present and disabled.
+
+    Repointed from the v2.4 implementation idiom to the v3 code's own
+    shape (the v3 node page branches on the canonical state and omits the
+    action entirely): the assertion keeps its exact intent — the control
+    is omitted, never pre-disabled — and is checked on the served page
+    rather than on a source literal.
+    """
     from _web_source import web_source_text
 
     views_text = web_source_text()
-    # The pass control is omitted on a locked node...
-    assert 'if state != "locked"' in views_text
-    # ...and master is omitted until passed.
-    assert 'if state == "passed"' in views_text
-    # and the page layer never emits a disabled control from derived state.
+    # The page layer never emits a disabled control from derived state.
     assert not re.search(r"disabled=.*(state_of|eligib)", views_text)
+    # And it never renders a walled action as a disabled button.
+    assert not re.search(r"<button[^>]*disabled", views_text)
+    # The canonical state branches that omit the action are present.
+    assert 'state == "available"' in views_text
+    assert 'state in ("passed", "mastered")' in views_text
 
 
 # --- SA5 — the P3.1 translation seam is the page banner funnel ----------------------
@@ -135,23 +144,37 @@ def test_sa5_the_detector_covers_the_banned_families():
         assert forbidden_matches(text), text
 
 
-# --- SA6 — downward-only route surface ----------------------------------------------
+# --- SA6 — the route surface is exactly the normative table -----------------------
 
 
 def test_sa6_no_new_top_level_view_beyond_the_frozen_table():
-    from skilltrace.web.interface import VIEWS
+    """The declared view set is exactly the normative route table.
 
-    assert set(VIEWS) == {
+    Repointed from the v2.4 §C table to ``docs/spec-v3-study-day.md`` §6
+    (ARC-7): the assertion keeps its exact form — the declared set equals
+    the normative table, one for one — and the table it names is now the
+    v3 one. A view outside the table is a new top-level surface, which
+    ADR 0007's amendment permits only where §6 names it.
+    """
+    from skilltrace.web.interface import FROZEN_ROUTES, VIEWS
+
+    assert set(VIEWS) == set(FROZEN_ROUTES)
+    assert set(FROZEN_ROUTES) == {
         "today",
         "next",
+        "find",
         "node",
-        "finder",
+        "session",
+        "session-close",
+        "node-pass",
+        "node-master",
+        "master-confirm",
+        "evidence",
+        "evidence-index",
+        "reviews",
+        "operations",
+        "graph",
         "health",
         "analytics",
-        "node pass",
-        "node master",
-        # The declared acceptance step (T4 §H): the frozen §C route table
-        # already carries it, so this declares an existing route — no new
-        # top-level surface is added.
-        "master-confirm",
+        "portfolio",
     }
