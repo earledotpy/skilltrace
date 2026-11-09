@@ -40,11 +40,13 @@ DOOR = WEB / "interface" / "text.py"
 
 # Every module that renders a count into copy: each must inflect through the
 # one helper rather than one of its own.
+# The modules that render a count to the learner. The v3 shell renders no
+# count of its own — the counts belong to the surfaces that hold the
+# facts — so the shell is no longer one of them.
 COUNT_PRODUCERS = (
     WEB / "health.py",
     WEB / "views" / "finder.py",
-    WEB / "views" / "shell.py",
-    WEB / "views" / "today.py",
+    WEB / "views" / "next.py",
 )
 
 NODE_A = "math.arithmetic.order_operations_01"  # available in the seed

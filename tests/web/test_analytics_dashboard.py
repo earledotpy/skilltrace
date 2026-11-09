@@ -128,8 +128,16 @@ def test_dashboard_renders_overdue_banner_and_advisory_slot(tmp_path):
     assert "Active blocker spike" in advisory_banners
 
 
-def test_dashboard_collapses_to_one_column_at_the_locked_breakpoint():
-    assert "@media(max-width:960px){.analytics-grid{grid-template-columns:1fr}}" in views._STYLE
+def test_dashboard_collapses_to_one_column_at_the_narrow_window():
+    """The grid collapses in the narrow window, not at the retired 960px.
+
+    The v2.4 desktop-only breakpoint is superseded history (spec §20 SUP-5):
+    the v3 stylesheet degrades at a narrow window, so the layout never
+    requires horizontal scrolling (AX-10).
+    """
+    assert "@media (max-width: 640px)" in views._STYLE
+    assert "@media(max-width:960px)" not in views._STYLE
+    assert "grid-template-columns:1fr" in views._STYLE.replace(" ", "")
 
 
 def test_dashboard_shows_limited_data_banner_below_threshold(tmp_path):

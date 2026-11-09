@@ -10,9 +10,6 @@ session-scoped observation — and is never a Blocker (IC-10).
 
 from __future__ import annotations
 
-from pathlib import Path
-
-from ...execution.overdue import utc_today
 from ...execution.records import open_session
 from ._shared import _esc, _session_node_id, _table
 from .forms import _resolve_blocker_form, _work_form_fields
@@ -215,7 +212,7 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
         "never records anything either.</p>\n"
         + '<form method="post" action="/work">\n'
         + f'<input type="hidden" name="node_id" value="{_esc(node_id)}">\n'
-        + f'<input type="hidden" name="next" value="/session">\n'
+        + '<input type="hidden" name="next" value="/session">\n'
         + f"{_work_form_fields()}"
         + '<button type="submit" class="btn primary">Record this work</button>\n'
         + "</form>\n"

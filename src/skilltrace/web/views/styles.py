@@ -370,6 +370,25 @@ _COMPONENT_RULES = """
   body.mode-operations table{font-size:var(--text-sm)}
   body.mode-operations th,body.mode-operations td{padding:var(--space-1) var(--space-2)}
 
+  /* --- the analytics grid ---------------------------------------------- */
+  .analytics-grid{
+    display:grid; gap:var(--space-4);
+    grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+  }
+  .analytics-card{
+    border:1px solid var(--border-default);
+    border-radius:var(--radius-md);
+    background:var(--canvas-raised);
+    padding:var(--space-4);
+  }
+  .analytics-controls{
+    border:1px solid var(--border-subtle);
+    border-radius:var(--radius-md);
+    background:var(--canvas-raised);
+    padding:var(--space-4);
+    margin-bottom:var(--space-4);
+  }
+
   /* --- narrow window: mandatory degradation (AX-10) -------------------- */
   @media (max-width: 640px) {
     .shell{padding:0 var(--space-4)}
@@ -380,6 +399,7 @@ _COMPONENT_RULES = """
     .nav{gap:var(--space-3)}
     .mode-switch{margin-left:0; width:100%}
     .inspector{border-left:0; border-top:3px solid var(--accent)}
+    .analytics-grid{grid-template-columns:1fr}
     .chart-table thead{display:none}
     .chart-table td,.chart-table th{display:block; padding:var(--space-1) 0}
   }

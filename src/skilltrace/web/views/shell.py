@@ -35,7 +35,6 @@ from ._shared import (
     _flash_html,
     _normalize_pill_label,
     _slug,
-    plural,
 )
 from .styles import STYLE as _STYLE
 
@@ -186,7 +185,6 @@ def _nav_html(
         nav_class = "nav guided"
         links = _nav_links(_GUIDED_ORDER, current_view)
 
-    other_mode = "operations" if mode == "guided" else "guided"
     switch = (
         f'<span class="nav-label">Mode</span>'
         f'<a href="{_esc(_mode_link(path, query, "guided"))}"'

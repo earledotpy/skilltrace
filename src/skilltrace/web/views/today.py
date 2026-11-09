@@ -30,12 +30,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from ...commands.recommend import derive_next
-from ...commands.today import derive_today
 from ...evidence.eligibility import compute_eligibility
 from ...execution.overdue import is_overdue, utc_today
 from ...execution.records import open_session
-from ._shared import _esc, _session_node_id, plural
-from .forms import _start_confirm_form
+from ._shared import _esc, _session_node_id
 from .shell import _page_head
 
 
@@ -138,7 +136,7 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
             _queue_item(
                 f"A check on {title} is overdue",
                 "A retention check you scheduled is past its date.",
-                f'<a class="btn secondary" href="/reviews">Open reviews</a>',
+                '<a class="btn secondary" href="/reviews">Open reviews</a>',
                 dominant=not dominant_used,
             )
         )
@@ -149,7 +147,7 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
             _queue_item(
                 f"Something is blocking {title}",
                 blocker.description or "A blocker is recorded on this skill.",
-                f'<a class="btn secondary" href="/session">Open the session</a>',
+                '<a class="btn secondary" href="/session">Open the session</a>',
                 dominant=not dominant_used,
             )
         )

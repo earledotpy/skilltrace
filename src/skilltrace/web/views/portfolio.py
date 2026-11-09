@@ -129,7 +129,7 @@ def portfolio_body(root, query: dict | None = None) -> tuple[str, str, int]:
         "snapshot. It is not live truth — it does not update, and the web "
         "cannot reopen it as your current state.</div>\n"
         + '<form method="post" action="/portfolio/export">\n'
-        + f'<input type="hidden" name="next" value="/portfolio">\n'
+        + '<input type="hidden" name="next" value="/portfolio">\n'
         + f'<input type="hidden" name="format" value="'
         f'{_esc((query.get("format") or ["md"])[0])}">\n'
         + "".join(

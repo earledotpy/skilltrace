@@ -137,6 +137,10 @@ def node_evidence_body(
     wanted = len(
         [s for s in view.specs_by_node.get(node_id, []) if s.minimum_count > 0]
     )
+    # The eligibility derivation says which required proofs are still
+    # unmet. It is the fact behind "what is left to do", so it is stated
+    # rather than computed twice.
+    unmet = [reason for reason in eligibility.reasons]
 
     gate = view.gates_by_node.get(node_id)
     gate_line = "No checking method is set up for this skill."
@@ -165,6 +169,13 @@ def node_evidence_body(
         f'<span class="row-value">{accepted_live} accepted, {rejected} '
         f"rejected, {superseded} superseded</span></div>\n"
         + "</div>\n"
+        + (
+            '<div class="banner advisory">Still to do on this skill:\n'
+            + "".join(f"<p>{_esc(reason)}</p>\n" for reason in unmet)
+            + "</div>\n"
+            if unmet
+            else ""
+        )
         + "</section>\n"
         + '<section class="section">\n'
         + '<h2 class="section-title">Evidence wanted</h2>\n'

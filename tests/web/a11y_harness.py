@@ -735,7 +735,11 @@ def ensure_axe_toolchain(workdir: Path) -> AxeToolchain:
     if npm is None:
         return AxeToolchain(node, "", workdir, False, "npm is not installed")
     workdir.mkdir(parents=True, exist_ok=True)
-    if not (workdir / "node_modules" / "axe-core").exists():
+    if not _pinned_packages_present(workdir):
+        # The packages must match the pins exactly. A workdir left behind by
+        # an unpinned install (or by an interrupted one) would otherwise be
+        # used as-is, and a version that axe-core does not agree with hangs
+        # the gate rather than failing it.
         try:
             completed = subprocess.run(
                 [npm, "install", "--no-audit", "--no-fund", "--silent", *AXE_PACKAGES],
@@ -758,6 +762,22 @@ def ensure_axe_toolchain(workdir: Path) -> AxeToolchain:
             )
     (workdir / "driver.js").write_text(AXE_DRIVER, encoding="utf-8")
     return AxeToolchain(node, npm, workdir, True)
+
+
+def _pinned_packages_present(workdir: Path) -> bool:
+    """Whether the workdir holds exactly the pinned package versions."""
+    expected = dict(package.split("@", 1) for package in AXE_PACKAGES)
+    for name, version in expected.items():
+        manifest = workdir / "node_modules" / name / "package.json"
+        if not manifest.exists():
+            return False
+        try:
+            installed = json.loads(manifest.read_text(encoding="utf-8")).get("version")
+        except (OSError, ValueError):
+            return False
+        if installed != version:
+            return False
+    return True
 
 
 def _run_axe_batch(toolchain: AxeToolchain, payload: list[dict]) -> list[dict]:

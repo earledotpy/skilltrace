@@ -14,7 +14,6 @@ and its event provenance.
 
 from __future__ import annotations
 
-from ._shared import _esc, _table
 from .shell import _page_head
 
 

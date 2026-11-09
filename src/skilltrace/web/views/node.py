@@ -825,11 +825,15 @@ def _reviews_section(view, node_id: str, *, operations: bool) -> str:
 
     reviews = [r for r in view.reviews if r.node_id == node_id]
     if not reviews:
+        # The dead-end offers the action that continues the work, in the
+        # product: a review is created only by an explicit scheduling
+        # action, and that action is right here.
         inner = _empty(
             "No reviews scheduled",
             "A review is created only by an explicit scheduling action. A "
             "suggested check is advisory and never creates a record.",
         )
+        inner += _schedule_review_form(node_id)
         return _section("Reviews", "Retention checks on this skill.", inner)
 
     rows = []
@@ -862,6 +866,32 @@ def _reviews_section(view, node_id: str, *, operations: bool) -> str:
         "only. It never demotes a skill you have passed.</p>\n"
     )
     return _section("Reviews", "Retention checks on this skill.", inner)
+
+
+def _schedule_review_form(node_id: str) -> str:
+    """The explicit scheduling action — the way a review comes to exist.
+
+    A review is never created by a suggestion, a sweep or a timer. This
+    form is the only path, and it is the learner's action.
+    """
+    return (
+        '<details class="disclosure">\n'
+        "<summary>Schedule a review for this skill</summary>\n"
+        '<p class="section-meta">A scheduled review asks you to come back '
+        "and recall this skill later. Scheduling one is your explicit "
+        "action — nothing is scheduled automatically here.</p>\n"
+        '<form method="post" action="/reviews/schedule">\n'
+        f'<input type="hidden" name="node_id" value="{_esc(node_id)}">\n'
+        f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">\n'
+        '<div class="form-row">'
+        '<label for="node-review-date">When should it come back?</label>'
+        '<input type="date" name="date" id="node-review-date" '
+        "required></div>\n"
+        '<button type="submit" class="btn secondary">Schedule this review'
+        "</button>\n"
+        "</form>\n"
+        "</details>\n"
+    )
 
 
 def _events_section(view, node_id: str, *, operations: bool) -> str:
