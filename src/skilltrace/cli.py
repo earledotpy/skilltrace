@@ -18,13 +18,14 @@ same `main`.
 from __future__ import annotations
 
 import argparse
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
 from .commands import register_all
 from .dispatch import Context, Registry, dispatch
-from .paths import find_root
+from .paths import RootNotFound, find_root
 
 # The process-wide command registry. Handlers are placeholders in this issue;
 # the dispatcher contract they exercise is final.
@@ -84,9 +85,13 @@ def run(
 ) -> int:
     """Parse `argv`, resolve the root, and dispatch. Returns an exit code.
 
-    `root` (or `--root`) overrides auto-detection; tests pass a temp copy.
-    `clock` is an optional wall-clock override threaded through to handlers
-    via `Context`; production callers leave it at the default.
+    `root` (or `--root`) overrides auto-detection; tests pass a temp copy and
+    the `./start.sh` launcher passes the directory it lives in. Without either,
+    discovery runs and a repository that carries no marker is refused here —
+    one sentence, one exit code, before any handler can bind a port or render
+    an empty curriculum (issue #366, friction 4). `clock` is an optional
+    wall-clock override threaded through to handlers via `Context`; production
+    callers leave it at the default.
     """
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -96,7 +101,14 @@ def run(
     elif args.root is not None:
         resolved_root = Path(args.root)
     else:
-        resolved_root = find_root()
+        try:
+            resolved_root = find_root()
+        except RootNotFound as exc:
+            # Same shape as argparse's own usage errors: `prog: error: …` on
+            # stderr and exit 2, so a caller can tell "wrong directory" apart
+            # from "the command ran and said no".
+            print(f"skilltrace: error: {exc}", file=sys.stderr)
+            return 2
 
     command = REGISTRY.get(getattr(args, "_command_name", ""))
     if command is None:  # pragma: no cover - guarded by required subparsers
@@ -108,7 +120,6 @@ def run(
 def main() -> None:
     """Console-script entry point."""
     import io
-    import sys
 
     # Ensure UTF-8 output on Windows consoles (cp1252 default) so em dashes
     # and other Unicode characters render correctly.

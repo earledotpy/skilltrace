@@ -162,3 +162,44 @@ def test_cwd_auto_detect_finds_the_repo_root_from_a_subdir(tmp_path, monkeypatch
     monkeypatch.chdir(sub)
     rc = cli.run(["validate", "graph"], root=None)
     assert rc == 0
+
+
+# --- Cwd auto-detect refuses to guess ----------------------------------------
+#
+# Issue #366 friction 4: discovery used to hand back the working directory when
+# no marker matched, so `serve` bound happily and rendered an empty curriculum
+# — indistinguishable from "nothing to do today". Discovery now refuses in one
+# sentence, before any handler can run.
+
+def test_no_marker_at_or_above_cwd_is_refused_before_dispatch(
+    tmp_path, monkeypatch, capsys
+):
+    empty = tmp_path / "empty-root"
+    empty.mkdir()
+    monkeypatch.chdir(empty)
+
+    # `serve` is the command the old silence hurt most: it must not bind.
+    rc = cli.run(["serve", "--no-browser"])
+    assert rc == 2
+
+    err = capsys.readouterr().err
+    assert "skilltrace: error: no SkillTrace repository found at or above" in err
+    assert str(empty) in err
+    assert "graph/edges.yaml" in err
+    assert "--root" in err
+
+
+def test_an_explicit_root_bypasses_discovery_entirely(tmp_path, monkeypatch, capsys):
+    """`--root` is the escape hatch the refusal names, so it must not be refused."""
+    repo = tmp_path / "repo"
+    (repo / "graph").mkdir(parents=True)
+    (repo / "graph" / "edges.yaml").write_text("edges: []\n", encoding="utf-8")
+
+    empty = tmp_path / "empty-root"
+    empty.mkdir()
+    monkeypatch.chdir(empty)
+
+    # `--root` is a top-level flag: it precedes the command (the refusal
+    # sentence says "before the command" for exactly this reason).
+    assert cli.run(["--root", str(repo), "validate", "graph"]) == 0
+    assert "no SkillTrace repository" not in capsys.readouterr().err
