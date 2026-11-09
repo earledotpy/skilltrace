@@ -31,6 +31,7 @@ from ...execution.records import open_session
 from ...resources.status import derive_status
 from ._shared import _esc, _table
 from .forms import _resolve_blocker_form, _work_form_fields
+from .sections import EMPTY, FAILURE, LIMITED, Markup, Rows, Section, State
 from .shell import _mode_from, _page_head, _status_page
 
 #: The five canonical node states, as the learner sees them.
@@ -93,61 +94,38 @@ def node_body(root, node_id: str, query: dict | None = None) -> tuple[str, str, 
 
 
 def _section(title: str, meta: str, inner: str) -> str:
-    """One stacked section — the page frame is sections, not cards."""
-    return (
-        '<section class="section">\n'
-        '<div class="section-head">\n'
-        f'<h2 class="section-title">{_esc(title)}</h2>\n'
-        f'<p class="section-meta">{_esc(meta)}</p>\n'
-        "</div>\n"
-        f"{inner}\n"
-        "</section>\n"
-    )
+    """One stacked section — the page frame is sections, not cards.
+
+    The frame itself comes from the structured section data (ADR 0006
+    escalation 1); ``inner`` is the section's blocks, already rendered.
+    """
+    # The node page's sections close on their own line.
+    return Section(title, meta, (Markup(inner + "\n"),)).render()
 
 
 def _row(label: str, value: str) -> str:
     """One fact row — a labelled value, the v3 fact primitive."""
-    return (
-        '<div class="row">'
-        f'<span class="row-label">{_esc(label)}</span>'
-        f'<span class="row-value">{value}</span>'
-        "</div>"
-    )
+    return Rows(((label, value),)).render()
 
 
 def _rows(pairs: list[tuple[str, str]]) -> str:
     """A block of fact rows."""
-    return '<div class="rows">\n' + "".join(_row(k, v) for k, v in pairs) + "</div>\n"
+    return Rows(tuple(pairs)).render()
 
 
 def _empty(title: str, body: str) -> str:
     """An honest empty state — the population is empty, and that is a fact."""
-    return (
-        '<div class="state state-empty">\n'
-        f'<p class="state-title">{_esc(title)}</p>\n'
-        f'<p class="state-body">{_esc(body)}</p>\n'
-        "</div>\n"
-    )
+    return State(EMPTY, title, body).render()
 
 
 def _limited(title: str, body: str) -> str:
     """A limited state — valid values exist, a threshold is not met yet."""
-    return (
-        '<div class="state state-limited">\n'
-        f'<p class="state-title">{_esc(title)}</p>\n'
-        f'<p class="state-body">{_esc(body)}</p>\n'
-        "</div>\n"
-    )
+    return State(LIMITED, title, body).render()
 
 
 def _failure(title: str, body: str) -> str:
     """A could-not-compute state — the source failed, so nothing is claimed."""
-    return (
-        '<div class="state state-failure">\n'
-        f'<p class="state-title">{_esc(title)}</p>\n'
-        f'<p class="state-body">{_esc(body)}</p>\n'
-        "</div>\n"
-    )
+    return State(FAILURE, title, body).render()
 
 
 def _degraded_notice(view) -> str:

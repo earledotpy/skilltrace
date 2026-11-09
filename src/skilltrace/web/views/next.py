@@ -44,6 +44,7 @@ from ._shared import (
     _parse_int,
     plural,
 )
+from .sections import section
 from .shell import _page_head
 
 #: The bounded list: the number of options a learner may ask for is capped,
@@ -193,15 +194,11 @@ def _not_ready_card(model, view) -> str:
     """
     if not model.locked:
         return ""
-    return (
-        '<section class="section">\n'
-        '<div class="section-head">\n'
-        '<h2 class="section-title">Not ready yet</h2>\n'
-        '<p class="section-meta">These skills are waiting on another skill. '
-        "They are not on your list, and they cannot be started yet.</p>\n"
-        "</div>\n"
-        f"{_not_ready_list(model, view)}\n"
-        "</section>\n"
+    return section(
+        "Not ready yet",
+        "These skills are waiting on another skill. They are not on your "
+        "list, and they cannot be started yet.",
+        f"{_not_ready_list(model, view)}\n",
     )
 
 

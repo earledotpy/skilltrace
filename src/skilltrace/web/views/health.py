@@ -33,6 +33,7 @@ from ..health import (
 from ..interface.cards import Affordance, Card
 from ..interface.render import render_guidance_cards
 from ._shared import _esc, _table
+from .sections import section
 from .shell import _page_head
 
 
@@ -77,14 +78,11 @@ def _guidance_section(view) -> str:
     """The study-guidance projection — the learner's own facts."""
     guidance = derive_study_guidance(view, utc_today())
     cards, banner = guidance_page_cards(guidance)
-    return (
-        '<section class="section">\n'
-        '<div class="section-head">\n'
-        '<h2 class="section-title">Study guidance</h2>\n'
-        '<p class="section-meta">Your execution, evidence and retention '
-        "facts. These describe your study, not your repository.</p>\n"
-        "</div>\n"
-        + render_guidance_cards(
+    return section(
+        "Study guidance",
+        "Your execution, evidence and retention facts. These describe your "
+        "study, not your repository.",
+        render_guidance_cards(
             [_ROLLUP_CARD],
             chromes={0: _ROLLUP_CHROME},
         )
@@ -95,8 +93,7 @@ def _guidance_section(view) -> str:
                 for index, derivation_card in enumerate(guidance.cards)
             },
             banner=banner[1] if banner else None,
-        )
-        + "</section>\n"
+        ),
     )
 
 
@@ -146,17 +143,14 @@ def _diagnostics_section(root) -> str:
             "</div>\n"
         )
 
-    return (
-        '<section class="section">\n'
-        '<div class="section-head">\n'
-        '<h2 class="section-title">Repository diagnostics</h2>\n'
-        '<p class="section-meta">The curriculum\'s and the resources\' '
-        "integrity. These describe the repository, not your progress — and "
-        "they never block anything you do.</p>\n"
-        "</div>\n"
-        + failure_state
-        + _table(["Layer", "Counts", "Standing", "What was checked"], rows)
-        + "</section>\n"
+    return section(
+        "Repository diagnostics",
+        "The curriculum's and the resources' integrity. These describe the "
+        "repository, not your progress — and they never block anything you "
+        "do.",
+        failure_state
+        + _table(["Layer", "Counts", "Standing", "What was checked"], rows),
+        meta_markup=True,
     )
 
 

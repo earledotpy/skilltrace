@@ -42,6 +42,7 @@ from ._shared import (
     _table,
     plural,
 )
+from .sections import section
 from .shell import _page_head
 
 #: The five canonical node states, as filter choices. A locked skill is a
@@ -150,29 +151,27 @@ def _browse_html(view: JoinedView, *, sections: bool = True) -> str:
         [_esc(label), str(count)] for _subject, label, count in subjects
     ]
     parts = [
-        '<section class="section" id="browse">\n',
-        '<div class="section-head">\n',
-        '<h2 class="section-title">Browse by subject</h2>\n',
-        '<p class="section-meta">Every subject in the curriculum. Each link '
-        "is a filter of its own, so a subject has its own addressable "
-        "URL.</p>\n",
-        "</div>\n",
-        f"<ul>{index_links}</ul>\n",
-        _table(["Subject", "Skills"], count_rows),
-        "\n</section>\n",
+        section(
+            "Browse by subject",
+            "Every subject in the curriculum. Each link is a filter of its "
+            "own, so a subject has its own addressable URL.",
+            f"<ul>{index_links}</ul>\n"
+            + _table(["Subject", "Skills"], count_rows)
+            + "\n",
+            anchor="browse",
+        ),
     ]
     if not sections:
         return "".join(parts)
     for subject, label, count in subjects:
         subject_cards = _render_results(browse_cards(view, subject), view)
         parts.append(
-            f'<section class="section" id="subject-{_esc(subject)}">\n'
-            '<div class="section-head">\n'
-            f'<h2 class="section-title">{_esc(label)}</h2>\n'
-            f'<p class="section-meta">{count} skill{plural(count)}</p>\n'
-            "</div>\n"
-            f"{subject_cards}"
-            "</section>\n"
+            section(
+                label,
+                f"{count} skill{plural(count)}",
+                f"{subject_cards}",
+                anchor=f"subject-{subject}",
+            )
         )
     return "".join(parts)
 

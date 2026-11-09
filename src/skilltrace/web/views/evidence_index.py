@@ -14,6 +14,7 @@ and its event provenance.
 
 from __future__ import annotations
 
+from .sections import NONE, section
 from .shell import _page_head
 
 
@@ -110,14 +111,17 @@ def evidence_index_body(root, query: dict | None = None) -> tuple[str, str, int]
     if not records:
         body = (
             head
-            + '<section class="section">\n'
-            + _filter_form(node, outcome, standing)
-            + '<div class="state state-empty">\n'
-            + '<p class="state-title">No evidence records</p>\n'
-            + '<p class="state-body">Nothing has been submitted against this '
-            "filter yet. A requirement being unmet is a fact about the "
-            "curriculum, not a problem with you.</p>\n"
-            + "</div>\n"
-            + "</section>\n"
+            + section(
+                "",
+                "",
+                _filter_form(node, outcome, standing)
+                + '<div class="state state-empty">\n'
+                + '<p class="state-title">No evidence records</p>\n'
+                + '<p class="state-body">Nothing has been submitted against '
+                "this filter yet. A requirement being unmet is a fact about "
+                "the curriculum, not a problem with you.</p>\n"
+                + "</div>\n",
+                frame=NONE,
+            )
         )
         return "Evidence", body, 200

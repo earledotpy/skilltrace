@@ -27,6 +27,7 @@ from __future__ import annotations
 from ...evidence.eligibility import compute_eligibility, live_accepted_count
 from ._shared import _esc, _table
 from .forms import _evidence_submit_form
+from .sections import BARE, INLINE, Markup, Rows, Section
 from .shell import _page_head
 
 
@@ -157,38 +158,44 @@ def node_evidence_body(
 
     body = (
         head
-        + '<section class="section">\n'
-        + '<div class="section-head">\n'
-        + f'<h2 class="section-title">{_esc(view.node_map[node_id].title)}</h2>\n'
-        + '<p class="section-meta">What is required, and what is on record.</p>\n'
-        + "</div>\n"
-        + '<div class="rows">\n'
-        + '<div class="row"><span class="row-label">Evidence wanted</span>'
-        f'<span class="row-value">{wanted} required</span></div>\n'
-        + '<div class="row"><span class="row-label">Evidence recorded</span>'
-        f'<span class="row-value">{accepted_live} accepted, {rejected} '
-        f"rejected, {superseded} superseded</span></div>\n"
-        + "</div>\n"
-        + (
-            '<div class="banner advisory">Still to do on this skill:\n'
-            + "".join(f"<p>{_esc(reason)}</p>\n" for reason in unmet)
-            + "</div>\n"
-            if unmet
-            else ""
-        )
-        + "</section>\n"
-        + '<section class="section">\n'
-        + '<h2 class="section-title">Evidence wanted</h2>\n'
-        + f"{_wanted_rows(view, node_id)}"
-        + "</section>\n"
-        + '<section class="section">\n'
-        + '<h2 class="section-title">Evidence recorded</h2>\n'
-        + f"{_recorded_rows(view, node_id)}"
-        + "</section>\n"
-        + '<section class="section">\n'
-        + '<h2 class="section-title">Submit evidence</h2>\n'
-        + f'<p class="section-meta">{_esc(gate_line)}</p>\n'
-        + f"{_evidence_submit_form(view, node_id)}"
-        + "</section>\n"
+        + Section(
+            view.node_map[node_id].title,
+            "What is required, and what is on record.",
+            (
+                Rows(
+                    (
+                        ("Evidence wanted", f"{wanted} required"),
+                        (
+                            "Evidence recorded",
+                            f"{accepted_live} accepted, {rejected} rejected, "
+                            f"{superseded} superseded",
+                        ),
+                    ),
+                    separated=True,
+                ),
+                Markup(
+                    '<div class="banner advisory">Still to do on this skill:\n'
+                    + "".join(f"<p>{_esc(reason)}</p>\n" for reason in unmet)
+                    + "</div>\n"
+                    if unmet
+                    else ""
+                ),
+            ),
+        ).render()
+        + Section(
+            "Evidence wanted", "", (Markup(_wanted_rows(view, node_id)),), frame=BARE
+        ).render()
+        + Section(
+            "Evidence recorded",
+            "",
+            (Markup(_recorded_rows(view, node_id)),),
+            frame=BARE,
+        ).render()
+        + Section(
+            "Submit evidence",
+            gate_line,
+            (Markup(_evidence_submit_form(view, node_id)),),
+            frame=INLINE,
+        ).render()
     )
     return "Evidence", body, 200

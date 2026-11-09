@@ -13,6 +13,7 @@ from __future__ import annotations
 from ...execution.records import open_session
 from ._shared import _esc, _session_node_id, _table
 from .forms import _resolve_blocker_form, _work_form_fields
+from .sections import BARE, INLINE, section
 from .shell import _page_head
 
 
@@ -62,14 +63,13 @@ def _blocked_work(view, session) -> str:
         ]
         for item in blocked
     ]
-    return (
-        '<section class="section">\n'
-        '<h2 class="section-title">Blocked work</h2>\n'
-        '<p class="section-meta">Work that ended stuck inside this session. '
-        "It is an observation about one session — it is not a blocker, and "
-        "it creates no record of its own.</p>\n"
-        + _table(["Skill", "What you noted", "When"], rows)
-        + "</section>\n"
+    return section(
+        "Blocked work",
+        "Work that ended stuck inside this session. It is an observation "
+        "about one session — it is not a blocker, and it creates no record "
+        "of its own.",
+        _table(["Skill", "What you noted", "When"], rows),
+        frame=INLINE,
     )
 
 
@@ -115,14 +115,12 @@ def _create_blocker_offer(view, session) -> str:
             "</form>\n"
             "</details>\n"
         )
-    return (
-        '<section class="section">\n'
-        "<h2 class=\"section-title\">Still stuck?</h2>\n"
-        '<p class="section-meta">If this keeps happening across sessions, '
-        "record it as a blocker so it survives the session. Recording one is "
-        "your explicit action.</p>\n"
-        + "".join(parts)
-        + "</section>\n"
+    return section(
+        "Still stuck?",
+        "If this keeps happening across sessions, record it as a blocker so "
+        "it survives the session. Recording one is your explicit action.",
+        "".join(parts),
+        frame=INLINE,
     )
 
 
@@ -191,45 +189,49 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
 
     body = (
         head
-        + '<section class="section">\n'
-        + '<div class="section-head">\n'
-        + f'<h2 class="section-title">{_esc(node_title)}</h2>\n'
-        + '<p class="section-meta">Session open — the timer is presentation '
-        "only and records nothing by itself.</p>\n"
-        + "</div>\n"
-        + '<div class="command-bar">\n'
-        + '<div class="actions">\n'
-        + f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Open this skill</a>\n'
-        + '<a class="btn secondary" href="/session/close">Close the session</a>\n'
-        + "</div>\n"
-        + "</div>\n"
-        + "</section>\n"
-        + '<section class="section">\n'
-        + '<h2 class="section-title">Work in this session</h2>\n'
-        + '<p class="section-meta">Recording work saves the minutes and the '
-        "notes you type, against this skill and this session. Nothing else "
-        "is written: the timer never records, and looking at another skill "
-        "never records anything either.</p>\n"
-        + '<form method="post" action="/work">\n'
-        + f'<input type="hidden" name="node_id" value="{_esc(node_id)}">\n'
-        + '<input type="hidden" name="next" value="/session">\n'
-        + f"{_work_form_fields()}"
-        + '<button type="submit" class="btn primary">Record this work</button>\n'
-        + "</form>\n"
-        + "</section>\n"
-        + '<section class="section">\n'
-        + '<h2 class="section-title">Session work</h2>\n'
-        + f"{work_rows}"
-        + "</section>\n"
+        + section(
+            node_title,
+            "Session open — the timer is presentation only and records "
+            "nothing by itself.",
+            '<div class="command-bar">\n'
+            '<div class="actions">\n'
+            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">'
+            "Open this skill</a>\n"
+            '<a class="btn secondary" href="/session/close">'
+            "Close the session</a>\n"
+            "</div>\n"
+            "</div>\n",
+        )
+        + section(
+            "Work in this session",
+            "Recording work saves the minutes and the notes you type, against "
+            "this skill and this session. Nothing else is written: the timer "
+            "never records, and looking at another skill never records "
+            "anything either.",
+            '<form method="post" action="/work">\n'
+            f'<input type="hidden" name="node_id" value="{_esc(node_id)}">\n'
+            '<input type="hidden" name="next" value="/session">\n'
+            f"{_work_form_fields()}"
+            '<button type="submit" class="btn primary">Record this work'
+            "</button>\n"
+            "</form>\n",
+            frame=INLINE,
+        )
+        + section(
+            "Session work",
+            "",
+            f"{work_rows}",
+            frame=BARE,
+        )
         + f"{blocked_work}"
         + f"{create_blocker}"
-        + '<section class="section">\n'
-        + '<h2 class="section-title">Blockers</h2>\n'
-        + '<p class="section-meta">A blocker is persistent stuckness you '
-        "recorded deliberately. It is a different thing from blocked work "
-        "above.</p>\n"
-        + f"{blockers}"
-        + "</section>\n"
+        + section(
+            "Blockers",
+            "A blocker is persistent stuckness you recorded deliberately. It "
+            "is a different thing from blocked work above.",
+            f"{blockers}",
+            frame=INLINE,
+        )
     )
     return "Study", body, 200
 

@@ -12,6 +12,7 @@ destination views (R7) and never become a composite score.
 from __future__ import annotations
 
 from ._shared import _esc
+from .sections import section
 from .shell import _page_head
 
 
@@ -94,13 +95,11 @@ def operations_body(root, query: dict | None = None) -> tuple[str, str, int]:
 
     body = (
         head
-        + '<section class="section">\n'
-        + '<div class="section-head">\n'
-        + '<h2 class="section-title">Capabilities</h2>\n'
-        + '<p class="section-meta">Each capability is its own destination. '
-        "Nothing here is hidden behind a generic menu.</p>\n"
-        + "</div>\n"
-        + f'<div class="rows">\n{section_rows}</div>\n'
-        + "</section>\n"
+        + section(
+            "Capabilities",
+            "Each capability is its own destination. Nothing here is hidden "
+            "behind a generic menu.",
+            f'<div class="rows">\n{section_rows}</div>\n',
+        )
     )
     return "Operations", body, 200

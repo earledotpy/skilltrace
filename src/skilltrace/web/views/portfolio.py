@@ -19,6 +19,7 @@ override dimension for that invocation.
 from __future__ import annotations
 
 from ._shared import _esc
+from .sections import section
 from .shell import _page_head
 
 # The redaction override dimensions. Each is opt-in, per invocation: the
@@ -200,13 +201,9 @@ def _preview_section(root, query: dict, enabled) -> str:
             "</section>\n"
         )
 
-    return (
-        '<section class="section">\n'
-        '<div class="section-head">\n'
-        "<h2 class=\"section-title\">Preview</h2>\n"
-        '<p class="section-meta">Exactly what the export would contain. '
-        "Nothing was written — this preview creates no bundle.</p>\n"
-        "</div>\n"
-        f'<pre class="mono">{_esc(rendered)}</pre>'
-        "</section>\n"
+    return section(
+        "Preview",
+        "Exactly what the export would contain. Nothing was written — this "
+        "preview creates no bundle.",
+        f'<pre class="mono">{_esc(rendered)}</pre>',
     )

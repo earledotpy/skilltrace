@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from ...execution.overdue import is_overdue, utc_today
 from ._shared import _esc, _table
+from .sections import BARE, INLINE, section
 from .shell import _page_head
 
 
@@ -60,13 +61,11 @@ def _overdue_section(view, today) -> str:
         ]
         for r in sorted(overdue, key=lambda r: r.scheduled_for)
     ]
-    return (
-        '<section class="section">\n'
-        '<h2 class="section-title">Overdue</h2>\n'
-        '<p class="section-meta">These checks are past their date. They are '
-        "waiting on you.</p>\n"
-        + _table(["Skill", "Due", "Do it"], rows)
-        + "</section>\n"
+    return section(
+        "Overdue",
+        "These checks are past their date. They are waiting on you.",
+        _table(["Skill", "Due", "Do it"], rows),
+        frame=INLINE,
     )
 
 
@@ -86,11 +85,11 @@ def _scheduled_section(view, today) -> str:
         ]
         for r in sorted(scheduled, key=lambda r: r.scheduled_for)
     ]
-    return (
-        '<section class="section">\n'
-        '<h2 class="section-title">Scheduled</h2>\n'
-        + _table(["Skill", "Due", "Do it"], rows)
-        + "</section>\n"
+    return section(
+        "Scheduled",
+        "",
+        _table(["Skill", "Due", "Do it"], rows),
+        frame=BARE,
     )
 
 
@@ -114,11 +113,11 @@ def _history_section(view) -> str:
                 _esc(review.completed_at or review.cancelled_at or ""),
             ]
         )
-    return (
-        '<section class="section">\n'
-        '<h2 class="section-title">History</h2>\n'
-        + _table(["Skill", "What happened", "Detail", "When"], rows)
-        + "</section>\n"
+    return section(
+        "History",
+        "",
+        _table(["Skill", "What happened", "Detail", "When"], rows),
+        frame=BARE,
     )
 
 
@@ -185,14 +184,13 @@ def _suggestions_section(view, today) -> str:
                 _schedule_form(node_id),
             ]
         )
-    return (
-        '<section class="section">\n'
-        '<h2 class="section-title">Suggested checks</h2>\n'
-        '<p class="section-meta">Advisory only. Nothing here is scheduled or '
-        "overdue, and nothing here creates a record — scheduling a check is "
-        "always your explicit action.</p>\n"
-        + _table(["Skill", "Retention status", "Suggested for", "Schedule"], rows)
-        + "</section>\n"
+    return section(
+        "Suggested checks",
+        "Advisory only. Nothing here is scheduled or overdue, and nothing "
+        "here creates a record — scheduling a check is always your explicit "
+        "action.",
+        _table(["Skill", "Retention status", "Suggested for", "Schedule"], rows),
+        frame=INLINE,
     )
 
 

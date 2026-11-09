@@ -34,6 +34,7 @@ from ...evidence.eligibility import compute_eligibility
 from ...execution.overdue import is_overdue, utc_today
 from ...execution.records import open_session
 from ._shared import _esc, _session_node_id
+from .sections import BARE, section
 from .shell import _page_head
 
 
@@ -232,23 +233,21 @@ def _queue_section(
             "</div>\n"
         )
     else:
-        secondary = (
-            '<section class="section">\n'
-            '<h2 class="section-title">Keep going</h2>\n'
+        secondary = section(
+            "Keep going",
+            "",
             '<div class="command-bar"><div class="actions">'
             '<a class="btn secondary" href="/next">See more options</a>'
             '<a class="btn secondary" href="/find">Find a skill</a>'
-            "</div></div>\n"
-            "</section>\n"
+            "</div></div>\n",
+            frame=BARE,
         )
 
     return (
-        '<section class="section">\n'
-        '<div class="section-head">\n'
-        '<h2 class="section-title">Your next step</h2>\n'
-        '<p class="section-meta">One thing at a time, in priority order.</p>\n'
-        "</div>\n"
-        f"{queue}"
-        "</section>\n"
-        f"{secondary}"
+        section(
+            "Your next step",
+            "One thing at a time, in priority order.",
+            f"{queue}",
+        )
+        + f"{secondary}"
     )

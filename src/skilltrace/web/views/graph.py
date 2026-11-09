@@ -16,6 +16,7 @@ picture: the graph is a table plus a list, both server-rendered.
 from __future__ import annotations
 
 from ._shared import _esc, _table
+from .sections import INLINE, NONE, section
 from .shell import _page_head
 
 
@@ -139,30 +140,36 @@ def graph_body(
         )
         body = (
             head
-            + '<section class="section">\n'
-            + f'<h2 class="section-title">{_esc(title)}</h2>\n'
-            + '<p class="section-meta">The selected skill, its immediate '
-            "relationships, and its full prerequisite ancestry.</p>\n"
-            + "</div>\n"
-            + '<h3>Immediate relationships</h3>\n'
-            + (
-                _table(["Related skill", "Relationship", "Affects readiness"], neighbours)
-                if neighbours
-                else '<div class="state state-empty"><p class="state-title">'
-                "No relationships</p><p class=\"state-body\">This skill has no "
-                "incoming or outgoing relationships in the edge table.</p></div>"
+            + section(
+                title,
+                "The selected skill, its immediate relationships, and its "
+                "full prerequisite ancestry.",
+                '<h3>Immediate relationships</h3>\n'
+                + (
+                    _table(
+                        ["Related skill", "Relationship", "Affects readiness"],
+                        neighbours,
+                    )
+                    if neighbours
+                    else '<div class="state state-empty"><p class="state-title">'
+                    "No relationships</p><p class=\"state-body\">This skill has no "
+                    "incoming or outgoing relationships in the edge table.</p></div>"
+                ),
+                frame=INLINE,
             )
-            + "</section>\n"
-            + '<section class="section">\n'
-            + "<h3>Full prerequisite ancestry</h3>\n"
-            + (
-                f'<ul class="history-list">{ancestor_rows}</ul>'
-                if ancestors
-                else '<div class="state state-empty"><p class="state-title">'
-                "No prerequisites</p><p class=\"state-body\">Nothing stands "
-                "between this skill and being ready.</p></div>"
+            + section(
+                "",
+                "",
+                "<h3>Full prerequisite ancestry</h3>\n"
+                + (
+                    f'<ul class="history-list">{ancestor_rows}</ul>'
+                    if ancestors
+                    else '<div class="state state-empty"><p class="state-title">'
+                    "No prerequisites</p><p class=\"state-body\">Nothing stands "
+                    "between this skill and being ready.</p></div>"
+                ),
+                frame=NONE,
             )
-            + "</section>\n"
         )
         return title, body, 200
 
