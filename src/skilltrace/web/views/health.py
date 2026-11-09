@@ -22,6 +22,8 @@ recovery path — never a zero and never a fabricated health fact (SC-00a).
 
 from __future__ import annotations
 
+import re
+
 from ...commands.health import health_report
 from ...execution.overdue import utc_today
 from ..health import (
@@ -49,6 +51,26 @@ def health_body(root, query: dict | None = None) -> tuple[str, str, int]:
 
     body = head + _guidance_section(view) + _diagnostics_section(root)
     return "Health", body, 200
+
+
+def _plain_counts(counts: str) -> str:
+    """The layer's counts in plain words, without the command's pluralisation.
+
+    The validator prints ``45 resource(s)`` — the command's own shorthand.
+    A learner-facing page says "45 resources".
+    """
+    return re.sub(r"\(s\)", "s", counts or "")
+
+
+def _layer_headline(layer) -> str:
+    """What this layer checks, in words.
+
+    The layer's own line is the command the CLI would print. A page never
+    shows a command, so the headline is the layer's subject instead.
+    """
+    target = layer.target or ""
+    subject = target.split(".")[-1] if target else "checks"
+    return f"the {subject} of the curriculum"
 
 
 def _guidance_section(view) -> str:
@@ -108,9 +130,9 @@ def _diagnostics_section(root) -> str:
         rows.append(
             [
                 _esc(layer.target),
-                _esc(layer.counts),
+                _esc(_plain_counts(layer.counts)),
                 "ok" if layer.ok else "failing",
-                _esc(layer.line),
+                _esc(_plain_counts(_layer_headline(layer))),
             ]
         )
 

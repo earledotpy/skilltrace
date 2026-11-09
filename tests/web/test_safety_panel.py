@@ -241,7 +241,17 @@ def test_operational_failure_points_at_health(repo):
 
 
 def test_friction_free_writes_stay_single_step(repo):
+    """The learner reaches each write in one step from the skill page.
+
+    The v3 node page *links* to the destinations that own the writes — the
+    evidence workspace, the pass panel, the mastery panel — and the
+    cockpit's work form appears only while a session is open (R6, IC-3).
+    The v2.4 page embedded all three forms at once; that is superseded.
+    """
     _, body, _ = views.node_body(repo, NODE, {})
-    assert 'action="/work"' in body
-    assert 'action="/nodes/' in body and "/blockers" in body
-    assert 'action="/nodes/' in body and "/evidence" in body
+    assert f'href="/nodes/{NODE}/evidence"' in body
+    assert f'href="/nodes/{NODE}/pass"' in body
+    assert f'href="/nodes/{NODE}/master"' in body
+    assert 'href="/reviews"' in body
+    # No work form without an open session.
+    assert 'action="/work"' not in body

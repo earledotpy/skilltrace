@@ -18,8 +18,8 @@ never collapsed into one generic progress / skill-health / evidence-state
 object. A section with nothing in it says so in an empty state instead of
 vanishing or rendering a zero-as-truth (SC-00a).
 
-Nothing here performs or implies ``pass_node``, ``master_node`` or
-``delete_record``. Those stay explicit commands behind their own panels;
+Nothing here passes, masters or deletes a record. Those stay explicit
+commands behind their own panels;
 this page only links to them (HB-1).
 """
 

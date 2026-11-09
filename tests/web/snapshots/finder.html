@@ -1,18 +1,54 @@
 <header><div class="shell"><h1 class="brand"><a href="/">SkillTrace</a></h1><nav class="nav guided" aria-label="Guided"><span class="section-nav-label">Guided</span><a href="/">Today</a><a href="/next">Next</a><a href="/find" aria-current="page">Find a skill</a><span class="mode-switch"><span class="nav-label">Mode</span><a href="/find?mode=guided" aria-current="true">Guided</a><a href="/find?mode=operations">Operations</a></span></nav></div></header>
-<div class="card">
-<div class="kicker">Find a skill</div>
-<form class="finder" method="get" action="/find"><label>Search skills <input type="text" name="q" value="" placeholder="Type a skill name" aria-label="search skills by title" size="32"></label><button type="submit">Search</button></form>
+<section class="section">
+<div class="section-head">
+<h2 class="section-title">Find a skill</h2>
+<p class="section-meta">Search the whole curriculum. Your search is a link — reload it, share it, or come back to it with the back button.</p>
 </div>
-<div class="card" id="browse">
-<div class="kicker">Browse by subject</div>
-<ul><li><a href="#subject-math">Math</a></li><li><a href="#subject-data">Data</a></li><li><a href="#subject-programming">Python</a></li><li><a href="#subject-agents">AI agents</a></li><li><a href="#subject-ml">Machine learning</a></li><li><a href="#subject-tooling">Tooling</a></li><li><a href="#subject-communication">Communication</a></li><li><a href="#subject-consolidation">Consolidation</a></li><li><a href="#subject-portfolio">Portfolio</a></li></ul>
-<table>
-<thead><tr><th>Subject</th><th>Skills</th></tr></thead>
-<tbody><tr><td>Math</td><td>33</td></tr><tr><td>Data</td><td>17</td></tr><tr><td>Python</td><td>14</td></tr><tr><td>AI agents</td><td>12</td></tr><tr><td>Machine learning</td><td>7</td></tr><tr><td>Tooling</td><td>6</td></tr><tr><td>Communication</td><td>3</td></tr><tr><td>Consolidation</td><td>4</td></tr><tr><td>Portfolio</td><td>4</td></tr></tbody>
-</table>
+<form class="filters" method="get" action="/find">
+<div class="form-row"><label for="find-q">Search skills</label><input id="find-q" type="search" name="q" value="" size="32"></div>
+<div class="form-row"><label for="find-subject">Subject</label><select id="find-subject" name="subject"><option value="">Every subject</option>
+<option value="math">Math</option>
+<option value="data">Data</option>
+<option value="programming">Python</option>
+<option value="agents">AI agents</option>
+<option value="ml">Machine learning</option>
+<option value="tooling">Tooling</option>
+<option value="communication">Communication</option>
+<option value="consolidation">Consolidation</option>
+<option value="portfolio">Portfolio</option>
+</select></div>
+<div class="form-row"><label for="find-state">State</label><select id="find-state" name="state"><option value="">Any state</option>
+<option value="available">Available</option>
+<option value="active">Active</option>
+<option value="passed">Passed</option>
+<option value="mastered">Mastered</option>
+<option value="locked">Locked</option>
+</select></div>
+<div class="actions"><button class="btn secondary" type="submit">Search</button></div>
+</form>
+</section>
+<section class="section" id="browse">
+<div class="section-head">
+<h2 class="section-title">Browse by subject</h2>
+<p class="section-meta">Every subject in the curriculum. Each link is a filter of its own, so a subject has its own addressable URL.</p>
 </div>
-<div class="card" id="subject-math">
-<div class="kicker">Math</div>
+<ul><li><a href="/find?subject=math">Math</a></li>
+<li><a href="/find?subject=data">Data</a></li>
+<li><a href="/find?subject=programming">Python</a></li>
+<li><a href="/find?subject=agents">AI agents</a></li>
+<li><a href="/find?subject=ml">Machine learning</a></li>
+<li><a href="/find?subject=tooling">Tooling</a></li>
+<li><a href="/find?subject=communication">Communication</a></li>
+<li><a href="/find?subject=consolidation">Consolidation</a></li>
+<li><a href="/find?subject=portfolio">Portfolio</a></li>
+</ul>
+<table class="data"><caption>Subject / Skills</caption><thead><tr><th scope="col">Subject</th><th scope="col">Skills</th></tr></thead><tbody><tr><td>Math</td><td>33</td></tr><tr><td>Data</td><td>17</td></tr><tr><td>Python</td><td>14</td></tr><tr><td>AI agents</td><td>12</td></tr><tr><td>Machine learning</td><td>7</td></tr><tr><td>Tooling</td><td>6</td></tr><tr><td>Communication</td><td>3</td></tr><tr><td>Consolidation</td><td>4</td></tr><tr><td>Portfolio</td><td>4</td></tr></tbody></table>
+</section>
+<section class="section" id="subject-math">
+<div class="section-head">
+<h2 class="section-title">Math</h2>
+<p class="section-meta">33 skills</p>
+</div>
 <div class="card result">
 <p class="lead"><a href="/nodes/math.arithmetic.order_operations_01">Apply order of operations</a> <span class="pill ready-to-start">Ready to start</span></p>
 <p class="big">Evaluate arithmetic expressions using standard order of operations.</p>
@@ -102,7 +138,7 @@
 <p class="lead">Apply a matrix to a vector <span class="pill locked">Locked</span></p>
 <p class="big">Compute a matrix-vector product and interpret it as applying the matrix&#x27;s transformation to the vector.</p>
 <p class="mut ref">math.linear_algebra.matrix_vector_product_01</p>
-<p class="sub">Blocked by <a href="/nodes/math.linear_algebra.matrices_01">Read a matrix as a transformation</a> — pass it first.</p>
+<p class="sub">Blocked by Read a matrix as a transformation, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Compute expected value <span class="pill locked">Locked</span></p>
@@ -132,7 +168,7 @@
 <p class="lead">Explain optimization by following the gradient <span class="pill locked">Locked</span></p>
 <p class="big">Explain how following the negative gradient downhill in small steps finds a minimum, and where the intuition breaks.</p>
 <p class="mut ref">math.calculus.optimization_intuition_01</p>
-<p class="sub">Blocked by <a href="/nodes/math.calculus.gradient_intuition_01">Read a gradient as steepest ascent</a> — pass it first.</p>
+<p class="sub">Blocked by Read a gradient as steepest ascent, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Interpret a hypothesis test and p-value <span class="pill locked">Locked</span></p>
@@ -150,19 +186,19 @@
 <p class="lead">Multiply two matrices <span class="pill locked">Locked</span></p>
 <p class="big">Compute a matrix-matrix product and interpret it as composing two transformations.</p>
 <p class="mut ref">math.linear_algebra.matrix_multiplication_01</p>
-<p class="sub">Blocked by <a href="/nodes/math.linear_algebra.matrix_vector_product_01">Apply a matrix to a vector</a> — pass it first.</p>
+<p class="sub">Blocked by Apply a matrix to a vector, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Read a derivative as sensitivity <span class="pill locked">Locked</span></p>
 <p class="big">Interpret a derivative as the rate of change of an output per small change in input — the slope of the tangent.</p>
 <p class="mut ref">math.calculus.derivative_intuition_01</p>
-<p class="sub">Blocked by <a href="/nodes/math.functions.slope_01">Explain and calculate slope</a> — pass it first.</p>
+<p class="sub">Blocked by Explain and calculate slope, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Read a gradient as steepest ascent <span class="pill locked">Locked</span></p>
 <p class="big">Interpret a gradient as the vector of partial sensitivities pointing in the direction of steepest increase.</p>
 <p class="mut ref">math.calculus.gradient_intuition_01</p>
-<p class="sub">Blocked by <a href="/nodes/math.calculus.derivative_intuition_01">Read a derivative as sensitivity</a> — pass it first.</p>
+<p class="sub">Blocked by Read a derivative as sensitivity, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Read a matrix as a transformation <span class="pill locked">Locked</span></p>
@@ -174,7 +210,7 @@
 <p class="lead">Solve a system of two linear equations <span class="pill locked">Locked</span></p>
 <p class="big">Solve a system of two linear equations in two unknowns by substitution or elimination and interpret the solution.</p>
 <p class="mut ref">math.algebra.systems_equations_01</p>
-<p class="sub">Blocked by <a href="/nodes/math.algebra.linear_equations_01">Solve one-variable linear equations</a> — pass it first.</p>
+<p class="sub">Blocked by Solve one-variable linear equations, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Solve one-variable linear equations <span class="pill locked">Locked</span></p>
@@ -192,11 +228,14 @@
 <p class="lead">Work with linear functions <span class="pill locked">Locked</span></p>
 <p class="big">Connect slope, intercept, equations, tables, and graphs.</p>
 <p class="mut ref">math.functions.linear_functions_01</p>
-<p class="sub">Blocked by <a href="/nodes/math.functions.slope_01">Explain and calculate slope</a> — pass it first.</p>
+<p class="sub">Blocked by Explain and calculate slope, which is itself waiting on another skill.</p>
 </div>
+</section>
+<section class="section" id="subject-data">
+<div class="section-head">
+<h2 class="section-title">Data</h2>
+<p class="section-meta">17 skills</p>
 </div>
-<div class="card" id="subject-data">
-<div class="kicker">Data</div>
 <div class="card result">
 <p class="lead"><a href="/nodes/data.sql.select_basics_01">Query rows and columns with SELECT</a> <span class="pill ready-to-start">Ready to start</span></p>
 <p class="big">Retrieve specific columns from a table with a basic SELECT statement.</p>
@@ -237,7 +276,7 @@
 <p class="lead">Clean a simple CSV dataset <span class="pill locked">Locked</span></p>
 <p class="big">Handle missing or malformed values in a small CSV file.</p>
 <p class="mut ref">data.csv.clean_simple_dataset_01</p>
-<p class="sub">Blocked by <a href="/nodes/data.csv.read_csv_01">Read a CSV file with Python</a> — pass it first.</p>
+<p class="sub">Blocked by Read a CSV file with Python, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Combine tables with an inner join <span class="pill locked">Locked</span></p>
@@ -293,9 +332,12 @@
 <p class="mut ref">data.csv.write_csv_01</p>
 <p class="sub">Blocked by <a href="/nodes/programming.python.files_01">Read and write files in Python</a> — pass it first.</p>
 </div>
+</section>
+<section class="section" id="subject-programming">
+<div class="section-head">
+<h2 class="section-title">Python</h2>
+<p class="section-meta">14 skills</p>
 </div>
-<div class="card" id="subject-programming">
-<div class="kicker">Python</div>
 <div class="card result">
 <p class="lead"><a href="/nodes/programming.python.variables_01">Use variables and expressions in Python</a> <span class="pill passed">Passed</span></p>
 <p class="big">Create variables, assign values, and use expressions to compute simple results.</p>
@@ -355,7 +397,7 @@
 <p class="lead">Transform sequences with comprehensions <span class="pill locked">Locked</span></p>
 <p class="big">Use list and dictionary comprehensions to map and filter data concisely.</p>
 <p class="mut ref">programming.python.comprehensions_01</p>
-<p class="sub">Blocked by <a href="/nodes/programming.python.lists_loops_01">Use lists and loops in Python</a> — pass it first.</p>
+<p class="sub">Blocked by Use lists and loops in Python, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Use conditionals in Python <span class="pill locked">Locked</span></p>
@@ -367,9 +409,12 @@
 <p class="big">Represent repeated values and process them with loops.</p>
 <p class="mut ref">programming.python.lists_loops_01</p>
 </div>
+</section>
+<section class="section" id="subject-agents">
+<div class="section-head">
+<h2 class="section-title">AI agents</h2>
+<p class="section-meta">12 skills</p>
 </div>
-<div class="card" id="subject-agents">
-<div class="kicker">AI agents</div>
 <div class="card result">
 <p class="lead"><a href="/nodes/agents.concepts.agent_fundamentals_01">Explain what an AI agent is and how tools extend an LLM</a> <span class="pill ready-to-start">Ready to start</span></p>
 <p class="big">Define agent, tool, and action loop; contrast CodeAgents with tool-calling agents.</p>
@@ -408,7 +453,7 @@
 <p class="lead">Deploy an agent behind FastAPI on Engine plus a ZeroGPU Space (capstone) <span class="pill locked">Locked</span></p>
 <p class="big">Ship a LangGraph agent with MCP tools served by FastAPI, checked on Engine-local and hosted on Gradio ZeroGPU.</p>
 <p class="mut ref">agents.capstone.deployed_agent_integration_01</p>
-<p class="sub">Blocked by <a href="/nodes/agents.deploy.docker_engine_build_run_01">Containerize the primer app and pass the Engine smoke check</a> — pass it first.</p>
+<p class="sub">Blocked by Containerize the primer app and pass the Engine smoke check, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Expose a tool through an MCP server and call it from a client <span class="pill locked">Locked</span></p>
@@ -440,9 +485,12 @@
 <p class="mut ref">agents.frameworks.pydanticai_01</p>
 <p class="sub">Blocked by <a href="/nodes/agents.concepts.agent_fundamentals_01">Explain what an AI agent is and how tools extend an LLM</a> — pass it first.</p>
 </div>
+</section>
+<section class="section" id="subject-ml">
+<div class="section-head">
+<h2 class="section-title">Machine learning</h2>
+<p class="section-meta">7 skills</p>
 </div>
-<div class="card" id="subject-ml">
-<div class="kicker">Machine learning</div>
 <div class="card result">
 <p class="lead"><a href="/nodes/ml.framing.ml_workflow_01">Frame an ML task and split data without leakage</a> <span class="pill ready-to-start">Ready to start</span></p>
 <p class="big">Frame a supervised task, choose train/validation/test splits, and name two leakage patterns to avoid.</p>
@@ -463,7 +511,7 @@
 <p class="lead">Train and evaluate logistic regression classifiers <span class="pill locked">Locked</span></p>
 <p class="big">Train logistic regression from scratch and with sklearn, and choose accuracy vs F1 vs ROC-AUC for a given class balance.</p>
 <p class="mut ref">ml.classification.logistic_regression_01</p>
-<p class="sub">Blocked by <a href="/nodes/ml.regression.linear_regression_01">Train and interpret linear regression</a> — pass it first.</p>
+<p class="sub">Blocked by Train and interpret linear regression, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Train and interpret linear regression <span class="pill locked">Locked</span></p>
@@ -475,17 +523,20 @@
 <p class="lead">Train tree ensembles and control overfitting <span class="pill locked">Locked</span></p>
 <p class="big">Train decision trees, random forests, and gradient boosting with sklearn and explain the overfitting controls.</p>
 <p class="mut ref">ml.trees.ensembles_01</p>
-<p class="sub">Blocked by <a href="/nodes/ml.evaluation.validation_metrics_01">Validate models and diagnose bias-variance</a> — pass it first.</p>
+<p class="sub">Blocked by Validate models and diagnose bias-variance, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Validate models and diagnose bias-variance <span class="pill locked">Locked</span></p>
 <p class="big">Run train/validation/test discipline, read validation curves, and apply regularization against overfitting.</p>
 <p class="mut ref">ml.evaluation.validation_metrics_01</p>
-<p class="sub">Blocked by <a href="/nodes/ml.classification.logistic_regression_01">Train and evaluate logistic regression classifiers</a> — pass it first.</p>
+<p class="sub">Blocked by Train and evaluate logistic regression classifiers, which is itself waiting on another skill.</p>
 </div>
+</section>
+<section class="section" id="subject-tooling">
+<div class="section-head">
+<h2 class="section-title">Tooling</h2>
+<p class="section-meta">6 skills</p>
 </div>
-<div class="card" id="subject-tooling">
-<div class="kicker">Tooling</div>
 <div class="card result">
 <p class="lead"><a href="/nodes/tooling.git.repository_basics_01">Create or clone a Git repository</a> <span class="pill ready-to-start">Ready to start</span></p>
 <p class="big">Initialize or clone a repository and inspect its status.</p>
@@ -517,9 +568,12 @@
 <p class="mut ref">tooling.git.commit_workflow_01</p>
 <p class="sub">Blocked by <a href="/nodes/tooling.git.repository_basics_01">Create or clone a Git repository</a> — pass it first.</p>
 </div>
+</section>
+<section class="section" id="subject-communication">
+<div class="section-head">
+<h2 class="section-title">Communication</h2>
+<p class="section-meta">3 skills</p>
 </div>
-<div class="card" id="subject-communication">
-<div class="kicker">Communication</div>
 <div class="card result">
 <p class="lead"><a href="/nodes/communication.readme.basic_readme_01">Write a basic project README</a> <span class="pill ready-to-start">Ready to start</span></p>
 <p class="big">Create a README that explains what a project does and how to run it.</p>
@@ -535,9 +589,12 @@
 <p class="big">Report a finding with its evidence, caveats, and next step.</p>
 <p class="mut ref">communication.reports.results_summary_01</p>
 </div>
+</section>
+<section class="section" id="subject-consolidation">
+<div class="section-head">
+<h2 class="section-title">Consolidation</h2>
+<p class="section-meta">4 skills</p>
 </div>
-<div class="card" id="subject-consolidation">
-<div class="kicker">Consolidation</div>
 <div class="card result">
 <p class="lead"><a href="/nodes/consolidation.data_roundtrip_01">Carry a dataset through a CSV to SQL to Pandas round-trip</a> <span class="pill ready-to-start">Ready to start</span></p>
 <p class="big">Load a CSV, query it with SQL, then reproduce the same answer in Pandas, and confirm the two paths agree.</p>
@@ -558,20 +615,23 @@
 <p class="big">Write a single small program that reads input, holds it in variables, branches and loops, factors work into functions, and reads or writes…</p>
 <p class="mut ref">consolidation.python_fundamentals_01</p>
 </div>
+</section>
+<section class="section" id="subject-portfolio">
+<div class="section-head">
+<h2 class="section-title">Portfolio</h2>
+<p class="section-meta">4 skills</p>
 </div>
-<div class="card" id="subject-portfolio">
-<div class="kicker">Portfolio</div>
 <div class="card result locked">
 <p class="lead">Build a data-cleaning tool portfolio project <span class="pill locked">Locked</span></p>
 <p class="big">Build a small, reusable Python tool that reads a messy CSV, applies documented cleaning rules, writes a clean CSV, and ships with a README…</p>
 <p class="mut ref">portfolio.project.data_cleaning_tool_01</p>
-<p class="sub">Blocked by <a href="/nodes/data.csv.clean_simple_dataset_01">Clean a simple CSV dataset</a> — pass it first.</p>
+<p class="sub">Blocked by Clean a simple CSV dataset, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Build a slope calculator portfolio project <span class="pill locked">Locked</span></p>
 <p class="big">Create a small Python project that calculates slope, handles edge cases, uses Git, and includes a README.</p>
 <p class="mut ref">portfolio.project.slope_calculator_01</p>
-<p class="sub">Blocked by <a href="/nodes/math.functions.slope_01">Explain and calculate slope</a> — pass it first.</p>
+<p class="sub">Blocked by Explain and calculate slope, which is itself waiting on another skill.</p>
 </div>
 <div class="card result locked">
 <p class="lead">Build a statistical simulation portfolio project <span class="pill locked">Locked</span></p>
@@ -585,4 +645,4 @@
 <p class="mut ref">portfolio.project.dataset_analysis_report_01</p>
 <p class="sub">Blocked by <a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> — pass it first.</p>
 </div>
-</div>
+</section>

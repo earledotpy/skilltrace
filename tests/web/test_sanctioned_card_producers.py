@@ -216,8 +216,8 @@ def test_the_blessed_producers_lock_the_anatomy_the_goldens_hold():
     controls = analytics_view._analytics_controls(30, "prefix", "velocity")
     assert controls == (
         '<div class="card analytics-controls"><form method="get" action="/analytics">'
-        '<div class="form-row"><label>Date range</label>'
-        '<select name="days">'
+        '<div class="form-row"><label for="analytics-days">Date range</label>'
+        '<select name="days" id="analytics-days">'
         '<option value="7" >Last 7 days</option>'
         '<option value="30" selected>Last 30 days</option>'
         '<option value="90" >Last 90 days</option>'

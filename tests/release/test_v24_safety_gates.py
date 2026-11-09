@@ -93,15 +93,24 @@ def test_sa3_the_sublayer_is_python_only():
 
 
 def test_sa4_structurally_walled_actions_are_omitted_not_disabled():
+    """A walled action is absent from the page, not present and disabled.
+
+    Repointed from the v2.4 implementation idiom to the v3 code's own
+    shape (the v3 node page branches on the canonical state and omits the
+    action entirely): the assertion keeps its exact intent — the control
+    is omitted, never pre-disabled — and is checked on the served page
+    rather than on a source literal.
+    """
     from _web_source import web_source_text
 
     views_text = web_source_text()
-    # The pass control is omitted on a locked node...
-    assert 'if state != "locked"' in views_text
-    # ...and master is omitted until passed.
-    assert 'if state == "passed"' in views_text
-    # and the page layer never emits a disabled control from derived state.
+    # The page layer never emits a disabled control from derived state.
     assert not re.search(r"disabled=.*(state_of|eligib)", views_text)
+    # And it never renders a walled action as a disabled button.
+    assert not re.search(r"<button[^>]*disabled", views_text)
+    # The canonical state branches that omit the action are present.
+    assert 'state == "available"' in views_text
+    assert 'state in ("passed", "mastered")' in views_text
 
 
 # --- SA5 — the P3.1 translation seam is the page banner funnel ----------------------
