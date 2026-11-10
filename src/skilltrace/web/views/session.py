@@ -105,8 +105,10 @@ def _create_blocker_offer(view, session) -> str:
             + duplicate
             + f'<form method="post" action="/nodes/{_esc(node_id)}/blockers">\n'
             '<input type="hidden" name="next" value="/session">\n'
-            '<div class="form-row"><label>What is in the way</label>\n'
-            '<input type="text" name="description" required></div>\n'
+            '<div class="form-row"><label for="blocker-description">'
+            "What is in the way</label>\n"
+            '<input type="text" name="description" id="blocker-description" '
+            "required></div>\n"
             '<p class="small mut">A blocker records persistent stuckness. It '
             "never resolves itself, never marks work complete and never "
             "passes a skill.</p>\n"

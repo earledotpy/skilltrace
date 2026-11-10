@@ -31,11 +31,13 @@ route                   case
 ``GET /session``       ``session``
 ``GET /session/close`` ``session-close``
 ``GET /nodes/{id}/evidence``  ``node-evidence``
-``GET /evidence``      ``evidence-index``
+``GET /evidence``      ``evidence-index``, ``evidence-inspector``
+                        (``?record=…``), ``evidence-inspector-refusal``
 ``GET /reviews``       ``reviews``
 ``GET /operations``    ``operations``
-``GET /graph``         ``graph``
-``GET /portfolio``     ``portfolio``
+``GET /graph``         ``graph``, ``graph-node`` (``/graph/{id}``)
+``GET /portfolio``     ``portfolio``, ``portfolio-preview``
+                        (``/portfolio/preview``, non-writing)
 ``GET /nodes/{id}``     ``node``
 ``GET /health``         ``health``
 ``GET /analytics``      ``analytics-velocity``, ``-blockers``, ``-reviews``,
@@ -45,6 +47,11 @@ route                   case
 ``GET /nodes/{id}/master/confirm``  ``master-confirm``
 anything else           ``error-404`` (the one unified error body)
 ======================  ==============================================
+
+Every destination in the normative route table (``docs/spec-v3-study-day.md``
+§6) has at least one golden here, and ``test_golden_snapshots_cover_the_
+normative_route_table`` asserts it — so a destination cannot lose its
+byte-level pin without the gate saying so.
 
 The ``/nodes/jump`` path is retired — the discovery destination is
 ``/find`` — and every POST is a write route, not a rendered body; the
@@ -282,12 +289,81 @@ def _pin_execution(path: Path) -> None:
     _write_yaml(path, "execution/remediation_actions.yaml", {"remediation_actions": []})
 
 
+def _pin_evidence(path: Path) -> None:
+    """Author the evidence history the index and the inspector render.
+
+    The seed repository holds no evidence records, so without this the
+    ``/evidence`` golden would only ever pin the empty state — the one state
+    that needs no code. These are authored fixture records (a stand-in
+    learner's history), never the output of an engine write path: one
+    accepted record, one honest rejection, and one correction that
+    supersedes the first, which is what makes derived standing visible.
+    """
+    spec_id = f"spec.{NODE_ACTIVE.removesuffix('_01')}"
+    _write_yaml(
+        path,
+        "evidence/evidence_records.yaml",
+        {
+            "evidence_records": [
+                {
+                    "id": f"ev.{NODE_ACTIVE}.001",
+                    "artifact_spec_id": spec_id,
+                    "location": "evidence/artifacts/data/pandas_basics.py",
+                    "accepted": True,
+                    "accepted_by": "learner_manual",
+                    "artifact_hash": "sha256:" + "1" * 64,
+                    "created_at": _ago(days=5),
+                },
+                {
+                    "id": f"ev.{NODE_ACTIVE}.002",
+                    "artifact_spec_id": spec_id,
+                    "location": "evidence/artifacts/data/pandas_basics.py",
+                    "accepted": False,
+                    "accepted_by": "learner_manual",
+                    "artifact_hash": "sha256:" + "2" * 64,
+                    "created_at": _ago(days=3),
+                    "note": "the revenue column was summed, not listed",
+                },
+                {
+                    "id": f"ev.{NODE_ACTIVE}.003",
+                    "artifact_spec_id": spec_id,
+                    "location": "evidence/artifacts/data/pandas_basics.py",
+                    "accepted": True,
+                    "accepted_by": "learner_manual",
+                    "artifact_hash": "sha256:" + "3" * 64,
+                    "created_at": _ago(days=1),
+                    "supersedes": f"ev.{NODE_ACTIVE}.001",
+                    "supersede_reason": "corrected the region_rows column",
+                },
+            ]
+        },
+    )
+    _write_yaml(
+        path,
+        "execution/events.yaml",
+        {
+            "events": [
+                {
+                    "timestamp": _ago(days=1),
+                    "command": "evidence submit",
+                    "args": {"node_id": NODE_ACTIVE},
+                    "records_touched": [
+                        f"ev.{NODE_ACTIVE}.003",
+                        f"ev.{NODE_ACTIVE}.001",
+                    ],
+                },
+            ]
+        },
+    )
+
+
 def build_pinned_repo(path: Path) -> Path:
     """A read-only seed copy with the learner stores authored and pinned."""
     for dirname in ("graph", "evidence", "policy"):
         shutil.copytree(REPO_ROOT / dirname, path / dirname)
     _pin_progress(path)
     _pin_execution(path)
+    _pin_evidence(path)
     return path
 
 
@@ -401,6 +477,22 @@ CASES: tuple[RouteCase, ...] = (
         lambda r: views.evidence_index_body(r, {}),
     ),
     RouteCase(
+        "evidence-inspector",
+        f"GET /evidence?record=ev.{NODE_ACTIVE}.003",
+        "Evidence",
+        200,
+        lambda r: views.evidence_index_body(
+            r, {"record": [f"ev.{NODE_ACTIVE}.003"]}
+        ),
+    ),
+    RouteCase(
+        "evidence-inspector-refusal",
+        "GET /evidence?record=ev.nowhere.999",
+        "Evidence",
+        200,
+        lambda r: views.evidence_index_body(r, {"record": ["ev.nowhere.999"]}),
+    ),
+    RouteCase(
         "reviews",
         "GET /reviews",
         "Reviews",
@@ -422,11 +514,25 @@ CASES: tuple[RouteCase, ...] = (
         lambda r: views.graph_body(r, {}),
     ),
     RouteCase(
+        "graph-node",
+        f"GET /graph/{NODE_ACTIVE}",
+        "Use basic Pandas DataFrame operations",
+        200,
+        lambda r: views.graph_body(r, {}, node_id=NODE_ACTIVE),
+    ),
+    RouteCase(
         "portfolio",
         "GET /portfolio",
         "Portfolio",
         200,
         lambda r: views.portfolio_body(r, {}),
+    ),
+    RouteCase(
+        "portfolio-preview",
+        "GET /portfolio/preview",
+        "Portfolio",
+        200,
+        lambda r: views.portfolio_body(r, {"preview": ["1"]}),
     ),
     RouteCase("health", "GET /health", "Health", 200, views.health_body),
     RouteCase(
@@ -569,6 +675,42 @@ def test_served_body_matches_its_golden(case: RouteCase, rendered) -> None:
     title, body, status = rendered[case.name]
     assert (title, status) == (case.title, case.status), case.route
     _compare_or_update(case.name, body)
+
+
+def test_golden_snapshots_cover_the_normative_route_table() -> None:
+    """Every §6 destination has at least one golden (ARC-7).
+
+    The goldens are one of the four things the spec repoints at the
+    normative table, so the coverage is asserted rather than eyeballed: a
+    destination with no golden is a route whose bytes nothing pins.
+    """
+    from skilltrace.web.interface import FROZEN_ROUTES
+
+    covered = {case.route.split(" ", 1)[1].split("?")[0] for case in CASES}
+    missing = []
+    for name, frozen in FROZEN_ROUTES.items():
+        if "{" in frozen:
+            prefix = frozen.split("{")[0]
+            found = any(path.startswith(prefix) for path in covered)
+        else:
+            found = frozen in covered
+        if not found:
+            missing.append(f"{name} ({frozen})")
+    assert missing == [], (
+        "destinations with no golden snapshot: " + ", ".join(sorted(missing))
+    )
+
+
+def test_golden_snapshots_cover_the_tables_extra_destinations() -> None:
+    """The table's node-centred graph and non-writing preview are pinned too.
+
+    RT-14 names a node-centred ``/graph/{id}`` and RT-17 a non-writing
+    ``/portfolio/preview``; both are served destinations of the contract even
+    though the frozen constant names their parents.
+    """
+    covered = {case.route.split(" ", 1)[1].split("?")[0] for case in CASES}
+    assert f"/graph/{NODE_ACTIVE}" in covered
+    assert "/portfolio/preview" in covered
 
 
 def test_snapshot_directory_has_no_orphans(rendered) -> None:

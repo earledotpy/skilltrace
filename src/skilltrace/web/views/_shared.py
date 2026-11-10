@@ -166,6 +166,29 @@ def _table(headers: list[str], rows: list[list[str]]) -> str:
 
 
 
+def superseded_ids(view) -> set[str]:
+    """The record ids a newer record supersedes — derived, never stored.
+
+    Supersession is a pointer on the *newer* record (``supersedes``), so the
+    older record's standing is derived on read. One helper serves every
+    surface that shows standing, so two pages cannot disagree about whether
+    a record still counts.
+    """
+    return {r.supersedes for r in view.records if r.supersedes}
+
+
+def record_standing(view, record) -> str:
+    """One record's derived standing: ``live``, ``superseded`` or ``rejected``.
+
+    A rejection is an honest outcome, not a command failure, and a
+    superseded record keeps its place in history — neither is ever deleted
+    (HB-5).
+    """
+    if record.id in superseded_ids(view):
+        return "superseded"
+    return "live" if record.accepted else "rejected"
+
+
 def _session_node_id(view, session) -> str:
     """The SkillNode an open Session is bound to.
 

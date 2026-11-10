@@ -27,7 +27,25 @@ from __future__ import annotations
 
 from ..tokens import root_blocks
 
-__all__ = ["STYLE"]
+__all__ = ["INTERACTIVE_STATES", "STYLE"]
+
+#: The nine interactive states every component defines (VS-5), and the
+#: selector in the served stylesheet that carries each one. The gate in
+#: ``tests/web/test_style_tokens.py`` asserts every selector is present, so
+#: the vocabulary cannot quietly shrink — and "disabled-with-nearby-reason"
+#: is two rules by construction: the dimmed control *and* the words beside it.
+INTERACTIVE_STATES: tuple[tuple[str, str], ...] = (
+    ("rest", ".btn{"),
+    ("hover", ".btn:hover{"),
+    ("focus", ":focus-visible{"),
+    ("active", ".btn:active"),
+    ("selected", '.btn[aria-selected="true"]'),
+    ("disabled", ".btn[disabled]"),
+    ("disabled-with-nearby-reason", ".control-reason"),
+    ("loading", ".loading"),
+    ("refusal", ".control-refusal"),
+    ("failure", ".control-failure"),
+)
 
 
 _COMPONENT_RULES = """
@@ -214,7 +232,6 @@ _COMPONENT_RULES = """
   .btn.primary:hover{filter:brightness(1.08)}
   .btn.secondary{background:transparent; color:var(--text-primary)}
   .btn.master{border-color:var(--mastery-ink); color:var(--mastery-ink)}
-  .btn[disabled]{opacity:.55; cursor:not-allowed}
   .btn-quiet{background:none; border:none; color:var(--text-secondary); padding:var(--space-1)}
   input,select,textarea{
     font:inherit; font-size:var(--text-base);
@@ -232,6 +249,49 @@ _COMPONENT_RULES = """
   .form-row{display:flex; flex-direction:column; gap:var(--space-1); margin-bottom:var(--space-3)}
   .inline-check{display:flex; gap:var(--space-2); align-items:center; flex-wrap:wrap}
   .filters{display:flex; gap:var(--space-3); flex-wrap:wrap; align-items:flex-end}
+
+  /* --- interactive component states (VS-5) ---------------------------- */
+  /* Every interactive component defines nine states: rest, hover, keyboard
+     focus, active/pressed, selected, disabled-with-nearby-reason, loading,
+     refusal and failure. Focus is the one global `:focus-visible` rule
+     above; the rest live here, and the INTERACTIVE_STATES table at the top
+     of this module names them so a gate can prove none went missing. A state
+     that means something carries a word, never colour alone (VS-3, AX-1):
+     the disabled and loading cues are text, and every control keeps its
+     label in every state. */
+  input:hover,select:hover,textarea:hover{border-color:var(--border-strong)}
+  input:active,select:active,textarea:active{border-color:var(--border-strong)}
+  .btn:active,.btn-quiet:active{
+    border-color:var(--border-strong); background:var(--canvas-selected);
+  }
+  /* Selected is marked by weight and surface as well as the label's words:
+     the accent is kept off the selected canvas, where it sits under the text
+     contrast floor (see tests/web/test_a11y_contrast.py). */
+  .btn[aria-pressed="true"],.btn[aria-selected="true"],.btn[aria-current="true"]{
+    border-color:var(--border-strong); background:var(--canvas-selected);
+    font-weight:600;
+  }
+  tr[aria-selected="true"] td,.row.selected{background:var(--canvas-selected)}
+  .btn[disabled],input[disabled],select[disabled],textarea[disabled]{
+    opacity:.55; cursor:not-allowed;
+  }
+  /* The reason a control is unavailable lives beside it, in words. */
+  .control-reason{
+    display:block; margin-top:var(--space-1);
+    color:var(--text-secondary); font-size:var(--text-sm);
+  }
+  /* Loading is a word plus a mark; nothing waits on an animation. */
+  .loading{
+    display:block; color:var(--text-secondary); font-size:var(--text-sm);
+  }
+  .loading::before{content:"\\2026  "}
+  /* A component's own refusal and failure registers, beside the control. */
+  .control-refusal,.control-failure{
+    display:block; margin-top:var(--space-1); padding-left:var(--space-2);
+    border-left:3px solid var(--border-default); font-size:var(--text-sm);
+  }
+  .control-refusal{border-left-color:var(--status-info)}
+  .control-failure{border-left-color:var(--status-failure)}
 
   /* --- status labels: never colour-only (AX-1, VS-3) ------------------ */
   .status-label{

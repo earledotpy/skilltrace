@@ -25,6 +25,7 @@ from ._shared import (
     _esc,
     _table,
 )
+from .sections import section
 from .shell import (
     _page_head,
     _status_page,
@@ -257,9 +258,14 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         + overdue
         + limited
         + advisory
-        + controls
-        + f'<nav class="nav" aria-label="Themes">{theme_links}</nav>'
-        + f'<div class="analytics-grid">{cards}</div>'
+        + section(
+            title,
+            f"{days}-day window, grouped by {group_by}.",
+            controls
+            + f'<nav class="nav" aria-label="Themes">{theme_links}</nav>'
+            + f'<div class="analytics-grid">{cards}</div>',
+            anchor="theme",
+        )
         + tooltip
     )
     return "Analytics", body, 200

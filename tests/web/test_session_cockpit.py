@@ -189,8 +189,12 @@ def test_after_persistent_blocked_work_the_cockpit_offers_to_record_a_blocker(wi
     _, body, _ = views.session_body(with_session)
     assert "Still stuck?" in body
     assert f'action="/nodes/{node_id}/blockers"' in body
-    # The obstacle description is required.
-    assert 'name="description" required' in body
+    # The obstacle description is required, and its control is labelled —
+    # an unassociated label leaves the field unnamed to a screen reader.
+    assert 'name="description"' in body
+    assert "required" in body
+    assert 'for="blocker-description"' in body
+    assert 'id="blocker-description"' in body
     # The copy says what a blocker does not do.
     assert "never resolves itself" in body
 

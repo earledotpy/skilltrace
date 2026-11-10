@@ -284,17 +284,23 @@ def _pin_progress(path: Path) -> None:
 def _pin_execution(path: Path) -> None:
     """Author the execution records: session history, blockers and reviews.
 
-    The fixture has **no open session**: the v3 view layer currently reads
-    ``session.node_id`` off the Session record, which the engine's record
-    shape does not carry, so an open session makes Today and the Study
-    cockpit raise. The gate covers the shipped, renderable surfaces; the
-    open-session defect is recorded in ``tests/web/A11Y_FINDINGS.md``.
+    The fixture carries **one open Session**, with work logged against the
+    active node: that is the product's most important state (Today resumes
+    it, the Study cockpit runs it), and an accessibility gate that skipped it
+    would be measuring the easy half. The bound node is derived from the
+    session's work (``views._shared._session_node_id``), which is what the
+    engine's record shape actually carries — a Session names no node itself.
     """
     _write_yaml(
         path,
         "execution/sessions.yaml",
         {
             "sessions": [
+                {
+                    "id": "ses.a11y.000",
+                    "status": "open",
+                    "started_at": _ago(hours=2),
+                },
                 {
                     "id": "ses.a11y.001",
                     "status": "completed",
@@ -320,8 +326,8 @@ def _pin_execution(path: Path) -> None:
         {
             "session_work": [
                 {
-                    "id": "wk.ses.a11y.001.01",
-                    "session_id": "ses.a11y.001",
+                    "id": "wk.ses.a11y.000.01",
+                    "session_id": "ses.a11y.000",
                     "node_id": NODE_ACTIVE,
                     "created_at": _ago(minutes=90),
                     "notes": "drilled groupby on the sample frame",
@@ -402,12 +408,81 @@ def _pin_execution(path: Path) -> None:
     _write_yaml(path, "execution/remediation_actions.yaml", {"remediation_actions": []})
 
 
+def _pin_evidence(path: Path) -> None:
+    """Author the evidence history: two superseding records and one rejection.
+
+    The repository's own ``evidence/evidence_records.yaml`` is empty, so an
+    accessibility sweep over the seed alone would only ever see the index's
+    empty state. These are *authored fixture records* — a stand-in learner's
+    history, exactly as the progress store is authored — never the output of
+    ``evidence submit`` (no engine write path runs here). They give the gate
+    the populated index, the derived standing (live / superseded / rejected)
+    and the inspector's provenance.
+    """
+    _write_yaml(
+        path,
+        "evidence/evidence_records.yaml",
+        {
+            "evidence_records": [
+                {
+                    "id": f"ev.{NODE_ACTIVE}.001",
+                    "artifact_spec_id": f"spec.{NODE_ACTIVE.removesuffix('_01')}",
+                    "location": "evidence/artifacts/data/pandas_basics.py",
+                    "accepted": True,
+                    "accepted_by": "learner_manual",
+                    "artifact_hash": "sha256:" + "1" * 64,
+                    "created_at": _ago(days=5),
+                },
+                {
+                    "id": f"ev.{NODE_ACTIVE}.002",
+                    "artifact_spec_id": f"spec.{NODE_ACTIVE.removesuffix('_01')}",
+                    "location": "evidence/artifacts/data/pandas_basics.py",
+                    "accepted": False,
+                    "accepted_by": "learner_manual",
+                    "artifact_hash": "sha256:" + "2" * 64,
+                    "created_at": _ago(days=3),
+                    "note": "the revenue column was summed, not listed",
+                },
+                {
+                    "id": f"ev.{NODE_ACTIVE}.003",
+                    "artifact_spec_id": f"spec.{NODE_ACTIVE.removesuffix('_01')}",
+                    "location": "evidence/artifacts/data/pandas_basics.py",
+                    "accepted": True,
+                    "accepted_by": "learner_manual",
+                    "artifact_hash": "sha256:" + "3" * 64,
+                    "created_at": _ago(days=1),
+                    "supersedes": f"ev.{NODE_ACTIVE}.001",
+                    "supersede_reason": "corrected the region_rows column",
+                },
+            ]
+        },
+    )
+    _write_yaml(
+        path,
+        "execution/events.yaml",
+        {
+            "events": [
+                {
+                    "timestamp": _ago(days=1),
+                    "command": "evidence submit",
+                    "args": {"node_id": NODE_ACTIVE},
+                    "records_touched": [
+                        f"ev.{NODE_ACTIVE}.003",
+                        f"ev.{NODE_ACTIVE}.001",
+                    ],
+                },
+            ]
+        },
+    )
+
+
 def build_fixture_repo(path: Path) -> Path:
     """A read-only seed copy with the learner stores authored and pinned."""
     for dirname in ("graph", "evidence", "policy"):
         shutil.copytree(REPO_ROOT / dirname, path / dirname)
     _pin_progress(path)
     _pin_execution(path)
+    _pin_evidence(path)
     return path
 
 
@@ -521,6 +596,15 @@ def route_cases() -> tuple[RouteCase, ...]:
             lambda r: views.evidence_index_body(r, {}),
         ),
         RouteCase(
+            "evidence-inspector",
+            f"GET /evidence?record=ev.{NODE_ACTIVE}.003",
+            "operations",
+            "evidence_index_body",
+            lambda r: views.evidence_index_body(
+                r, {"record": [f"ev.{NODE_ACTIVE}.003"]}
+            ),
+        ),
+        RouteCase(
             "reviews",
             "GET /reviews",
             "guided",
@@ -542,6 +626,13 @@ def route_cases() -> tuple[RouteCase, ...]:
             lambda r: views.graph_body(r, {}),
         ),
         RouteCase(
+            "graph-node",
+            f"GET /graph/{NODE_ACTIVE}",
+            "operations",
+            "graph_body",
+            lambda r: views.graph_body(r, {}, node_id=NODE_ACTIVE),
+        ),
+        RouteCase(
             "health",
             "GET /health",
             "operations",
@@ -561,6 +652,13 @@ def route_cases() -> tuple[RouteCase, ...]:
             "operations",
             "portfolio_body",
             lambda r: views.portfolio_body(r, {}),
+        ),
+        RouteCase(
+            "portfolio-preview",
+            "GET /portfolio/preview",
+            "operations",
+            "portfolio_body",
+            lambda r: views.portfolio_body(r, {"preview": ["1"]}),
         ),
         RouteCase(
             "pass",

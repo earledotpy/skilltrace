@@ -1,0 +1,53 @@
+<header><div class="shell"><h1 class="brand"><a href="/">SkillTrace</a></h1><nav class="nav operations" aria-label="Operations"><span class="section-nav-label">Operations</span><a href="/operations">Operations</a><a href="/graph">Graph</a><a href="/evidence">Evidence</a><a href="/reviews">Reviews</a><a href="/health">Health</a><a href="/analytics">Analytics</a><a href="/portfolio" aria-current="page">Portfolio</a><span class="mode-switch"><span class="nav-label">Mode</span><a href="/portfolio?preview=1&amp;mode=guided">Guided</a><a href="/portfolio?preview=1&amp;mode=operations" aria-current="true">Operations</a></span></nav></div></header>
+<section class="section">
+<div class="section-head">
+<h2 class="section-title">What to include</h2>
+<p class="section-meta">Nothing is shared unless you enable it. The default share profile keeps every dimension out.</p>
+</div>
+<form method="get" action="/portfolio/preview">
+<div class="form-row"><label for="portfolio-track">Track (optional)</label><input type="text" name="track" id="portfolio-track" value=""></div>
+<div class="form-row"><label for="portfolio-format">Format</label><select name="format" id="portfolio-format"><option value="md" selected>md</option><option value="html">html</option><option value="json">json</option></select></div>
+<div class="row"><span class="row-label">File paths</span><span class="row-value">Where each artifact lives</span><span class="row-value"><label><input type="checkbox" name="include_paths" value="1"> include</label></span></div><div class="row"><span class="row-label">Your notes</span><span class="row-value">The notes you wrote on each record</span><span class="row-value"><label><input type="checkbox" name="include_notes" value="1"> include</label></span></div><div class="row"><span class="row-label">Free text</span><span class="row-value">Unstructured text you typed</span><span class="row-value"><label><input type="checkbox" name="include_free_text" value="1"> include</label></span></div><div class="row"><span class="row-label">External links</span><span class="row-value">Links to resources outside the repo</span><span class="row-value"><label><input type="checkbox" name="include_urls" value="1"> include</label></span></div><div class="row"><span class="row-label">Work in progress</span><span class="row-value">Skills you started but did not pass</span><span class="row-value"><label><input type="checkbox" name="include_active" value="1"> include</label></span></div><div class="row"><span class="row-label">Rejected evidence</span><span class="row-value">Evidence that did not pass</span><span class="row-value"><label><input type="checkbox" name="include_rejected" value="1"> include</label></span></div><div class="row"><span class="row-label">Superseded evidence</span><span class="row-value">Evidence replaced by a later record</span><span class="row-value"><label><input type="checkbox" name="include_superseded" value="1"> include</label></span></div><div class="row"><span class="row-label">Blockers</span><span class="row-value">What you recorded as stuck</span><span class="row-value"><label><input type="checkbox" name="include_blockers" value="1"> include</label></span></div><div class="row"><span class="row-label">Reviews</span><span class="row-value">Your retention-check history</span><span class="row-value"><label><input type="checkbox" name="include_reviews" value="1"> include</label></span></div><div class="command-bar"><div class="actions"><button type="submit">Preview</button></div></div>
+</form>
+</section>
+<section class="section">
+<h2 class="section-title">Redactions</h2>
+<div class="state state-empty">
+<p class="state-title">Nothing extra is included</p>
+<p class="state-body">Every redaction dimension is off. The export carries the selection only.</p>
+</div>
+</section>
+<section class="section">
+<h2 class="section-title">Export</h2>
+<div class="banner advisory">An export is a dated, disposable snapshot. It is not live truth — it does not update, and the web cannot reopen it as your current state.</div>
+<form method="post" action="/portfolio/export">
+<input type="hidden" name="next" value="/portfolio">
+<input type="hidden" name="format" value="md">
+<div class="command-bar"><div class="actions"><button type="submit" class="btn primary">Export this snapshot</button></div></div>
+</form>
+</section>
+<section class="section">
+<div class="section-head">
+<h2 class="section-title">Preview</h2>
+<p class="section-meta">Exactly what the export would contain. Nothing was written — this preview creates no bundle.</p>
+</div>
+<pre class="mono"># Portfolio
+
+Generated: 2026-11-17T00:00:00Z
+Selection: all tracks (1 node(s))
+
+[honesty] This portfolio contains stale resources, unverified claims. Review before sharing.
+
+[redacted] artifact paths hidden by the share profile (pass --include-paths to reveal).
+[redacted] learner notes hidden by the share profile (pass --include-notes to reveal).
+[redacted] blocker descriptions hidden by the share profile (pass --include-blockers to reveal).
+[redacted] review notes hidden by the share profile (pass --include-reviews to reveal).
+[redacted] free-text fields hidden by the share profile (pass --include-free-text to reveal).
+[redacted] URLs hidden by the share profile (pass --include-urls to reveal).
+
+## Use variables and expressions in Python (programming.python.variables_01) — passed
+
+| Evidence | Location |
+| --- | --- |
+| (none) | - |
+</pre></section>

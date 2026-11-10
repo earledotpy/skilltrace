@@ -61,11 +61,12 @@ def _start_confirm_form(
 
 def _work_form_fields() -> str:
     return (
-        '<div class="form-row"><label>Notes</label>'
-        '<textarea name="notes"></textarea>'
+        '<div class="form-row"><label for="work-notes">Notes</label>'
+        '<textarea name="notes" id="work-notes"></textarea>'
         '<p class="small mut">What you did — shown in history and the week view.</p></div>'
-        '<div class="form-row"><label>Minutes '
-        '<input type="number" name="minutes" min="1" style="max-width:7rem"></label>'
+        '<div class="form-row"><label for="work-minutes">Minutes</label>'
+        '<input type="number" name="minutes" id="work-minutes" min="1" '
+        'style="max-width:7rem">'
         '<p class="small mut">How long you worked, in minutes.</p></div>'
         '<div class="form-row inline-check">'
         '<label><input type="checkbox" name="blocked" value="1"> ended stuck '
@@ -75,12 +76,13 @@ def _work_form_fields() -> str:
 
 def _resolve_blocker_form(blocker_id: str, next_url: str = "/") -> str:
     """Resolve affordance on each open-blocker row (G5): summary required."""
+    field = f"blocker-summary-{blocker_id}"
     return (
         "<details><summary>Resolve</summary>"
         f'<form method="post" action="/blockers/{_esc(blocker_id)}/resolve">'
         f'<input type="hidden" name="next" value="{_esc(next_url)}">'
-        '<div class="form-row"><label>Resolution summary</label>'
-        '<input type="text" name="summary" required>'
+        f'<div class="form-row"><label for="{_esc(field)}">Resolution summary</label>'
+        f'<input type="text" name="summary" id="{_esc(field)}" required>'
         '<p class="small mut">What unblocked you — one line for the record.</p></div>'
         '<button type="submit" class="btn secondary">Clear blocker</button></form></details>'
     )
