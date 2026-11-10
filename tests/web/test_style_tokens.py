@@ -151,3 +151,67 @@ def test_cards_are_not_the_default_layout_primitive() -> None:
     # a card.
     assert 'class="section"' in views._STYLE or ".section{" in views._STYLE
     assert ".card{" in views._STYLE
+
+
+# --- the interactive state vocabulary (VS-5) ----------------------------------
+
+
+def _rule(selector: str) -> str:
+    """The body of one rule from the served stylesheet ("" when absent)."""
+    match = re.search(re.escape(selector) + r"\{([^}]*)\}", views._STYLE)
+    return match.group(1) if match else ""
+
+
+def test_every_interactive_state_is_defined() -> None:
+    """Rest, hover, focus, active, selected, disabled, loading, refusal, failure.
+
+    VS-5 requires the whole set of every interactive component, so the
+    vocabulary is a declared table rather than a hope: a state that loses its
+    rule fails here, by name.
+    """
+    from skilltrace.web.views.styles import INTERACTIVE_STATES
+
+    names = [name for name, _selector in INTERACTIVE_STATES]
+    assert names == [
+        "rest",
+        "hover",
+        "focus",
+        "active",
+        "selected",
+        "disabled",
+        "disabled-with-nearby-reason",
+        "loading",
+        "refusal",
+        "failure",
+    ]
+    for name, selector in INTERACTIVE_STATES:
+        assert selector in views._STYLE, f"the {name} state has no rule ({selector})"
+
+
+def test_a_disabled_control_carries_its_reason_beside_it() -> None:
+    """Disabled is not refusal: the reason lives beside the control, in words."""
+    assert _rule(".control-reason") != ""
+    assert "var(--text-secondary)" in _rule(".control-reason")
+    # The disabled control itself is dimmed, never colour-coded as a status.
+    assert "opacity:.55" in views._STYLE
+    assert ".btn[disabled]" in views._STYLE
+
+
+def test_the_loading_state_is_text_not_animation() -> None:
+    """Nothing waits on an animation or a spinner (AX-6, VS-9)."""
+    loading = _rule(".loading")
+    assert loading != ""
+    assert "animation" not in loading
+    assert ".loading::before" in views._STYLE
+
+
+def test_a_components_refusal_and_failure_are_their_own_registers() -> None:
+    """A control's refusal is not its failure, and neither is page state."""
+    assert ".control-refusal{border-left-color:var(--status-info)}" in views._STYLE
+    assert ".control-failure{border-left-color:var(--status-failure)}" in views._STYLE
+
+
+def test_the_selected_state_is_marked_by_more_than_colour() -> None:
+    """A selected region is marked by the accent *and* its own words (VS-3)."""
+    assert '.btn[aria-selected="true"]' in views._STYLE
+    assert 'tr[aria-selected="true"]' in views._STYLE

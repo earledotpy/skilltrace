@@ -30,6 +30,7 @@ from pathlib import Path
 import pytest
 from a11y_harness import (
     AXE_DRIVER,
+    NODE_ACTIVE,
     AxeToolchain,
     build_fixture_repo,
     ensure_axe_toolchain,
@@ -150,6 +151,33 @@ def test_the_route_table_covers_every_served_body() -> None:
         f"the route table covers {sorted(covered)} but the view package "
         f"publishes {sorted(published)}"
     )
+
+
+def test_the_route_table_covers_every_normative_destination() -> None:
+    """Every §6 destination is in the gate's route table (ARC-7).
+
+    The gate's route list is one of the four things the spec repoints at the
+    normative table. A destination the spec names but the gate never renders
+    would be an unchecked surface that looks exactly like a clean one.
+    """
+    from skilltrace.web.interface import FROZEN_ROUTES
+
+    covered = {case.route.split(" ", 1)[1].split("?")[0] for case in route_cases()}
+    missing = []
+    for name, frozen in FROZEN_ROUTES.items():
+        if "{" in frozen:
+            prefix = frozen.split("{")[0]
+            found = any(path.startswith(prefix) for path in covered)
+        else:
+            found = frozen in covered
+        if not found:
+            missing.append(f"{name} ({frozen})")
+    assert missing == [], (
+        "destinations the a11y gate never renders: " + ", ".join(sorted(missing))
+    )
+    # The table's two extra served paths (RT-14 node-centred, RT-17 preview).
+    assert f"/graph/{NODE_ACTIVE}" in covered
+    assert "/portfolio/preview" in covered
 
 
 def test_the_wcag_aa_rule_sets_are_the_ones_asked_for() -> None:

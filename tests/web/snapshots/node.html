@@ -5,7 +5,7 @@
 <p class="section-meta">One skill in your curriculum.</p>
 </div>
 <div class="rows">
-<div class="row"><span class="row-label">State</span><span class="row-value"><span class="pill active">Active</span></span></div><div class="row"><span class="row-label">What this skill is</span><span class="row-value">Load, inspect, filter, and summarize tabular data with Pandas.</span></div><div class="row"><span class="row-label">Subject</span><span class="row-value">data &middot; foundational</span></div><div class="row"><span class="row-label">Evidence wanted</span><span class="row-value">1 required specification, 1 record wanted</span></div><div class="row"><span class="row-label">Evidence recorded</span><span class="row-value">Nothing has been submitted for this skill yet.</span></div></div>
+<div class="row"><span class="row-label">State</span><span class="row-value"><span class="pill active">Active</span></span></div><div class="row"><span class="row-label">What this skill is</span><span class="row-value">Load, inspect, filter, and summarize tabular data with Pandas.</span></div><div class="row"><span class="row-label">Subject</span><span class="row-value">data &middot; foundational</span></div><div class="row"><span class="row-label">Evidence wanted</span><span class="row-value">1 required specification, 1 record wanted</span></div><div class="row"><span class="row-label">Evidence recorded</span><span class="row-value">1 accepted, 1 rejected, 1 superseded</span></div></div>
 
 </section>
 <section class="section">
@@ -23,7 +23,7 @@
 <form method="post" action="/work">
 <input type="hidden" name="node_id" value="data.pandas.dataframe_basics_01">
 <input type="hidden" name="next" value="/nodes/data.pandas.dataframe_basics_01">
-<div class="form-row"><label>Notes</label><textarea name="notes"></textarea><p class="small mut">What you did — shown in history and the week view.</p></div><div class="form-row"><label>Minutes <input type="number" name="minutes" min="1" style="max-width:7rem"></label><p class="small mut">How long you worked, in minutes.</p></div><div class="form-row inline-check"><label><input type="checkbox" name="blocked" value="1"> ended stuck (blocked requires notes)</label></div><button type="submit" class="btn primary">Log work here</button>
+<div class="form-row"><label for="work-notes">Notes</label><textarea name="notes" id="work-notes"></textarea><p class="small mut">What you did — shown in history and the week view.</p></div><div class="form-row"><label for="work-minutes">Minutes</label><input type="number" name="minutes" id="work-minutes" min="1" style="max-width:7rem"><p class="small mut">How long you worked, in minutes.</p></div><div class="form-row inline-check"><label><input type="checkbox" name="blocked" value="1"> ended stuck (blocked requires notes)</label></div><button type="submit" class="btn primary">Log work here</button>
 </form>
 <h3>Where this skill leads</h3>
 <div class="command-bar">
@@ -37,7 +37,7 @@
 </div>
 <p class="section-meta">Passing and mastering are separate, explicit decisions. Each one is confirmed on its own panel &mdash; nothing here records them for you.</p>
 <h3>Blockers on this skill</h3>
-<table class="data"><caption>What is in the way / Resolve</caption><thead><tr><th scope="col">What is in the way</th><th scope="col">Resolve</th></tr></thead><tbody><tr><td>groupby output keeps surprising me</td><td><details><summary>Resolve</summary><form method="post" action="/blockers/blk.snapshot.001/resolve"><input type="hidden" name="next" value="/nodes/data.pandas.dataframe_basics_01"><div class="form-row"><label>Resolution summary</label><input type="text" name="summary" required><p class="small mut">What unblocked you — one line for the record.</p></div><button type="submit" class="btn secondary">Clear blocker</button></form></details></td></tr></tbody></table><p class="section-meta">A blocker is an explicit record that you are stuck. Resolving it changes no node state and passes nothing.</p>
+<table class="data"><caption>What is in the way / Resolve</caption><thead><tr><th scope="col">What is in the way</th><th scope="col">Resolve</th></tr></thead><tbody><tr><td>groupby output keeps surprising me</td><td><details><summary>Resolve</summary><form method="post" action="/blockers/blk.snapshot.001/resolve"><input type="hidden" name="next" value="/nodes/data.pandas.dataframe_basics_01"><div class="form-row"><label for="blocker-summary-blk.snapshot.001">Resolution summary</label><input type="text" name="summary" id="blocker-summary-blk.snapshot.001" required><p class="small mut">What unblocked you — one line for the record.</p></div><button type="submit" class="btn secondary">Clear blocker</button></form></details></td></tr></tbody></table><p class="section-meta">A blocker is an explicit record that you are stuck. Resolving it changes no node state and passes nothing.</p>
 
 </section>
 <section class="section">
@@ -81,7 +81,7 @@
 <h2 class="section-title">Evidence wanted</h2>
 <p class="section-meta">The proof this skill asks for, before any work begins.</p>
 </div>
-<table class="data"><caption>What you show / Kind / Requirement / Minimum / Accepted / Description</caption><thead><tr><th scope="col">What you show</th><th scope="col">Kind</th><th scope="col">Requirement</th><th scope="col">Minimum</th><th scope="col">Accepted</th><th scope="col">Description</th></tr></thead><tbody><tr><td>Pandas DataFrame basics solution script</td><td>code_snippet</td><td>required</td><td>1</td><td>0</td><td>Required evidence for data.pandas.dataframe_basics_01: a solution script defining column_names, total_revenue, and region_rows over a DataFrame.</td></tr></tbody></table><p class="section-meta">Only required specifications count toward passing. An optional specification is additional, never an eligibility gap.</p>
+<table class="data"><caption>What you show / Kind / Requirement / Minimum / Accepted / Description</caption><thead><tr><th scope="col">What you show</th><th scope="col">Kind</th><th scope="col">Requirement</th><th scope="col">Minimum</th><th scope="col">Accepted</th><th scope="col">Description</th></tr></thead><tbody><tr><td>Pandas DataFrame basics solution script</td><td>code_snippet</td><td>required</td><td>1</td><td>1</td><td>Required evidence for data.pandas.dataframe_basics_01: a solution script defining column_names, total_revenue, and region_rows over a DataFrame.</td></tr></tbody></table><p class="section-meta">Only required specifications count toward passing. An optional specification is additional, never an eligibility gap.</p>
 
 </section>
 <section class="section">
@@ -99,11 +99,7 @@
 <h2 class="section-title">Evidence recorded</h2>
 <p class="section-meta">What has been submitted for this skill.</p>
 </div>
-<div class="state state-empty">
-<p class="state-title">Nothing recorded yet</p>
-<p class="state-body">No evidence has been submitted for this skill. That is a fact about the record, not a problem with you.</p>
-</div>
-
+<table class="data"><caption>Artifact / Verdict / Standing / Location / Submitted / Accepted by</caption><thead><tr><th scope="col">Artifact</th><th scope="col">Verdict</th><th scope="col">Standing</th><th scope="col">Location</th><th scope="col">Submitted</th><th scope="col">Accepted by</th></tr></thead><tbody><tr><td>Pandas DataFrame basics solution script</td><td>accepted</td><td>superseded</td><td>evidence/artifacts/data/pandas_basics.py</td><td>2026-11-12T09:00:00+00:00</td><td>learner_manual</td></tr><tr><td>Pandas DataFrame basics solution script</td><td>rejected</td><td>rejected</td><td>evidence/artifacts/data/pandas_basics.py</td><td>2026-11-14T09:00:00+00:00</td><td>learner_manual</td></tr><tr><td>Pandas DataFrame basics solution script</td><td>accepted</td><td>live</td><td>evidence/artifacts/data/pandas_basics.py</td><td>2026-11-16T09:00:00+00:00</td><td>learner_manual</td></tr></tbody></table>
 </section>
 <section class="section">
 <div class="section-head">

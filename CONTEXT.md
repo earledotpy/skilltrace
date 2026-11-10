@@ -545,3 +545,30 @@ absent rather than shown as a break. It never affects eligibility,
 ranking, recommendation order, or advisory pressure, and it never appears
 in a refusal.
 
+## Product shell (v3)
+
+**Guided mode** — the presentation register for ordinary study: today's
+priorities, the Session, work, evidence, passing and mastering, Reviews.
+It is navigation and presentation context, never domain state: it changes
+register and section navigation, never a fact, a meaning, a term or an
+outcome, and no action exists in one mode that the other refuses.
+
+**Operations mode** — the presentation register for engine inspection over
+the same facts: the graph, the evidence history, Reviews, Health, analytics
+and the portfolio. Canonical identifiers, record types, gate detail and
+event provenance are labelled technical detail here. It is the same
+learner, the same truth and the same commands as Guided mode.
+
+**Contextual inspector** — the Operations region that shows one selected
+fact in detail: the canonical record, the SkillNode and requirement it
+belongs to, the gate that judged it, and its event provenance. It has no
+destination of its own; it renders inside the screen that owns the fact,
+reads the engine, and writes nothing. Its opinion is never an acceptance
+authority.
+
+**Selected context** — the one fact a screen currently has picked out for
+the contextual inspector, carried on that screen's URL so a shared or
+reloaded link reproduces exactly what was seen. It is presentation context:
+never a record type, never a learner command, never eligibility or progress,
+and never stored.
+
