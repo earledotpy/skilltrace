@@ -46,15 +46,19 @@ st close
 
 ---
 
-## 2. Using the Local Web Dashboard (`st ui`)
+## 2. Using the Local Web Dashboard (`./start.sh` or `st serve`)
 
 If you prefer a visual interface alongside your code editor or terminal, SkillTrace includes a built-in, stdlib-pure localhost web server:
 
 ```bash
-st ui
-# or explicitly:
-skilltrace serve --port 8341
+./start.sh     # one step: serves this repository and opens the browser
+st serve       # the same server from the command line (`st ui` is an alias)
+st serve --port 8341   # an explicit port; fails fast if it is already taken
 ```
+
+`./start.sh` is the entry point to reach for: it pins the root to the repository
+it lives in, reuses an instance already serving that same repository, and
+otherwise walks past a busy port instead of stopping. Ctrl+C ends it either way.
 
 This launches your default browser at `http://127.0.0.1:8341` with a zero-JavaScript, server-rendered dashboard:
 

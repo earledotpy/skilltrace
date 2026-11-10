@@ -62,6 +62,10 @@ enter only as seed data and policy values, never as engine code.
 - `execution/` — sessions, work, blockers, remediation, reviews, event log
 - `policy/` — hard-boundary and advisory policy values (seed data)
 - `release/` — release manifest, tests, criteria
+- `start.sh` — the single launch program (issue #366): pins the root to this
+  repository, reuses an instance already serving it, otherwise walks past a
+  busy port; hands off to `serve` through the dispatcher. Not a CLI command —
+  `st --help` never lists it (`src/skilltrace/web/launch.py`).
 - `src/skilltrace/` — installable CLI+web engine (dispatcher registry;
   web-only sublayer at `web/interface/`; mentor/advisory seam). The v0.1
   `compiler/` scaffold it replaced was retired in v0.4; its interface-layer

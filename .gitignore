@@ -5,6 +5,9 @@ __pycache__/
 build/
 dist/
 .pytest_cache/
+# The environment `./start.sh` looks for (docs/INSTALL.md step 2). A
+# convention, not an invariant — but never tracked.
+.venv/
 
 # Derived, disposable data (invariant / decision 12): never read back by the engine
 data/
