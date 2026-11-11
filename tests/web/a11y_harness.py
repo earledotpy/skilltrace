@@ -40,6 +40,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import yaml
+from today_fixtures import build_today_variant
 
 from skilltrace.web import views
 
@@ -558,6 +559,36 @@ def route_cases() -> tuple[RouteCase, ...]:
     """
     return (
         RouteCase("home", "GET /", "guided", "home_body", lambda r: views.home_body(r, {})),
+        # The named Today states (§10.1, SC-00a): the same fixtures the
+        # golden suite pins, so axe scans every state the page can render.
+        RouteCase(
+            "home-empty",
+            "GET /",
+            "guided",
+            "home_body",
+            lambda r: views.home_body(build_today_variant(r, "empty"), {}),
+        ),
+        RouteCase(
+            "home-limited",
+            "GET /",
+            "guided",
+            "home_body",
+            lambda r: views.home_body(build_today_variant(r, "limited"), {}),
+        ),
+        RouteCase(
+            "home-stale",
+            "GET /",
+            "guided",
+            "home_body",
+            lambda r: views.home_body(build_today_variant(r, "stale"), {}),
+        ),
+        RouteCase(
+            "home-refusal",
+            "GET /",
+            "guided",
+            "home_body",
+            lambda r: views.home_body(build_today_variant(r, "refusal"), {}),
+        ),
         RouteCase("next", "GET /next", "guided", "next_body", lambda r: views.next_body(r, {})),
         RouteCase("find", "GET /find", "guided", "finder_body", lambda r: views.finder_body(r, {})),
         RouteCase(
