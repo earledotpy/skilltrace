@@ -85,7 +85,7 @@ from ..discovery import (
     discover,
     discovery_page_cards,
 )
-from ..health import derive_study_guidance, guidance_page_cards
+from ..health import derive_study_guidance, guidance_page_cards, rhythm_facts
 from ..interface.affordances import intent_label
 from ..interface.cards import ActiveViewState, Affordance, Card, view_by_name
 from ..interface.handoff import handoff_html
@@ -96,6 +96,20 @@ from ..interface.translate import rich_cards as _rich_cards_from_model
 # resolve on the facade, so a consumer never has to reach into a
 # module to find one. The private helpers are re-exported for the same
 # reason the public ones are — the union is the surface.
+from ._readiness import (  # noqa: F401
+    ASSERTED_STATES,
+    derive_readiness,
+    every_skill_locked,
+    hard_prerequisite_sources,
+    stale_readiness,
+    stale_readiness_panel,
+)
+from ._reasons import (  # noqa: F401
+    DEFAULT_MINUTES,
+    downstream_count,
+    facts_for,
+    reason_for,
+)
 from ._shared import (  # noqa: F401  # noqa: F401
     _CANONICAL_STATE_LABELS,
     _degraded_banner,
@@ -289,11 +303,27 @@ from .styles import (  # noqa: F401
     root_blocks,
 )
 from .today import (  # noqa: F401  # noqa: F401
+    MINUTES,
+    _Action,
+    _blocker_item,
+    _derivation_state,
+    _discovery_section,
+    _empty_day_state,
+    _Item,
     _open_blocker_records,
     _overdue_reviews,
     _pass_eligible_node,
+    _pass_item,
     _queue_item,
+    _queue_items,
     _queue_section,
+    _recommendation_item,
+    _refusal_state,
+    _review_item,
+    _session_item,
+    _study_day_section,
+    _unavailable_parts,
+    _unavailable_state,
     home_body,
 )
 from .writes import (  # noqa: F401
@@ -322,11 +352,13 @@ from .writes import (  # noqa: F401
 # half of it: the names a consumer may import, and the private
 # helpers the package's own modules share.
 __all__ = [
+    "ASSERTED_STATES",
     "Affordance",
     "AnalyticsParams",
     "BARE",
     "Card",
     "Context",
+    "DEFAULT_MINUTES",
     "DiscoveryCard",
     "EMPTY",
     "ENTRY_NODES",
@@ -365,17 +397,22 @@ __all__ = [
     "dataclass",
     "derive_analytics",
     "derive_next",
+    "derive_readiness",
     "derive_status",
     "derive_study_guidance",
     "discover",
     "discovery_page_cards",
     "dispatch",
+    "downstream_count",
+    "every_skill_locked",
     "evidence_index_body",
     "evidence_inspector",
+    "facts_for",
     "field",
     "finder_body",
     "graph_body",
     "guidance_page_cards",
+    "hard_prerequisite_sources",
     "health_body",
     "health_report",
     "home_body",
@@ -410,12 +447,14 @@ __all__ = [
     "post_start",
     "post_work",
     "re",
+    "reason_for",
     "record_standing",
     "redirect_stdout",
     "render",
     "render_discovery_cards",
     "render_guidance_cards",
     "reviews_body",
+    "rhythm_facts",
     "root_blocks",
     "route_default_mode",
     "section",
@@ -423,10 +462,13 @@ __all__ = [
     "session_body",
     "session_close_body",
     "sparkline_svg",
+    "stale_readiness",
+    "stale_readiness_panel",
     "superseded_ids",
     "tooltip_script",
     "urlencode",
     "utc_today",
+
 ]
 
 # The structured section data the pages render from (ADR 0006

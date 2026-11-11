@@ -25,7 +25,11 @@ Routes covered (the router in ``web/handler.py`` serves exactly these bodies):
 ======================  ==============================================
 route                   case
 ======================  ==============================================
-``GET /``               ``home``
+``GET /``               ``home``; plus the named Today states (§10.1,
+                        SC-00a) ``today-empty``, ``today-limited``,
+                        ``today-stale`` and ``today-refusal``, each the
+                        served body of ``/`` for one reshaped fixture
+                        repo (``tests/web/today_fixtures.py``)
 ``GET /next``           ``next``, ``next-locked`` (``?locked=1``)
 ``GET /find``          ``finder``, ``finder-query`` (``?q=…``)
 ``GET /session``       ``session``
@@ -78,6 +82,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from today_fixtures import build_today_variant
 
 from skilltrace.web import views
 
@@ -423,6 +428,36 @@ class RouteCase:
 
 CASES: tuple[RouteCase, ...] = (
     RouteCase("home", "GET /", "Today", 200, lambda r: views.home_body(r, {})),
+    # The named Today states (§10.1, SC-00a): each is the served body of `/`
+    # for one reshaped fixture repo, so the golden pins the state's bytes.
+    RouteCase(
+        "today-empty",
+        "GET /",
+        "Today",
+        200,
+        lambda r: views.home_body(build_today_variant(r, "empty"), {}),
+    ),
+    RouteCase(
+        "today-limited",
+        "GET /",
+        "Today",
+        200,
+        lambda r: views.home_body(build_today_variant(r, "limited"), {}),
+    ),
+    RouteCase(
+        "today-stale",
+        "GET /",
+        "Today",
+        200,
+        lambda r: views.home_body(build_today_variant(r, "stale"), {}),
+    ),
+    RouteCase(
+        "today-refusal",
+        "GET /",
+        "Today",
+        200,
+        lambda r: views.home_body(build_today_variant(r, "refusal"), {}),
+    ),
     RouteCase("next", "GET /next", "Next", 200, lambda r: views.next_body(r, {})),
     RouteCase(
         "next-locked",

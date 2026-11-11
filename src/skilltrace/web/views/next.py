@@ -25,11 +25,11 @@ A progress store whose readiness no longer matches the curriculum is
 reported as a recovery prompt: the dependency is named, never hidden
 behind silence.
 
-**Why the helpers are nested.** The ``web.views`` facade freezes every
-module-level name (ADR 0009); a new top-level helper here would have to be
-re-exported by a facade this slice may not touch. The page-local helpers
-therefore live inside the functions that use them, and the engine seams
-they need are imported where they are used.
+**Why some helpers are nested.** The page-local pieces (``controls``,
+``waiting_on``) close over this request's ``view`` and query. The
+cross-surface helpers — the human reasons and the stale-readiness
+derivation — live in the shared ``_reasons`` / ``_readiness`` modules, so
+``/next`` and Today can never drift apart on the facts they state.
 """
 
 from __future__ import annotations
@@ -38,6 +38,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 from ...commands.recommend import derive_next
+from . import _readiness, _reasons
 from ._shared import (
     _esc,
     _normalize_pill_label,
@@ -93,79 +94,17 @@ def _candidate_stack(
 
     The first item is the dominant action of the page (VS-6): one visually
     dominant action at a time, never two. Every item is a *target* — a link
-    to the skill — and every item states why it sits where it does.
+    to the skill — and every item states why it sits where it does. The
+    reasons come from the shared ``_reasons`` helpers, so ``/next`` and
+    Today state the same facts about the same skill.
     """
-
-    def downstream_count(node_id: str) -> int:
-        """How many other skills are waiting on this one.
-
-        The honest form of the ranker's leverage term: only the active hard
-        prerequisites count, because only those make a skill wait. The
-        relationship comes from the edge file alone (HB-8).
-        """
-        return sum(
-            1
-            for edge in view.edges
-            if edge.active
-            and edge.edge_type == "hard_prerequisite"
-            and edge.source == node_id
-        )
-
-    def facts_for(rec) -> list[str]:
-        """The contributing conditions behind one item's rank.
-
-        Each fact is a derived condition the learner can check for
-        themselves; nothing here is a score, a weight or a flag name.
-        """
-        facts: list[str] = []
-        if rec.is_active:
-            facts.append("You have already started it, so it comes first.")
-        if minutes <= 30:
-            if rec.fits_session:
-                facts.append(f"It fits a {minutes}-minute session.")
-            else:
-                facts.append(f"It does not fit a {minutes}-minute session.")
-        if rec.prereq_reviews_due:
-            facts.append(
-                "A skill you have already passed is fading below retention, "
-                "and this one builds on it."
-            )
-        if rec.open_blocked:
-            facts.append("You have an open blocker recorded on it.")
-        if rec.remediation_boosted:
-            facts.append("It is a remediation step for a skill you are stuck on.")
-        if rec.agent_boosted:
-            facts.append("An advisory signal ranks it higher than the rest.")
-        waiting = downstream_count(rec.node_id)
-        if waiting:
-            facts.append(
-                f"{waiting} other skill{plural(waiting)} "
-                f'{"is" if waiting == 1 else "are"} waiting on it.'
-            )
-        return facts
-
-    def reason_for(rec, facts: list[str]) -> str:
-        """One honest sentence: why this skill sits where it does."""
-        lead = (
-            "You have already started it"
-            if rec.is_active
-            else "It is available now"
-        )
-        others = [
-            fact for fact in facts if not fact.startswith("You have already started")
-        ]
-        if not others:
-            if only_candidate and not rec.is_active:
-                return "It is the only skill available to start right now."
-            return f"{lead} and nothing is holding it up."
-        return f"{lead}, and " + ", and ".join(others) + "."
 
     items: list[str] = []
     for index, rec in enumerate(model.recommendations[:limit]):
         title = view.titles.get(rec.node_id) or "Another skill"
         state = view.store.state_of(rec.node_id)
-        facts = facts_for(rec)
-        reason = reason_for(rec, facts)
+        facts = _reasons.facts_for(view, rec, minutes=minutes)
+        reason = _reasons.reason_for(rec, facts, only_candidate=only_candidate)
         cls = "queue-item dominant" if index == 0 else "queue-item"
         tone = "info" if state == "active" else "neutral"
         action_class = "btn primary" if index == 0 else "btn secondary"
@@ -306,30 +245,6 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
             "</section>\n"
         )
 
-    def stale_readiness() -> list[str]:
-        """The skills whose saved readiness no longer matches the curriculum.
-
-        The readiness rule is the engine's, not the page's: the page asks
-        the engine what each skill's readiness *would* be and compares it
-        with what is saved. Asserted progress is never compared — a refresh
-        never moves it.
-        """
-        from ...graph.readiness import derive_readiness
-        from ...graph.state import ASSERTED_STATES
-
-        sources: dict[str, list[str]] = {}
-        for edge in view.edges:
-            if edge.active and edge.edge_type == "hard_prerequisite":
-                sources.setdefault(edge.target, []).append(edge.source)
-        stale: list[str] = []
-        for node in view.nodes:
-            current = view.store.state_of(node.id)
-            if current in ASSERTED_STATES:
-                continue
-            if derive_readiness(node.id, sources, view.store) != current:
-                stale.append(node.id)
-        return stale
-
     # --- the controls the learner set ---------------------------------------
     if minutes is None or limit is None or minutes < 1 or limit < 1:
         body = (
@@ -442,23 +357,14 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
         )
 
     # --- the stale-readiness recovery prompt ---------------------------------
-    stale = stale_readiness()
-    recovery = ""
-    if stale:
-        recovery = (
-            '<div class="state state-recovery">\n'
-            '<p class="state-title">Your saved readiness is out of date</p>\n'
-            f'<p class="state-body">The curriculum changed since your '
-            f"readiness was last computed, so {len(stale)} skill"
-            f"{plural(len(stale))} may be shown as locked or available "
-            "incorrectly. Refreshing readiness happens on the command line — "
-            "this page never changes your saved readiness, and a refresh never "
-            "moves your recorded progress: active, passed and mastered stay "
-            "exactly as they are.</p>\n"
-            '<p class="state-body">Refresh your readiness, then '
-            f'<a href="{_esc(next_url(minutes, limit))}">reload this list</a>.</p>\n'
-            "</div>\n"
-        )
+    # One shared panel, so /next and Today name the dependency identically:
+    # refreshing readiness happens on the command line, and this page never
+    # changes saved readiness.
+    recovery = _readiness.stale_readiness_panel(
+        view,
+        reload_href=next_url(minutes, limit),
+        reload_label="reload this list",
+    )
 
     body = (
         head

@@ -169,11 +169,38 @@ def _gaps_card(view: JoinedView) -> GuidanceCard:
     )
 
 
-def _rhythm_card(view: JoinedView, today: date) -> tuple[GuidanceCard, str | None]:
-    """Study rhythm — the days-practiced mirror plus logged-work context.
+@dataclass(frozen=True)
+class StudyRhythm:
+    """The study-rhythm figures a day view reports (spec-v3-study-day §10.1).
 
-    Returns the card and, when the session count sits under the soft data
-    threshold, the limited-data line that replaces any below-target advisory.
+    ``days_practiced`` is the lifetime mirror (CONTEXT.md *Days practiced*);
+    the window counts feed the soft-data threshold (``min_sessions_for_full_data``
+    from ``policy/analytics.yaml``) that decides whether the figures are
+    *limited*. One derivation serves Health's Study-rhythm card and Today's
+    study-day counts, so the two surfaces can never disagree about a count
+    (R7: numbers are truthful and consistent across surfaces).
+    """
+
+    days_practiced: int
+    sessions_in_window: int
+    work_items_in_window: int
+    window_days: int
+    min_sessions: int
+
+    @property
+    def limited(self) -> bool:
+        """True when the window holds fewer sessions than the policy threshold."""
+        return self.sessions_in_window < self.min_sessions
+
+
+def rhythm_facts(view: JoinedView, today: date) -> StudyRhythm:
+    """The study-rhythm figures, derived once from the joined view.
+
+    The single derivation behind Health's Study-rhythm card and Today's
+    study-day counts (AC: counts on Today agree with the destination views
+    and the fixture they were derived from). Policy values come off the
+    joined view's ``policy`` accessor, exactly as every other surface reads
+    them — never a second read of the policy seed.
     """
     policy = view.policy.analytics_policy
     window_days = (
@@ -181,7 +208,6 @@ def _rhythm_card(view: JoinedView, today: date) -> tuple[GuidanceCard, str | Non
         if policy.default_window_days >= 1
         else WINDOW_DAYS_FALLBACK
     )
-    min_sessions = policy.min_sessions_for_full_data
     cutoff = date.fromordinal(today.toordinal() - window_days)
     sessions_in_window = [
         s for s in view.sessions if (parse_date(s.started_at) or date.min) >= cutoff
@@ -189,23 +215,39 @@ def _rhythm_card(view: JoinedView, today: date) -> tuple[GuidanceCard, str | Non
     work_in_window = [
         w for w in view.work if (parse_date(w.created_at) or date.min) >= cutoff
     ]
-    if len(sessions_in_window) < min_sessions:
+    return StudyRhythm(
+        days_practiced=days_practiced(view.sessions, view.work),
+        sessions_in_window=len(sessions_in_window),
+        work_items_in_window=len(work_in_window),
+        window_days=window_days,
+        min_sessions=policy.min_sessions_for_full_data,
+    )
+
+
+def _rhythm_card(view: JoinedView, today: date) -> tuple[GuidanceCard, str | None]:
+    """Study rhythm — the days-practiced mirror plus logged-work context.
+
+    Returns the card and, when the session count sits under the soft data
+    threshold, the limited-data line that replaces any below-target advisory.
+    """
+    rhythm = rhythm_facts(view, today)
+    if rhythm.limited:
         limited = (
-            f"Limited data ({len(sessions_in_window)} sessions) — "
+            f"Limited data ({rhythm.sessions_in_window} sessions) — "
             "counts may not reflect your full activity."
         )
     else:
         limited = None
     why = (
-        f"Logged {len(work_in_window)} work item{plural(len(work_in_window))} "
-        "this window."
+        f"Logged {rhythm.work_items_in_window} work "
+        f"item{plural(rhythm.work_items_in_window)} this window."
     )
     return (
         GuidanceCard(
             title="Study rhythm",
             why=why,
             notes=(
-                f"Days practiced: {days_practiced(view.sessions, view.work)}.",
+                f"Days practiced: {rhythm.days_practiced}.",
                 RHYTHM_MIRROR,
             ),
         ),
