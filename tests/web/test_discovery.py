@@ -121,6 +121,8 @@ def test_next_every_item_carries_a_human_readable_reason_for_its_rank(repo):
         assert reason.strip()
         # A sentence in the learner's language — no ranker internals.
         assert reason[0].isupper()
+        # A fact joins the sentence mid-clause, so it reads as a clause.
+        assert ", and You" not in reason
         for internals in ("weight", "score", "track ", "leverage", "policy boost"):
             assert internals not in reason.lower(), reason
 
@@ -270,6 +272,25 @@ def test_find_search_controls_are_labelled_get_controls(repo):
     assert 'name="state"' in body
 
 
+def test_find_empty_curriculum_explains_the_source_and_recovery(writable_repo):
+    for node in (writable_repo / "graph" / "nodes").glob("*.md"):
+        node.unlink()
+    (writable_repo / "graph" / "edges.yaml").write_text("edges: []\n", encoding="utf-8")
+    (writable_repo / "graph" / "state.yaml").write_text("progress: {}\n", encoding="utf-8")
+
+    body = _find(writable_repo)
+
+    assert 'class="state state-empty"' in body
+    assert "There are no skills to search yet" in body
+    assert "The curriculum contains no skills" in body
+    assert "not about you" not in body
+    assert '<a href="/find">Reload Find a skill</a>' in body
+    # No dead chrome: a search form whose every option is absent would be a
+    # misleading control over an empty curriculum.
+    assert '<form class="filters"' not in body
+    assert "find-q" not in body
+
+
 def test_find_results_have_their_own_url(repo):
     body = _find(repo, q="sql select")
     # The search text is carried in the form, so the result set is a URL.
@@ -314,6 +335,21 @@ def test_find_no_results_preserves_discovery(repo):
     # And the browse index stays on the page.
     assert 'id="browse"' in body
     assert 'href="#browse"' in body
+
+
+def test_find_no_results_never_links_a_locked_foundation(writable_repo):
+    _set_all_states(writable_repo, "available")
+    path = writable_repo / "graph" / "state.yaml"
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    doc["progress"][ORDER_OPERATIONS]["state"] = "locked"
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+    body = _find(writable_repo, q="xyzzyplugh")
+    empty = body[body.index('<div class="state state-empty">') : body.index("</div>", body.index('<div class="state state-empty">'))]
+
+    assert f'href="/nodes/{ORDER_OPERATIONS}"' not in empty
+    assert _titles(writable_repo)[ORDER_OPERATIONS] in empty
+    assert "Locked" in empty
 
 
 def test_find_locked_results_are_explanation_not_targets(repo):

@@ -1,0 +1,55 @@
+<header><div class="shell"><h1 class="brand"><a href="/">SkillTrace</a></h1><nav class="nav guided" aria-label="Guided"><span class="section-nav-label">Guided</span><a href="/">Today</a><a href="/next">Next</a><a href="/find" aria-current="page">Find a skill</a><span class="mode-switch"><span class="nav-label">Mode</span><a href="/find?q=xyzzyplugh&amp;mode=guided" aria-current="true">Guided</a><a href="/find?q=xyzzyplugh&amp;mode=operations">Operations</a></span></nav></div></header>
+<section class="section">
+<div class="section-head">
+<h2 class="section-title">Find a skill</h2>
+<p class="section-meta">Search the whole curriculum. Your search is a link — reload it, share it, or come back to it with the back button.</p>
+</div>
+<form class="filters" method="get" action="/find">
+<div class="form-row"><label for="find-q">Search skills</label><input id="find-q" type="search" name="q" value="xyzzyplugh" size="32"></div>
+<div class="form-row"><label for="find-subject">Subject</label><select id="find-subject" name="subject"><option value="">Every subject</option>
+<option value="math">Math</option>
+<option value="data">Data</option>
+<option value="programming">Python</option>
+<option value="agents">AI agents</option>
+<option value="ml">Machine learning</option>
+<option value="tooling">Tooling</option>
+<option value="communication">Communication</option>
+<option value="consolidation">Consolidation</option>
+<option value="portfolio">Portfolio</option>
+</select></div>
+<div class="form-row"><label for="find-state">State</label><select id="find-state" name="state"><option value="">Any state</option>
+<option value="available">Available</option>
+<option value="active">Active</option>
+<option value="passed">Passed</option>
+<option value="mastered">Mastered</option>
+<option value="locked">Locked</option>
+</select></div>
+<div class="actions"><button class="btn secondary" type="submit">Search</button></div>
+</form>
+</section>
+<section class="section">
+<div class="state state-empty">
+<p class="state-title">No skills match</p>
+<p class="state-body">Nothing came back — nothing in the curriculum matches “xyzzyplugh”. That is a fact about the curriculum, not about you. The whole curriculum is still open to you: start from a foundations entry, or browse by subject below.</p>
+<p class="state-body">Foundations entries:</p>
+<ul><li><a href="/nodes/math.arithmetic.order_operations_01">Apply order of operations</a></li><li><a href="/nodes/data.sql.select_basics_01">Query rows and columns with SELECT</a></li><li><a href="/nodes/programming.python.variables_01">Use variables and expressions in Python</a></li></ul>
+<p><a href="#browse">Browse by subject</a> — or <a href="/find">clear the search and start again</a>.</p>
+</div>
+</section>
+<section class="section" id="browse">
+<div class="section-head">
+<h2 class="section-title">Browse by subject</h2>
+<p class="section-meta">Every subject in the curriculum. Each link is a filter of its own, so a subject has its own addressable URL.</p>
+</div>
+<ul><li><a href="/find?subject=math">Math</a></li>
+<li><a href="/find?subject=data">Data</a></li>
+<li><a href="/find?subject=programming">Python</a></li>
+<li><a href="/find?subject=agents">AI agents</a></li>
+<li><a href="/find?subject=ml">Machine learning</a></li>
+<li><a href="/find?subject=tooling">Tooling</a></li>
+<li><a href="/find?subject=communication">Communication</a></li>
+<li><a href="/find?subject=consolidation">Consolidation</a></li>
+<li><a href="/find?subject=portfolio">Portfolio</a></li>
+</ul>
+<table class="data"><caption>Subject / Skills</caption><thead><tr><th scope="col">Subject</th><th scope="col">Skills</th></tr></thead><tbody><tr><td>Math</td><td>33</td></tr><tr><td>Data</td><td>17</td></tr><tr><td>Python</td><td>14</td></tr><tr><td>AI agents</td><td>12</td></tr><tr><td>Machine learning</td><td>7</td></tr><tr><td>Tooling</td><td>6</td></tr><tr><td>Communication</td><td>3</td></tr><tr><td>Consolidation</td><td>4</td></tr><tr><td>Portfolio</td><td>4</td></tr></tbody></table>
+</section>

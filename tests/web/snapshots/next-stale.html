@@ -1,0 +1,106 @@
+<header><div class="shell"><h1 class="brand"><a href="/">SkillTrace</a></h1><nav class="nav guided" aria-label="Guided"><span class="section-nav-label">Guided</span><a href="/">Today</a><a href="/next" aria-current="page">Next</a><a href="/find">Find a skill</a><span class="mode-switch"><span class="nav-label">Mode</span><a href="/next?mode=guided" aria-current="true">Guided</a><a href="/next?mode=operations">Operations</a></span></nav></div></header>
+<section class="section">
+<div class="section-head">
+<h2 class="section-title">Your next steps</h2>
+<p class="section-meta">A short, ranked list for the time you have. Change the time or the number of options and the list changes — the result is a link you can reload, share or come back to.</p>
+</div>
+<form class="filters" method="get" action="/next">
+<div class="form-row"><label for="next-minutes">How much time do you have (minutes)</label><input id="next-minutes" type="number" name="minutes" value="60" min="1" size="4"></div>
+<div class="form-row"><label for="next-limit">How many ideas do you want</label><input id="next-limit" type="number" name="limit" value="5" min="1" size="3"></div>
+<div class="actions"><button class="btn secondary" type="submit">Update the list</button></div>
+</form>
+</section>
+<section class="section">
+<div class="state state-recovery">
+<p class="state-title">Your saved readiness is out of date</p>
+<p class="state-body">The curriculum changed since your readiness was last computed, so 4 skills may be shown as locked or available incorrectly. Refreshing readiness happens on the command line — this page never changes your saved readiness, and a refresh never moves your recorded progress: active, passed and mastered stay exactly as they are.</p>
+<p class="state-body">Refresh your readiness, then <a href="/next?minutes=60&amp;limit=5">reload this list</a>.</p>
+</div>
+</section>
+<section class="section">
+<div class="section-head">
+<h2 class="section-title">Study targets</h2>
+<p class="section-meta">Ranked for the time you have. Each one tells you why it is here.</p>
+</div>
+<ul class="queue">
+<li class="queue-item dominant">
+<p class="queue-title"><a href="/nodes/data.pandas.dataframe_basics_01">Use basic Pandas DataFrame operations</a> <span class="status-label info">Active</span></p>
+<p class="queue-why">You have already started it, and you have an open blocker recorded on it, and 5 other skills are waiting on it.</p>
+<div class="queue-actions"><a class="btn primary" href="/nodes/data.pandas.dataframe_basics_01">Open this skill</a></div>
+<details class="disclosure">
+<summary>Why this?</summary>
+<p class="state-body">You have already started it, and you have an open blocker recorded on it, and 5 other skills are waiting on it.</p>
+<ul><li>You have already started it, so it comes first.</li><li>You have an open blocker recorded on it.</li><li>5 other skills are waiting on it.</li></ul>
+<p class="mut">Advisory policies reorder recommendations; they never block a human-initiated action.</p>
+</details>
+
+</li>
+<li class="queue-item">
+<p class="queue-title"><a href="/nodes/programming.python.functions_01">Define and call Python functions</a> <span class="status-label neutral">Available</span></p>
+<p class="queue-why">It is available now, and 1 other skill is waiting on it.</p>
+<div class="queue-actions"><a class="btn secondary" href="/nodes/programming.python.functions_01">Open this skill</a></div>
+<details class="disclosure">
+<summary>Why this?</summary>
+<p class="state-body">It is available now, and 1 other skill is waiting on it.</p>
+<ul><li>1 other skill is waiting on it.</li></ul>
+<p class="mut">Advisory policies reorder recommendations; they never block a human-initiated action.</p>
+</details>
+
+</li>
+<li class="queue-item">
+<p class="queue-title"><a href="/nodes/data.sql.select_basics_01">Query rows and columns with SELECT</a> <span class="status-label neutral">Available</span></p>
+<p class="queue-why">It is available now, and 4 other skills are waiting on it.</p>
+<div class="queue-actions"><a class="btn secondary" href="/nodes/data.sql.select_basics_01">Open this skill</a></div>
+<details class="disclosure">
+<summary>Why this?</summary>
+<p class="state-body">It is available now, and 4 other skills are waiting on it.</p>
+<ul><li>4 other skills are waiting on it.</li></ul>
+<p class="mut">Advisory policies reorder recommendations; they never block a human-initiated action.</p>
+</details>
+
+</li>
+<li class="queue-item">
+<p class="queue-title"><a href="/nodes/math.statistics.probability_basics_01">Compute basic probabilities</a> <span class="status-label neutral">Available</span></p>
+<p class="queue-why">It is available now, and 3 other skills are waiting on it.</p>
+<div class="queue-actions"><a class="btn secondary" href="/nodes/math.statistics.probability_basics_01">Open this skill</a></div>
+<details class="disclosure">
+<summary>Why this?</summary>
+<p class="state-body">It is available now, and 3 other skills are waiting on it.</p>
+<ul><li>3 other skills are waiting on it.</li></ul>
+<p class="mut">Advisory policies reorder recommendations; they never block a human-initiated action.</p>
+</details>
+
+</li>
+<li class="queue-item">
+<p class="queue-title"><a href="/nodes/math.statistics.descriptive_stats_01">Summarize a dataset with descriptive statistics</a> <span class="status-label neutral">Available</span></p>
+<p class="queue-why">It is available now and nothing is holding it up.</p>
+<div class="queue-actions"><a class="btn secondary" href="/nodes/math.statistics.descriptive_stats_01">Open this skill</a></div>
+<details class="disclosure">
+<summary>Why this?</summary>
+<p class="state-body">It is available now and nothing is holding it up.</p>
+<p class="state-body">Nothing about this skill is holding it up. It is available, and it is on the list because it can be started now.</p>
+<p class="mut">Advisory policies reorder recommendations; they never block a human-initiated action.</p>
+</details>
+
+</li>
+</ul>
+<p class="section-meta">There are more options than shown. <a href="/next?minutes=60&amp;limit=20">Show more of them</a>.</p>
+</section>
+<section class="section">
+<div class="section-head">
+<h2 class="section-title">Not ready yet</h2>
+<p class="section-meta">These skills are waiting on another skill. They are not on your list, and they cannot be started yet.</p>
+</div>
+<div class="rows">
+<div class="row"><span class="row-label">Deploy an agent behind FastAPI on Engine plus a ZeroGPU Space (capstone)</span><span class="row-value">waiting on Orchestrate a stateful graph with LangGraph and persistence (Locked), Containerize the primer app and pass the Engine smoke check (Locked)</span></div>
+<div class="row"><span class="row-label">Explain what an AI agent is and how tools extend an LLM</span><span class="row-value">its readiness looks out of date — refresh your readiness and it will be placed correctly</span></div>
+<div class="row"><span class="row-label">Build a small RAG pipeline with LlamaIndex retrievers</span><span class="row-value">waiting on Explain what an AI agent is and how tools extend an LLM (Locked)</span></div>
+<div class="row"><span class="row-label">Containerize the primer app and pass the Engine smoke check</span><span class="row-value">waiting on <a href="/nodes/agents.deploy.fastapi_minimal_01">Serve a minimal FastAPI app with interactive docs</a> (Available)</span></div>
+<div class="row"><span class="row-label">Orchestrate a stateful graph with LangGraph and persistence</span><span class="row-value">waiting on Explain what an AI agent is and how tools extend an LLM (Locked)</span></div>
+<div class="row"><span class="row-label">Run an agent team with Microsoft Agent Framework workflows</span><span class="row-value">waiting on Explain what an AI agent is and how tools extend an LLM (Locked)</span></div>
+<div class="row"><span class="row-label">Delegate a task with OpenAI Agents SDK handoffs and guardrails</span><span class="row-value">waiting on Explain what an AI agent is and how tools extend an LLM (Locked)</span></div>
+<div class="row"><span class="row-label">Ship a typed agent with PydanticAI tools and test-model evals</span><span class="row-value">waiting on Explain what an AI agent is and how tools extend an LLM (Locked)</span></div>
+</div>
+<p class="section-meta">44 more skills are waiting on another skill — <a href="/find">find them in the curriculum</a>.</p>
+
+</section>

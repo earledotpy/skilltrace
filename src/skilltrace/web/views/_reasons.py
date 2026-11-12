@@ -89,7 +89,7 @@ def reason_for(rec, facts: list[str], *, only_candidate: bool = False) -> str:
         else "It is available now"
     )
     others = [
-        fact.rstrip(".")
+        fact.rstrip(".")[:1].lower() + fact.rstrip(".")[1:]
         for fact in facts
         if not fact.startswith("You have already started")
     ]
