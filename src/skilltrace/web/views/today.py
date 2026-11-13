@@ -52,7 +52,7 @@ from ...evidence.eligibility import compute_eligibility
 from ...execution.overdue import is_overdue, utc_today
 from ...execution.records import open_session
 from ..health import rhythm_facts
-from ._readiness import every_skill_locked, stale_readiness_panel
+from ._readiness import every_skill_locked, stale_readiness_section
 from ._reasons import facts_for, reason_for
 from ._shared import _esc, _session_node_id
 from .sections import BARE, section
@@ -331,7 +331,7 @@ def _empty_day_state() -> str:
     body = (
         "There is no open session, nothing is past its date, and no skill "
         "is ready to pass right now. That is a fact about what is "
-        "available, not a problem with you. Everything you have already "
+        "available, not about you. Everything you have already "
         "finished stays finished."
     )
     return (
@@ -503,7 +503,7 @@ def home_body(root, query: dict | None = None) -> tuple[str, str, int]:
 
     body = (
         head
-        + stale_readiness_panel(view, reload_href="/", reload_label="reload this page")
+        + stale_readiness_section(view, reload_href="/", reload_label="reload this page")
         + _queue_section(
             items,
             unavailable=_unavailable_parts(degraded),

@@ -337,6 +337,10 @@ def test_no_raw_record_ids_on_all_routes(repo):
         ("next /next", views.next_body(repo, {})[1]),
         (f"node /nodes/{node_id}", views.node_body(repo, node_id)[1]),
         ("health /health", views.health_body(repo)[1]),
+        # Guided Find is learner prose too — its default presentation. The
+        # Operations presentation is the sanctioned raw-id context (R1), so
+        # it is deliberately not scanned here.
+        ("find /find (guided)", views.finder_body(repo, {"mode": ["guided"]})[1]),
     ]
     for route_name, html in routes:
         prose = _prose_outside_code(html)

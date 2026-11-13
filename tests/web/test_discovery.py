@@ -6,12 +6,16 @@ The v3 contract for the two discovery routes:
   carrying an honest, human-readable reason for its rank — no scores, no
   weights, no flags, no identifiers. Locked skills appear only as
   explanation, never as selectable targets. The empty, limited and
-  could-not-compute states each say something true, and a stale readiness
+  could-not-compute states each say something true — the empty reason is
+  derived from the records, never a fixed sentence — and a stale readiness
   store is reported as a recovery prompt rather than hidden.
 * **Find a skill** searches the whole curriculum through labelled GET
   controls whose result set has its own URL — reloadable, shareable and
   reachable with the back button. A query that matches nothing explains
-  itself and keeps discovery alive instead of dead-ending.
+  itself and keeps discovery alive instead of dead-ending. The Guided
+  presentation carries no raw identifier anywhere (R1); the id survives in
+  Operations mode and in the URL. A curriculum that is genuinely empty and
+  a source that cannot be read are two states, never merged (SC-00a).
 
 The golden cases at the end pin the populated, empty and limited shapes of
 Next and the no-results shape of Find, so a change of copy or structure
@@ -27,6 +31,12 @@ from pathlib import Path
 
 import pytest
 import yaml
+from discovery_fixtures import build_discovery_variant
+from fixture_repo import (
+    finish_every_startable_skill,
+    fresh_learner_store,
+)
+from today_fixtures import build_today_variant
 
 from skilltrace.context import load_context_lenient
 from skilltrace.web import views
@@ -118,13 +128,21 @@ def test_next_every_item_carries_a_human_readable_reason_for_its_rank(repo):
         why = re.search(r'<p class="queue-why">(.*?)</p>', item, re.S)
         assert why, item
         reason = why.group(1)
-        assert reason.strip()
-        # A sentence in the learner's language — no ranker internals.
+        # A sentence in the learner's language — one sentence, no ranker
+        # internals, and no fact spliced in with its capital letter still
+        # on (a fact joins mid-clause, so it must read as a clause).
         assert reason[0].isupper()
-        # A fact joins the sentence mid-clause, so it reads as a clause.
+        assert reason.endswith(".")
         assert ", and You" not in reason
+        assert "  " not in reason
         for internals in ("weight", "score", "track ", "leverage", "policy boost"):
             assert internals not in reason.lower(), reason
+        # The ``Why this?`` disclosure carries the same facts in their
+        # standalone sentence form — closed, and led by a capital or a
+        # number (a count-led fact has no capital to take).
+        for fact in re.findall(r"<li>(.*?)</li>", item, re.S):
+            assert fact[0].isupper() or fact[0].isdigit(), fact
+            assert fact.endswith("."), fact
 
 
 def test_next_keeps_the_why_this_disclosure(repo):
@@ -181,14 +199,33 @@ def test_next_list_is_bounded(repo):
 
 
 def test_next_empty_state_is_authoritative_and_offers_recovery(writable_repo):
-    _set_all_states(writable_repo, "passed")
+    finish_every_startable_skill(writable_repo)
     body = _next(writable_repo)
     assert 'class="state state-empty"' in body
-    # The reason is authoritative: it says what is and is not recommendable.
+    # The reason is authoritative: it says what is and is not recommendable,
+    # from the counts that make it true — every startable skill finished.
     assert "Nothing is recommendable right now" in body
-    assert "No skill is available or active" in body
+    view = load_context_lenient(writable_repo)
+    assert f"finished every one of the {len(view.nodes)} skills" in body
+    # The window plays no part in the empty reason: the limited state is the
+    # one that speaks for the window.
+    assert "60-minute session" not in body
     # The recovery path keeps discovery alive.
     assert '<a href="/find">Find a skill</a>' in body
+    # The assurance is the one wording every discovery surface shares.
+    assert "not about you." in body
+    assert "not a problem with you" not in body
+
+
+def test_next_empty_reason_covers_the_waiting_world_too(writable_repo):
+    # A one-skill curriculum whose only skill is locked (the same repo shape
+    # as the Today refusal fixture): nothing is recommendable, and this time
+    # the reason is the waiting half, not the finished half.
+    repo = build_today_variant(writable_repo, "refusal")
+    body = _next(repo)
+    assert 'class="state state-empty"' in body
+    assert "None of the 1 skill in the curriculum can be started yet" in body
+    assert "waiting on a skill you have not finished" in body
 
 
 def test_next_limited_state_retains_the_values_and_states_the_threshold(repo):
@@ -272,23 +309,46 @@ def test_find_search_controls_are_labelled_get_controls(repo):
     assert 'name="state"' in body
 
 
-def test_find_empty_curriculum_explains_the_source_and_recovery(writable_repo):
-    for node in (writable_repo / "graph" / "nodes").glob("*.md"):
-        node.unlink()
-    (writable_repo / "graph" / "edges.yaml").write_text("edges: []\n", encoding="utf-8")
-    (writable_repo / "graph" / "state.yaml").write_text("progress: {}\n", encoding="utf-8")
-
-    body = _find(writable_repo)
+def test_find_empty_curriculum_explains_the_source_and_recovery(repo):
+    body = _find(build_discovery_variant(repo, "finder-empty"))
 
     assert 'class="state state-empty"' in body
     assert "There are no skills to search yet" in body
     assert "The curriculum contains no skills" in body
-    assert "not about you" not in body
+    # The assurance is the one wording every discovery surface shares.
+    assert "not about you." in body
+    # The vocabulary is the curriculum's own: no unlabelled "source" talk.
+    assert "skill source" not in body
+    assert "curriculum source" not in body
     assert '<a href="/find">Reload Find a skill</a>' in body
     # No dead chrome: a search form whose every option is absent would be a
     # misleading control over an empty curriculum.
     assert '<form class="filters"' not in body
     assert "find-q" not in body
+
+
+def test_find_a_missing_curriculum_source_is_a_failure_not_an_empty_state(
+    repo,
+):
+    """A missing graph/nodes/ directory is could-not-compute, never empty.
+
+    The loader answers an empty list for a missing source directory, so
+    without the distinction the failure would present itself as "the
+    curriculum contains no skills" — a fact the page does not know.
+    """
+    body = _find(build_discovery_variant(repo, "finder-source-missing"))
+
+    assert 'class="state state-failure"' in body
+    assert "The curriculum could not be read" in body
+    assert "graph/nodes/" in body
+    # It claims nothing about the curriculum itself.
+    assert "The curriculum contains no skills" not in body
+    assert 'class="state state-empty"' not in body
+    # No dead chrome here either.
+    assert '<form class="filters"' not in body
+    # A precise recovery path.
+    assert 'href="/health"' in body
+    assert "reload Find a skill" in body
 
 
 def test_find_results_have_their_own_url(repo):
@@ -314,15 +374,33 @@ def test_find_state_filter_narrows_the_result_set_and_says_what_it_hid(repo):
     body = _find(repo, state="locked")
     assert 'class="state state-limited"' in body
     assert "The state filter is what hides them" in body
-    assert "Locked" in body
+    # Locked results render as the locked card, explanation only.
+    assert '<span class="pill locked">Locked</span>' in body
 
 
 def test_find_searches_the_whole_curriculum(repo):
     body = _find(repo, q="python")
     assert "python" in body.lower()
     # Matches come from more than one subject — the search is not one folder.
-    subjects = set(re.findall(r'<p class="mut ref">([a-z_]+)\.', body))
+    subjects = set(re.findall(r'href="/nodes/([a-z]+)\.', body))
     assert len(subjects) >= 2
+
+
+def test_find_guided_carries_no_raw_identifier_anywhere(repo):
+    """R1: Guided prose names skills; raw ids survive only as labelled
+    technical data in Operations mode."""
+    guided = _find(repo)
+    assert '<p class="mut ref">' not in guided
+    # The whole browse half is Guided prose too.
+    browse = guided[guided.index("Browse by subject") :]
+    assert '<p class="mut ref">' not in browse
+    # The default query state is Guided as well.
+    queried = _find(repo, q="order of operations")
+    assert '<p class="mut ref">' not in queried
+    assert "The skill identifier is shown in grey" not in queried
+    operations = _find(repo, mode="operations", q="order of operations")
+    assert f'<p class="mut ref">{ORDER_OPERATIONS}</p>' in operations
+    assert "The skill identifier is shown in grey" in operations
 
 
 def test_find_no_results_preserves_discovery(repo):
@@ -337,19 +415,40 @@ def test_find_no_results_preserves_discovery(repo):
     assert 'href="#browse"' in body
 
 
-def test_find_no_results_never_links_a_locked_foundation(writable_repo):
-    _set_all_states(writable_repo, "available")
-    path = writable_repo / "graph" / "state.yaml"
+def test_find_no_results_never_links_a_locked_foundation(tmp_path):
+    fresh = tmp_path / "repo"
+    for dirname in ("graph", "evidence", "policy"):
+        shutil.copytree(REPO_ROOT / dirname, fresh / dirname)
+    fresh_learner_store(fresh)  # a fresh learner's derived states
+    path = fresh / "graph" / "state.yaml"
     doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     doc["progress"][ORDER_OPERATIONS]["state"] = "locked"
     path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
 
-    body = _find(writable_repo, q="xyzzyplugh")
+    body = _find(fresh, q="xyzzyplugh")
     empty = body[body.index('<div class="state state-empty">') : body.index("</div>", body.index('<div class="state state-empty">'))]
 
     assert f'href="/nodes/{ORDER_OPERATIONS}"' not in empty
-    assert _titles(writable_repo)[ORDER_OPERATIONS] in empty
-    assert "Locked" in empty
+    assert _titles(fresh)[ORDER_OPERATIONS] in empty
+    # The locked entry carries the full explanation, not just the word.
+    assert "(Locked — waiting on another skill)" in empty
+
+
+def test_find_stale_readiness_prompts_a_safe_refresh(writable_repo):
+    _add_hard_prerequisite(
+        writable_repo,
+        source=ORDER_OPERATIONS,
+        target=SELECT_BASICS,
+    )
+    body = _find(writable_repo)
+    assert 'class="state state-recovery"' in body
+    assert "readiness is out of date" in body
+    # The dependency is named, not hidden behind silence, and the refresh is
+    # safe: it never moves recorded progress.
+    assert "command line" in body
+    assert "never moves your recorded progress" in body
+    # The recovery link reloads the same addressable result.
+    assert "reload this result" in body
 
 
 def test_find_locked_results_are_explanation_not_targets(repo):
@@ -379,9 +478,10 @@ def test_find_shows_the_readable_title_not_the_identifier(repo):
     card = re.findall(r'<div class="card result[^"]*">.*?</div>', body, re.S)[0]
     titles = _titles(repo)
     assert titles[ORDER_OPERATIONS] in card
-    # The raw identifier survives only as labelled secondary technical data.
-    assert f'<p class="mut ref">{ORDER_OPERATIONS}</p>' in card
-    assert "The skill identifier is shown in grey" in body
+    # Guided prose carries the title only — no identifier line (R1); the id
+    # survives in the link's URL, which is navigation, never prose.
+    assert '<p class="mut ref">' not in card
+    assert f">{ORDER_OPERATIONS}<" not in card
 
 
 def test_find_selection_navigates_only(repo):
@@ -416,13 +516,13 @@ def test_golden_next_populated(repo):
 
 
 def test_golden_next_empty(writable_repo):
-    _set_all_states(writable_repo, "passed")
+    finish_every_startable_skill(writable_repo)
     body = _next(writable_repo)
     empty = body[body.index('<div class="state state-empty">') :]
     assert empty.startswith(
         '<div class="state state-empty">\n'
         '<p class="state-title">Nothing is recommendable right now</p>\n'
-        '<p class="state-body">No skill is available or active for a '
+        '<p class="state-body">You have finished every one of the '
     )
     assert '<a href="/find">Find a skill</a>' in empty
 
@@ -452,13 +552,12 @@ def test_golden_find_no_results(repo):
 
 # --- helpers that edit the fixture ---------------------------------------------
 
-
-def _set_all_states(root: Path, state: str) -> None:
-    path = root / "graph" / "state.yaml"
-    doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {"progress": {}}
-    for entry in doc.get("progress", {}).values():
-        entry["state"] = state
-    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+# The store-level edits live in ``fixture_repo`` (shared with the fixture
+# modules): ``finish_every_startable_skill`` for a finished-everything store,
+# ``fresh_learner_store`` for a fresh learner's derived states, and
+# ``make_one_readiness_stale`` for a stale one. The one edit this suite makes
+# by hand is a single node's recorded state, in the locked-foundation test
+# above — the exact stale record that test wants.
 
 
 def _add_hard_prerequisite(root: Path, *, source: str, target: str) -> None:

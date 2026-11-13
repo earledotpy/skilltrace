@@ -102,10 +102,11 @@ from ._readiness import (  # noqa: F401
     every_skill_locked,
     hard_prerequisite_sources,
     stale_readiness,
-    stale_readiness_panel,
+    stale_readiness_section,
 )
 from ._reasons import (  # noqa: F401
     DEFAULT_MINUTES,
+    Fact,
     downstream_count,
     facts_for,
     reason_for,
@@ -155,6 +156,7 @@ from .evidence_index import (  # noqa: F401  # noqa: F401
 from .finder import (  # noqa: F401
     _browse_html,
     _discovery_chrome,
+    _link_or_name,
     _no_results_html,
     _render_results,
     finder_body,
@@ -364,6 +366,7 @@ __all__ = [
     "ENTRY_NODES",
     "EdgeLoadError",
     "FAILURE",
+    "Fact",
     "HEAD",
     "INLINE",
     "JoinedView",
@@ -463,7 +466,7 @@ __all__ = [
     "session_close_body",
     "sparkline_svg",
     "stale_readiness",
-    "stale_readiness_panel",
+    "stale_readiness_section",
     "superseded_ids",
     "tooltip_script",
     "urlencode",

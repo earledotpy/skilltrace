@@ -37,8 +37,12 @@ route                   case
                         (``tests/web/discovery_fixtures.py``)
 ``GET /find``          ``finder``, ``finder-query`` (``?q=…``); plus the
                         named Find states (§10.3) ``finder-no-results``
-                        (``?q=xyzzyplugh``) and ``finder-empty``, each the
-                        served body for one query or reshaped fixture repo
+                        (``?q=xyzzyplugh``), ``finder-stale``,
+                        ``finder-empty`` (a curriculum with no skills) and
+                        ``finder-source-missing`` (the graph/nodes/
+                        directory gone — could-not-compute, never merged
+                        with the empty state), each the served body for
+                        one query or reshaped fixture repo
 ``GET /session``       ``session``
 ``GET /session/close`` ``session-close``
 ``GET /nodes/{id}/evidence``  ``node-evidence``
@@ -518,6 +522,22 @@ CASES: tuple[RouteCase, ...] = (
         "Find a skill",
         200,
         lambda r: views.finder_body(build_discovery_variant(r, "finder-empty"), {}),
+    ),
+    RouteCase(
+        "finder-stale",
+        "GET /find",
+        "Find a skill",
+        200,
+        lambda r: views.finder_body(build_discovery_variant(r, "finder-stale"), {}),
+    ),
+    RouteCase(
+        "finder-source-missing",
+        "GET /find",
+        "Find a skill",
+        200,
+        lambda r: views.finder_body(
+            build_discovery_variant(r, "finder-source-missing"), {}
+        ),
     ),
     RouteCase(
         "session",

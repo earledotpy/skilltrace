@@ -623,6 +623,22 @@ def route_cases() -> tuple[RouteCase, ...]:
             lambda r: views.finder_body(build_discovery_variant(r, "finder-empty"), {}),
         ),
         RouteCase(
+            "finder-stale",
+            "GET /find",
+            "guided",
+            "finder_body",
+            lambda r: views.finder_body(build_discovery_variant(r, "finder-stale"), {}),
+        ),
+        RouteCase(
+            "finder-source-missing",
+            "GET /find",
+            "guided",
+            "finder_body",
+            lambda r: views.finder_body(
+                build_discovery_variant(r, "finder-source-missing"), {}
+            ),
+        ),
+        RouteCase(
             "node",
             f"GET /nodes/{NODE_ACTIVE}",
             "guided",

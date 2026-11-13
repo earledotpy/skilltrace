@@ -14,7 +14,8 @@ and a locked skill is never a link at all (HB-1, HB-4).
 Four states are distinguished and never merged (SC-00a):
 
 * **populated** — the ranked queue, with the locked half as explanation;
-* **empty** — nothing is recommendable: an authoritative reason plus a
+* **empty** — nothing is recommendable: the reason is derived from the
+  records (how many skills are finished, how many are waiting) plus a
   recovery path that keeps discovery alive;
 * **limited** — the values are real but the session window they need is
   not met: the values are retained and the threshold is stated;
@@ -56,15 +57,20 @@ MAX_OPTIONS = 20
 MAX_EXPLAINED = 8
 
 
-def _why_details(reason: str, facts: list[str]) -> str:
+def _why_details(reason: str, facts: list) -> str:
     """The ``Why this?`` disclosure — the whole of this item's reasoning.
 
     The reason is the same honest sentence the queue shows; the facts are
-    the contributing conditions behind it. Advisory wording rides along so
-    the learner knows the ordering is advisory and never a gate (IC-8).
+    the contributing conditions behind it, each rendered in its standalone
+    sentence form. Advisory wording rides along so the learner knows the
+    ordering is advisory and never a gate (IC-8).
     """
     if facts:
-        detail = "<ul>" + "".join(f"<li>{_esc(fact)}</li>" for fact in facts) + "</ul>"
+        detail = (
+            "<ul>"
+            + "".join(f"<li>{_esc(fact.sentence)}</li>" for fact in facts)
+            + "</ul>"
+        )
     else:
         detail = (
             '<p class="state-body">Nothing about this skill is holding it up. '
@@ -184,6 +190,58 @@ def _not_ready_list(model, view) -> str:
             '<a href="/find">find them in the curriculum</a>.</p>\n'
         )
     return f'<div class="rows">\n{rows}</div>\n{more}'
+
+
+def _empty_state(view) -> str:
+    """The empty state — the reason derived from the records.
+
+    Nothing is recommendable exactly when no skill is recorded as
+    ``available`` or ``active``, so the sentence is built from the counts
+    that make that true: how many skills are finished, how many are
+    waiting on an unfinished one. The session window plays no part here —
+    the limited state is the one that speaks for the window — so the
+    reason never claims a constraint the records do not make. The
+    recovery path keeps discovery alive.
+    """
+    states = [view.store.state_of(node.id) for node in view.nodes]
+    total = len(states)
+    finished = sum(1 for state in states if state in ("passed", "mastered"))
+    waiting = sum(1 for state in states if state == "locked")
+    if total == 0:
+        reason = (
+            "The curriculum holds no skills yet, so there is nothing to "
+            "search, browse or start."
+        )
+    elif waiting == 0:
+        reason = (
+            f"You have finished every one of the {total} "
+            f"skill{plural(total)} in the curriculum — nothing is left "
+            "to start."
+        )
+    elif finished == 0:
+        reason = (
+            f"None of the {total} skill{plural(total)} in the curriculum "
+            "can be started yet — every one of them is waiting on a skill "
+            "you have not finished."
+        )
+    else:
+        reason = (
+            f"You have finished {finished} skill{plural(finished)}, and "
+            f"the other {waiting} skill{plural(waiting)} "
+            f'{"is" if waiting == 1 else "are"} waiting on a skill you '
+            "have not finished."
+        )
+    return (
+        '<section class="section">\n'
+        '<div class="state state-empty">\n'
+        '<p class="state-title">Nothing is recommendable right now</p>\n'
+        f'<p class="state-body">{_esc(reason)} That is a fact about the '
+        "curriculum, not about you.</p>\n"
+        '<p><a href="/find">Find a skill</a> — the whole curriculum is '
+        'open to you, whatever this list says.</p>\n'
+        "</div>\n"
+        "</section>\n"
+    )
 
 
 def next_body(root, query: dict) -> tuple[str, str, int]:
@@ -341,26 +399,13 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
             )
         results += "</section>\n"
     else:
-        results = (
-            '<section class="section">\n'
-            '<div class="state state-empty">\n'
-            '<p class="state-title">Nothing is recommendable right now</p>\n'
-            '<p class="state-body">No skill is available or active for a '
-            f"{minutes}-minute session at the moment. The ones you have "
-            "already finished are done, and the rest are waiting on a skill "
-            "you have not finished yet. That is a fact about the curriculum, "
-            "not a problem with you.</p>\n"
-            '<p><a href="/find">Find a skill</a> — the whole curriculum is '
-            'open to you, whatever this list says.</p>\n'
-            "</div>\n"
-            "</section>\n"
-        )
+        results = _empty_state(view)
 
     # --- the stale-readiness recovery prompt ---------------------------------
     # One shared panel, so /next and Today name the dependency identically:
     # refreshing readiness happens on the command line, and this page never
     # changes saved readiness.
-    recovery = _readiness.stale_readiness_panel(
+    recovery = _readiness.stale_readiness_section(
         view,
         reload_href=next_url(minutes, limit),
         reload_label="reload this list",
