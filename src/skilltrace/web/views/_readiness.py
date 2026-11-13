@@ -13,9 +13,9 @@ be shown with the wrong readiness?* — by asking the engine's own
 :func:`~skilltrace.graph.readiness.derive_readiness` what each node's
 readiness **would** be and comparing it with what is saved.
 
-Why one module: ``/next`` and ``/`` (Today) both report stale readiness,
-and they must never disagree about which skills are affected. The rule
-lives here once; both surfaces read it.
+Why one module: ``/next``, ``/`` (Today) and ``/find`` all report stale
+readiness, and they must never disagree about which skills are affected.
+The rule lives here once; every surface reads it.
 
 Asserted progress (``active`` / ``passed`` / ``mastered``) is never
 compared. A refresh recomputes readiness; it never moves asserted
@@ -85,14 +85,18 @@ def every_skill_locked(view) -> bool:
     return unfinished > 0 and locked == unfinished
 
 
-def stale_readiness_panel(view, *, reload_href: str, reload_label: str) -> str:
-    """The stale-readiness recovery panel — one wording for every surface.
+def stale_readiness_section(view, *, reload_href: str, reload_label: str) -> str:
+    """The stale-readiness recovery section — one wording for every surface.
+
+    Returns the whole ``<section>`` frame, not just the state inside it, so
+    a surface places it like any other section of the page. Empty when
+    nothing is stale.
 
     The dependency is **named, never hidden behind silence**: refreshing
     readiness happens on the command line, this page never changes saved
     readiness, and a refresh never moves asserted progress. ``reload_href``
     and ``reload_label`` are the surface's own way back (``/next`` reloads
-    its list; Today reloads the page).
+    its list; Today and Find reload the page).
     """
     stale = stale_readiness(view)
     if not stale:

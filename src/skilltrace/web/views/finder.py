@@ -19,11 +19,22 @@ technical data (R1, VS-4).
 **Why the page-local helpers are nested.** The ``web.views`` facade freezes
 every module-level name (ADR 0009); a new top-level helper here would have
 to be re-exported by a facade this slice may not touch. The helpers
-therefore live inside the functions that use them.
+therefore live inside the functions that use them — except the locked-
+target decision, which two of them share and which therefore lives once
+at module level (:func:`_link_or_name`).
+
+**Where the raw identifier may render.** The §C-bis card anatomy carries
+the node id as labelled secondary technical data, and R1 sanctions raw ids
+only in the Operations presentation (and record detail and the inspector).
+So the Guided presentation of this page — its default — renders no
+identifier anywhere: the readable SkillNode title is the only
+learner-visible name (R1). The id survives in Operations mode, in the URL
+itself, and in the labelled technical data of those other contexts.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 from urllib.parse import urlencode
 
 from ...context import JoinedView
@@ -36,6 +47,7 @@ from ..discovery import (
     discovery_page_cards,
 )
 from ..interface.render import render_discovery_cards
+from . import _readiness
 from ._shared import (
     _esc,
     _normalize_pill_label,
@@ -57,41 +69,74 @@ STATE_FILTERS: tuple[str, ...] = (
 )
 
 
+def _link_or_name(view: JoinedView, node_id: str, *, locked_note: str = "") -> str:
+    """The readable title, linked only when the skill is a target.
+
+    The one locked-target decision, shared by the blocked-prerequisite
+    tail and the foundations entries: a locked skill is explanation,
+    never a selectable target (HB-4), so its name stands alone, never
+    inside a link. Every learner-visible name is the readable SkillNode
+    title — a raw identifier never renders as prose (R1), so a curriculum
+    without the title falls back to words, never the id. When the skill
+    is locked, ``locked_note`` rides after the name as the explanation of
+    why it is not a link.
+    """
+    title = _esc(view.titles.get(node_id) or "Another skill")
+    if view.store.state_of(node_id) != "locked":
+        return f'<a href="/nodes/{_esc(node_id)}">{title}</a>'
+    return f"{title}{locked_note}"
+
+
 def _discovery_chrome(card: DiscoveryCard, view=None) -> str:
     """One locked card's blocked-prerequisite tail — the page attachment (#319).
 
     The §C-bis anatomy's tail (the wall's name + link) travels with the
     page and rides the renderer's per-card attachment channel, exactly as
     the Health guidance links do (#318). Values escape through the one
-    door here; locked stays the only wall — this names it, never overrides.
+    door here; the link-or-name decision is :func:`_link_or_name`'s, so
+    this composer adds only the sentence around it. Locked stays the only
+    wall — this names it, never overrides.
 
-    A wall that is itself locked is named, never linked: a locked skill is
-    explanation, never a selectable target (HB-4). With no view to consult
-    the tail keeps its canonical shape.
+    A wall that is itself locked is named, never linked, with the reason
+    said: a locked skill is explanation, never a selectable target (HB-4).
+    With no view to consult the tail keeps its canonical shape.
     """
     if not (card.locked and card.blocked_by_id):
         return ""
-    title = _esc(card.blocked_by_title)
-    if view is not None and view.store.state_of(card.blocked_by_id) == "locked":
-        tail = f"{title}, which is itself waiting on another skill"
-    else:
+    if view is None:
         tail = (
-            f'<a href="/nodes/{_esc(card.blocked_by_id)}">{title}</a>'
-            " — pass it first"
+            f'<a href="/nodes/{_esc(card.blocked_by_id)}">'
+            f"{_esc(card.blocked_by_title)}</a> — pass it first"
         )
+    elif view.store.state_of(card.blocked_by_id) == "locked":
+        tail = _link_or_name(
+            view,
+            card.blocked_by_id,
+            locked_note=", which is itself waiting on another skill",
+        )
+    else:
+        tail = f"{_link_or_name(view, card.blocked_by_id)} — pass it first"
     return f'<p class="sub">Blocked by {tail}.</p>\n'
 
 
-def _render_results(cards: list[DiscoveryCard], view=None) -> str:
+def _render_results(
+    cards: list[DiscoveryCard],
+    view=None,
+    *,
+    show_ids: bool = True,
+) -> str:
     """Discovery records as page HTML: compose Cards, attach, render (#319).
 
     The §C-bis cards leave this page module as interface ``Card`` objects
     through the one Card-to-HTML map; this composer adds only the page's
-    per-card tail attachment and owns no markup itself.
+    per-card tail attachment and owns no markup itself. ``show_ids`` rides
+    through to the renderer's labelled-technical-data gate (R1): Guided
+    prose carries no raw identifier.
     """
     return render_discovery_cards(
         discovery_page_cards(cards),
         {index: _discovery_chrome(card, view) for index, card in enumerate(cards)},
+        show_ids=show_ids,
     )
 
 
@@ -109,10 +154,20 @@ def _no_results_html(
     never dead-ends.
     """
     def foundation_item(node_id: str) -> str:
-        title = _esc(view.titles.get(node_id) or node_id)
-        if view.store.state_of(node_id) == "locked":
-            return f"<li>{title} (Locked — waiting on another skill)</li>"
-        return f'<li><a href="/nodes/{_esc(node_id)}">{title}</a></li>'
+        """One foundations entry — the shared link-or-name decision.
+
+        The locked annotation rides on :func:`_link_or_name`'s
+        ``locked_note``, so the locked branch lives in one place.
+        """
+        return (
+            "<li>"
+            + _link_or_name(
+                view,
+                node_id,
+                locked_note=" (Locked — waiting on another skill)",
+            )
+            + "</li>"
+        )
 
     entries = "".join(
         foundation_item(node_id)
@@ -140,12 +195,15 @@ def _no_results_html(
     )
 
 
-def _browse_html(view: JoinedView, *, sections: bool = True) -> str:
+def _browse_html(
+    view: JoinedView, *, sections: bool = True, show_ids: bool = True
+) -> str:
     """The browse-by-subject half: an index of subject links plus, when the
     page is in browse mode, one section per subject.
 
     Every subject link is a GET control, so a subject's skills have their
-    own addressable URL rather than an in-page jump (IC-4).
+    own addressable URL rather than an in-page jump (IC-4). ``show_ids``
+    rides through to the cards' labelled-technical-data gate (R1).
     """
     subjects = browse_subjects(view)
     index_links = "".join(
@@ -169,7 +227,9 @@ def _browse_html(view: JoinedView, *, sections: bool = True) -> str:
     if not sections:
         return "".join(parts)
     for subject, label, count in subjects:
-        subject_cards = _render_results(browse_cards(view, subject), view)
+        subject_cards = _render_results(
+            browse_cards(view, subject), view, show_ids=show_ids
+        )
         parts.append(
             section(
                 label,
@@ -209,6 +269,10 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
     subject = ((query.get("subject") or [""])[0] or "").strip()
     state = ((query.get("state") or [""])[0] or "").strip()
     mode = (query.get("mode") or [""])[0]
+    # R1: raw identifiers are labelled technical data, sanctioned in the
+    # Operations presentation; Guided prose — this page's default — never
+    # carries one.
+    show_ids = mode == "operations"
 
     def find_url(**params: str) -> str:
         """The Find destination with these controls — one addressable URL."""
@@ -266,21 +330,48 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
             "</section>\n"
         )
 
+    # --- the curriculum source -----------------------------------------------
+    # Two states that must never merge (SC-00a): a curriculum that is
+    # genuinely empty, and a source that cannot be read. The loader answers
+    # [] for a missing graph/nodes/ directory, so without the directory
+    # check the failure would present itself as an empty curriculum and
+    # the page would claim a fact it does not know.
+    nodes_dir = Path(root) / "graph" / "nodes"
+    if not nodes_dir.is_dir():
+        body = (
+            '<section class="section">\n'
+            '<div class="state state-failure">\n'
+            '<p class="state-title">The curriculum could not be read</p>\n'
+            '<p class="state-body">The graph/nodes/ directory that holds the '
+            "curriculum is missing, so there is nothing to search and no "
+            "fact is claimed about the curriculum. Nothing about your "
+            "progress changed.</p>\n"
+            '<p><a href="/health">Open Health</a> for the detail — or '
+            'restore the directory and <a href="/find">reload Find a '
+            "skill</a>.</p>\n"
+            "</div>\n"
+            "</section>\n"
+        )
+        return (
+            "Find a skill",
+            head + body,
+            200,
+        )
+
     # --- the empty curriculum -----------------------------------------------
     # The source itself holds no skills: say so plainly, in terms of the
-    # curriculum and its source, never in terms of the learner (SC-00a).
+    # curriculum, never in terms of the learner (SC-00a).
     if not view.node_map:
         body = (
             '<section class="section">\n'
             '<div class="state state-empty">\n'
             '<p class="state-title">There are no skills to search yet</p>\n'
-            '<p class="state-body">The curriculum contains no skills — the '
-            "skill source is empty, so there is nothing to search, browse "
-            "or start. This is a fact about the curriculum, not something "
-            "you did or failed to do.</p>\n"
-            '<p class="state-body">If you expected skills here, the '
-            "curriculum source needs to be set up before Find a skill has "
-            "anything to show.</p>\n"
+            '<p class="state-body">The curriculum contains no skills, so '
+            "there is nothing to search, browse or start. That is a fact "
+            "about the curriculum, not about you.</p>\n"
+            '<p class="state-body">If you expected skills here, add node '
+            "files to the graph/nodes/ directory — Find a skill picks them "
+            "up on the next reload.</p>\n"
             '<p><a href="/find">Reload Find a skill</a></p>\n'
             "</div>\n"
             "</section>\n"
@@ -309,6 +400,18 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
     hidden_by_state = len(matched) - len(shown)
 
     parts = [controls()]
+
+    # --- the stale-readiness recovery prompt ---------------------------------
+    # One shared section, so /next, Today and /find name the dependency
+    # identically: refreshing readiness happens on the command line, and
+    # this page never changes saved readiness.
+    parts.append(
+        _readiness.stale_readiness_section(
+            view,
+            reload_href=find_url(q=raw, subject=subject, state=state, mode=mode),
+            reload_label="reload this result",
+        )
+    )
 
     if raw or subject or state:
         if shown:
@@ -347,15 +450,21 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
                 )
             else:
                 count_text = f"{len(shown)} skill{plural(len(shown))}"
+            id_note = (
+                "The skill identifier is shown in grey under each skill, "
+                "for reference."
+                if show_ids
+                else "Each one names the skill and its state — select one "
+                "to open it."
+            )
             parts.append(
                 '<section class="section">\n'
                 '<div class="section-head">\n'
                 '<h2 class="section-title">Results</h2>\n'
-                f'<p class="section-meta">{count_text}. The skill identifier '
-                "is shown in grey under each skill, for reference.</p>\n"
+                f'<p class="section-meta">{count_text}. {id_note}</p>\n'
                 "</div>\n"
                 f"{limits}"
-                f"{_render_results(shown, view)}"
+                f"{_render_results(shown, view, show_ids=show_ids)}"
                 "</section>\n"
             )
         else:
@@ -365,7 +474,7 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
                 "</section>\n"
             )
 
-    parts.append(_browse_html(view, sections=not (raw or subject or state)))
+    parts.append(_browse_html(view, sections=not (raw or subject or state), show_ids=show_ids))
     return (
         "Find a skill",
         head + "".join(parts),

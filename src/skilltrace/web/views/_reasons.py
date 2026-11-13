@@ -14,9 +14,21 @@ factor weights, leverage counts, flag names and node identifiers never
 render (VS-4, R1). The learner gets conditions they can check for
 themselves — "it is available", "three other skills are waiting on it" —
 never the arithmetic that produced the order.
+
+**Why a fact is not a string.** One condition renders in two places in two
+forms: spliced into the middle of the reason sentence ("It is available
+now, and you have an open blocker recorded on it") and standing alone in
+the ``Why this?`` disclosure ("You have an open blocker recorded on it.").
+A bare string can only be one of those, so the other form was produced by
+hand-editing the string at the join — the rewrite that let a capital
+letter survive into the middle of a sentence. A :class:`Fact` carries the
+condition once, in its clause form, and derives the sentence form by
+capitalising — the safe direction; the fragile rewrite no longer exists.
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 from ._shared import plural
 
@@ -24,6 +36,31 @@ from ._shared import plural
 #: ``/next`` route uses by default, so the same skill never gets two
 #: different reasons on two pages.
 DEFAULT_MINUTES = 60
+
+
+@dataclass(frozen=True)
+class Fact:
+    """One contributing condition behind a recommendation's place.
+
+    Authored once, as the **clause** it reads as mid-sentence — lowercase
+    opening, no full stop. :attr:`sentence` is the standalone form the
+    ``Why this?`` disclosure renders, derived by capitalising and closing
+    the clause; it is never authored separately, so the two forms cannot
+    drift.
+
+    ``is_lead`` marks the one fact the reason sentence already states in
+    its lead (the started skill's own standing), so the sentence never
+    says it a second time.
+    """
+
+    clause: str
+    is_lead: bool = False
+
+    @property
+    def sentence(self) -> str:
+        """The standalone form: the clause, capitalised and closed."""
+        text = self.clause.strip()
+        return text[:1].upper() + text[1:] + "."
 
 
 def downstream_count(view, node_id: str) -> int:
@@ -42,57 +79,60 @@ def downstream_count(view, node_id: str) -> int:
     )
 
 
-def facts_for(view, rec, *, minutes: int = DEFAULT_MINUTES) -> list[str]:
+def facts_for(view, rec, *, minutes: int = DEFAULT_MINUTES) -> list[Fact]:
     """The contributing conditions behind one recommendation's place.
 
     Each fact is a derived condition the learner can check for themselves;
     nothing here is a score, a weight or a flag name.
     """
-    facts: list[str] = []
+    facts: list[Fact] = []
     if rec.is_active:
-        facts.append("You have already started it, so it comes first.")
+        facts.append(
+            Fact("you have already started it, so it comes first", is_lead=True)
+        )
     if minutes <= 30:
         if rec.fits_session:
-            facts.append(f"It fits a {minutes}-minute session.")
+            facts.append(Fact(f"it fits a {minutes}-minute session"))
         else:
-            facts.append(f"It does not fit a {minutes}-minute session.")
+            facts.append(Fact(f"it does not fit a {minutes}-minute session"))
     if rec.prereq_reviews_due:
         facts.append(
-            "A skill you have already passed is fading below retention, "
-            "and this one builds on it."
+            Fact(
+                "a skill you have already passed is fading below retention, "
+                "and this one builds on it"
+            )
         )
     if rec.open_blocked:
-        facts.append("You have an open blocker recorded on it.")
+        facts.append(Fact("you have an open blocker recorded on it"))
     if rec.remediation_boosted:
-        facts.append("It is a remediation step for a skill you are stuck on.")
+        facts.append(Fact("it is a remediation step for a skill you are stuck on"))
     if rec.agent_boosted:
-        facts.append("An advisory signal ranks it higher than the rest.")
+        facts.append(Fact("an advisory signal ranks it higher than the rest"))
     waiting = downstream_count(view, rec.node_id)
     if waiting:
         facts.append(
-            f"{waiting} other skill{plural(waiting)} "
-            f'{"is" if waiting == 1 else "are"} waiting on it.'
+            Fact(
+                f"{waiting} other skill{plural(waiting)} "
+                f'{"is" if waiting == 1 else "are"} waiting on it'
+            )
         )
     return facts
 
 
-def reason_for(rec, facts: list[str], *, only_candidate: bool = False) -> str:
+def reason_for(rec, facts: list[Fact], *, only_candidate: bool = False) -> str:
     """One honest sentence: why this skill sits where it does.
 
-    The lead states the skill's own standing; the facts that follow are the
-    conditions behind it. When nothing else is holding the skill up, the
-    sentence says so plainly rather than inventing a reason.
+    The lead states the skill's own standing; the facts that follow are
+    spliced in as the clauses they are authored as. When nothing else is
+    holding the skill up, the sentence says so plainly rather than
+    inventing a reason.
     """
     lead = (
         "You have already started it"
         if rec.is_active
         else "It is available now"
     )
-    others = [
-        fact.rstrip(".")[:1].lower() + fact.rstrip(".")[1:]
-        for fact in facts
-        if not fact.startswith("You have already started")
-    ]
+    others = [fact.clause for fact in facts if not fact.is_lead]
     if not others:
         if only_candidate and not rec.is_active:
             return "It is the only skill available to start right now."
