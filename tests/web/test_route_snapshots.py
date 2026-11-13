@@ -30,8 +30,15 @@ route                   case
                         ``today-stale`` and ``today-refusal``, each the
                         served body of ``/`` for one reshaped fixture
                         repo (``tests/web/today_fixtures.py``)
-``GET /next``           ``next``, ``next-locked`` (``?locked=1``)
-``GET /find``          ``finder``, ``finder-query`` (``?q=…``)
+``GET /next``           ``next``, ``next-locked`` (``?locked=1``); plus the
+                        named Next states (§10.2, SC-00a) ``next-empty``
+                        and ``next-stale``, each the served body of
+                        ``/next`` for one reshaped fixture repo
+                        (``tests/web/discovery_fixtures.py``)
+``GET /find``          ``finder``, ``finder-query`` (``?q=…``); plus the
+                        named Find states (§10.3) ``finder-no-results``
+                        (``?q=xyzzyplugh``) and ``finder-empty``, each the
+                        served body for one query or reshaped fixture repo
 ``GET /session``       ``session``
 ``GET /session/close`` ``session-close``
 ``GET /nodes/{id}/evidence``  ``node-evidence``
@@ -82,6 +89,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from discovery_fixtures import build_discovery_variant
 from today_fixtures import build_today_variant
 
 from skilltrace.web import views
@@ -467,6 +475,20 @@ CASES: tuple[RouteCase, ...] = (
         lambda r: views.next_body(r, {"locked": ["1"]}),
     ),
     RouteCase(
+        "next-empty",
+        "GET /next",
+        "Next",
+        200,
+        lambda r: views.next_body(build_discovery_variant(r, "next-empty"), {}),
+    ),
+    RouteCase(
+        "next-stale",
+        "GET /next",
+        "Next",
+        200,
+        lambda r: views.next_body(build_discovery_variant(r, "next-stale"), {}),
+    ),
+    RouteCase(
         "node",
         f"GET /nodes/{NODE_ACTIVE}",
         "Use basic Pandas DataFrame operations",
@@ -482,6 +504,20 @@ CASES: tuple[RouteCase, ...] = (
         "Find a skill",
         200,
         lambda r: views.finder_body(r, {"q": ["pandas"]}),
+    ),
+    RouteCase(
+        "finder-no-results",
+        "GET /find?q=xyzzyplugh",
+        "Find a skill",
+        200,
+        lambda r: views.finder_body(r, {"q": ["xyzzyplugh"]}),
+    ),
+    RouteCase(
+        "finder-empty",
+        "GET /find",
+        "Find a skill",
+        200,
+        lambda r: views.finder_body(build_discovery_variant(r, "finder-empty"), {}),
     ),
     RouteCase(
         "session",

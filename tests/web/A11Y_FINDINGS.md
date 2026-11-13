@@ -20,7 +20,7 @@ gate; a stale record also fails it, so a fixed finding cannot linger.
 
 ## 1. axe-core findings (serious/critical, WCAG 2.2 AA)
 
-None. The sweep covers twenty-one served documents — every destination in
+None. The sweep covers twenty-nine served documents — every destination in
 `docs/spec-v3-study-day.md` §6, the table's node-centred graph
 (`/graph/{id}`) and non-writing portfolio preview (`/portfolio/preview`),
 the contextual inspector over a selected evidence record, and the one
@@ -34,7 +34,9 @@ open Blocker, and an evidence history with a live record, a rejected record
 and a correction that supersedes an earlier one. The open-Session state was
 absent from an earlier revision of this fixture (a note here recorded a view
 defect that has since been fixed by deriving a Session's bound node from its
-logged work); it is covered now.
+logged work); it is covered now. The named Next (`next-empty`, `next-stale`)
+and Find (`finder-no-results`, `finder-empty`) states — the same fixtures the
+golden snapshot suite pins — are covered too.
 
 ## 2. Colour-contrast deviations
 

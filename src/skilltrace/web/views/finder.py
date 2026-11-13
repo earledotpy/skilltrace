@@ -108,9 +108,14 @@ def _no_results_html(
     foundations entries and the browse index within reach, so the route
     never dead-ends.
     """
+    def foundation_item(node_id: str) -> str:
+        title = _esc(view.titles.get(node_id) or node_id)
+        if view.store.state_of(node_id) == "locked":
+            return f"<li>{title} (Locked — waiting on another skill)</li>"
+        return f'<li><a href="/nodes/{_esc(node_id)}">{title}</a></li>'
+
     entries = "".join(
-        f'<li><a href="/nodes/{_esc(node_id)}">'
-        f"{_esc(view.titles.get(node_id) or node_id)}</a></li>"
+        foundation_item(node_id)
         for node_id in ENTRY_NODES
         if node_id in view.node_map
     )
@@ -259,6 +264,31 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
             '<button class="btn secondary" type="submit">Search</button></div>\n'
             "</form>\n"
             "</section>\n"
+        )
+
+    # --- the empty curriculum -----------------------------------------------
+    # The source itself holds no skills: say so plainly, in terms of the
+    # curriculum and its source, never in terms of the learner (SC-00a).
+    if not view.node_map:
+        body = (
+            '<section class="section">\n'
+            '<div class="state state-empty">\n'
+            '<p class="state-title">There are no skills to search yet</p>\n'
+            '<p class="state-body">The curriculum contains no skills — the '
+            "skill source is empty, so there is nothing to search, browse "
+            "or start. This is a fact about the curriculum, not something "
+            "you did or failed to do.</p>\n"
+            '<p class="state-body">If you expected skills here, the '
+            "curriculum source needs to be set up before Find a skill has "
+            "anything to show.</p>\n"
+            '<p><a href="/find">Reload Find a skill</a></p>\n'
+            "</div>\n"
+            "</section>\n"
+        )
+        return (
+            "Find a skill",
+            head + body,
+            200,
         )
 
     # --- the result set ------------------------------------------------------

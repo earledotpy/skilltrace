@@ -98,6 +98,7 @@ def stale_readiness_panel(view, *, reload_href: str, reload_label: str) -> str:
     if not stale:
         return ""
     return (
+        '<section class="section">\n'
         '<div class="state state-recovery">\n'
         '<p class="state-title">Your saved readiness is out of date</p>\n'
         '<p class="state-body">The curriculum changed since your '
@@ -110,4 +111,5 @@ def stale_readiness_panel(view, *, reload_href: str, reload_label: str) -> str:
         '<p class="state-body">Refresh your readiness, then '
         f'<a href="{_esc(reload_href)}">{_esc(reload_label)}</a>.</p>\n'
         "</div>\n"
+        "</section>\n"
     )

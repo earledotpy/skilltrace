@@ -40,6 +40,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import yaml
+from discovery_fixtures import build_discovery_variant
 from today_fixtures import build_today_variant
 
 from skilltrace.web import views
@@ -590,7 +591,37 @@ def route_cases() -> tuple[RouteCase, ...]:
             lambda r: views.home_body(build_today_variant(r, "refusal"), {}),
         ),
         RouteCase("next", "GET /next", "guided", "next_body", lambda r: views.next_body(r, {})),
-        RouteCase("find", "GET /find", "guided", "finder_body", lambda r: views.finder_body(r, {})),
+        # The named Next states (§10.2, SC-00a): the same fixtures the
+        # golden suite pins, so axe scans every state the page can render.
+        RouteCase(
+            "next-empty",
+            "GET /next",
+            "guided",
+            "next_body",
+            lambda r: views.next_body(build_discovery_variant(r, "next-empty"), {}),
+        ),
+        RouteCase(
+            "next-stale",
+            "GET /next",
+            "guided",
+            "next_body",
+            lambda r: views.next_body(build_discovery_variant(r, "next-stale"), {}),
+        ),
+        RouteCase("finder", "GET /find", "guided", "finder_body", lambda r: views.finder_body(r, {})),
+        RouteCase(
+            "finder-no-results",
+            "GET /find?q=xyzzyplugh",
+            "guided",
+            "finder_body",
+            lambda r: views.finder_body(r, {"q": ["xyzzyplugh"]}),
+        ),
+        RouteCase(
+            "finder-empty",
+            "GET /find",
+            "guided",
+            "finder_body",
+            lambda r: views.finder_body(build_discovery_variant(r, "finder-empty"), {}),
+        ),
         RouteCase(
             "node",
             f"GET /nodes/{NODE_ACTIVE}",

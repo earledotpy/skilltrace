@@ -1,0 +1,19 @@
+<header><div class="shell"><h1 class="brand"><a href="/">SkillTrace</a></h1><nav class="nav guided" aria-label="Guided"><span class="section-nav-label">Guided</span><a href="/">Today</a><a href="/next" aria-current="page">Next</a><a href="/find">Find a skill</a><span class="mode-switch"><span class="nav-label">Mode</span><a href="/next?mode=guided" aria-current="true">Guided</a><a href="/next?mode=operations">Operations</a></span></nav></div></header>
+<section class="section">
+<div class="section-head">
+<h2 class="section-title">Your next steps</h2>
+<p class="section-meta">A short, ranked list for the time you have. Change the time or the number of options and the list changes — the result is a link you can reload, share or come back to.</p>
+</div>
+<form class="filters" method="get" action="/next">
+<div class="form-row"><label for="next-minutes">How much time do you have (minutes)</label><input id="next-minutes" type="number" name="minutes" value="60" min="1" size="4"></div>
+<div class="form-row"><label for="next-limit">How many ideas do you want</label><input id="next-limit" type="number" name="limit" value="5" min="1" size="3"></div>
+<div class="actions"><button class="btn secondary" type="submit">Update the list</button></div>
+</form>
+</section>
+<section class="section">
+<div class="state state-empty">
+<p class="state-title">Nothing is recommendable right now</p>
+<p class="state-body">No skill is available or active for a 60-minute session at the moment. The ones you have already finished are done, and the rest are waiting on a skill you have not finished yet. That is a fact about the curriculum, not a problem with you.</p>
+<p><a href="/find">Find a skill</a> — the whole curriculum is open to you, whatever this list says.</p>
+</div>
+</section>

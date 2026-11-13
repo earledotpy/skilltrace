@@ -1,4 +1,4 @@
-"""Discovery matching for the `/nodes/jump` combination surface.
+"""Discovery matching for the `/find` combination surface.
 
 Implements the discovery amendment locked in `docs/spec-tier1-serve.md`
 §C-bis (G-SubjectDiscovery #293 · handoff step 4 #297 · built in #310):
