@@ -1,0 +1,22 @@
+<header><div class="shell"><h1 class="brand"><a href="/">SkillTrace</a></h1><nav class="nav guided" aria-label="Guided"><span class="section-nav-label">Guided</span><a href="/">Today</a><a href="/next">Next</a><a href="/find">Find a skill</a><span class="mode-switch"><span class="nav-label">Mode</span><a href="/session/close?mode=guided" aria-current="true">Guided</a><a href="/session/close?mode=operations">Operations</a></span></nav></div></header>
+<div class="banner advisory">
+<p>This session has been open for 3 days. It may be one you forgot to close. Nothing is blocked by that: you can keep recording work, or close it with the time you actually stopped so the record stays honest.</p>
+</div>
+<section class="section">
+<h2 class="section-title">Close this session</h2>
+<div class="rows">
+<div class="row"><span class="row-label">Skill</span><span class="row-value">Use basic Pandas DataFrame operations</span></div>
+<div class="row"><span class="row-label">Open for</span><span class="row-value">3 days</span></div>
+<div class="row"><span class="row-label">Work recorded</span><span class="row-value">45 minutes</span></div>
+<div class="row"><span class="row-label">Started</span><span class="row-value">2026-11-14T09:00:00+00:00</span></div>
+<div class="row"><span class="row-label">Open blockers</span><span class="row-value">1 open — closing resolves none of them</span></div>
+<div class="row"><span class="row-label">State after closing</span><span class="row-value">Active — unchanged by closing</span></div>
+<div class="row"><span class="row-label">Evidence afterwards</span><span class="row-value">1 accepted, 1 rejected, 1 superseded — unchanged by closing</span></div>
+</div>
+<div class="banner advisory">Closing saves the work you recorded. It does not pass a skill, resolve a blocker or complete a review — those are separate, explicit actions.</div>
+<form method="post" action="/session/close">
+<input type="hidden" name="next" value="/">
+<div class="form-row"><label for="session-end">When did you actually stop? (optional)</label><input type="text" name="end" id="session-end" placeholder="2026-11-16T18:30:00+00:00"><p class="small mut">Leave it blank to record the time you close it now. A time in the future, or before the session started, is refused — and nothing you recorded is lost.</p></div>
+<div class="command-bar"><div class="actions"><button type="submit" class="btn primary">Close the session</button><a class="btn secondary" href="/session">Keep working</a></div></div>
+</form>
+</section>

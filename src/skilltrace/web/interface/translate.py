@@ -83,6 +83,24 @@ _PREFIX_REWRITES: tuple[tuple[re.Pattern[str], str], ...] = tuple(
 # the engine-voice phrase, and engine relpaths on success lines (the page
 # composers omit the path field; the flash carries none).
 _PHRASES: tuple[tuple[re.Pattern[str], str], ...] = (
+    # The session refusals: the CLI names raw ids and commands; the page
+    # names the skill and the two real options instead (R1, R5).
+    (
+        re.compile(
+            r"session \S+ is already open — use `work` to add to it or "
+            r"`session close` to end it\."
+        ),
+        "A session is already open. Add work to it, or close it first.",
+    ),
+    (
+        re.compile(r"\S+ is locked — a locked node cannot be started\."),
+        "This skill is locked — it cannot be started until its prerequisites "
+        "are passed.",
+    ),
+    (
+        re.compile(r"\S+ is locked — a locked node cannot be worked on\."),
+        "This skill is locked — no work can be recorded against it.",
+    ),
     (re.compile(r"\bmaster blocked:"), "Marked as mastered is refused:"),
     (re.compile(r"\bpass blocked:"), "Marked as passed is refused:"),
     (re.compile(r"\bstart blocked:"), "Starting is refused:"),

@@ -12,6 +12,16 @@ from ._shared import (
     _esc,
 )
 
+#: What an explicit start records — one copy, announced before every start
+#: affordance (Today and the node page) and restated by the start form. R6
+#: forbids silent timing: this names the Session, its first SessionWork row,
+#: and the asserted state, and says what is *not* recorded.
+START_ANNOUNCEMENT = (
+    "Starting opens a session, records the start of this session against "
+    "this skill, and marks the skill active. No minutes or notes are "
+    "recorded until you log work, and progress never moves backward."
+)
+
 
 def _template_select(templates: set[str], empty_label: str) -> str:
     options = "".join(f'<option value="{_esc(t)}">{_esc(t)}</option>' for t in sorted(templates))
@@ -39,8 +49,8 @@ def _start_confirm_form(
         )
     elif open_now is not None:
         advisory = (
-            '<p class="mut">A session is already open — '
-            "close it before starting another.</p>"
+            '<p class="mut">A session is already open. Add work to it, or '
+            "close it first.</p>"
         )
     button_label = button_label or "Start this session"
     return (
@@ -53,8 +63,7 @@ def _start_confirm_form(
         f'<form method="post" action="/nodes/{_esc(node_id)}/start">'
         f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
         f'<button type="submit" class="btn primary">{_esc(button_label)}</button></form>'
-        '<span class="mut">marks this skill '
-        "<strong>active</strong> — progress never moves backward.</span>"
+        f'<span class="mut">{_esc(START_ANNOUNCEMENT)}</span>'
         "</div>"
     )
 

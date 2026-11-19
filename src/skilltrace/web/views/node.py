@@ -30,7 +30,7 @@ from ...execution.overdue import utc_today
 from ...execution.records import open_session
 from ...resources.status import derive_status
 from ._shared import _esc, _table
-from .forms import _resolve_blocker_form, _work_form_fields
+from .forms import START_ANNOUNCEMENT, _resolve_blocker_form, _work_form_fields
 from .sections import EMPTY, FAILURE, LIMITED, Markup, Rows, Section, State
 from .shell import _mode_from, _page_head, _status_page
 
@@ -266,7 +266,29 @@ def _node_actions_card(view, node_id: str) -> str:
     session = open_session(view.sessions)
 
     inner = ""
-    if session is not None:
+    if session is not None and state == "locked":
+        # A locked skill refuses work at the engine (HB-4): the page does not
+        # render a form the domain would always refuse, and it offers the
+        # safe route back to the Session instead.
+        inner += (
+            '<div class="state state-refusal">\n'
+            '<p class="state-title">This skill is locked</p>\n'
+            '<p class="state-body">Work is recorded against a skill a session '
+            "is bound to. This skill is waiting on a hard prerequisite, so no "
+            "work can be logged against it — nothing here overrides that."
+            "</p>\n"
+            '<p><a href="/session">Go back to your session</a></p>\n'
+            "</div>\n"
+        )
+    elif session is not None:
+        history_note = ""
+        if state in ("passed", "mastered"):
+            history_note = (
+                '<p class="small mut">This skill is already '
+                f"{'mastered' if state == 'mastered' else 'passed'}. Work "
+                "recorded here stays honest history; it never changes that "
+                "state or moves it backward.</p>\n"
+            )
         inner += (
             '<div class="command-bar">\n'
             '<div class="actions">\n'
@@ -276,6 +298,7 @@ def _node_actions_card(view, node_id: str) -> str:
             '<h3>Log work here</h3>\n'
             '<p class="section-meta">A session is open, so work logged here '
             "joins it and is recorded against this skill.</p>\n"
+            f"{history_note}"
             '<form method="post" action="/work">\n'
             f'<input type="hidden" name="node_id" value="{_esc(node_id)}">\n'
             f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">\n'
@@ -295,8 +318,8 @@ def _node_actions_card(view, node_id: str) -> str:
             "</form>\n"
             "</div>\n"
             "</div>\n"
-            '<p class="section-meta">Starting records this skill as active. '
-            "Progress never moves backward.</p>\n"
+            '<p class="section-meta">'
+            f"{_esc(START_ANNOUNCEMENT)}</p>\n"
         )
     else:
         inner += (

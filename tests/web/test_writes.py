@@ -300,6 +300,44 @@ def test_second_start_refuses_with_single_open_session_copy(repo):
     assert len(sessions) == 1
 
 
+def test_a_refused_second_start_lands_on_the_cockpit_and_names_both_options(repo):
+    """R5: the refusal itself is recoverable — no hint ladder, no raw ids."""
+    from skilltrace.web.interface import forbidden_matches
+
+    _set_state(repo, NODE, "available")
+    views.post_start(repo, NODE, _form())
+    events_before = _events(repo)
+    assert [event["command"] for event in events_before] == ["start"]
+    assert events_before[0]["args"]["source"] == "web"
+    work_before = _read_yaml(repo, "execution/session_work.yaml")
+    sessions_before = _read_yaml(repo, "execution/sessions.yaml")
+
+    result = views.post_start(repo, NODE, _form(next="/"))
+    assert isinstance(result, Redirect)
+    assert result.location.startswith("/session?")
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+    # The CLI's own refusal (a Session is already open), translated to the
+    # two real options; no CLI voice leaks through.
+    assert "already open" in notice
+    assert "Add work to it, or close it first." in notice
+    assert forbidden_matches(notice) == []
+    # Pin the source: the notice is the dispatcher's own refusal line, not a
+    # hand-written web sentence (exit 2, no event).
+    from skilltrace.web.interface import translate
+    from skilltrace.web.views.writes import _dispatch_web
+
+    exit_code, lines = _dispatch_web(repo, "start", node_id=NODE, template=None)
+    assert exit_code == 2
+    cli_line = next(line for line in lines if "is already open" in line)
+    stripped = re.sub(r"^\[(?:error|warning|advisory)\]\s*", "", cli_line).strip()
+    assert translate(stripped) == notice
+    # A refusal writes nothing: one start event, one session, one work row.
+    assert _events(repo) == events_before
+    assert _read_yaml(repo, "execution/sessions.yaml") == sessions_before
+    assert _read_yaml(repo, "execution/session_work.yaml") == work_before
+
+
 def test_work_blocked_requires_notes_translated(repo):
     """T5 P3.5: the blocked-work refusal names the requirement with no flags."""
     _set_state(repo, NODE, "available")
@@ -332,6 +370,68 @@ def test_work_bad_minutes_is_a_warning_flash(repo):
     result = views.post_work(repo, _form(node_id=NODE, minutes="abc"))
     notice = parse_qs(result.location.partition("?")[2])["notice"][0]
     assert "minutes must be an integer." in notice
+
+
+def test_work_on_a_locked_node_is_refused_without_a_record(repo):
+    """HB-4: no override; the refusal names the lock and writes nothing."""
+    _set_state(repo, NODE, "available")
+    views.post_start(repo, NODE, _form())
+    locked = _first_locked_node(repo)
+    work_before = _read_yaml(repo, "execution/session_work.yaml")
+    events_before = _events(repo)
+
+    result = views.post_work(repo, _form(node_id=locked, notes="x", next="/session"))
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+    assert "locked" in notice
+    assert "no work can be recorded" in notice
+    assert locked not in notice  # R1: a readable sentence, not a raw id
+    assert _read_yaml(repo, "execution/session_work.yaml") == work_before
+    assert _events(repo) == events_before
+
+
+@pytest.mark.parametrize("asserted_state", ["passed", "mastered"])
+def test_work_on_an_asserted_node_stays_history_and_never_demotes(repo, asserted_state):
+    """HB-3: the work row is honest history; the asserted state stands."""
+    _set_state(repo, NODE, asserted_state)
+    views.post_start(repo, NODE, _form())
+    assert _state_of(repo, NODE) == asserted_state
+
+    result = views.post_work(
+        repo, _form(node_id=NODE, notes="revisited the examples", minutes="10")
+    )
+    assert isinstance(result, Redirect)
+    _, kind = _notice_of(result)
+    assert kind == "ok"
+    assert _state_of(repo, NODE) == asserted_state
+    work_rows = _read_yaml(repo, "execution/session_work.yaml").get("session_work") or []
+    assert work_rows[-1]["node_id"] == NODE
+    assert work_rows[-1]["notes"] == "revisited the examples"
+    commands = [e["command"] for e in _events(repo)]
+    assert commands == ["start", "work"]
+    assert all(e["args"]["source"] == "web" for e in _events(repo))
+
+
+def test_work_operational_failure_writes_nothing_and_points_at_health(repo):
+    """SC-00a/IC-8: a failure is not a refusal and never fabricates a record."""
+    _set_state(repo, NODE, "available")
+    views.post_start(repo, NODE, _form())
+    work_before = _read_yaml(repo, "execution/session_work.yaml")
+    events_before = _events(repo)
+    # The record store becomes unreadable — an operational failure, not a
+    # domain refusal.
+    (repo / "execution" / "sessions.yaml").write_text(
+        "sessions: [oops\n", encoding="utf-8"
+    )
+
+    result = views.post_work(repo, _form(node_id=NODE, notes="x", next="/session"))
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "error"
+    assert "/health" in notice
+    assert _read_yaml(repo, "execution/session_work.yaml") == work_before
+    assert _events(repo) == events_before
 
 
 # --- #343: the Log work form carries the canonical node id ----------------------
@@ -427,17 +527,55 @@ def test_work_unknown_node_id_refuses_without_writing(repo):
 def test_session_close_honest_end_refuses_future(repo):
     _set_state(repo, NODE, "available")
     views.post_start(repo, NODE, _form())
+    events_before = _events(repo)
     future = (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat(
         timespec="seconds"
     )
     result = views.post_session_close(repo, _form(end=future))
     notice = parse_qs(result.location.partition("?")[2])["notice"][0]
     assert "in the future" in notice
+    # §10.6: a refused close discards nothing and keeps closure available.
+    assert result.location.startswith("/session/close?")
+    assert _events(repo) == events_before
+    sessions = _read_yaml(repo, "execution/sessions.yaml").get("sessions") or []
+    assert sessions[0]["status"] == "open"
+    _, body, _ = views.session_close_body(repo)
+    assert "Close the session" in body
 
     ok = views.post_session_close(repo, _form())
     assert isinstance(ok, Redirect)
     sessions = _read_yaml(repo, "execution/sessions.yaml").get("sessions") or []
     assert sessions[0]["status"] == "completed"
+    # Closing implies no progress change at all (C05, HB-3).
+    assert _state_of(repo, NODE) == "active"
+    commands = [e["command"] for e in _events(repo)]
+    assert commands == ["start", "session close"]
+    assert all(e["args"]["source"] == "web" for e in _events(repo))
+
+
+def test_a_stale_session_closes_with_an_honest_past_end_time(repo):
+    """A forgotten Session may record when the learner actually stopped."""
+    _set_state(repo, NODE, "available")
+    views.post_start(repo, NODE, _form())
+    sessions = _read_yaml(repo, "execution/sessions.yaml")
+    started = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat(
+        timespec="seconds"
+    )
+    sessions["sessions"][0]["started_at"] = started
+    _write_yaml(repo, "execution/sessions.yaml", sessions)
+    ended = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(
+        timespec="seconds"
+    )
+
+    result = views.post_session_close(repo, _form(end=ended))
+    assert isinstance(result, Redirect)
+    _, kind = _notice_of(result)
+    assert kind == "ok"
+    session = (_read_yaml(repo, "execution/sessions.yaml").get("sessions") or [])[0]
+    assert session["status"] == "completed"
+    assert session["ended_at"] == ended
+    assert _state_of(repo, NODE) == "active"
+    assert [e["command"] for e in _events(repo)] == ["start", "session close"]
 
 
 def test_blocker_create_then_resolve_round_trip(repo):
@@ -776,3 +914,43 @@ def test_http_rendered_log_work_form_round_trips_into_session_work(running_serve
     assert events[-1]["command"] == "work"
     assert events[-1]["args"]["source"] == "web"
     assert events[-1]["args"]["node_id"] == NODE
+
+
+def test_http_cockpit_loads_record_nothing(running_server):
+    """#354: page loads and inspections are not commands — no events, no work."""
+    server, root = running_server
+    base = f"http://127.0.0.1:{server.server_port}"
+
+    for path in ("/session", "/session/close", "/"):
+        status, _ = _http_get(base + path)
+        assert status == 200
+    assert _events(root) == []
+    assert _read_yaml(root, "execution/session_work.yaml") == {}
+
+
+def test_http_refused_second_start_lands_on_the_cockpit_without_an_event(running_server):
+    """#354/R5: the refusal is a fresh cockpit page naming the two options."""
+    server, root = running_server
+    base = f"http://127.0.0.1:{server.server_port}"
+
+    status, _, _ = _http_post(base + f"/nodes/{NODE}/start", {"next": f"/nodes/{NODE}"})
+    assert status == 303
+    events_before = _events(root)
+    assert [event["command"] for event in events_before] == ["start"]
+
+    status, location, _ = _http_post(
+        base + f"/nodes/{NODE}/start", {"next": f"/nodes/{NODE}"}
+    )
+    assert status == 303
+    assert location.startswith("/session?")
+    status, body = _http_get(base + location)
+    assert status == 200
+    # The CLI's own refusal, translated: the session is open and the two
+    # real options are named, with the cockpit itself one line below.
+    assert "A session is already open" in body
+    assert "Add work to it, or close it first" in body
+    assert "A second session cannot be started while this one is open" in body
+    # A refusal writes nothing: still one start event, one session.
+    assert _events(root) == events_before
+    sessions = _read_yaml(root, "execution/sessions.yaml").get("sessions") or []
+    assert len(sessions) == 1

@@ -10,11 +10,199 @@ session-scoped observation — and is never a Blocker (IC-10).
 
 from __future__ import annotations
 
+from datetime import datetime
+
+from ...evidence.eligibility import compute_eligibility
 from ...execution.records import open_session
-from ._shared import _esc, _session_node_id, _table
+from ...execution.staleness import stale_session_hours
+from . import _clock
+from ._shared import _CANONICAL_STATE_LABELS, _esc, _session_node_id, _table, plural
+from .evidence import evidence_figures
 from .forms import _resolve_blocker_form, _work_form_fields
 from .sections import BARE, INLINE, section
 from .shell import _page_head
+
+
+def _open_hours(session, *, now: datetime) -> float | None:
+    """How long the Session has been open — a derived figure, never a record.
+
+    ``None`` when the stored start is unparseable: the page states no
+    elapsed time rather than inventing one (a bad timestamp is ``validate``'s
+    concern, not a reason to crash the cockpit).
+    """
+    try:
+        started = datetime.fromisoformat(session.started_at)
+    except (TypeError, ValueError):
+        return None
+    if started.tzinfo is None:
+        started = started.replace(tzinfo=now.tzinfo)
+    elapsed = (now - started).total_seconds()
+    if elapsed < 0:
+        # A start in the future cannot yield a truthful open time; state no
+        # figure rather than a zero dressed as fact (SC-00a).
+        return None
+    return elapsed / 3600
+
+
+def _duration(hours: float) -> str:
+    """A calm human duration — orientation, never a measurement of work."""
+    if hours < 1:
+        return "under an hour"
+    whole = int(hours)
+    if whole >= 48:
+        days = whole // 24
+        return f"{days} {plural(days, 'day', 'days')}"
+    return f"{whole} hour{plural(whole)}"
+
+
+def _session_minutes(view, session) -> int:
+    """The minutes recorded in this Session — one sum for every surface."""
+    return sum(w.minutes or 0 for w in view.work if w.session_id == session.id)
+
+
+def _open_for_label(session, *, now: datetime) -> str:
+    """The honest elapsed-time label — ``unknown`` when it cannot be derived."""
+    hours = _open_hours(session, now=now)
+    return _duration(hours) if hours is not None else "unknown"
+
+
+def _stale(root, session, *, now: datetime) -> float | None:
+    """The open hours when the Session is past the policy window, else None.
+
+    Staleness is derived (CONTEXT.md): it warns and never blocks work or
+    closure. The threshold is seed data (``policy/workload.yaml``), read
+    through the one engine helper.
+    """
+    hours = _open_hours(session, now=now)
+    if hours is None:
+        return None
+    return hours if hours >= stale_session_hours(root) else None
+
+
+def _stale_banner(stale_hours: float | None) -> str:
+    """The stale warning: noticeable, honest, and never a dead end."""
+    if stale_hours is None:
+        return ""
+    return (
+        '<div class="banner advisory">\n'
+        f"<p>This session has been open for {_esc(_duration(stale_hours))}. It "
+        "may be one you forgot to close. Nothing is blocked by that: you can "
+        "keep recording work, or close it with the time you actually stopped "
+        "so the record stays honest.</p>\n"
+        "</div>\n"
+    )
+
+
+def _pass_facts(view, node_id: str, state: str) -> tuple[str, str]:
+    """The cockpit's eligibility fact and its next valid action (§10.5).
+
+    Eligibility is derived on demand (never stored), and passing is always a
+    separate, explicit decision on its own panel — this row says what is
+    true, never what to assert.
+    """
+    if not node_id:
+        return "—", "Next: close this session — it has no skill to work."
+    if state in ("passed", "mastered"):
+        return (
+            f"Already {_CANONICAL_STATE_LABELS[state].lower()} — closing changes nothing",
+            "Next: open the evidence workspace, or close this session. "
+            "Closing changes no progress.",
+        )
+    if state == "locked":
+        return (
+            "Locked — no work or pass is possible",
+            "Next: close this session — this skill cannot take work.",
+        )
+    eligible = compute_eligibility(
+        node_id,
+        view.specs_by_node.get(node_id, []),
+        has_gate=node_id in view.has_gate,
+        records=view.records,
+        node_state=state,
+    ).eligible
+    if eligible:
+        return (
+            "Ready — passing is a separate decision",
+            'Next: keep working, or decide on the '
+            f'<a href="/nodes/{_esc(node_id)}/pass">pass panel</a>. '
+            "Closing does neither.",
+        )
+    return (
+        "Not yet",
+        "Next: record the work you did below, or open the evidence "
+        "workspace.",
+    )
+
+
+def _session_facts(view, session, node_id: str, *, now: datetime) -> str:
+    """The cockpit's timer, totals and next action — presentation only.
+
+    The elapsed figure is rendered once, server-side. It is not a
+    ``SessionWork`` field, never becomes work, and no page load, navigation,
+    inspection or elapsed time records anything (IC-3, R6).
+    """
+    state = view.store.state_of(node_id) if node_id else ""
+    eligibility, next_action = _pass_facts(view, node_id, state)
+    open_for = _open_for_label(session, now=now)
+    return (
+        '<div class="rows">\n'
+        '<div class="row"><span class="row-label">Timer</span>'
+        f'<span class="row-value">Open for {_esc(open_for)}</span></div>\n'
+        '<div class="row"><span class="row-label">Work recorded</span>'
+        f'<span class="row-value">{_session_minutes(view, session)} minutes'
+        "</span></div>\n"
+        '<div class="row"><span class="row-label">Pass eligibility</span>'
+        f'<span class="row-value">{_esc(eligibility)}</span></div>\n'
+        "</div>\n"
+        '<p class="small mut">The elapsed time is shown for orientation only. '
+        "It is never recorded and never becomes work; only the work you log "
+        "below is saved.</p>\n"
+        f'<p class="small mut">{next_action}</p>\n'
+    )
+
+
+def _evidence_section(view, node_id: str) -> str:
+    """The evidence requirements for the bound SkillNode (R2, R7).
+
+    Wanted and recorded stay two labelled figures, derived once
+    (:func:`evidence.evidence_figures`) so the cockpit and the evidence
+    workspace cannot disagree. The full history stays one link away.
+    """
+    if not node_id:
+        return ""
+    specs = view.specs_by_node.get(node_id, [])
+    if not specs:
+        inner = (
+            '<div class="state state-empty">\n'
+            '<p class="state-title">Nothing is required here</p>\n'
+            '<p class="state-body">This skill has no artifact specification, '
+            "so there is no proof to gather before passing it.</p>\n"
+            "</div>\n"
+        )
+    else:
+        figures = evidence_figures(view, node_id)
+        inner = (
+            '<div class="rows">\n'
+            '<div class="row"><span class="row-label">Evidence wanted</span>'
+            f'<span class="row-value">{figures.wanted} required</span></div>\n'
+            '<div class="row"><span class="row-label">Evidence recorded</span>'
+            f'<span class="row-value">{figures.accepted_live} accepted, '
+            f"{figures.rejected} rejected, {figures.superseded} superseded"
+            "</span></div>\n"
+            "</div>\n"
+        )
+    inner += (
+        '<div class="command-bar"><div class="actions">'
+        f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/evidence">'
+        "Open the evidence workspace</a>"
+        "</div></div>\n"
+    )
+    return section(
+        "Evidence for this skill",
+        "What the proof asks for, before any work begins.",
+        inner,
+        frame=INLINE,
+    )
 
 
 def _session_rows(view, session) -> str:
@@ -183,31 +371,25 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
         return "Study", body, 200
 
     node_id = _session_node_id(view, session)
-    node_title = view.titles.get(node_id) or node_id
+    node_title = view.titles.get(node_id) or node_id or "Your session"
+    now = _clock.now_utc()
+    stale_hours = _stale(root, session, now=now)
     work_rows = _session_rows(view, session)
     blockers = _blocker_section(view)
     blocked_work = _blocked_work(view, session)
     create_blocker = _create_blocker_offer(view, session)
-
-    body = (
-        head
-        + section(
-            node_title,
-            "Session open — the timer is presentation only and records "
-            "nothing by itself.",
-            '<div class="command-bar">\n'
-            '<div class="actions">\n'
-            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">'
-            "Open this skill</a>\n"
-            '<a class="btn secondary" href="/session/close">'
-            "Close the session</a>\n"
-            "</div>\n"
-            "</div>\n",
-        )
-        + section(
+    skill_link = (
+        f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">'
+        "Open this skill</a>\n"
+        if node_id
+        else ""
+    )
+    if node_id:
+        work_section = section(
             "Work in this session",
             "Recording work saves the minutes and the notes you type, against "
-            "this skill and this session. Nothing else is written: the timer "
+            "this skill and this session. Blocked work also needs a note "
+            "saying where you got stuck. Nothing else is written: the timer "
             "never records, and looking at another skill never records "
             "anything either.",
             '<form method="post" action="/work">\n'
@@ -219,6 +401,51 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
             "</form>\n",
             frame=INLINE,
         )
+    else:
+        # A session with no work has no bound skill (corrupt or hand-edited
+        # data). Never render a form the domain would always refuse: name
+        # the state and offer the one safe move.
+        work_section = section(
+            "Work in this session",
+            "",
+            '<div class="state state-refusal">\n'
+            '<p class="state-title">No skill is bound to this session</p>\n'
+            '<p class="state-body">Work is recorded against the skill a '
+            "session is bound to, and this session has none on record. Close "
+            "it and start again from Today; nothing already saved is lost."
+            "</p>\n"
+            '<p><a href="/session/close">Close this session</a> or '
+            '<a href="/">go to Today</a>.</p>\n'
+            "</div>\n",
+            frame=INLINE,
+        )
+
+    body = (
+        head
+        + _stale_banner(stale_hours)
+        + section(
+            node_title,
+            "Session open — the timer is presentation only and records "
+            "nothing by itself.",
+            '<div class="command-bar">\n'
+            '<div class="actions">\n'
+            f"{skill_link}"
+            '<a class="btn secondary" href="/session/close">'
+            "Close the session</a>\n"
+            "</div>\n"
+            "</div>\n"
+            '<p class="small mut">A second session cannot be started while '
+            "this one is open: record work here against the skill it is bound "
+            "to, or close this session first. Nothing on this page closes or "
+            "replaces it.</p>\n",
+        )
+        + section(
+            "This session",
+            "",
+            _session_facts(view, session, node_id, now=now),
+            frame=INLINE,
+        )
+        + work_section
         + section(
             "Session work",
             "",
@@ -227,6 +454,7 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
         )
         + f"{blocked_work}"
         + f"{create_blocker}"
+        + _evidence_section(view, node_id)
         + section(
             "Blockers",
             "A blocker is persistent stuckness you recorded deliberately. It "
@@ -268,28 +496,81 @@ def session_close_body(root, query: dict | None = None) -> tuple[str, str, int]:
         )
         return "Close session", body, 200
 
-    items = [w for w in view.work if w.session_id == session.id]
-    minutes = sum(w.minutes or 0 for w in items)
     node_id = _session_node_id(view, session)
-    node_title = view.titles.get(node_id) or node_id
+    node_title = view.titles.get(node_id) or node_id or "Your session"
+    now = _clock.now_utc()
+    stale_hours = _stale(root, session, now=now)
+    open_for_line = _open_for_label(session, now=now)
+
+    # §10.6: the panel discloses what remains after closure — the unresolved
+    # Blockers, the asserted state, and the evidence standing. None of them
+    # changes by closing.
+    state = view.store.state_of(node_id) if node_id else ""
+    open_blockers = [
+        b
+        for b in view.blockers
+        if b.status == "open" and b.node_id == node_id
+    ]
+    if open_blockers:
+        blockers_fact = (
+            f"{len(open_blockers)} open — closing resolves none of them"
+        )
+    else:
+        blockers_fact = "None open"
+    state_fact = (
+        f"{_CANONICAL_STATE_LABELS.get(state, state)} — unchanged by closing"
+        if state
+        else "—"
+    )
+    if node_id and view.specs_by_node.get(node_id):
+        figures = evidence_figures(view, node_id)
+        evidence_fact = (
+            f"{figures.accepted_live} accepted, {figures.rejected} rejected, "
+            f"{figures.superseded} superseded — unchanged by closing"
+        )
+    else:
+        evidence_fact = "Nothing is required"
+
+    end_field = ""
+    if stale_hours is not None:
+        end_field = (
+            '<div class="form-row"><label for="session-end">'
+            "When did you actually stop? (optional)</label>"
+            '<input type="text" name="end" id="session-end" '
+            'placeholder="2026-11-16T18:30:00+00:00">'
+            '<p class="small mut">Leave it blank to record the time you close '
+            "it now. A time in the future, or before the session started, is "
+            "refused — and nothing you recorded is lost.</p></div>\n"
+        )
 
     body = (
         head
+        + _stale_banner(stale_hours)
         + '<section class="section">\n'
         + '<h2 class="section-title">Close this session</h2>\n'
         + '<div class="rows">\n'
         + f'<div class="row"><span class="row-label">Skill</span>'
         f'<span class="row-value">{_esc(node_title)}</span></div>\n'
+        + f'<div class="row"><span class="row-label">Open for</span>'
+        f'<span class="row-value">{_esc(open_for_line)}</span></div>\n'
         + f'<div class="row"><span class="row-label">Work recorded</span>'
-        f'<span class="row-value">{minutes} minutes</span></div>\n'
+        f'<span class="row-value">{_session_minutes(view, session)} minutes'
+        "</span></div>\n"
         + '<div class="row"><span class="row-label">Started</span>'
         f'<span class="row-value">{_esc(session.started_at)}</span></div>\n'
+        + '<div class="row"><span class="row-label">Open blockers</span>'
+        f'<span class="row-value">{_esc(blockers_fact)}</span></div>\n'
+        + '<div class="row"><span class="row-label">State after closing</span>'
+        f'<span class="row-value">{_esc(state_fact)}</span></div>\n'
+        + '<div class="row"><span class="row-label">Evidence afterwards</span>'
+        f'<span class="row-value">{_esc(evidence_fact)}</span></div>\n'
         + "</div>\n"
         + '<div class="banner advisory">Closing saves the work you recorded. '
         "It does not pass a skill, resolve a blocker or complete a review — "
         "those are separate, explicit actions.</div>\n"
         + '<form method="post" action="/session/close">\n'
         + '<input type="hidden" name="next" value="/">\n'
+        + end_field
         + '<div class="command-bar"><div class="actions">'
         + '<button type="submit" class="btn primary">Close the session</button>'
         + '<a class="btn secondary" href="/session">Keep working</a>'

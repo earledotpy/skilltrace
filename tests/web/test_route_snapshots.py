@@ -46,8 +46,14 @@ route                   case
                         directory gone — could-not-compute, never merged
                         with the empty state), each the served body for
                         one query or reshaped fixture repo
-``GET /session``       ``session``
-``GET /session/close`` ``session-close``
+``GET /session``       ``session``; plus the named cockpit states (§10.5)
+                        ``session-stale`` (a forgotten Session past the
+                        policy window, on a reshaped fixture repo) and
+                        ``session-start-refused`` (the fresh page a refused
+                        second start lands on — produced through the write
+                        path, which writes nothing)
+``GET /session/close`` ``session-close``; plus ``session-close-stale`` (the
+                        honest past-end closure offered for a stale Session)
 ``GET /nodes/{id}/evidence``  ``node-evidence``
 ``GET /evidence``      ``evidence-index``, ``evidence-inspector``
                         (``?record=…``), ``evidence-inspector-refusal``
@@ -101,6 +107,7 @@ import pytest
 import yaml
 from discovery_fixtures import build_discovery_variant
 from node_fixtures import build_node_variant
+from session_fixtures import build_session_variant, refused_start_body
 from today_fixtures import build_today_variant
 
 from skilltrace.web import views
@@ -429,6 +436,11 @@ def _freeze_read_clock(monkeypatch: pytest.MonkeyPatch) -> None:
             monkeypatch.setattr(module, "utc_today", frozen)
     monkeypatch.setattr(commands.today, "datetime", _FrozenDatetime)
     monkeypatch.setattr(commands._common, "datetime", _FrozenDatetime)
+    # The cockpit's elapsed-time read is the web's one wall-clock call; pin
+    # it through its module so the rendered timer never follows the wall.
+    from skilltrace.web.views import _clock
+
+    monkeypatch.setattr(_clock, "now_utc", lambda: FROZEN_MOMENT)
 
 
 # --- The route table: one case per served body ------------------------------
@@ -585,12 +597,36 @@ CASES: tuple[RouteCase, ...] = (
         200,
         lambda r: views.session_body(r, {}),
     ),
+    # The named cockpit states (§10.5): stale warns without blocking, and
+    # the refusal state is the fresh page a refused second start lands on —
+    # the same fixture the axe harness scans.
+    RouteCase(
+        "session-stale",
+        "GET /session",
+        "Study",
+        200,
+        lambda r: views.session_body(build_session_variant(r, "stale"), {}),
+    ),
+    RouteCase(
+        "session-start-refused",
+        "GET /session (after a refused start)",
+        "Study",
+        200,
+        lambda r: refused_start_body(r, NODE_ACTIVE),
+    ),
     RouteCase(
         "session-close",
         "GET /session/close",
         "Close session",
         200,
         lambda r: views.session_close_body(r, {}),
+    ),
+    RouteCase(
+        "session-close-stale",
+        "GET /session/close",
+        "Close session",
+        200,
+        lambda r: views.session_close_body(build_session_variant(r, "stale"), {}),
     ),
     RouteCase(
         "node-evidence",
