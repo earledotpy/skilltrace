@@ -449,23 +449,41 @@ def _resolved_blockers(view, node_ids: set[str]) -> str:
 
 
 def _blocker_section(view, node_ids: set[str], *, back_to_work: bool) -> str:
-    """The open Blockers, then the Session's resolved history.
+    """The Session's open Blockers, then its resolved history.
 
-    Every open Blocker is shown — the cockpit is where stuckness becomes
-    visible, and hiding one because its skill has no work in this Session
-    would make the page's "no blockers" copy over-claim. The resolved
-    history is scoped to the Session's own skills, where it is the terminal
-    trace of what this Session cleared. An open Blocker shows its obstacle,
-    the available study material and the available remediation actions;
-    none of those is a resolution. Only the explicit resolve action clears
-    it, and that changes no other record.
+    Both halves are scoped to the skills the Session has worked: the cockpit
+    is one Session's timeline. An open Blocker shows its obstacle, the
+    available study material and the available remediation actions; none of
+    those is a resolution. Only the explicit resolve action clears it, and
+    that changes no other record. Blockers on other skills are named by
+    count rather than silently omitted (SC-00a).
     """
     open_blockers = sorted(
-        (blocker for blocker in view.blockers if blocker.status == "open"),
+        (
+            blocker
+            for blocker in view.blockers
+            if blocker.status == "open" and blocker.node_id in node_ids
+        ),
         key=lambda b: b.created_at or "",
     )
     resolved = _resolved_blockers(view, node_ids)
     if not open_blockers and not resolved:
+        elsewhere = [
+            blocker for blocker in view.blockers if blocker.status == "open"
+        ]
+        if elsewhere:
+            count = len(elsewhere)
+            return (
+                '<div class="state state-empty">\n'
+                '<p class="state-title">No blockers on this session\'s skills'
+                "</p>\n"
+                '<p class="state-body">'
+                f"{count} open blocker{'' if count == 1 else 's'} "
+                f"{'exists' if count == 1 else 'exist'} on other skills. "
+                "They appear here when you work on those skills; nothing is "
+                "hidden.</p>\n"
+                "</div>\n"
+            )
         return (
             '<div class="state state-empty">\n'
             '<p class="state-title">No blockers</p>\n'
@@ -523,7 +541,8 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
     session_nodes = {
         item.node_id for item in view.work if item.session_id == session.id
     }
-    blockers = _blocker_section(view, session_nodes, back_to_work=bool(node_id))
+    has_work = bool(node_id)
+    blockers = _blocker_section(view, session_nodes, back_to_work=has_work)
     blocked_work = _blocked_work(view, session)
     create_blocker = _create_blocker_offer(view, session)
     skill_link = (
@@ -532,7 +551,7 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
         if node_id
         else ""
     )
-    if node_id:
+    if has_work:
         work_section = section(
             "Work in this session",
             "Recording work saves the minutes and the notes you type, against "

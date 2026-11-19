@@ -358,6 +358,27 @@ def test_work_blocked_requires_notes_translated(repo):
     assert work_rows[-1]["minutes"] == 25
 
 
+def test_blocked_work_never_creates_a_blocker(repo):
+    """Blocked work is a session observation; only the explicit command records one."""
+    _set_state(repo, NODE, "available")
+    views.post_start(repo, NODE, _form())
+
+    result = views.post_work(
+        repo,
+        _form(node_id=NODE, blocked="1", notes="stuck on X", minutes="25"),
+    )
+    assert isinstance(result, Redirect)
+    assert _notice_of(result)[1] == "ok"
+
+    assert _read_yaml(repo, "execution/blockers.yaml").get("blockers") in (
+        None,
+        [],
+    )
+    assert [e["command"] for e in _events(repo)] == ["start", "work"]
+    work_rows = _read_yaml(repo, "execution/session_work.yaml").get("session_work") or []
+    assert work_rows[-1]["blocked"] is True
+
+
 def test_work_without_open_session_refuses_like_cli(repo):
     result = views.post_work(repo, _form(node_id=NODE))
     notice = parse_qs(result.location.partition("?")[2])["notice"][0]

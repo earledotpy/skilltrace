@@ -36,7 +36,7 @@ import re
 from argparse import Namespace
 from contextlib import redirect_stdout
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from io import StringIO
 from pathlib import Path
 from urllib.parse import urlencode

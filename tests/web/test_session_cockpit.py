@@ -33,10 +33,11 @@ NOW = datetime(2026, 11, 17, 9, 0, tzinfo=timezone.utc)
 
 @pytest.fixture(autouse=True)
 def _frozen_now(monkeypatch):
-    """Pin the cockpit's one wall-clock read — the fixture-clock discipline."""
-    from skilltrace.web.views import _clock
+    """Pin the cockpit's clock reads and the shared resource-status date."""
+    from skilltrace.web.views import _clock, _shared
 
     monkeypatch.setattr(_clock, "now_utc", lambda: NOW)
+    monkeypatch.setattr(_shared, "utc_today", lambda: NOW.date())
     return NOW
 
 
