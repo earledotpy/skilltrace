@@ -607,6 +607,24 @@ def route_cases() -> tuple[RouteCase, ...]:
             "next_body",
             lambda r: views.next_body(build_discovery_variant(r, "next-stale"), {}),
         ),
+        RouteCase(
+            "next-empty-curriculum",
+            "GET /next",
+            "guided",
+            "next_body",
+            lambda r: views.next_body(
+                build_discovery_variant(r, "next-empty-curriculum"), {}
+            ),
+        ),
+        RouteCase(
+            "next-source-missing",
+            "GET /next",
+            "guided",
+            "next_body",
+            lambda r: views.next_body(
+                build_discovery_variant(r, "next-source-missing"), {}
+            ),
+        ),
         RouteCase("finder", "GET /find", "guided", "finder_body", lambda r: views.finder_body(r, {})),
         RouteCase(
             "finder-no-results",

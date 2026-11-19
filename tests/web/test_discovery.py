@@ -259,6 +259,40 @@ def test_next_failure_state_is_operational_and_invents_nothing(
     assert 'href="/find"' in body
 
 
+def test_next_a_missing_curriculum_source_is_a_failure_not_an_empty_state(repo):
+    """A missing graph/nodes/ directory is could-not-compute, never empty.
+
+    The loader answers an empty list for a missing source directory, so
+    without the distinction the failure would present itself as an empty
+    curriculum — a fact the page does not know. Both discovery surfaces sit
+    over the same source, so Next must draw the line as Find does (SC-00a).
+    """
+    body = _next(build_discovery_variant(repo, "next-source-missing"))
+
+    assert 'class="state state-failure"' in body
+    assert "The curriculum could not be read" in body
+    assert "graph/nodes/" in body
+    # It claims nothing about the curriculum itself.
+    assert "The curriculum holds no skills yet" not in body
+    assert 'class="state state-empty"' not in body
+    # A precise recovery path.
+    assert 'href="/health"' in body
+    assert "reload Next" in body
+
+
+def test_next_empty_curriculum_speaks_in_nexts_own_vocabulary(repo):
+    """A genuinely empty curriculum says what Next cannot do — not Find's copy."""
+    body = _next(build_discovery_variant(repo, "next-empty-curriculum"))
+
+    assert 'class="state state-empty"' in body
+    assert "The curriculum holds no skills yet" in body
+    assert "nothing to recommend" in body
+    # The Find surface's vocabulary ("search, browse") belongs to Find.
+    assert "search, browse" not in body
+    # The assurance is the one wording every discovery surface shares.
+    assert "not about you." in body
+
+
 def test_next_stale_readiness_prompts_a_safe_refresh(writable_repo):
     # A new hard prerequisite makes the saved readiness out of date.
     _add_hard_prerequisite(
@@ -401,6 +435,19 @@ def test_find_guided_carries_no_raw_identifier_anywhere(repo):
     operations = _find(repo, mode="operations", q="order of operations")
     assert f'<p class="mut ref">{ORDER_OPERATIONS}</p>' in operations
     assert "The skill identifier is shown in grey" in operations
+
+
+def test_find_operations_mode_matches_the_chrome_case_insensitively(repo):
+    """The raw-id gate parses the mode as the chrome does (case-insensitively).
+
+    ``?mode=Operations`` renders the Operations chrome, so its cards must be
+    Operations too: an id-less Guided card under Operations chrome is exactly
+    the mismatch R1 forbids.
+    """
+    body = _find(repo, mode="Operations", q="order of operations")
+
+    assert f'<p class="mut ref">{ORDER_OPERATIONS}</p>' in body
+    assert "The skill identifier is shown in grey" in body
 
 
 def test_find_no_results_preserves_discovery(repo):

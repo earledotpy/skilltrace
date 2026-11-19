@@ -34,7 +34,6 @@ itself, and in the labelled technical data of those other contexts.
 
 from __future__ import annotations
 
-from pathlib import Path
 from urllib.parse import urlencode
 
 from ...context import JoinedView
@@ -43,19 +42,21 @@ from ..discovery import (
     DiscoveryCard,
     browse_cards,
     browse_subjects,
+    curriculum_source_present,
     discover,
     discovery_page_cards,
 )
 from ..interface.render import render_discovery_cards
 from . import _readiness
 from ._shared import (
+    ASSURANCE,
     _esc,
     _normalize_pill_label,
     _table,
     plural,
 )
 from .sections import section
-from .shell import _page_head
+from .shell import _mode_from, _page_head
 
 #: The five canonical node states, as filter choices. A locked skill is a
 #: legitimate thing to look for — it is shown as explanation, never as a
@@ -183,10 +184,9 @@ def _no_results_html(
     return (
         '<div class="state state-empty">\n'
         '<p class="state-title">No skills match</p>\n'
-        f'<p class="state-body">Nothing came back — {searched}. That is a fact '
-        "about the curriculum, not about you. The whole curriculum is still "
-        "open to you: start from a foundations entry, or browse by subject "
-        "below.</p>\n"
+        f'<p class="state-body">Nothing came back — {searched}. {ASSURANCE} '
+        "The whole curriculum is still open to you: start from a foundations "
+        "entry, or browse by subject below.</p>\n"
         '<p class="state-body">Foundations entries:</p>\n'
         f"<ul>{entries}</ul>\n"
         '<p><a href="#browse">Browse by subject</a> — or '
@@ -271,8 +271,11 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
     mode = (query.get("mode") or [""])[0]
     # R1: raw identifiers are labelled technical data, sanctioned in the
     # Operations presentation; Guided prose — this page's default — never
-    # carries one.
-    show_ids = mode == "operations"
+    # carries one. The mode is parsed by the shell's own helper, so the card
+    # gate and the chrome can never disagree about the presentation (an
+    # uppercase ``?mode=Operations`` renders Operations chrome *and*
+    # Operations cards).
+    show_ids = _mode_from(query) == "operations"
 
     def find_url(**params: str) -> str:
         """The Find destination with these controls — one addressable URL."""
@@ -333,11 +336,10 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
     # --- the curriculum source -----------------------------------------------
     # Two states that must never merge (SC-00a): a curriculum that is
     # genuinely empty, and a source that cannot be read. The loader answers
-    # [] for a missing graph/nodes/ directory, so without the directory
-    # check the failure would present itself as an empty curriculum and
-    # the page would claim a fact it does not know.
-    nodes_dir = Path(root) / "graph" / "nodes"
-    if not nodes_dir.is_dir():
+    # [] for a missing graph/nodes/ directory, so without the source check
+    # the failure would present itself as an empty curriculum and the page
+    # would claim a fact it does not know.
+    if not curriculum_source_present(root):
         body = (
             '<section class="section">\n'
             '<div class="state state-failure">\n'
@@ -367,8 +369,7 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
             '<div class="state state-empty">\n'
             '<p class="state-title">There are no skills to search yet</p>\n'
             '<p class="state-body">The curriculum contains no skills, so '
-            "there is nothing to search, browse or start. That is a fact "
-            "about the curriculum, not about you.</p>\n"
+            f"there is nothing to search, browse or start. {ASSURANCE}</p>\n"
             '<p class="state-body">If you expected skills here, add node '
             "files to the graph/nodes/ directory — Find a skill picks them "
             "up on the next reload.</p>\n"

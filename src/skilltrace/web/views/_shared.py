@@ -16,6 +16,13 @@ from ...context import JoinedView
 from ..interface import esc as _esc
 from ..interface import plural as plural  # explicit re-export (PEP 484) — see docstring
 
+#: The assurance the discovery surfaces share when an empty result is a fact
+#: about the curriculum, not the learner (R7): stated once here, so ``/next``
+#: and ``/find`` can never disagree about who the fact is about. Today's day
+#: state is about *availability* rather than the curriculum, so it keeps its
+#: own wording; this constant covers the curriculum-fact case only.
+ASSURANCE = "That is a fact about the curriculum, not about you."
+
 
 def _output_banners(lines: list[str], *, default_class: str = "advisory") -> str:
     """Captured handler output as banners — through the P3.1 translation seam.

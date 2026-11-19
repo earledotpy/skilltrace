@@ -31,9 +31,12 @@ route                   case
                         served body of ``/`` for one reshaped fixture
                         repo (``tests/web/today_fixtures.py``)
 ``GET /next``           ``next``, ``next-locked`` (``?locked=1``); plus the
-                        named Next states (§10.2, SC-00a) ``next-empty``
-                        and ``next-stale``, each the served body of
-                        ``/next`` for one reshaped fixture repo
+                        named Next states (§10.2, SC-00a) ``next-empty``,
+                        ``next-stale``, ``next-empty-curriculum`` (a
+                        curriculum with no skills) and ``next-source-missing``
+                        (the graph/nodes/ directory gone — could-not-compute,
+                        never merged with the empty state), each the served
+                        body of ``/next`` for one reshaped fixture repo
                         (``tests/web/discovery_fixtures.py``)
 ``GET /find``          ``finder``, ``finder-query`` (``?q=…``); plus the
                         named Find states (§10.3) ``finder-no-results``
@@ -491,6 +494,24 @@ CASES: tuple[RouteCase, ...] = (
         "Next",
         200,
         lambda r: views.next_body(build_discovery_variant(r, "next-stale"), {}),
+    ),
+    RouteCase(
+        "next-empty-curriculum",
+        "GET /next",
+        "Next",
+        200,
+        lambda r: views.next_body(
+            build_discovery_variant(r, "next-empty-curriculum"), {}
+        ),
+    ),
+    RouteCase(
+        "next-source-missing",
+        "GET /next",
+        "Next",
+        200,
+        lambda r: views.next_body(
+            build_discovery_variant(r, "next-source-missing"), {}
+        ),
     ),
     RouteCase(
         "node",

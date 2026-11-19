@@ -113,7 +113,7 @@ def facts_for(view, rec, *, minutes: int = DEFAULT_MINUTES) -> list[Fact]:
         facts.append(
             Fact(
                 f"{waiting} other skill{plural(waiting)} "
-                f'{"is" if waiting == 1 else "are"} waiting on it'
+                f"{plural(waiting, 'is', 'are')} waiting on it"
             )
         )
     return facts

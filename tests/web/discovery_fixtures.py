@@ -13,6 +13,10 @@ that turn a pinned repo into each named discovery state (spec-v3-study-day
   one more saved readiness (available → locked) the curriculum no longer
   agrees with, so Next prompts a safe refresh instead of trusting the
   store;
+* ``next-empty-curriculum`` — a curriculum with no skills at all: Next says
+  there is nothing to recommend, in its own vocabulary;
+* ``next-source-missing`` — the graph/nodes/ directory gone: Next reports
+  an operational failure, never an empty-curriculum claim;
 * ``finder-empty`` — a curriculum with no skills at all: Find explains the
   curriculum, never the learner;
 * ``finder-source-missing`` — the graph/nodes/ directory gone: Find
@@ -59,6 +63,8 @@ def _source_missing(root: Path) -> None:
 _MUTATIONS = {
     "next-empty": finish_every_startable_skill,
     "next-stale": make_one_readiness_stale,
+    "next-empty-curriculum": _empty_curriculum,
+    "next-source-missing": _source_missing,
     "finder-empty": _empty_curriculum,
     "finder-source-missing": _source_missing,
     "finder-stale": make_one_readiness_stale,

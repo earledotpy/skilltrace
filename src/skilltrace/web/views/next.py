@@ -39,8 +39,11 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 from ...commands.recommend import derive_next
+from ..discovery import curriculum_source_present
 from . import _readiness, _reasons
+from ._reasons import Fact
 from ._shared import (
+    ASSURANCE,
     _esc,
     _normalize_pill_label,
     _parse_int,
@@ -57,7 +60,7 @@ MAX_OPTIONS = 20
 MAX_EXPLAINED = 8
 
 
-def _why_details(reason: str, facts: list) -> str:
+def _why_details(reason: str, facts: list[Fact]) -> str:
     """The ``Why this?`` disclosure — the whole of this item's reasoning.
 
     The reason is the same honest sentence the queue shows; the facts are
@@ -186,7 +189,7 @@ def _not_ready_list(model, view) -> str:
     if rest > 0:
         more = (
             f'<p class="section-meta">{rest} more skill{plural(rest)} '
-            f'{"is" if rest == 1 else "are"} waiting on another skill — '
+            f"{plural(rest, 'is', 'are')} waiting on another skill — "
             '<a href="/find">find them in the curriculum</a>.</p>\n'
         )
     return f'<div class="rows">\n{rows}</div>\n{more}'
@@ -202,15 +205,24 @@ def _empty_state(view) -> str:
     the limited state is the one that speaks for the window — so the
     reason never claims a constraint the records do not make. The
     recovery path keeps discovery alive.
+
+    The three counts partition the curriculum as ``finished + waiting ==
+    total``: this page only reaches the empty state when the ranker found
+    nothing to recommend, and the ranker recommends every ``available`` or
+    ``active`` node — so no node here is in either state. A node the store
+    does not know is read at its derived floor, ``locked`` (``state_of``),
+    which keeps the partition true for an unsynced store too.
     """
     states = [view.store.state_of(node.id) for node in view.nodes]
     total = len(states)
     finished = sum(1 for state in states if state in ("passed", "mastered"))
     waiting = sum(1 for state in states if state == "locked")
     if total == 0:
+        # The source exists but holds no skills — an empty curriculum, not a
+        # source that could not be read (that failure is caught before here).
         reason = (
             "The curriculum holds no skills yet, so there is nothing to "
-            "search, browse or start."
+            "recommend."
         )
     elif waiting == 0:
         reason = (
@@ -228,15 +240,14 @@ def _empty_state(view) -> str:
         reason = (
             f"You have finished {finished} skill{plural(finished)}, and "
             f"the other {waiting} skill{plural(waiting)} "
-            f'{"is" if waiting == 1 else "are"} waiting on a skill you '
+            f"{plural(waiting, 'is', 'are')} waiting on a skill you "
             "have not finished."
         )
     return (
         '<section class="section">\n'
         '<div class="state state-empty">\n'
         '<p class="state-title">Nothing is recommendable right now</p>\n'
-        f'<p class="state-body">{_esc(reason)} That is a fact about the '
-        "curriculum, not about you.</p>\n"
+        f'<p class="state-body">{_esc(reason)} {ASSURANCE}</p>\n'
         '<p><a href="/find">Find a skill</a> — the whole curriculum is '
         'open to you, whatever this list says.</p>\n'
         "</div>\n"
@@ -266,6 +277,30 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
     )
     if failure is not None:
         return failure
+
+    # --- the curriculum source -----------------------------------------------
+    # Two states that must never merge (SC-00a): a curriculum that is
+    # genuinely empty, and a source that cannot be read. The loader answers
+    # [] for a missing graph/nodes/ directory, so without the source check
+    # the failure would present itself as an empty curriculum and the page
+    # would claim a fact it does not know — the same distinction /find
+    # draws, over the same source.
+    if not curriculum_source_present(root):
+        body = (
+            head
+            + '<section class="section">\n'
+            '<div class="state state-failure">\n'
+            '<p class="state-title">The curriculum could not be read</p>\n'
+            '<p class="state-body">The graph/nodes/ directory that holds the '
+            "curriculum is missing, so there is nothing to rank and no fact "
+            "is claimed about the curriculum. Nothing about your progress "
+            "changed.</p>\n"
+            '<p><a href="/health">Open Health</a> for the detail — or '
+            'restore the directory and <a href="/next">reload Next</a>.</p>\n'
+            "</div>\n"
+            "</section>\n"
+        )
+        return "Next", body, 200
 
     def next_url(mins: int, count: int) -> str:
         """This destination with different controls — one addressable URL."""

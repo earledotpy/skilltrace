@@ -82,6 +82,7 @@ from ..discovery import (
     browse_cards,
     browse_subjects,
     card_for,
+    curriculum_source_present,
     discover,
     discovery_page_cards,
 )
@@ -113,6 +114,7 @@ from ._reasons import (  # noqa: F401
 )
 from ._shared import (  # noqa: F401  # noqa: F401
     _CANONICAL_STATE_LABELS,
+    ASSURANCE,
     _degraded_banner,
     _esc,
     _field,
@@ -393,10 +395,12 @@ __all__ = [
     "analytics_body",
     "analytics_warnings",
     "annotations",
+    "ASSURANCE",
     "browse_cards",
     "browse_subjects",
     "compute_eligibility",
     "compute_mastery_eligibility",
+    "curriculum_source_present",
     "dataclass",
     "derive_analytics",
     "derive_next",
