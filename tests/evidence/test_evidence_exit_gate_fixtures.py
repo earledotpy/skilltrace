@@ -196,8 +196,7 @@ def test_spec_non_boolean_required_fails(evidence_builder):
     assert "non-boolean required" in out
 
 
-def test_spec_zero_minimum_count_fails(evidence_builder):
-    # An optional spec is `required: false`, never a zero count.
+def test_required_spec_zero_minimum_count_fails(evidence_builder):
     root = (
         evidence_builder.node(NODE)
         .specs([evidence_builder.spec_dict("spec.a", NODE, minimum_count=0)])
@@ -207,6 +206,26 @@ def test_spec_zero_minimum_count_fails(evidence_builder):
     rc, out = _run_validate(root)
     assert rc == 1
     assert "invalid minimum_count" in out
+
+
+def test_optional_spec_zero_minimum_count_passes(evidence_builder):
+    root = (
+        evidence_builder.node(NODE)
+        .specs(
+            [
+                evidence_builder.spec_dict(
+                    "spec.a",
+                    NODE,
+                    minimum_count=0,
+                    overrides={"required": False},
+                )
+            ]
+        )
+        .gates([evidence_builder.gate_dict("gate.a", NODE)])
+        .write()
+    )
+    rc, out = _run_validate(root)
+    assert rc == 0, out
 
 
 # --- Validation gate shape errors ------------------------------------------

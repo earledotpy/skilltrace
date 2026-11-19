@@ -41,6 +41,7 @@ from pathlib import Path
 
 import yaml
 from discovery_fixtures import build_discovery_variant
+from node_fixtures import build_node_variant
 from today_fixtures import build_today_variant
 
 from skilltrace.web import views
@@ -627,7 +628,21 @@ def route_cases() -> tuple[RouteCase, ...]:
             f"GET /nodes/{NODE_ACTIVE}",
             "guided",
             "node_body",
-            lambda r: views.node_body(r, NODE_ACTIVE, {}),
+            lambda r: views.node_body(build_node_variant(r, "populated"), NODE_ACTIVE, {}),
+        ),
+        RouteCase(
+            "node-empty",
+            f"GET /nodes/{NODE_ACTIVE}",
+            "guided",
+            "node_body",
+            lambda r: views.node_body(build_node_variant(r, "empty"), NODE_ACTIVE, {}),
+        ),
+        RouteCase(
+            "node-limited",
+            f"GET /nodes/{NODE_ACTIVE}",
+            "guided",
+            "node_body",
+            lambda r: views.node_body(build_node_variant(r, "limited"), NODE_ACTIVE, {}),
         ),
         RouteCase(
             "session",

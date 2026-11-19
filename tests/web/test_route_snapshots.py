@@ -90,6 +90,7 @@ from pathlib import Path
 import pytest
 import yaml
 from discovery_fixtures import build_discovery_variant
+from node_fixtures import build_node_variant
 from today_fixtures import build_today_variant
 
 from skilltrace.web import views
@@ -493,7 +494,21 @@ CASES: tuple[RouteCase, ...] = (
         f"GET /nodes/{NODE_ACTIVE}",
         "Use basic Pandas DataFrame operations",
         200,
-        lambda r: views.node_body(r, NODE_ACTIVE, {}),
+        lambda r: views.node_body(build_node_variant(r, "populated"), NODE_ACTIVE, {}),
+    ),
+    RouteCase(
+        "node-empty",
+        f"GET /nodes/{NODE_ACTIVE}",
+        "Use basic Pandas DataFrame operations",
+        200,
+        lambda r: views.node_body(build_node_variant(r, "empty"), NODE_ACTIVE, {}),
+    ),
+    RouteCase(
+        "node-limited",
+        f"GET /nodes/{NODE_ACTIVE}",
+        "Use basic Pandas DataFrame operations",
+        200,
+        lambda r: views.node_body(build_node_variant(r, "limited"), NODE_ACTIVE, {}),
     ),
     RouteCase(
         "finder", "GET /find", "Find a skill", 200, lambda r: views.finder_body(r, {})
@@ -746,6 +761,22 @@ def test_served_body_matches_its_golden(case: RouteCase, rendered) -> None:
     title, body, status = rendered[case.name]
     assert (title, status) == (case.title, case.status), case.route
     _compare_or_update(case.name, body)
+
+
+def test_node_goldens_cover_populated_empty_and_limited_records(rendered) -> None:
+    populated = rendered["node"][1]
+    assert "groupby aggregation needs another pass" in populated
+    assert "Redo the groupby examples with a smaller frame" in populated
+    assert "state-failure" not in populated
+
+    empty = rendered["node-empty"][1]
+    assert "No artifact specifications" in empty
+    assert "No attempts recorded" in empty
+
+    limited = rendered["node-limited"][1]
+    assert "Optional DataFrame design notes" in limited
+    shortfall = limited.split("Some required evidence is still short", 1)[1]
+    assert "Optional DataFrame design notes" not in shortfall
 
 
 def test_golden_snapshots_cover_the_normative_route_table() -> None:

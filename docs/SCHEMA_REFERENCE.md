@@ -84,7 +84,7 @@ last segment ends in `_\d+` (e.g. `math.algebra.linear_equations_01`).
 | `title` | string | yes | |
 | `artifact_kind` | string | yes | Free-form (not enum-constrained) |
 | `required` | boolean | yes | Must be a real bool |
-| `minimum_count` | integer | yes | Must be >= 1; booleans rejected |
+| `minimum_count` | integer | yes | >= 1 when required, >= 0 when optional; booleans rejected |
 | `description` | string | no | |
 | `expected_location_hint` | string | no | |
 | `example_filename` | string | no | |

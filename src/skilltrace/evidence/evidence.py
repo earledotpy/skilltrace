@@ -172,7 +172,8 @@ class ArtifactSpec:
 
     `required` distinguishes a counted spec (must meet `minimum_count` accepted
     records for the node to be pass-eligible) from an optional slot (kept and
-    shown, never counted). `minimum_count` is always ``>= 1``.
+    shown, never counted). Required specs have a positive `minimum_count`;
+    optional specs may use zero to show a slot with no evidence owed.
     """
 
     id: str
@@ -275,7 +276,8 @@ def load_artifact_spec(
 
     Raises `EvidenceLoadError` (naming the spec) on a non-mapping, an unknown
     field, a missing required field, a malformed `node_id`, a non-boolean
-    `required`, or a `minimum_count` that is not an integer ``>= 1``.
+    `required`, or an invalid `minimum_count` (positive for required specs,
+    non-negative for optional specs).
     """
     check_shape(
         data,
@@ -302,15 +304,16 @@ def load_artifact_spec(
     minimum_count = data["minimum_count"]
     # `bool` is a subclass of `int`; a stray `true`/`false` here is a schema
     # error, not the integer 1/0 it would coerce to.
+    minimum_allowed = 1 if required else 0
     if (
         not isinstance(minimum_count, int)
         or isinstance(minimum_count, bool)
-        or minimum_count < 1
+        or minimum_count < minimum_allowed
     ):
         raise EvidenceLoadError(
             f"{where}{ident} has invalid minimum_count {minimum_count!r} — expected "
-            "an integer >= 1 (an optional spec uses required: false, not a zero "
-            "count)."
+            f"an integer >= {minimum_allowed} for a "
+            f"{'required' if required else 'optional'} spec."
         )
 
     return ArtifactSpec(

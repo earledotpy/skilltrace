@@ -1,7 +1,7 @@
-"""ArtifactSpec loader: closed schema, required bool, minimum_count >= 1.
+"""ArtifactSpec loader: closed schema and required/optional minimum counts.
 
-Issue #10: `minimum_count: 0` fails; unknown fields fail; `artifact_kind` is
-free curriculum vocabulary and is *not* enum-constrained.
+Required evidence needs a positive minimum; an optional slot may use zero.
+Unknown fields fail; `artifact_kind` is free curriculum vocabulary.
 """
 
 from __future__ import annotations
@@ -78,10 +78,16 @@ def test_missing_required_field_fails(field):
     assert field in str(excinfo.value)
 
 
-def test_minimum_count_zero_fails():
+def test_required_minimum_count_zero_fails():
     with pytest.raises(EvidenceLoadError) as excinfo:
         load_artifact_spec(_spec_with(minimum_count=0))
     assert "minimum_count" in str(excinfo.value)
+
+
+def test_optional_minimum_count_zero_loads():
+    spec = load_artifact_spec(_spec_with(required=False, minimum_count=0))
+    assert spec.required is False
+    assert spec.minimum_count == 0
 
 
 def test_negative_minimum_count_fails():
