@@ -177,6 +177,102 @@ def test_node_page_shows_evidence_wanted_and_recorded_apart(repo):
     assert "recorded" in body.lower()
 
 
+def test_optional_zero_minimum_spec_is_visible_but_not_an_eligibility_gap(repo):
+    specs_path = repo / "evidence" / "artifact_specs.yaml"
+    specs = yaml.safe_load(specs_path.read_text(encoding="utf-8"))
+    node_id = next(spec["node_id"] for spec in specs["artifact_specs"] if spec["required"])
+    spec_id = f"spec.{node_id.removesuffix('_01')}"
+    required_count = sum(
+        spec["minimum_count"]
+        for spec in specs["artifact_specs"]
+        if spec["node_id"] == node_id and spec["required"]
+    )
+    specs["artifact_specs"].append(
+        {
+            "id": f"{spec_id}.optional",
+            "node_id": node_id,
+            "title": "Optional design notes",
+            "artifact_kind": "notes",
+            "required": False,
+            "minimum_count": 0,
+        }
+    )
+    _write_yaml(repo, "evidence/artifact_specs.yaml", specs)
+    _write_yaml(
+        repo,
+        "evidence/evidence_records.yaml",
+        {
+            "evidence_records": [
+                {
+                    "id": f"ev.{node_id}.001",
+                    "artifact_spec_id": spec_id,
+                    "location": "evidence/artifacts/rejected.md",
+                    "accepted": False,
+                    "accepted_by": "learner_manual",
+                    "artifact_hash": "sha256:" + "0" * 64,
+                    "created_at": "2026-11-01T09:00:00+00:00",
+                }
+            ]
+        },
+    )
+
+    _, body, status = views.node_body(repo, node_id)
+
+    assert status == 200
+    assert "Optional design notes" in body
+    assert "optional" in body
+    if required_count:
+        assert f"{required_count} record" in body
+        assert "wanted" in body
+    else:
+        assert "No required evidence is defined for this skill." in body
+    limited = body.split("Some required evidence is still short", 1)[1]
+    assert "Optional design notes" not in limited
+
+
+def test_passed_evidence_discrepancy_warns_without_demoting(repo):
+    node_id = _first_node_id(repo, state="available")
+    _set_state(repo, node_id, "passed")
+    spec_id = f"spec.{node_id.removesuffix('_01')}"
+    records = []
+    for index in range(1, 4):
+        records.append(
+            {
+                "id": f"ev.{node_id}.{index:03}",
+                "artifact_spec_id": spec_id,
+                "location": f"evidence/artifacts/example-{index}.md",
+                "accepted": True,
+                "accepted_by": "learner_manual",
+                "artifact_hash": "sha256:" + str(index) * 64,
+                "created_at": f"2026-11-0{index}T09:00:00+00:00",
+            }
+        )
+    records.append(
+        {
+            "id": f"ev.{node_id}.004",
+            "artifact_spec_id": spec_id,
+            "location": "evidence/artifacts/correction.md",
+            "accepted": False,
+            "accepted_by": "learner_manual",
+            "artifact_hash": "sha256:" + "4" * 64,
+            "created_at": "2026-11-04T09:00:00+00:00",
+            "supersedes": f"ev.{node_id}.001",
+            "supersede_reason": "The replacement did not meet the gate.",
+        }
+    )
+    _write_yaml(repo, "evidence/evidence_records.yaml", {"evidence_records": records})
+    state_path = repo / "graph" / "state.yaml"
+    before = state_path.read_bytes()
+
+    _, body, status = views.node_body(repo, node_id)
+
+    assert status == 200
+    assert "Your recorded pass is no longer backed by live evidence" in body
+    assert "The pass stands and never moves backward" in body
+    assert '<span class="pill passed">Passed</span>' in body
+    assert state_path.read_bytes() == before
+
+
 def test_node_page_links_reach_the_other_destinations(repo):
     """The links reach the session, the evidence workspace and the panels."""
     node_id = _first_node_id(repo)

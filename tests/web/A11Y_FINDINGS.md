@@ -20,7 +20,7 @@ gate; a stale record also fails it, so a fixed finding cannot linger.
 
 ## 1. axe-core findings (serious/critical, WCAG 2.2 AA)
 
-None. The sweep covers thirty-three served documents — every destination in
+None. The sweep covers thirty-five served documents — every destination in
 `docs/spec-v3-study-day.md` §6, the table's node-centred graph
 (`/graph/{id}`) and non-writing portfolio preview (`/portfolio/preview`),
 the contextual inspector over a selected evidence record, and the one
@@ -37,7 +37,10 @@ defect that has since been fixed by deriving a Session's bound node from its
 logged work); it is covered now. The named Next (`next-empty`, `next-stale`,
 `next-empty-curriculum`, `next-source-missing`) and Find (`finder-no-results`,
 `finder-stale`, `finder-empty`, `finder-source-missing`) states — the same
-fixtures the golden snapshot suite pins — are covered too.
+fixtures the golden snapshot suite pins — are covered too. SkillNode detail's
+populated, empty and limited states are covered as well, including an optional
+zero-minimum ArtifactSpec that remains visible without becoming an
+eligibility gap.
 
 ## 2. Colour-contrast deviations
 
