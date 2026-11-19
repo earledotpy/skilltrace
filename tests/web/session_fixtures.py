@@ -71,13 +71,13 @@ def _bound_node(root: Path) -> str:
 
 def _open_session_id(root: Path) -> str:
     """The id of the one open Session in the pinned fixture."""
-    sessions = (
-        yaml.safe_load(
-            (root / "execution" / "sessions.yaml").read_text(encoding="utf-8")
-        )
-        or {}
-    ).get("sessions") or []
-    return next(s["id"] for s in sessions if s.get("status") == "open")
+    from skilltrace.context import load_context_lenient
+    from skilltrace.execution.records import open_session
+
+    session = open_session(load_context_lenient(root).sessions)
+    if session is None:
+        raise ValueError("the pinned fixture has no open session")
+    return session.id
 
 
 def _blockers_doc(root: Path) -> dict:
@@ -102,7 +102,9 @@ def _make_session_blocker_open(root: Path) -> None:
 
     One open ``RemediationAction`` is authored here so the Blocker's
     deliberate-intervention list is pinned; it names the Blocker it
-    addresses, exactly as the engine's optional link allows.
+    addresses, exactly as the engine's optional link allows. A second open
+    Blocker is authored on another skill so the "open elsewhere" count is
+    pinned too.
     """
     node_id = _bound_node(root)
     doc = _blockers_doc(root)
@@ -113,6 +115,13 @@ def _make_session_blocker_open(root: Path) -> None:
             blocker.pop("resolved_at", None)
             blocker.pop("resolution_summary", None)
             blocker_id = blocker.get("id")
+            break
+    for blocker in doc.get("blockers") or []:
+        if blocker.get("node_id") != node_id:
+            blocker["status"] = "open"
+            blocker.pop("resolved_at", None)
+            blocker.pop("resolution_summary", None)
+            break
     write_yaml(root, "execution/blockers.yaml", {"blockers": doc.get("blockers") or []})
     if blocker_id is None:
         raise ValueError("the pinned fixture has no blocker on the session skill")

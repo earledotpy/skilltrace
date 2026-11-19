@@ -448,6 +448,17 @@ def _resolved_blockers(view, node_ids: set[str]) -> str:
     )
 
 
+def _other_open_note(count: int) -> str:
+    """Name open Blockers outside the Session's skills instead of hiding them."""
+    if not count:
+        return ""
+    return (
+        f'<p class="small mut">{count} open blocker{plural(count)} '
+        f"{plural(count, 'exists', 'exist')} on other skills; they appear "
+        "here when you work on those skills.</p>\n"
+    )
+
+
 def _blocker_section(view, node_ids: set[str], *, back_to_work: bool) -> str:
     """The Session's open Blockers, then its resolved history.
 
@@ -466,20 +477,21 @@ def _blocker_section(view, node_ids: set[str], *, back_to_work: bool) -> str:
         ),
         key=lambda b: b.created_at or "",
     )
+    elsewhere = [
+        blocker
+        for blocker in view.blockers
+        if blocker.status == "open" and blocker.node_id not in node_ids
+    ]
     resolved = _resolved_blockers(view, node_ids)
     if not open_blockers and not resolved:
-        elsewhere = [
-            blocker for blocker in view.blockers if blocker.status == "open"
-        ]
         if elsewhere:
-            count = len(elsewhere)
             return (
                 '<div class="state state-empty">\n'
                 '<p class="state-title">No blockers on this session\'s skills'
                 "</p>\n"
                 '<p class="state-body">'
-                f"{count} open blocker{'' if count == 1 else 's'} "
-                f"{'exists' if count == 1 else 'exist'} on other skills. "
+                f"{len(elsewhere)} open blocker{plural(len(elsewhere))} "
+                f"{plural(len(elsewhere), 'exists', 'exist')} on other skills. "
                 "They appear here when you work on those skills; nothing is "
                 "hidden.</p>\n"
                 "</div>\n"
@@ -492,12 +504,20 @@ def _blocker_section(view, node_ids: set[str], *, back_to_work: bool) -> str:
             "never creates a blocker on its own.</p>\n"
             "</div>\n"
         )
+    other_note = _other_open_note(len(elsewhere))
     if not open_blockers:
-        return f'<p class="small mut">No blockers are open.</p>\n{resolved}'
-    return "".join(
-        _open_blocker_detail(view, blocker, back_to_work=back_to_work)
-        for blocker in open_blockers
-    ) + resolved
+        return (
+            "<p class=\"small mut\">No blockers are open on this session's "
+            f"skills.</p>\n{other_note}{resolved}"
+        )
+    return (
+        "".join(
+            _open_blocker_detail(view, blocker, back_to_work=back_to_work)
+            for blocker in open_blockers
+        )
+        + other_note
+        + resolved
+    )
 
 
 def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
@@ -541,8 +561,8 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
     session_nodes = {
         item.node_id for item in view.work if item.session_id == session.id
     }
-    has_work = bool(node_id)
-    blockers = _blocker_section(view, session_nodes, back_to_work=has_work)
+    has_bound_node = bool(node_id)
+    blockers = _blocker_section(view, session_nodes, back_to_work=has_bound_node)
     blocked_work = _blocked_work(view, session)
     create_blocker = _create_blocker_offer(view, session)
     skill_link = (
@@ -551,7 +571,7 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
         if node_id
         else ""
     )
-    if has_work:
+    if has_bound_node:
         work_section = section(
             "Work in this session",
             "Recording work saves the minutes and the notes you type, against "

@@ -284,6 +284,7 @@ from .session import (  # noqa: F401  # noqa: F401
     _open_blocker_detail,
     _open_for_label,
     _open_hours,
+    _other_open_note,
     _pass_facts,
     _resolved_blockers,
     _session_facts,
