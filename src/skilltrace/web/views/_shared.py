@@ -16,6 +16,39 @@ from ...context import JoinedView
 from ..interface import esc as _esc
 from ..interface import plural as plural  # explicit re-export (PEP 484) — see docstring
 
+#: The assurance the discovery surfaces share when an empty result is a fact
+#: about the curriculum, not the learner (R7): stated once here, so ``/next``
+#: and ``/find`` can never disagree about who the fact is about. Today's day
+#: state is about *availability* rather than the curriculum, so it keeps its
+#: own wording; this constant covers the curriculum-fact case only.
+ASSURANCE = "That is a fact about the curriculum, not about you."
+
+
+def _curriculum_unreadable_section(
+    *, verb: str, reload_href: str, reload_label: str
+) -> str:
+    """The could-not-compute state for a curriculum whose source is missing.
+
+    One section for every discovery surface, so an unreadable source reads
+    the same on ``/next`` and ``/find`` — never merged with the empty state
+    (SC-00a). Only the surface's own verb ('search' / 'rank') and its way
+    back differ; the caller checks the source and appends this.
+    """
+    return (
+        '<section class="section">\n'
+        '<div class="state state-failure">\n'
+        '<p class="state-title">The curriculum could not be read</p>\n'
+        '<p class="state-body">The graph/nodes/ directory that holds the '
+        f"curriculum is missing, so there is nothing to {verb} and no fact "
+        "is claimed about the curriculum. Nothing about your progress "
+        "changed.</p>\n"
+        '<p><a href="/health">Open Health</a> for the detail — or '
+        "restore the directory and "
+        f'<a href="{_esc(reload_href)}">{_esc(reload_label)}</a>.</p>\n'
+        "</div>\n"
+        "</section>\n"
+    )
+
 
 def _output_banners(lines: list[str], *, default_class: str = "advisory") -> str:
     """Captured handler output as banners — through the P3.1 translation seam.

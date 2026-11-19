@@ -268,6 +268,8 @@ def _guidance_card_html(card: Card, index: int, chromes: dict[int, str] | None) 
 def render_discovery_cards(
     cards: list[Card],
     chromes: dict[int, str] | None = None,
+    *,
+    show_ids: bool = True,
 ) -> str:
     """The discovery result and browse cards as page HTML (#319).
 
@@ -285,14 +287,27 @@ def render_discovery_cards(
     one door at the page layer), exactly as on the guidance variant. The
     neutral ``resources`` and single ``explore`` affordance the Card
     minimums require render nowhere here: selection navigates only.
+
+    ``show_ids`` gates the secondary node id, which is labelled technical
+    data (R1): Guided prose never carries a raw identifier, so the finder
+    page passes ``show_ids=False`` in its Guided presentation and keeps the
+    default in Operations, where the spec sanctions raw ids. The default
+    renders the id, so a caller that does not name a mode keeps the full
+    §C-bis anatomy byte for byte.
     """
     return "".join(
-        _result_card_html(card, index, chromes)
+        _result_card_html(card, index, chromes, show_ids=show_ids)
         for index, card in enumerate(cards)
     )
 
 
-def _result_card_html(card: Card, index: int, chromes: dict[int, str] | None) -> str:
+def _result_card_html(
+    card: Card,
+    index: int,
+    chromes: dict[int, str] | None,
+    *,
+    show_ids: bool = True,
+) -> str:
     """One §C-bis discovery card: lead + chip, description, id, tail."""
     locked = card.state == "locked"
     cls = "card result" + (" locked" if locked else "")
@@ -308,7 +323,7 @@ def _result_card_html(card: Card, index: int, chromes: dict[int, str] | None) ->
     lines.append(f'<p class="big">{_esc(card.why)}</p>\n')
     if card.disclosure:
         lines.append(f'<p class="mut">{_esc(card.disclosure)}</p>\n')
-    if card.node_id:
+    if card.node_id and show_ids:
         lines.append(f'<p class="mut ref">{_esc(card.node_id)}</p>\n')
     if chromes and index in chromes:
         lines.append(chromes[index])

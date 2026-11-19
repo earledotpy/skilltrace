@@ -20,18 +20,35 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
+from ..graph.nodes import NODES_RELDIR
 from .interface.cards import Affordance, Card
 
 __all__ = [
     "ENTRY_NODES",
     "DiscoveryCard",
     "SUBJECT_LABELS",
+    "curriculum_source_present",
     "discover",
     "discovery_page_cards",
     "subject_label",
     "subject_of",
 ]
+
+
+def curriculum_source_present(root: Path | str) -> bool:
+    """True when the curriculum's node directory exists under ``root``.
+
+    The loader answers ``[]`` for a missing directory (a fresh repo is a
+    valid, empty graph), so it cannot tell "no skills yet" from "the source
+    is gone". A discovery surface that must draw that line — the empty state
+    versus *could not compute* (SC-00a) — asks here, and the layout it checks
+    is the loader's own (:data:`~skilltrace.graph.nodes.NODES_RELDIR`), never
+    a path re-derived at the page.
+    """
+    return (Path(root) / NODES_RELDIR).is_dir()
+
 
 # --- Curated seed data ---------------------------------------------------------
 

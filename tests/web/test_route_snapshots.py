@@ -31,14 +31,21 @@ route                   case
                         served body of ``/`` for one reshaped fixture
                         repo (``tests/web/today_fixtures.py``)
 ``GET /next``           ``next``, ``next-locked`` (``?locked=1``); plus the
-                        named Next states (§10.2, SC-00a) ``next-empty``
-                        and ``next-stale``, each the served body of
-                        ``/next`` for one reshaped fixture repo
+                        named Next states (§10.2, SC-00a) ``next-empty``,
+                        ``next-stale``, ``next-empty-curriculum`` (a
+                        curriculum with no skills) and ``next-source-missing``
+                        (the graph/nodes/ directory gone — could-not-compute,
+                        never merged with the empty state), each the served
+                        body of ``/next`` for one reshaped fixture repo
                         (``tests/web/discovery_fixtures.py``)
 ``GET /find``          ``finder``, ``finder-query`` (``?q=…``); plus the
                         named Find states (§10.3) ``finder-no-results``
-                        (``?q=xyzzyplugh``) and ``finder-empty``, each the
-                        served body for one query or reshaped fixture repo
+                        (``?q=xyzzyplugh``), ``finder-stale``,
+                        ``finder-empty`` (a curriculum with no skills) and
+                        ``finder-source-missing`` (the graph/nodes/
+                        directory gone — could-not-compute, never merged
+                        with the empty state), each the served body for
+                        one query or reshaped fixture repo
 ``GET /session``       ``session``
 ``GET /session/close`` ``session-close``
 ``GET /nodes/{id}/evidence``  ``node-evidence``
@@ -49,7 +56,10 @@ route                   case
 ``GET /graph``         ``graph``, ``graph-node`` (``/graph/{id}``)
 ``GET /portfolio``     ``portfolio``, ``portfolio-preview``
                         (``/portfolio/preview``, non-writing)
-``GET /nodes/{id}``     ``node``
+``GET /nodes/{id}``     ``node``; plus the SkillNode detail states (§10.4)
+                        ``node-empty`` and ``node-limited``, each the served
+                        body for one reshaped fixture repo
+                        (``tests/web/node_fixtures.py``)
 ``GET /health``         ``health``
 ``GET /analytics``      ``analytics-velocity``, ``-blockers``, ``-reviews``,
                         ``-evidence`` (one per theme)
@@ -490,6 +500,24 @@ CASES: tuple[RouteCase, ...] = (
         lambda r: views.next_body(build_discovery_variant(r, "next-stale"), {}),
     ),
     RouteCase(
+        "next-empty-curriculum",
+        "GET /next",
+        "Next",
+        200,
+        lambda r: views.next_body(
+            build_discovery_variant(r, "next-empty-curriculum"), {}
+        ),
+    ),
+    RouteCase(
+        "next-source-missing",
+        "GET /next",
+        "Next",
+        200,
+        lambda r: views.next_body(
+            build_discovery_variant(r, "next-source-missing"), {}
+        ),
+    ),
+    RouteCase(
         "node",
         f"GET /nodes/{NODE_ACTIVE}",
         "Use basic Pandas DataFrame operations",
@@ -533,6 +561,22 @@ CASES: tuple[RouteCase, ...] = (
         "Find a skill",
         200,
         lambda r: views.finder_body(build_discovery_variant(r, "finder-empty"), {}),
+    ),
+    RouteCase(
+        "finder-stale",
+        "GET /find",
+        "Find a skill",
+        200,
+        lambda r: views.finder_body(build_discovery_variant(r, "finder-stale"), {}),
+    ),
+    RouteCase(
+        "finder-source-missing",
+        "GET /find",
+        "Find a skill",
+        200,
+        lambda r: views.finder_body(
+            build_discovery_variant(r, "finder-source-missing"), {}
+        ),
     ),
     RouteCase(
         "session",

@@ -37,7 +37,11 @@ FORBIDDEN_FRONTMATTER_KEYS: frozenset[str] = frozenset(
 # Fields required on every node. Missing any is a load error.
 _REQUIRED_FIELDS: tuple[str, ...] = ("id", "title", "summary", "domain", "track")
 
-_NODES_RELDIR = Path("graph") / "nodes"
+#: Where the curriculum's node files live, relative to the repo root. Public
+#: so a caller that must distinguish an empty curriculum from an unreadable
+#: source asks about *this* layout rather than re-deriving it (the loader
+#: owns the layout; see :func:`load_nodes`).
+NODES_RELDIR = Path("graph") / "nodes"
 
 # A node ID is dot-separated lowercase segments (alphanumeric words joined by
 # underscores), and the final segment ends in a numeric *sequence* suffix
@@ -226,5 +230,5 @@ def load_nodes(root: Path | str | None = None) -> list[SkillNode]:
     duplicate-ID detection belongs.
     """
     root_path = Path(root) if root is not None else find_root()
-    nodes_dir = root_path / _NODES_RELDIR
+    nodes_dir = root_path / NODES_RELDIR
     return [load_node(path) for path in sorted(nodes_dir.glob("*.md"))]

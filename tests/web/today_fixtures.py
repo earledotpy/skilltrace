@@ -18,16 +18,17 @@ The authored stores are *fixture data*, exactly as the other web suites
 seed state — no engine pass/master path runs here (see AGENTS.md safety
 rule). Dates are absolute so the fixtures are wall-clock independent,
 matching the frozen-clock convention of the suites that consume them.
+The shared mechanics (variant materialisation, the deterministic stale
+mutation) live in :mod:`fixture_repo`.
 """
 
 from __future__ import annotations
 
-import shutil
-import tempfile
 from pathlib import Path
 from typing import Any
 
 import yaml
+from fixture_repo import make_one_readiness_stale, materialise_variant, write_yaml
 
 #: The named Today states a fixture can be reshaped into. ``populated`` is
 #: the pinned repo itself, so it is not a mutation here.
@@ -51,12 +52,6 @@ updated_at: 2026-06-28
 
 # The one skill in this curriculum
 """
-
-
-def _write_yaml(root: Path, relpath: str, doc: dict[str, Any]) -> None:
-    path = root / relpath
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
 
 
 def _drop_execution(root: Path) -> None:
@@ -113,8 +108,8 @@ def _single_skill(root: Path, *, passed: bool) -> None:
                 "updated_at": "2026-06-28",
             }
         )
-    _write_yaml(root, "graph/edges.yaml", {"edges": edges})
-    _write_yaml(root, "graph/state.yaml", {"progress": progress})
+    write_yaml(root, "graph/edges.yaml", {"edges": edges})
+    write_yaml(root, "graph/state.yaml", {"progress": progress})
     _drop_execution(root)
 
 
@@ -127,7 +122,7 @@ def _first_node_id(root: Path) -> str:
 def _minimal_history(root: Path) -> None:
     """Author a two-session history when the pinned repo carries none."""
     node_id = _first_node_id(root)
-    _write_yaml(
+    write_yaml(
         root,
         "execution/sessions.yaml",
         {
@@ -146,7 +141,7 @@ def _minimal_history(root: Path) -> None:
             ]
         },
     )
-    _write_yaml(
+    write_yaml(
         root,
         "execution/session_work.yaml",
         {
@@ -192,7 +187,7 @@ def _trim_window(root: Path) -> None:
     )
     kept.extend(completed[:1])
     doc["sessions"] = kept
-    _write_yaml(root, "execution/sessions.yaml", doc)
+    write_yaml(root, "execution/sessions.yaml", doc)
 
     kept_ids = {s["id"] for s in kept}
     work_path = root / "execution" / "session_work.yaml"
@@ -200,30 +195,14 @@ def _trim_window(root: Path) -> None:
     work_doc["session_work"] = [
         w for w in work_doc.get("session_work", []) if w.get("session_id") in kept_ids
     ]
-    _write_yaml(root, "execution/session_work.yaml", work_doc)
-
-
-def _stale_one(root: Path) -> None:
-    """Save one readiness the curriculum no longer agrees with.
-
-    A node whose derived readiness is ``available`` is recorded as
-    ``locked``: the store was written before the curriculum changed, so the
-    saved value no longer matches what the graph says today.
-    """
-    path = root / "graph" / "state.yaml"
-    doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {"progress": {}}
-    for entry in doc.get("progress", {}).values():
-        if entry.get("state") == "available":
-            entry["state"] = "locked"
-            break
-    _write_yaml(root, "graph/state.yaml", doc)
+    write_yaml(root, "execution/session_work.yaml", work_doc)
 
 
 _MUTATIONS = {
     "empty": lambda root: _single_skill(root, passed=True),
     "refusal": lambda root: _single_skill(root, passed=False),
     "limited": _trim_window,
-    "stale": _stale_one,
+    "stale": make_one_readiness_stale,
 }
 
 
@@ -234,9 +213,6 @@ def build_today_variant(pinned: Path, kind: str) -> Path:
     temporary copy, so a render is repeatable and the shared fixture stays
     read-only.
     """
-    if kind not in _MUTATIONS:
-        raise ValueError(f"unknown Today variant: {kind!r}")
-    dest = Path(tempfile.mkdtemp(prefix=f"today-{kind}-"))
-    shutil.copytree(pinned, dest, dirs_exist_ok=True)
-    _MUTATIONS[kind](dest)
-    return dest
+    return materialise_variant(
+        pinned, kind, prefix=f"today-{kind}", mutations=_MUTATIONS
+    )

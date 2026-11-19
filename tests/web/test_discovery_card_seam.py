@@ -174,9 +174,9 @@ def test_finder_body_renders_results_and_browse_through_the_renderer(
     seen: list[list] = []
     real = finder_view.render_discovery_cards
 
-    def spy(cards, chromes=None):
+    def spy(cards, chromes=None, **kwargs):
         seen.append(list(cards))
-        return real(cards, chromes)
+        return real(cards, chromes, **kwargs)
 
     monkeypatch.setattr(finder_view, "render_discovery_cards", spy)
 
