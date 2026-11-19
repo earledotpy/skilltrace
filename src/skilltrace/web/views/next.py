@@ -44,6 +44,7 @@ from . import _readiness, _reasons
 from ._reasons import Fact
 from ._shared import (
     ASSURANCE,
+    _curriculum_unreadable_section,
     _esc,
     _normalize_pill_label,
     _parse_int,
@@ -286,21 +287,16 @@ def next_body(root, query: dict) -> tuple[str, str, int]:
     # would claim a fact it does not know — the same distinction /find
     # draws, over the same source.
     if not curriculum_source_present(root):
-        body = (
+        return (
+            "Next",
             head
-            + '<section class="section">\n'
-            '<div class="state state-failure">\n'
-            '<p class="state-title">The curriculum could not be read</p>\n'
-            '<p class="state-body">The graph/nodes/ directory that holds the '
-            "curriculum is missing, so there is nothing to rank and no fact "
-            "is claimed about the curriculum. Nothing about your progress "
-            "changed.</p>\n"
-            '<p><a href="/health">Open Health</a> for the detail — or '
-            'restore the directory and <a href="/next">reload Next</a>.</p>\n'
-            "</div>\n"
-            "</section>\n"
+            + _curriculum_unreadable_section(
+                verb="rank",
+                reload_href="/next",
+                reload_label="reload Next",
+            ),
+            200,
         )
-        return "Next", body, 200
 
     def next_url(mins: int, count: int) -> str:
         """This destination with different controls — one addressable URL."""

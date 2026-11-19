@@ -50,6 +50,7 @@ from ..interface.render import render_discovery_cards
 from . import _readiness
 from ._shared import (
     ASSURANCE,
+    _curriculum_unreadable_section,
     _esc,
     _normalize_pill_label,
     _table,
@@ -340,23 +341,14 @@ def finder_body(root, query: dict | None = None) -> tuple[str, str, int]:
     # the failure would present itself as an empty curriculum and the page
     # would claim a fact it does not know.
     if not curriculum_source_present(root):
-        body = (
-            '<section class="section">\n'
-            '<div class="state state-failure">\n'
-            '<p class="state-title">The curriculum could not be read</p>\n'
-            '<p class="state-body">The graph/nodes/ directory that holds the '
-            "curriculum is missing, so there is nothing to search and no "
-            "fact is claimed about the curriculum. Nothing about your "
-            "progress changed.</p>\n"
-            '<p><a href="/health">Open Health</a> for the detail — or '
-            'restore the directory and <a href="/find">reload Find a '
-            "skill</a>.</p>\n"
-            "</div>\n"
-            "</section>\n"
-        )
         return (
             "Find a skill",
-            head + body,
+            head
+            + _curriculum_unreadable_section(
+                verb="search",
+                reload_href="/find",
+                reload_label="reload Find a skill",
+            ),
             200,
         )
 

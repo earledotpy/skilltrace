@@ -115,6 +115,7 @@ from ._reasons import (  # noqa: F401
 from ._shared import (  # noqa: F401  # noqa: F401
     _CANONICAL_STATE_LABELS,
     ASSURANCE,
+    _curriculum_unreadable_section,
     _degraded_banner,
     _esc,
     _field,
