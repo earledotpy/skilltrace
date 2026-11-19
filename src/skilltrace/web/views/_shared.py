@@ -13,8 +13,10 @@ from __future__ import annotations
 import re
 
 from ...context import JoinedView
+from ...resources.status import derive_status
 from ..interface import esc as _esc
 from ..interface import plural as plural  # explicit re-export (PEP 484) — see docstring
+from . import _clock
 
 #: The assurance the discovery surfaces share when an empty result is a fact
 #: about the curriculum, not the learner (R7): stated once here, so ``/next``
@@ -236,3 +238,23 @@ def _session_node_id(view, session) -> str:
         if item.node_id in view.node_map:
             return item.node_id
     return ""
+
+
+def resources_with_status(view, node_id: str):
+    """The ``LearningResource`` records for a skill, each with derived status.
+
+    One derivation for every surface that lists study material: the node
+    page and the cockpit's Blocker options cannot disagree about whether a
+    resource is verified, stale or broken. The date comes from the web's
+    one clock (:mod:`skilltrace.web.views._clock`), so a page render never
+    reads the calendar directly.
+    """
+    window = view.policy.resource_stale_after_days
+    today = _clock.today()
+    return [
+        (
+            resource,
+            derive_status(resource, today=today, stale_after_days=window),
+        )
+        for resource in view.resources_by_node.get(node_id, [])
+    ]

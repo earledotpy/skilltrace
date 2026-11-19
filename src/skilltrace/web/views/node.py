@@ -26,10 +26,8 @@ this page only links to them (HB-1).
 from __future__ import annotations
 
 from ...evidence.eligibility import compute_eligibility, live_accepted_count
-from ...execution.overdue import utc_today
 from ...execution.records import open_session
-from ...resources.status import derive_status
-from ._shared import _esc, _table
+from ._shared import _esc, _table, resources_with_status
 from .forms import START_ANNOUNCEMENT, _resolve_blocker_form, _work_form_fields
 from .sections import EMPTY, FAILURE, LIMITED, Markup, Rows, Section, State
 from .shell import _mode_from, _page_head, _status_page
@@ -525,18 +523,13 @@ def _resources_section(view, node_id: str, *, operations: bool) -> str:
             "Where to learn", "The materials that support this skill.", inner
         )
 
-    window = view.policy.resource_stale_after_days
-    today = utc_today()
     rows = []
-    for resource in resources:
-        status = derive_status(
-            resource, today=today, stale_after_days=window
-        ).value
+    for resource, status in resources_with_status(view, node_id):
         where = resource.url or resource.local_path or ""
         cells = [
             f'<a href="{_esc(where)}">{_esc(where)}</a>' if where else "—",
             _esc(resource.cost),
-            _esc(status),
+            _esc(status.value),
         ]
         if operations:
             cells.insert(0, f"<code>{_esc(resource.id)}</code>")

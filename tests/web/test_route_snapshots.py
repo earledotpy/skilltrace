@@ -48,10 +48,12 @@ route                   case
                         one query or reshaped fixture repo
 ``GET /session``       ``session``; plus the named cockpit states (§10.5)
                         ``session-stale`` (a forgotten Session past the
-                        policy window, on a reshaped fixture repo) and
-                        ``session-start-refused`` (the fresh page a refused
-                        second start lands on — produced through the write
-                        path, which writes nothing)
+                        policy window, on a reshaped fixture repo),
+                        ``session-no-blocker``, ``session-open-blocker``,
+                        ``session-blocked-work`` and
+                        ``session-blocker-resolved`` (the Blocker states) and
+                        ``session-start-refused`` (the fresh page a refused second start lands on — produced
+                        through the write path, which writes nothing)
 ``GET /session/close`` ``session-close``; plus ``session-close-stale`` (the
                         honest past-end closure offered for a stale Session)
 ``GET /nodes/{id}/evidence``  ``node-evidence``
@@ -606,6 +608,40 @@ CASES: tuple[RouteCase, ...] = (
         "Study",
         200,
         lambda r: views.session_body(build_session_variant(r, "stale"), {}),
+    ),
+    # The Blocker states (§10.5): nothing recorded, an open Blocker with its
+    # advisory options, and the terminal resolved history.
+    RouteCase(
+        "session-no-blocker",
+        "GET /session",
+        "Study",
+        200,
+        lambda r: views.session_body(build_session_variant(r, "no-blocker"), {}),
+    ),
+    RouteCase(
+        "session-open-blocker",
+        "GET /session",
+        "Study",
+        200,
+        lambda r: views.session_body(build_session_variant(r, "open-blocker"), {}),
+    ),
+    RouteCase(
+        "session-blocked-work",
+        "GET /session",
+        "Study",
+        200,
+        lambda r: views.session_body(
+            build_session_variant(r, "blocked-work"), {}
+        ),
+    ),
+    RouteCase(
+        "session-blocker-resolved",
+        "GET /session",
+        "Study",
+        200,
+        lambda r: views.session_body(
+            build_session_variant(r, "blocker-resolved"), {}
+        ),
     ),
     RouteCase(
         "session-start-refused",

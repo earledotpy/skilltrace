@@ -46,7 +46,8 @@ One funnel: `Context.clock`, injected through `cli.run(..., clock=...)` (and
   the CLI for simulated runs. Tests may still pin that wall clock for
   byte-exact output: `tests/web/test_route_snapshots.py` rebinds the one
   funnel (plus the two read paths that call `datetime.now` directly, and the
-  Study cockpit's single elapsed-time read in `web/views/_clock.py`) so the
+  web layer's single wall-clock read in `web/views/_clock.py`, which feeds
+  elapsed time, staleness and the node/cockpit resource listings) so the
   golden route bodies cannot drift with the calendar. The served surface
   itself still has no clock context.
 - **`export sqlite` `retention_memory.computed_at`** — a disposable mirror

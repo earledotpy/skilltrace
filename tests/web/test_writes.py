@@ -579,16 +579,28 @@ def test_a_stale_session_closes_with_an_honest_past_end_time(repo):
 
 
 def test_blocker_create_then_resolve_round_trip(repo):
+    """Each explicit action writes one audit event; a refusal writes nothing."""
     result = views.post_blocker_create(
         repo, NODE, _form(description="stuck on recursion", next=f"/nodes/{NODE}")
     )
     assert isinstance(result, Redirect)
     blockers = _read_yaml(repo, "execution/blockers.yaml").get("blockers") or []
     assert blockers[0]["status"] == "open"
+    events = _events(repo)
+    assert [e["command"] for e in events] == ["blocker create"]
+    assert events[0]["args"]["source"] == "web"
+    assert events[0]["records_touched"] == [blockers[0]["id"]]
 
+    before = _read_yaml(repo, "execution/blockers.yaml")
     again = views.post_blocker_create(repo, NODE, _form(description="still stuck"))
     notice = parse_qs(again.location.partition("?")[2])["notice"][0]
     assert "already has an open blocker" in notice
+    # A duplicate warns but is not forbidden: the second record is written,
+    # and it is its own explicit action with its own audit event.
+    blockers = _read_yaml(repo, "execution/blockers.yaml").get("blockers") or []
+    assert len(blockers) == len(before.get("blockers") or []) + 1
+    events = _events(repo)
+    assert [e["command"] for e in events] == ["blocker create", "blocker create"]
 
     resolved = views.post_blocker_resolve(
         repo, blockers[0]["id"], _form(summary="it clicked", next="/")
@@ -596,12 +608,112 @@ def test_blocker_create_then_resolve_round_trip(repo):
     assert isinstance(resolved, Redirect)
     blockers = _read_yaml(repo, "execution/blockers.yaml").get("blockers") or []
     assert blockers[0]["status"] == "resolved"
+    events = _events(repo)
+    assert [e["command"] for e in events] == [
+        "blocker create",
+        "blocker create",
+        "blocker resolve",
+    ]
+    assert events[-1]["args"]["source"] == "web"
+    assert events[-1]["records_touched"] == [blockers[0]["id"]]
 
+    before = _read_yaml(repo, "execution/blockers.yaml")
     terminal = views.post_blocker_resolve(
         repo, blockers[0]["id"], _form(summary="again")
     )
     notice = parse_qs(terminal.location.partition("?")[2])["notice"][0]
     assert "already resolved" in notice
+    # Resolution is terminal: the second attempt writes no record and no event.
+    assert _events(repo) == events
+    assert _read_yaml(repo, "execution/blockers.yaml") == before
+
+
+def test_blocker_create_requires_an_obstacle_description(repo):
+    """A Blocker names its own obstacle; an empty refusal writes nothing."""
+    result = views.post_blocker_create(repo, NODE, _form(description=""))
+    assert isinstance(result, Redirect)
+    _, kind = _notice_of(result)
+    assert kind == "warning"
+    assert _read_yaml(repo, "execution/blockers.yaml").get("blockers") in (None, [])
+    assert _events(repo) == []
+
+
+def test_blocker_create_is_refused_on_a_locked_node(repo):
+    """What cannot be started cannot be stuck; the refusal writes nothing."""
+    locked = _first_locked_node(repo)
+    result = views.post_blocker_create(
+        repo, locked, _form(description="stuck before starting")
+    )
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+    assert "locked" in notice
+    assert _read_yaml(repo, "execution/blockers.yaml").get("blockers") in (None, [])
+    assert _events(repo) == []
+
+
+def test_blocker_resolve_requires_a_summary_and_writes_nothing(repo):
+    """Resolution names what changed; without it the record stays open."""
+    views.post_blocker_create(repo, NODE, _form(description="stuck"))
+    blocker = (_read_yaml(repo, "execution/blockers.yaml").get("blockers") or [])[0]
+    before = _read_yaml(repo, "execution/blockers.yaml")
+
+    result = views.post_blocker_resolve(repo, blocker["id"], _form(summary=""))
+    assert isinstance(result, Redirect)
+    _, kind = _notice_of(result)
+    assert kind == "warning"
+    assert _read_yaml(repo, "execution/blockers.yaml") == before
+    assert [e["command"] for e in _events(repo)] == ["blocker create"]
+
+
+def test_a_blocker_failure_writes_no_record_and_no_event(repo):
+    """An unreadable store is an operational failure, never a silent write."""
+    (repo / "execution").mkdir()
+    (repo / "execution" / "blockers.yaml").write_text(
+        "blockers: not-a-list\n", encoding="utf-8"
+    )
+    created = views.post_blocker_create(repo, NODE, _form(description="stuck"))
+    assert isinstance(created, Redirect)
+    assert _notice_of(created)[1] == "error"
+    resolved = views.post_blocker_resolve(repo, "blk.nope.001", _form(summary="x"))
+    assert isinstance(resolved, Redirect)
+    assert _notice_of(resolved)[1] == "error"
+    assert _events(repo) == []
+
+
+def test_resolving_a_blocker_closes_no_session_completes_no_work_and_passes_no_node(
+    repo,
+):
+    """Resolution touches exactly one record: the Blocker."""
+    _set_state(repo, NODE, "available")
+    started = views.post_start(repo, NODE, _form())
+    assert isinstance(started, Redirect)
+    assert _notice_of(started)[1] == "ok"
+    created = views.post_blocker_create(
+        repo, NODE, _form(description="stuck halfway")
+    )
+    assert isinstance(created, Redirect)
+    assert _notice_of(created)[1] == "ok"
+    blocker = (_read_yaml(repo, "execution/blockers.yaml").get("blockers") or [])[0]
+
+    sessions_before = _read_yaml(repo, "execution/sessions.yaml")
+    work_before = _read_yaml(repo, "execution/session_work.yaml")
+
+    result = views.post_blocker_resolve(
+        repo, blocker["id"], _form(summary="it clicked", next="/session")
+    )
+    assert isinstance(result, Redirect)
+
+    # The Session is untouched, the recorded work is untouched, and the node
+    # keeps its asserted state (HB-3).
+    assert _read_yaml(repo, "execution/sessions.yaml") == sessions_before
+    assert _read_yaml(repo, "execution/session_work.yaml") == work_before
+    assert _state_of(repo, NODE) == "active"
+    assert [e["command"] for e in _events(repo)] == [
+        "start",
+        "blocker create",
+        "blocker resolve",
+    ]
 
 
 def test_evidence_submit_manual_accept_freezes_record(repo):
