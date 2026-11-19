@@ -16,7 +16,9 @@ What only this module shows: the cockpit's own contract.
 from __future__ import annotations
 
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import parse_qs
 
 import pytest
 import yaml
@@ -24,6 +26,18 @@ import yaml
 from skilltrace.web import views
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+#: The moment every cockpit render in this module is read against.
+NOW = datetime(2026, 11, 17, 9, 0, tzinfo=timezone.utc)
+
+
+@pytest.fixture(autouse=True)
+def _frozen_now(monkeypatch):
+    """Pin the cockpit's one wall-clock read — the fixture-clock discipline."""
+    from skilltrace.web.views import _clock
+
+    monkeypatch.setattr(_clock, "now_utc", lambda: NOW)
+    return NOW
 
 
 def _seed(tmp_path: Path) -> Path:
@@ -50,7 +64,23 @@ def with_session(tmp_path: Path) -> Path:
     root = _seed(tmp_path)
     from skilltrace.context import load_context_lenient
 
-    node_id = sorted(load_context_lenient(root).nodes, key=lambda n: n.id)[0].id
+    view = load_context_lenient(root)
+    candidates = sorted(
+        node.id
+        for node in view.nodes
+        if view.store.state_of(node.id) == "available"
+    )
+    # Prefer a skill with an evidence requirement and a gate, so the
+    # cockpit's wanted-vs-recorded and eligibility facts are part of the
+    # ordinary fixture.
+    node_id = next(
+        (
+            candidate
+            for candidate in candidates
+            if view.specs_by_node.get(candidate) and candidate in view.has_gate
+        ),
+        candidates[0],
+    )
     _write_yaml(
         root,
         "execution/sessions.yaml",
@@ -266,3 +296,290 @@ def test_the_close_panel_shows_what_was_recorded(with_session):
     _, body, _ = views.session_close_body(with_session)
     assert "Work recorded" in body
     assert "25 minutes" in body
+
+
+# --- the timer is shown, and it is still presentation only ------------------------
+
+
+def test_the_cockpit_shows_a_presentation_only_timer(with_session):
+    """The elapsed time is visible — orientation, never a record (IC-3)."""
+    _, body, _ = views.session_body(with_session)
+    assert "Timer" in body
+    assert "Open for 2 hours" in body
+    assert "orientation only" in body
+    assert "never recorded and never becomes work" in body
+
+
+def test_an_unparseable_start_shows_no_invented_elapsed_time(with_session):
+    """A bad timestamp is validate's concern — the page invents nothing."""
+    _write_yaml(
+        with_session,
+        "execution/sessions.yaml",
+        {"sessions": [{"id": "ses.cockpit.001", "status": "open", "started_at": "not-a-date"}]},
+    )
+    _, body, status = views.session_body(with_session)
+    assert status == 200
+    assert "Open for unknown" in body
+
+
+# --- the stale Session warns, and never blocks ------------------------------------
+
+
+def _make_stale(root: Path) -> None:
+    _write_yaml(
+        root,
+        "execution/sessions.yaml",
+        {
+            "sessions": [
+                {
+                    "id": "ses.cockpit.001",
+                    "status": "open",
+                    "started_at": "2026-11-14T09:00:00+00:00",
+                }
+            ]
+        },
+    )
+
+
+def test_a_stale_session_warns_but_still_allows_work(with_session):
+    """Staleness warns; it is never a dead end (R4, §10.5)."""
+    _make_stale(with_session)
+    _, body, _ = views.session_body(with_session)
+    assert "This session has been open for 3 days" in body
+    assert "Nothing is blocked by that" in body
+    assert "close it with the time you actually stopped" in body
+    # The work form is still there: a warning is not a block.
+    assert 'action="/work"' in body
+
+
+def test_a_stale_session_can_be_closed_with_an_honest_past_end_time(with_session):
+    """A forgotten Session may record the time the learner actually stopped."""
+    _make_stale(with_session)
+    _, body, _ = views.session_close_body(with_session)
+    assert "This session has been open for 3 days" in body
+    assert 'name="end"' in body
+    assert "before the session started" in body
+    assert "nothing you recorded is lost" in body
+
+
+def test_a_current_session_gets_no_end_time_field(with_session):
+    """A current close records the current end — the field is not offered."""
+    _, body, _ = views.session_close_body(with_session)
+    assert 'name="end"' not in body
+    assert '<span class="row-label">Open for</span>' in body
+    assert '<span class="row-value">2 hours</span>' in body
+
+
+def test_the_cockpit_names_pass_eligibility_and_the_next_action(with_session):
+    """§10.5: eligibility is a derived fact; passing stays a separate decision."""
+    _, body, _ = views.session_body(with_session)
+    assert "Pass eligibility" in body
+    assert "Not yet" in body
+    assert "Next: record the work you did below" in body
+
+
+def test_an_eligible_skill_says_passing_is_separate_and_links_the_panel(with_session):
+    """Eligibility never pushes a pass; it names the explicit panel instead."""
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(with_session)
+    node_id = view.work[0].node_id
+    spec = view.specs_by_node[node_id][0]
+    _write_yaml(
+        with_session,
+        "evidence/evidence_records.yaml",
+        {
+            "evidence_records": [
+                {
+                    "id": f"ev.{node_id}.{i:03d}",
+                    "artifact_spec_id": spec.id,
+                    "location": "evidence/artifacts/session_fixture.md",
+                    "accepted": True,
+                    "accepted_by": "learner_manual",
+                    "artifact_hash": "sha256:" + "0" * 64,
+                    "created_at": "2026-11-17T08:00:00+00:00",
+                }
+                for i in range(1, spec.minimum_count + 1)
+            ]
+        },
+    )
+    _, body, _ = views.session_body(with_session)
+    assert "Ready — passing is a separate decision" in body
+    assert f'href="/nodes/{node_id}/pass"' in body
+    assert "Closing does neither" in body
+
+
+def test_the_close_panel_names_what_remains_after_closure(with_session):
+    """§10.6: unresolved Blockers, the state and the evidence survive closure."""
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(with_session)
+    node_id = view.work[0].node_id
+    _write_yaml(
+        with_session,
+        "execution/blockers.yaml",
+        {
+            "blockers": [
+                {
+                    "id": "blk.cockpit.001",
+                    "node_id": node_id,
+                    "status": "open",
+                    "description": "still stuck on the join",
+                    "created_at": "2026-11-16T08:00:00+00:00",
+                }
+            ]
+        },
+    )
+    _, body, _ = views.session_close_body(with_session)
+    assert "Open blockers" in body
+    assert "1 open — closing resolves none of them" in body
+    assert "State after closing" in body
+    assert (
+        f"{view.store.state_of(node_id).capitalize()} — unchanged by closing"
+        in body
+    )
+    assert "Evidence afterwards" in body
+    assert "unchanged by closing" in body
+
+
+# --- the refused second start lands on the cockpit -------------------------------
+
+
+def test_a_refused_second_start_lands_on_the_cockpit_with_both_options(with_session):
+    """The fresh page names the two real options and the way back (R5)."""
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(with_session)
+    bound = view.work[0].node_id
+    result = views.post_start(with_session, bound, {"next": ["/"]})
+    assert isinstance(result, views.Redirect)
+    assert result.location.startswith("/session?")
+    query = parse_qs(result.location.partition("?")[2])
+    _, body, _ = views.session_body(with_session, query)
+    assert "already open" in body.lower()
+    assert "A second session cannot be started while this one is open" in body
+    assert "close this session first" in body
+    assert 'href="/session/close"' in body
+
+
+# --- starting is announced before it records --------------------------------------
+
+
+def test_today_announces_exactly_what_starting_records(repo):
+    """R6: no silent timing — the start copy names the session and the state."""
+    _, body, _ = views.home_body(repo, {})
+    assert "Starting opens a session, records the start of this session" in body
+    assert "marks the skill active" in body
+    assert "No minutes or notes are recorded until you log work" in body
+
+
+def test_the_node_page_announces_exactly_what_starting_records(repo):
+    """The same announcement on the node page — one explicit start, one truth."""
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(repo)
+    available = sorted(
+        node.id for node in view.nodes if view.store.state_of(node.id) == "available"
+    )[0]
+    _, body, _ = views.node_body(repo, available, {})
+    assert "Starting opens a session, records the start of this session" in body
+    assert "marks the skill active" in body
+    assert "No minutes or notes are recorded until you log work" in body
+
+
+def test_a_session_with_no_bound_skill_offers_no_work_form(with_session):
+    """Never render a form the domain would always refuse — name the recovery."""
+    _write_yaml(with_session, "execution/session_work.yaml", {"session_work": []})
+    _, body, _ = views.session_body(with_session)
+    assert "No skill is bound to this session" in body
+    assert 'action="/work"' not in body
+    assert 'href="/session/close"' in body
+    assert 'href="/"' in body
+
+
+# --- evidence requirements are visible before work -------------------------------
+
+
+def test_the_cockpit_shows_wanted_and_recorded_as_distinct_facts(with_session):
+    """R2: evidence wanted and recorded are never one ambiguous number."""
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(with_session)
+    node_id = view.work[0].node_id
+    _, body, _ = views.session_body(with_session)
+    assert "Evidence wanted" in body
+    assert "Evidence recorded" in body
+    assert f'href="/nodes/{node_id}/evidence"' in body
+
+
+# --- inspecting another SkillNode never touches the Session ----------------------
+
+
+def _read_yaml(root: Path, relpath: str) -> dict:
+    path = root / relpath
+    if not path.exists():
+        return {}
+    return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+
+
+def test_inspecting_another_node_never_closes_replaces_or_extends_the_session(with_session):
+    """Browsing is safe: viewing a skill is not a session command (IC-3)."""
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(with_session)
+    bound = view.work[0].node_id
+    other = sorted(
+        node.id
+        for node in view.nodes
+        if node.id != bound and view.store.state_of(node.id) == "available"
+    )[0]
+
+    sessions_before = _read_yaml(with_session, "execution/sessions.yaml")
+    work_before = _read_yaml(with_session, "execution/session_work.yaml")
+
+    views.node_body(with_session, other, {})
+    views.session_body(with_session, {})
+    views.session_close_body(with_session, {})
+    views.home_body(with_session, {})
+
+    assert _read_yaml(with_session, "execution/sessions.yaml") == sessions_before
+    assert _read_yaml(with_session, "execution/session_work.yaml") == work_before
+    assert _read_yaml(with_session, "execution/events.yaml") == {}
+
+    # And the other node offers no start: it cannot replace the Session.
+    _, body, _ = views.node_body(with_session, other, {})
+    assert 'data-intent="start"' not in body
+    assert "Start this session" not in body
+
+
+def test_work_on_a_locked_node_is_refused_on_the_page(with_session):
+    """A locked skill renders no work form — the engine would refuse it."""
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(with_session)
+    locked = sorted(n.id for n in view.nodes if view.store.state_of(n.id) == "locked")[0]
+    _, body, _ = views.node_body(with_session, locked, {})
+    assert "This skill is locked" in body
+    assert 'action="/work"' not in body
+    assert 'href="/session"' in body
+
+
+def test_work_on_a_passed_node_is_offered_as_honest_history(with_session):
+    """Work on a passed skill stays history; it never demotes the state."""
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(with_session)
+    bound = view.work[0].node_id
+    passed = sorted(
+        node.id
+        for node in view.nodes
+        if node.id != bound and view.store.state_of(node.id) != "locked"
+    )[0]
+    doc = _read_yaml(with_session, "graph/state.yaml")
+    doc.setdefault("progress", {})[passed] = {"state": "passed"}
+    _write_yaml(with_session, "graph/state.yaml", doc)
+
+    _, body, _ = views.node_body(with_session, passed, {})
+    assert 'action="/work"' in body
+    assert "stays honest history" in body
+    assert "never changes that state" in body

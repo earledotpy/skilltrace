@@ -286,7 +286,7 @@ def test_node_page_links_reach_the_other_destinations(repo):
 
 def test_log_work_appears_only_while_a_session_is_open(repo):
     """The contextual work action exists only with an open Session."""
-    node_id = _first_node_id(repo)
+    node_id = _first_node_id(repo, state="available")
     _, body, _ = views.node_body(repo, node_id)
     assert "Log work here" not in body
 

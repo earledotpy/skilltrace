@@ -137,12 +137,38 @@ def post_master_confirm(root, node_id: str, form: dict):
     )
 
 
+def _start_refusal_url(root, next_url: str) -> str:
+    """Where a refused start lands — recovery must need no hint ladder (R5).
+
+    A second start is refused while a Session is open. The refusal explains
+    the two real options, and this sends the learner to the cockpit that
+    holds them: record work on the skill the Session is bound to, or close
+    the Session. With no open Session (a locked node), the node page is the
+    safe place — it states the lock and offers no override.
+
+    A failed load is not a reason to guess: the form's own host page stays.
+    """
+    from ...context import load_context_lenient
+    from ...execution.records import open_session
+
+    try:
+        current = open_session(load_context_lenient(root).sessions)
+    except Exception:  # noqa: BLE001 — recovery routing must never fail a refusal
+        return next_url
+    return "/session" if current is not None else next_url
+
+
 def post_start(root, node_id: str, form: dict):
     next_url = _safe_next(form, f"/nodes/{node_id}")
     exit_code, lines = _dispatch_web(
         root, "start", node_id=node_id, template=_field(form, "template")
     )
-    return _finish_write(next_url, lines, exit_code)
+    return _finish_write(
+        next_url,
+        lines,
+        exit_code,
+        refusal_url=_start_refusal_url(root, next_url) if exit_code == 2 else None,
+    )
 
 
 def post_work(root, form: dict):
@@ -167,7 +193,12 @@ def post_work(root, form: dict):
 def post_session_close(root, form: dict):
     next_url = _safe_next(form, "/")
     exit_code, lines = _dispatch_web(root, "session close", end=_field(form, "end"))
-    return _finish_write(next_url, lines, exit_code)
+    # A refused close (a future end, or an end before the start) returns to
+    # the close panel with the session facts refreshed: the SessionWork is
+    # never discarded and closure stays available (§10.6).
+    return _finish_write(
+        next_url, lines, exit_code, refusal_url="/session/close"
+    )
 
 
 def post_blocker_create(root, node_id: str, form: dict):

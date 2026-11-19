@@ -55,6 +55,7 @@ from ..health import rhythm_facts
 from ._readiness import every_skill_locked, stale_readiness_section
 from ._reasons import facts_for, reason_for
 from ._shared import _esc, _session_node_id
+from .forms import START_ANNOUNCEMENT
 from .sections import BARE, section
 from .shell import _page_head
 
@@ -268,6 +269,7 @@ def _queue_item(
     the thing to do (VS-6).
     """
     parts: list[str] = []
+    announcement = ""
     for index, action in enumerate(actions):
         cls = "btn primary" if dominant and index == 0 else "btn secondary"
         if action.start_node is not None:
@@ -275,6 +277,11 @@ def _queue_item(
                 f'<form method="post" action="/nodes/{_esc(action.start_node)}/start">'
                 '<input type="hidden" name="next" value="/">'
                 f'<button type="submit" class="{cls}">{_esc(action.label)}</button></form>'
+            )
+            # R6: starting is announced before the POST. No silent timing —
+            # the learner knows exactly what the write records.
+            announcement = (
+                f'<p class="small mut">{_esc(START_ANNOUNCEMENT)}</p>\n'
             )
         else:
             parts.append(
@@ -287,6 +294,7 @@ def _queue_item(
         f'<p class="queue-title">{_esc(title)}</p>\n'
         f'<p class="queue-why">{_esc(why)}</p>\n'
         f'<div class="queue-actions">{"".join(parts)}</div>\n'
+        f"{announcement}"
         "</li>\n"
     )
 

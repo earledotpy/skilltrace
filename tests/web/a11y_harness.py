@@ -42,6 +42,7 @@ from pathlib import Path
 import yaml
 from discovery_fixtures import build_discovery_variant
 from node_fixtures import build_node_variant
+from session_fixtures import build_session_variant, refused_start_body
 from today_fixtures import build_today_variant
 
 from skilltrace.web import views
@@ -530,6 +531,12 @@ def frozen_clock():
     for module, name in ((commands.today, "datetime"), (commands._common, "datetime")):
         saved.append((module, name, module.datetime))
         setattr(module, name, _FrozenDatetime)
+    # The cockpit's elapsed-time read is the web's one wall-clock call; pin
+    # it so the rendered timer is the same on every run.
+    from skilltrace.web.views import _clock
+
+    saved.append((_clock, "now_utc", _clock.now_utc))
+    _clock.now_utc = lambda: FROZEN_MOMENT
     try:
         yield
     finally:
@@ -686,11 +693,32 @@ def route_cases() -> tuple[RouteCase, ...]:
             lambda r: views.session_body(r, {}),
         ),
         RouteCase(
+            "session-stale",
+            "GET /session",
+            "guided",
+            "session_body",
+            lambda r: views.session_body(build_session_variant(r, "stale"), {}),
+        ),
+        RouteCase(
+            "session-start-refused",
+            "GET /session (after a refused start)",
+            "guided",
+            "session_body",
+            lambda r: refused_start_body(r, NODE_ACTIVE),
+        ),
+        RouteCase(
             "session-close",
             "GET /session/close",
             "guided",
             "session_close_body",
             lambda r: views.session_close_body(r, {}),
+        ),
+        RouteCase(
+            "session-close-stale",
+            "GET /session/close",
+            "guided",
+            "session_close_body",
+            lambda r: views.session_close_body(build_session_variant(r, "stale"), {}),
         ),
         RouteCase(
             "node-evidence",

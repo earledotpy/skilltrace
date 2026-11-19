@@ -58,6 +58,9 @@ from ...dispatch import Context, dispatch
 from ...evidence.eligibility import compute_eligibility, live_accepted_count
 from ...execution.overdue import parse_date, utc_today
 from ...execution.records import open_session
+from ...execution.staleness import (  # noqa: F401 — the session views' seam
+    stale_session_hours,
+)
 from ...graph.edges import EdgeLoadError
 from ...graph.nodes import NodeLoadError
 from ...graph.state import ProgressStoreError
@@ -97,6 +100,7 @@ from ..interface.translate import rich_cards as _rich_cards_from_model
 # resolve on the facade, so a consumer never has to reach into a
 # module to find one. The private helpers are re-exported for the same
 # reason the public ones are — the union is the surface.
+from ._clock import now_utc  # noqa: F401
 from ._readiness import (  # noqa: F401
     ASSERTED_STATES,
     derive_readiness,
@@ -142,8 +146,10 @@ from .analytics import (  # noqa: F401
     analytics_body,
 )
 from .evidence import (  # noqa: F401  # noqa: F401
+    EvidenceFigures,
     _recorded_rows,
     _wanted_rows,
+    evidence_figures,
     node_evidence_body,
 )
 from .evidence_index import (  # noqa: F401  # noqa: F401
@@ -165,6 +171,7 @@ from .finder import (  # noqa: F401
     finder_body,
 )
 from .forms import (  # noqa: F401
+    START_ANNOUNCEMENT,
     _evidence_submit_form,
     _resolve_blocker_form,
     _start_confirm_form,
@@ -270,7 +277,16 @@ from .session import (  # noqa: F401  # noqa: F401
     _blocked_work,
     _blocker_section,
     _create_blocker_offer,
+    _duration,
+    _evidence_section,
+    _open_for_label,
+    _open_hours,
+    _pass_facts,
+    _session_facts,
+    _session_minutes,
     _session_rows,
+    _stale,
+    _stale_banner,
     session_body,
     session_close_body,
 )
@@ -337,6 +353,7 @@ from .writes import (  # noqa: F401
     _finish_write,
     _redirect_with_notice,
     _safe_next,
+    _start_refusal_url,
     post_analytics_export,
     post_blocker_create,
     post_blocker_resolve,
@@ -367,6 +384,7 @@ __all__ = [
     "DiscoveryCard",
     "EMPTY",
     "ENTRY_NODES",
+    "EvidenceFigures",
     "EdgeLoadError",
     "FAILURE",
     "Fact",
@@ -387,6 +405,7 @@ __all__ = [
     "Redirect",
     "Rows",
     "SELECTED_PARAM",
+    "START_ANNOUNCEMENT",
     "STATES",
     "Section",
     "State",
@@ -413,6 +432,7 @@ __all__ = [
     "dispatch",
     "downstream_count",
     "every_skill_locked",
+    "evidence_figures",
     "evidence_index_body",
     "evidence_inspector",
     "facts_for",
@@ -434,6 +454,7 @@ __all__ = [
     "node_body",
     "node_evidence_body",
     "not_found_body",
+    "now_utc",
     "open_session",
     "operations_body",
     "page",

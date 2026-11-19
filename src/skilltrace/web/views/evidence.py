@@ -24,11 +24,45 @@ delete anywhere (HB-5).
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from ...evidence.eligibility import compute_eligibility, live_accepted_count
 from ._shared import _esc, _table
 from .forms import _evidence_submit_form
 from .sections import BARE, INLINE, Markup, Rows, Section
 from .shell import _page_head
+
+
+@dataclass(frozen=True)
+class EvidenceFigures:
+    """The four evidence figures for one SkillNode — one named derivation."""
+
+    wanted: int
+    accepted_live: int
+    rejected: int
+    superseded: int
+
+
+def evidence_figures(view, node_id: str) -> EvidenceFigures:
+    """The evidence figures for one SkillNode — one derivation (R7).
+
+    ``wanted`` counts the artifact specs with a positive minimum; the other
+    three split the recorded history into accepted-and-standing, rejected and
+    superseded. The Study cockpit, the close panel and the evidence workspace
+    all read this, so no two surfaces state different numbers for one skill.
+    """
+    specs = view.specs_by_node.get(node_id, [])
+    spec_ids = {s.id for s in specs}
+    records = [r for r in view.records if r.artifact_spec_id in spec_ids]
+    superseded_ids = {r.supersedes for r in records if r.supersedes}
+    return EvidenceFigures(
+        wanted=len([s for s in specs if s.minimum_count > 0]),
+        accepted_live=len(
+            [r for r in records if r.accepted and r.id not in superseded_ids]
+        ),
+        rejected=len([r for r in records if not r.accepted]),
+        superseded=len([r for r in records if r.id in superseded_ids]),
+    )
 
 
 def _wanted_rows(view, node_id: str) -> str:
@@ -126,18 +160,7 @@ def node_evidence_body(
         node_state=state,
     )
 
-    spec_ids = {s.id for s in view.specs_by_node.get(node_id, [])}
-    records = [r for r in view.records if r.artifact_spec_id in spec_ids]
-    superseded_ids = {r.supersedes for r in records if r.supersedes}
-    accepted_live = len(
-        [r for r in records if r.accepted and r.id not in superseded_ids]
-    )
-    rejected = len([r for r in records if not r.accepted])
-    superseded = len([r for r in records if r.id in superseded_ids])
-
-    wanted = len(
-        [s for s in view.specs_by_node.get(node_id, []) if s.minimum_count > 0]
-    )
+    figures = evidence_figures(view, node_id)
     # The eligibility derivation says which required proofs are still
     # unmet. It is the fact behind "what is left to do", so it is stated
     # rather than computed twice.
@@ -164,11 +187,12 @@ def node_evidence_body(
             (
                 Rows(
                     (
-                        ("Evidence wanted", f"{wanted} required"),
+                        ("Evidence wanted", f"{figures.wanted} required"),
                         (
                             "Evidence recorded",
-                            f"{accepted_live} accepted, {rejected} rejected, "
-                            f"{superseded} superseded",
+                            f"{figures.accepted_live} accepted, "
+                            f"{figures.rejected} rejected, "
+                            f"{figures.superseded} superseded",
                         ),
                     ),
                     separated=True,
