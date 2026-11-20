@@ -41,6 +41,7 @@ from pathlib import Path
 
 import yaml
 from discovery_fixtures import build_discovery_variant
+from evidence_fixtures import build_evidence_variant
 from node_fixtures import build_node_variant
 from session_fixtures import build_session_variant, refused_start_body
 from today_fixtures import build_today_variant
@@ -433,8 +434,21 @@ def _pin_evidence(path: Path) -> None:
                     "artifact_spec_id": f"spec.{NODE_ACTIVE.removesuffix('_01')}",
                     "location": "evidence/artifacts/data/pandas_basics.py",
                     "accepted": True,
-                    "accepted_by": "learner_manual",
+                    "accepted_by": "objective_gate",
                     "artifact_hash": "sha256:" + "1" * 64,
+                    "gate_run": {
+                        "command_argv": [
+                            "python",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "inputs": [
+                            "evidence/artifacts/data/pandas_basics.py",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "exit_class": "passed",
+                        "exit_code": 0,
+                        "stdout_hash": "sha256:" + "a" * 64,
+                    },
                     "created_at": _ago(days=5),
                 },
                 {
@@ -442,8 +456,21 @@ def _pin_evidence(path: Path) -> None:
                     "artifact_spec_id": f"spec.{NODE_ACTIVE.removesuffix('_01')}",
                     "location": "evidence/artifacts/data/pandas_basics.py",
                     "accepted": False,
-                    "accepted_by": "learner_manual",
+                    "accepted_by": "objective_gate",
                     "artifact_hash": "sha256:" + "2" * 64,
+                    "gate_run": {
+                        "command_argv": [
+                            "python",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "inputs": [
+                            "evidence/artifacts/data/pandas_basics.py",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "exit_class": "failed",
+                        "exit_code": 1,
+                        "stderr_hash": "sha256:" + "b" * 64,
+                    },
                     "created_at": _ago(days=3),
                     "note": "the revenue column was summed, not listed",
                 },
@@ -452,8 +479,21 @@ def _pin_evidence(path: Path) -> None:
                     "artifact_spec_id": f"spec.{NODE_ACTIVE.removesuffix('_01')}",
                     "location": "evidence/artifacts/data/pandas_basics.py",
                     "accepted": True,
-                    "accepted_by": "learner_manual",
+                    "accepted_by": "objective_gate",
                     "artifact_hash": "sha256:" + "3" * 64,
+                    "gate_run": {
+                        "command_argv": [
+                            "python",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "inputs": [
+                            "evidence/artifacts/data/pandas_basics.py",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "exit_class": "passed",
+                        "exit_code": 0,
+                        "stdout_hash": "sha256:" + "c" * 64,
+                    },
                     "created_at": _ago(days=1),
                     "supersedes": f"ev.{NODE_ACTIVE}.001",
                     "supersede_reason": "corrected the region_rows column",
@@ -758,6 +798,42 @@ def route_cases() -> tuple[RouteCase, ...]:
             "guided",
             "node_evidence_body",
             lambda r: views.node_evidence_body(r, NODE_ACTIVE, {}),
+        ),
+        RouteCase(
+            "node-evidence-empty",
+            f"GET /nodes/{NODE_ACTIVE}/evidence",
+            "guided",
+            "node_evidence_body",
+            lambda r: views.node_evidence_body(
+                build_evidence_variant(r, "empty"), NODE_ACTIVE, {}
+            ),
+        ),
+        RouteCase(
+            "node-evidence-limited",
+            f"GET /nodes/{NODE_ACTIVE}/evidence",
+            "guided",
+            "node_evidence_body",
+            lambda r: views.node_evidence_body(
+                build_evidence_variant(r, "limited"), NODE_ACTIVE, {}
+            ),
+        ),
+        RouteCase(
+            "node-evidence-failure",
+            f"GET /nodes/{NODE_ACTIVE}/evidence",
+            "guided",
+            "node_evidence_body",
+            lambda r: views.node_evidence_body(
+                build_evidence_variant(r, "failure"), NODE_ACTIVE, {}
+            ),
+        ),
+        RouteCase(
+            "node-evidence-manual",
+            f"GET /nodes/{NODE_ACTIVE}/evidence",
+            "guided",
+            "node_evidence_body",
+            lambda r: views.node_evidence_body(
+                build_evidence_variant(r, "manual"), NODE_ACTIVE, {}
+            ),
         ),
         RouteCase(
             "evidence-index",

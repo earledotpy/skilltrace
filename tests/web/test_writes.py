@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import re
 import shutil
+import sys
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -98,6 +99,40 @@ def _make_eligible(root: Path, node_id: str = NODE, spec_id: str = SPEC, count: 
 
 def _form(**fields) -> dict:
     return {key: [str(value)] for key, value in fields.items()}
+
+
+def _make_objective_gate(
+    root: Path, command: str, node_id: str = NODE, gate_id: str | None = None
+) -> None:
+    """Turn the node's gate into an objective gate running ``command``."""
+    doc = _read_yaml(root, "evidence/validation_gates.yaml")
+    for gate in doc.get("validation_gates") or []:
+        if gate.get("node_id") != node_id:
+            continue
+        if gate_id is not None and gate.get("id") != gate_id:
+            continue
+        gate["authority"] = "objective"
+        gate["command"] = command
+        _write_yaml(root, "evidence/validation_gates.yaml", doc)
+        return
+    raise AssertionError(f"no gate for {node_id}")
+
+
+def _gate_script(root: Path, *, exit_code: int, output: str = "") -> str:
+    """An executable gate script outside the repo — a stable command for tests."""
+    path = root / "gate-script.py"
+    body = "import sys\n"
+    if output:
+        body += f"print({output!r})\n"
+    body += f"sys.exit({exit_code})\n"
+    path.write_text(body, encoding="utf-8")
+    return f"{sys.executable} {path}"
+
+
+def _evidence_records(root: Path) -> list[dict]:
+    return _read_yaml(root, "evidence/evidence_records.yaml").get(
+        "evidence_records"
+    ) or []
 
 
 # --- Pass flow: modal facts, forward-only write, verbatim refusals -----------------
@@ -791,6 +826,308 @@ def test_missing_location_warns_instead_of_crashing(repo):
     notice, kind = _notice_of(result)
     assert kind == "warning"
     assert "artifact location" in notice
+
+
+# --- Evidence write round-trips: one record, one canonical audit event -------------
+
+
+def test_manual_accept_writes_one_record_and_one_canonical_event(repo):
+    _set_state(repo, NODE, "available")
+    result = views.post_evidence(
+        repo, NODE, _form(location="evidence/math/set_001.md", verdict="accept")
+    )
+    assert isinstance(result, Redirect)
+    assert result.location.startswith(f"/nodes/{NODE}/evidence?")
+    assert _notice_of(result)[1] == "ok"
+
+    records = _evidence_records(repo)
+    assert len(records) == 1
+    assert records[0]["accepted"] is True
+    assert records[0]["accepted_by"] == "learner_manual"
+
+    events = _events(repo)
+    assert len(events) == 1
+    assert events[0]["command"] == "evidence submit"
+    assert events[0]["args"]["source"] == "web"
+    assert events[0]["records_touched"] == [records[0]["id"]]
+
+
+def test_manual_reject_is_an_honest_record_not_a_failure(repo):
+    _set_state(repo, NODE, "available")
+    result = views.post_evidence(
+        repo, NODE, _form(location="evidence/math/set_002.md", verdict="reject")
+    )
+    assert isinstance(result, Redirect)
+    assert _notice_of(result)[1] == "ok"
+
+    records = _evidence_records(repo)
+    assert len(records) == 1 and records[0]["accepted"] is False
+    events = _events(repo)
+    assert len(events) == 1
+    assert events[0]["command"] == "evidence submit"
+
+
+def test_manual_submit_without_a_verdict_refuses_and_writes_nothing(repo):
+    _set_state(repo, NODE, "available")
+    result = views.post_evidence(
+        repo, NODE, _form(location="evidence/math/set_003.md")
+    )
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+    assert "explicit verdict" in notice
+    assert _evidence_records(repo) == []
+    assert _events(repo) == []
+
+
+def test_correction_requires_a_reason_and_writes_nothing_without_one(repo):
+    _set_state(repo, NODE, "available")
+    views.post_evidence(
+        repo, NODE, _form(location="evidence/math/a.md", verdict="accept")
+    )
+    events_before = list(_events(repo))
+    result = views.post_evidence(
+        repo,
+        NODE,
+        _form(
+            location="evidence/math/b.md",
+            verdict="accept",
+            supersedes=f"ev.{NODE}.001",
+        ),
+    )
+    assert isinstance(result, Redirect)
+    assert _notice_of(result)[1] == "warning"
+    assert len(_evidence_records(repo)) == 1
+    assert _events(repo) == events_before
+
+
+def test_correction_supersedes_visibly_and_keeps_the_prior_record(repo):
+    _set_state(repo, NODE, "available")
+    views.post_evidence(
+        repo, NODE, _form(location="evidence/math/a.md", verdict="accept")
+    )
+    original = _evidence_records(repo)[0]
+
+    result = views.post_evidence(
+        repo,
+        NODE,
+        _form(
+            location="evidence/math/b.md",
+            verdict="accept",
+            supersedes=original["id"],
+            reason="the first file was the wrong attempt",
+        ),
+    )
+    assert isinstance(result, Redirect)
+    assert _notice_of(result)[1] == "ok"
+
+    records = _evidence_records(repo)
+    assert len(records) == 2
+    assert records[0] == original  # immutable: the prior record is untouched
+    assert records[1]["supersedes"] == original["id"]
+    assert records[1]["supersede_reason"]
+
+    from skilltrace.evidence.eligibility import live_accepted_count
+    from skilltrace.evidence.evidence import load_evidence_records
+
+    assert live_accepted_count(load_evidence_records(repo), SPEC) == 1
+
+    events = _events(repo)
+    assert [event["command"] for event in events] == [
+        "evidence submit",
+        "evidence submit",
+    ]
+    assert events[-1]["records_touched"] == [records[1]["id"]]
+
+
+def test_objective_gate_accepts_and_freezes_the_receipt(repo):
+    _set_state(repo, NODE, "available")
+    _make_objective_gate(repo, _gate_script(repo, exit_code=0, output="ok"))
+    result = views.post_evidence(
+        repo, NODE, _form(location="evidence/math/set_004.md")
+    )
+    assert isinstance(result, Redirect)
+    assert _notice_of(result)[1] == "ok"
+
+    record = _evidence_records(repo)[0]
+    assert record["accepted"] is True
+    assert record["accepted_by"] == "objective_gate"
+    receipt = record["gate_run"]
+    assert receipt["exit_class"] == "passed"
+    assert receipt["exit_code"] == 0
+    assert receipt["command_argv"][0] == sys.executable
+    assert "evidence/math/set_004.md" in receipt["inputs"]
+    assert receipt["stdout_hash"].startswith("sha256:")
+    assert len(_events(repo)) == 1
+
+
+def test_failing_objective_gate_records_a_rejection_not_a_command_failure(repo):
+    _set_state(repo, NODE, "available")
+    _make_objective_gate(repo, _gate_script(repo, exit_code=1, output="bad"))
+    result = views.post_evidence(
+        repo, NODE, _form(location="evidence/math/set_005.md")
+    )
+    assert isinstance(result, Redirect)
+    assert _notice_of(result)[1] == "ok"
+
+    record = _evidence_records(repo)[0]
+    assert record["accepted"] is False
+    assert record["gate_run"]["exit_class"] == "failed"
+    events = _events(repo)
+    assert len(events) == 1
+    assert events[0]["command"] == "evidence submit"
+
+
+def test_unrunnable_gate_writes_no_record_and_names_the_recovery(repo):
+    _set_state(repo, NODE, "available")
+    _make_objective_gate(repo, "skilltrace-no-such-gate-command")
+    result = views.post_evidence(
+        repo, NODE, _form(location="evidence/math/set_006.md")
+    )
+    assert isinstance(result, Redirect)
+    assert result.location.startswith(f"/nodes/{NODE}/evidence?")
+    notice, kind = _notice_of(result)
+    assert kind == "error"
+    assert "Nothing was recorded" in notice
+    assert "submit again" in notice
+    assert _evidence_records(repo) == []
+    assert _events(repo) == []
+
+
+# --- Evidence workspace: the wanted/recorded split, gates and corrections ----------
+
+
+def test_evidence_workspace_shows_wanted_and_recorded_as_distinct_facts(repo):
+    _set_state(repo, NODE, "available")
+    views.post_evidence(
+        repo, NODE, _form(location="evidence/math/a.md", verdict="accept")
+    )
+    views.post_evidence(
+        repo, NODE, _form(location="evidence/math/b.md", verdict="reject")
+    )
+    _, body, status = views.node_evidence_body(repo, NODE, {})
+    assert status == 200
+    assert "Evidence wanted" in body
+    assert "Evidence recorded" in body
+    assert "3 records wanted" in body
+    assert "1 accepted, 1 rejected, 0 superseded" in body
+    assert "Some required evidence is still short" in body
+
+
+def test_manual_gate_form_demands_a_verdict_with_no_default(repo):
+    _set_state(repo, NODE, "available")
+    _, body, _ = views.node_evidence_body(repo, NODE, {})
+    verdict_radios = re.findall(
+        r'<input type="radio" name="verdict"[^>]*>', body
+    )
+    assert len(verdict_radios) == 2
+    assert all("required" in radio for radio in verdict_radios)
+    assert all("checked" not in radio for radio in verdict_radios)
+    assert "There is no default verdict" in body
+
+
+def test_correction_is_a_separate_action_with_a_required_reason(repo):
+    _set_state(repo, NODE, "available")
+    views.post_evidence(
+        repo, NODE, _form(location="evidence/math/a.md", verdict="accept")
+    )
+    _, body, _ = views.node_evidence_body(repo, NODE, {})
+    assert "Correct earlier evidence" in body
+    assert 'name="supersedes"' in body
+    reason_field = re.search(
+        r'<input type="text" name="reason" id="correction-reason"[^>]*>', body
+    )
+    assert reason_field is not None
+    assert "required" in reason_field.group(0)
+    # No edit or delete affordance exists anywhere (HB-5).
+    assert 'action="/evidence/delete' not in body
+    assert 'action="/evidence/edit' not in body
+    assert "edit record" not in body.lower()
+    assert "delete record" not in body.lower()
+
+
+def test_evidence_workspace_and_inspector_show_the_gate_run_receipt(repo):
+    _set_state(repo, NODE, "available")
+    _make_objective_gate(repo, _gate_script(repo, exit_code=0, output="ok"))
+    views.post_evidence(
+        repo, NODE, _form(location="evidence/math/receipt.md")
+    )
+    record = _evidence_records(repo)[0]
+
+    _, body, _ = views.node_evidence_body(repo, NODE, {})
+    assert "How the gate judged" in body
+    assert "evidence/checks" not in body  # no invented receipt
+    assert "evidence/math/receipt.md" in body
+    assert record["gate_run"]["exit_class"] in body
+    assert record["gate_run"]["stdout_hash"] in body
+
+    _, index_body, _ = views.evidence_index_body(
+        repo, {"record": [record["id"]]}
+    )
+    assert "Gate-run receipt" in index_body
+    assert record["gate_run"]["stdout_hash"] in index_body
+
+
+def test_an_optional_spec_never_becomes_an_eligibility_gap(repo):
+    _set_state(repo, NODE, "available")
+    doc = _read_yaml(repo, "evidence/artifact_specs.yaml")
+    optional = {
+        "id": f"{SPEC}.optional",
+        "node_id": NODE,
+        "title": "Optional worked notes",
+        "artifact_kind": "note",
+        "required": False,
+        "minimum_count": 1,
+    }
+    doc["artifact_specs"].append(optional)
+    _write_yaml(repo, "evidence/artifact_specs.yaml", doc)
+
+    view = load_context_lenient(repo)
+    figures = views.evidence_figures(view, NODE)
+    assert figures.wanted_specs == 1
+    assert figures.wanted_records == 3
+    assert figures.optional_specs == 1
+
+    _, body, _ = views.node_evidence_body(repo, NODE, {})
+    assert "1 optional specification, not counted" in body
+    assert "3 records wanted" in body
+
+
+def test_optional_evidence_never_counts_toward_pass_eligibility(repo):
+    _set_state(repo, NODE, "available")
+    doc = _read_yaml(repo, "evidence/artifact_specs.yaml")
+    optional_id = f"{SPEC}.optional"
+    doc["artifact_specs"].append(
+        {
+            "id": optional_id,
+            "node_id": NODE,
+            "title": "Optional worked notes",
+            "artifact_kind": "note",
+            "required": False,
+            "minimum_count": 1,
+        }
+    )
+    _write_yaml(repo, "evidence/artifact_specs.yaml", doc)
+
+    views.post_evidence(
+        repo,
+        NODE,
+        _form(location="evidence/math/notes.md", spec=optional_id, verdict="accept"),
+    )
+
+    view = load_context_lenient(repo)
+    from skilltrace.evidence.eligibility import live_accepted_count
+
+    assert live_accepted_count(view.records, optional_id) == 1
+    eligibility = views.compute_eligibility(
+        NODE,
+        view.specs_by_node[NODE],
+        has_gate=NODE in view.has_gate,
+        records=view.records,
+        node_state=view.store.state_of(NODE),
+    )
+    assert eligibility.eligible is False
+    assert [spec.spec_id for spec in eligibility.specs] == [SPEC]
 
 
 # --- Host pages carry the forms; degradation warns but never blocks ----------------
