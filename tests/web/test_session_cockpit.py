@@ -33,10 +33,11 @@ NOW = datetime(2026, 11, 17, 9, 0, tzinfo=timezone.utc)
 
 @pytest.fixture(autouse=True)
 def _frozen_now(monkeypatch):
-    """Pin the cockpit's one wall-clock read — the fixture-clock discipline."""
-    from skilltrace.web.views import _clock
+    """Pin the cockpit's clock reads and the shared resource-status date."""
+    from skilltrace.web.views import _clock, _shared
 
     monkeypatch.setattr(_clock, "now_utc", lambda: NOW)
+    monkeypatch.setattr(_shared, "utc_today", lambda: NOW.date())
     return NOW
 
 
@@ -50,6 +51,11 @@ def _write_yaml(path: Path, relpath: str, doc: dict) -> None:
     target = path / relpath
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+
+def _read_yaml(path: Path, relpath: str) -> dict:
+    target = path / relpath
+    return yaml.safe_load(target.read_text(encoding="utf-8")) or {}
 
 
 @pytest.fixture
@@ -271,6 +277,144 @@ def test_a_second_open_blocker_warns_but_does_not_forbid(with_session):
     assert "allowed" in body
     # The form is still there: a warning is not a prohibition.
     assert f'action="/nodes/{node_id}/blockers"' in body
+
+
+def test_an_open_blocker_shows_its_obstacle_study_material_and_interventions(
+    with_session,
+):
+    """An open Blocker shows its options without claiming any of them resolves it."""
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(with_session)
+    node_id = view.work[0].node_id
+    resources = view.resources_by_node.get(node_id, [])
+    assert resources, "the fixture skill must have study material to show"
+    _write_yaml(
+        with_session,
+        "execution/blockers.yaml",
+        {
+            "blockers": [
+                {
+                    "id": "blk.cockpit.001",
+                    "node_id": node_id,
+                    "status": "open",
+                    "description": "groupby output keeps surprising me",
+                    "created_at": "2026-11-16T08:00:00+00:00",
+                }
+            ]
+        },
+    )
+    _write_yaml(
+        with_session,
+        "execution/remediation_actions.yaml",
+        {
+            "remediation_actions": [
+                {
+                    "id": f"rem.{node_id}.001",
+                    "node_id": node_id,
+                    "status": "open",
+                    "description": "rebuild the drill from the docs",
+                    "created_at": "2026-11-16T09:00:00+00:00",
+                    "blocker_id": "blk.cockpit.001",
+                },
+                {
+                    "id": f"rem.{node_id}.002",
+                    "node_id": node_id,
+                    "status": "completed",
+                    "description": "an intervention that is no longer available",
+                    "created_at": "2026-11-15T09:00:00+00:00",
+                    "completed_at": "2026-11-16T09:00:00+00:00",
+                    "result_summary": "done",
+                },
+            ]
+        },
+    )
+    _, body, _ = views.session_body(with_session)
+
+    # The obstacle itself, not just the skill label.
+    assert "groupby output keeps surprising me" in body
+    # The available study material, rendered as advisory pointers.
+    where = resources[0].url or resources[0].local_path
+    assert where in body
+    assert "Study material" in body
+    assert "Deliberate interventions" in body
+    assert "rebuild the drill from the docs" in body
+    assert "recorded for this blocker" in body
+    # A completed action is history, never listed as an available intervention.
+    assert "an intervention that is no longer available" not in body
+    # The options are never presented as a resolution or an unlock.
+    assert "Neither clears this blocker" in body
+    assert "unlocks anything" in body
+    # Resolving is the explicit action, and it requires a summary.
+    assert 'action="/blockers/blk.cockpit.001/resolve"' in body
+    assert 'name="summary"' in body
+    assert "required" in body
+    # A clear path back to the work that is already in progress.
+    assert 'href="#work"' in body
+
+
+def test_an_open_blocker_names_missing_material_and_interventions(with_session):
+    """The empty branches are pinned too: no material and no remediation."""
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(with_session)
+    node_id = view.work[0].node_id
+    _write_yaml(
+        with_session,
+        "execution/blockers.yaml",
+        {
+            "blockers": [
+                {
+                    "id": "blk.cockpit.001",
+                    "node_id": node_id,
+                    "status": "open",
+                    "description": "no options recorded",
+                    "created_at": "2026-11-16T08:00:00+00:00",
+                }
+            ]
+        },
+    )
+    resources = _read_yaml(with_session, "graph/resources.yaml")
+    for resource in resources.get("resources") or []:
+        supports = resource.get("supports") or []
+        resource["supports"] = [n for n in supports if n != node_id]
+    _write_yaml(with_session, "graph/resources.yaml", resources)
+
+    _, body, _ = views.session_body(with_session)
+    assert "No usable study material is registered" in body
+    assert "No remediation action is recorded" in body
+
+
+def test_a_resolved_blocker_is_terminal_history_not_an_open_record(with_session):
+    """Resolution is terminal: the record stays visible, with its summary."""
+    from skilltrace.context import load_context_lenient
+
+    view = load_context_lenient(with_session)
+    node_id = view.work[0].node_id
+    _write_yaml(
+        with_session,
+        "execution/blockers.yaml",
+        {
+            "blockers": [
+                {
+                    "id": "blk.cockpit.001",
+                    "node_id": node_id,
+                    "status": "resolved",
+                    "description": "the same stuckness",
+                    "created_at": "2026-11-15T08:00:00+00:00",
+                    "resolved_at": "2026-11-16T08:00:00+00:00",
+                    "resolution_summary": "re-read the docs and re-ran the drills",
+                }
+            ]
+        },
+    )
+    _, body, _ = views.session_body(with_session)
+    assert "No blockers are open" in body
+    assert "Resolved" in body
+    assert "re-read the docs and re-ran the drills" in body
+    # A resolved record is never offered for resolving again.
+    assert "/resolve" not in body
+    assert "Resolution is terminal" in body
 
 
 # --- the safe closure ---------------------------------------------------------------

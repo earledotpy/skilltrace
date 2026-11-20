@@ -134,8 +134,10 @@ from ._shared import (  # noqa: F401  # noqa: F401
     _session_node_id,
     _slug,
     _table,
+    derive_status,
     plural,
     record_standing,
+    resources_with_status,
     superseded_ids,
 )
 from .analytics import (  # noqa: F401
@@ -250,7 +252,6 @@ from .node import (  # noqa: F401  # noqa: F401
     _state_word,
     _technical,
     _unmet_specs,
-    derive_status,  # noqa: F401
     node_body,
 )
 from .operations import (  # noqa: F401  # noqa: F401
@@ -274,19 +275,24 @@ from .reviews import (  # noqa: F401  # noqa: F401
     reviews_body,
 )
 from .session import (  # noqa: F401  # noqa: F401
+    _available_remediation,
     _blocked_work,
     _blocker_section,
     _create_blocker_offer,
     _duration,
     _evidence_section,
+    _open_blocker_detail,
     _open_for_label,
     _open_hours,
+    _other_open_note,
     _pass_facts,
+    _resolved_blockers,
     _session_facts,
     _session_minutes,
     _session_rows,
     _stale,
     _stale_banner,
+    _study_material,
     session_body,
     session_close_body,
 )
@@ -478,6 +484,7 @@ __all__ = [
     "re",
     "reason_for",
     "record_standing",
+    "resources_with_status",
     "redirect_stdout",
     "render",
     "render_discovery_cards",

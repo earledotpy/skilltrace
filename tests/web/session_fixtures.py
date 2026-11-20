@@ -10,6 +10,14 @@ left unchecked by the other. This module owns those states
 * ``stale`` — the same Session started three days before the frozen
   moment, past the policy staleness window, so the warning and the honest
   past-end closure are visible;
+* ``no-blocker`` — the same Session with no Blocker record at all, so the
+  cockpit's empty state is pinned;
+* ``open-blocker`` — the pinned Blocker on the Session's skill, so its
+  obstacle and its advisory options are visible;
+* ``blocked-work`` — a blocked SessionWork row, so the distinct blocked-work
+  observation and the explicit Create Blocker offer are pinned;
+* ``blocker-resolved`` — that Blocker resolved with its summary, so the
+  terminal history is visible instead of an open record;
 * ``refusal`` — the fresh page after a **refused second start**: the
   submission is real (it goes through the dispatcher), it writes nothing,
   and the cockpit it lands on states the two real options and the way back
@@ -32,6 +40,12 @@ from fixture_repo import materialise_variant, write_yaml
 #: past the 12-hour default staleness window.
 STALE_STARTED_AT = "2026-11-14T09:00:00+00:00"
 
+#: The fixed moment a resolved Blocker carries in these fixtures.
+BLOCKER_RESOLVED_AT = "2026-11-16T18:00:00+00:00"
+
+#: The fixed moment an open action and a blocked work item carry in these fixtures.
+FIXTURE_MOMENT = "2026-11-16T09:00:00+00:00"
+
 
 def _make_session_stale(root: Path) -> None:
     """Start the open Session three days ago — a forgotten Session."""
@@ -45,7 +59,140 @@ def _make_session_stale(root: Path) -> None:
     write_yaml(root, "execution/sessions.yaml", {"sessions": sessions})
 
 
-_MUTATIONS = {"stale": _make_session_stale}
+def _bound_node(root: Path) -> str:
+    """The SkillNode the open Session is bound to (the engine's own derivation)."""
+    from skilltrace.context import load_context_lenient
+    from skilltrace.execution.records import open_session
+    from skilltrace.web.views._shared import _session_node_id
+
+    view = load_context_lenient(root)
+    return _session_node_id(view, open_session(view.sessions))
+
+
+def _open_session_id(root: Path) -> str:
+    """The id of the one open Session in the pinned fixture."""
+    from skilltrace.context import load_context_lenient
+    from skilltrace.execution.records import open_session
+
+    session = open_session(load_context_lenient(root).sessions)
+    if session is None:
+        raise ValueError("the pinned fixture has no open session")
+    return session.id
+
+
+def _blockers_doc(root: Path) -> dict:
+    path = root / "execution" / "blockers.yaml"
+    if not path.exists():
+        return {"blockers": []}
+    return yaml.safe_load(path.read_text(encoding="utf-8")) or {"blockers": []}
+
+
+def _make_session_blockers_empty(root: Path) -> None:
+    """No Blocker record at all — the cockpit's empty state."""
+    write_yaml(root, "execution/blockers.yaml", {"blockers": []})
+    write_yaml(
+        root,
+        "execution/remediation_actions.yaml",
+        {"remediation_actions": []},
+    )
+
+
+def _make_session_blocker_open(root: Path) -> None:
+    """The Blocker on the Session's skill, open — its options are visible.
+
+    One open ``RemediationAction`` is authored here so the Blocker's
+    deliberate-intervention list is pinned; it names the Blocker it
+    addresses, exactly as the engine's optional link allows. A second open
+    Blocker is authored on another skill so the "open elsewhere" count is
+    pinned too.
+    """
+    node_id = _bound_node(root)
+    doc = _blockers_doc(root)
+    blocker_id = None
+    for blocker in doc.get("blockers") or []:
+        if blocker.get("node_id") == node_id:
+            blocker["status"] = "open"
+            blocker.pop("resolved_at", None)
+            blocker.pop("resolution_summary", None)
+            blocker_id = blocker.get("id")
+            break
+    for blocker in doc.get("blockers") or []:
+        if blocker.get("node_id") != node_id:
+            blocker["status"] = "open"
+            blocker.pop("resolved_at", None)
+            blocker.pop("resolution_summary", None)
+            break
+    write_yaml(root, "execution/blockers.yaml", {"blockers": doc.get("blockers") or []})
+    if blocker_id is None:
+        raise ValueError("the pinned fixture has no blocker on the session skill")
+    write_yaml(
+        root,
+        "execution/remediation_actions.yaml",
+        {
+            "remediation_actions": [
+                {
+                    "id": f"rem.{node_id}.001",
+                    "node_id": node_id,
+                    "status": "open",
+                    "description": "rebuild the groupby drill from the docs",
+                    "created_at": FIXTURE_MOMENT,
+                    "blocker_id": blocker_id,
+                }
+            ]
+        },
+    )
+
+
+def _make_session_blocked_work(root: Path) -> None:
+    """A blocked SessionWork row — the distinct "blocked work" state.
+
+    Blocked work is a session-scoped observation, and it is what offers the
+    explicit **Create Blocker** disclosure. It never creates a Blocker on its
+    own: the pinned fixture's Blocker is authored separately.
+    """
+    node_id = _bound_node(root)
+    session_id = _open_session_id(root)
+    path = root / "execution" / "session_work.yaml"
+    doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    work = doc.get("session_work") or []
+    work.append(
+        {
+            "id": f"wk.{session_id}.99",
+            "session_id": session_id,
+            "node_id": node_id,
+            "created_at": FIXTURE_MOMENT,
+            "blocked": True,
+            "notes": "stuck on the second step",
+        }
+    )
+    write_yaml(root, "execution/session_work.yaml", {"session_work": work})
+
+
+def _make_session_blocker_resolved(root: Path) -> None:
+    """Resolve the Session's Blocker — terminal history, nothing open."""
+    node_id = _bound_node(root)
+    doc = _blockers_doc(root)
+    resolved = False
+    for blocker in doc.get("blockers") or []:
+        if blocker.get("node_id") == node_id and blocker.get("status") == "open":
+            blocker["status"] = "resolved"
+            blocker["resolved_at"] = BLOCKER_RESOLVED_AT
+            blocker["resolution_summary"] = (
+                "re-read the docs and re-ran the drills"
+            )
+            resolved = True
+    if not resolved:
+        raise ValueError("the pinned fixture has no open blocker to resolve")
+    write_yaml(root, "execution/blockers.yaml", {"blockers": doc.get("blockers") or []})
+
+
+_MUTATIONS = {
+    "stale": _make_session_stale,
+    "no-blocker": _make_session_blockers_empty,
+    "open-blocker": _make_session_blocker_open,
+    "blocked-work": _make_session_blocked_work,
+    "blocker-resolved": _make_session_blocker_resolved,
+}
 
 
 def build_session_variant(pinned: Path, kind: str) -> Path:

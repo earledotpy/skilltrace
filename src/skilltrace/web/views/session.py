@@ -15,8 +15,16 @@ from datetime import datetime
 from ...evidence.eligibility import compute_eligibility
 from ...execution.records import open_session
 from ...execution.staleness import stale_session_hours
+from ...resources.status import VerificationStatus
 from . import _clock
-from ._shared import _CANONICAL_STATE_LABELS, _esc, _session_node_id, _table, plural
+from ._shared import (
+    _CANONICAL_STATE_LABELS,
+    _esc,
+    _session_node_id,
+    _table,
+    plural,
+    resources_with_status,
+)
 from .evidence import evidence_figures
 from .forms import _resolve_blocker_form, _work_form_fields
 from .sections import BARE, INLINE, section
@@ -314,10 +322,180 @@ def _create_blocker_offer(view, session) -> str:
     )
 
 
-def _blocker_section(view) -> str:
-    """The open Blockers of the Session's nodes — explicit records, not work."""
-    open_blockers = [b for b in view.blockers if b.status == "open"]
-    if not open_blockers:
+def _study_material(view, node_id: str) -> str:
+    """The available ``LearningResource`` records — advisory study material.
+
+    A resource is a pointer to something to read or watch; its verification
+    status is derived and advisory. A broken resource is not offered as
+    available material. Nothing here resolves a Blocker, changes the skill's
+    state or unlocks anything.
+    """
+    available = []
+    for resource, status in resources_with_status(view, node_id):
+        if status is not VerificationStatus.BROKEN:
+            available.append((resource, status.value))
+    if not available:
+        return (
+            '<p class="small mut">No usable study material is registered for '
+            "this skill yet.</p>\n"
+        )
+    items = []
+    for resource, status in available:
+        where = resource.url or resource.local_path or ""
+        link = (
+            f'<a href="{_esc(where)}">{_esc(where)}</a>'
+            if where
+            else "No link recorded"
+        )
+        items.append(f"<li>{link} — {_esc(resource.cost)}, {_esc(status)}</li>")
+    return (
+        '<p class="small mut">Advisory material: verification says whether it '
+        "was last checked, and never affects readiness or eligibility.</p>\n"
+        "<ul>\n" + "\n".join(items) + "\n</ul>\n"
+    )
+
+
+def _available_remediation(view, blocker) -> str:
+    """The open ``RemediationAction`` records — deliberate interventions.
+
+    Only open actions are available; a completed one is history and stays
+    on the node detail. An action never resolves a Blocker, touches state
+    or eligibility, or activates a remediation edge (CONTEXT.md).
+    """
+    actions = [
+        action
+        for action in view.remediations
+        if action.node_id == blocker.node_id and action.status == "open"
+    ]
+    if not actions:
+        return (
+            '<p class="small mut">No remediation action is recorded for this '
+            "skill yet.</p>\n"
+        )
+    items = []
+    for action in sorted(actions, key=lambda a: a.created_at or ""):
+        note = (
+            " (recorded for this blocker)"
+            if action.blocker_id == blocker.id
+            else ""
+        )
+        items.append(f"<li>{_esc(action.description)}{_esc(note)}</li>")
+    return "<ul>\n" + "\n".join(items) + "\n</ul>\n"
+
+
+def _open_blocker_detail(view, blocker, *, back_to_work: bool) -> str:
+    """One open Blocker: its obstacle, options and the explicit resolve act."""
+    node_id = blocker.node_id
+    title = view.titles.get(node_id) or node_id
+    back_link = (
+        '<p><a href="#work">Back to this session\'s work</a></p>\n'
+        if back_to_work
+        else ""
+    )
+    return (
+        f"<h3>{_esc(title)}</h3>\n"
+        '<div class="rows">\n'
+        '<div class="row"><span class="row-label">What is in the way</span>'
+        f'<span class="row-value">{_esc(blocker.description)}</span></div>\n'
+        '<div class="row"><span class="row-label">Recorded</span>'
+        f'<span class="row-value">{_esc(str(blocker.created_at or ""))}'
+        "</span></div>\n"
+        "</div>\n"
+        "<h4>Study material</h4>\n"
+        f"{_study_material(view, node_id)}"
+        "<h4>Deliberate interventions for this skill</h4>\n"
+        f"{_available_remediation(view, blocker)}"
+        '<p class="small mut">Study material and remediation actions are '
+        "options you may try. Neither clears this blocker, changes the "
+        "skill's state or unlocks anything: resolving it is the explicit "
+        "action below, and it needs a summary of what changed.</p>\n"
+        f"{_resolve_blocker_form(blocker.id, '/session')}"
+        f"{back_link}"
+    )
+
+
+def _resolved_blockers(view, node_ids: set[str]) -> str:
+    """The resolved Blocker history for the Session's skills.
+
+    Resolution is terminal for that record: it is shown as history, never as
+    something that can be resolved again, and being stuck again is a new
+    Blocker.
+    """
+    resolved = [
+        blocker
+        for blocker in view.blockers
+        if blocker.node_id in node_ids and blocker.status == "resolved"
+    ]
+    if not resolved:
+        return ""
+    rows = [
+        [
+            _esc(view.titles.get(blocker.node_id) or blocker.node_id),
+            _esc(blocker.description),
+            _esc(blocker.resolution_summary or ""),
+            _esc(str(blocker.resolved_at or "")),
+        ]
+        for blocker in sorted(resolved, key=lambda b: b.resolved_at or "")
+    ]
+    return (
+        "<h3>Resolved</h3>\n"
+        + _table(
+            ["Skill", "What was in the way", "How it cleared", "Resolved"], rows
+        )
+        + '<p class="small mut">Resolution is terminal for that record: it '
+        "stays resolved. Being stuck again is a new blocker, not a reopened "
+        "one.</p>\n"
+    )
+
+
+def _other_open_note(count: int) -> str:
+    """Name open Blockers outside the Session's skills instead of hiding them."""
+    if not count:
+        return ""
+    return (
+        f'<p class="small mut">{count} open blocker{plural(count)} '
+        f"{plural(count, 'exists', 'exist')} on other skills; they appear "
+        "here when you work on those skills.</p>\n"
+    )
+
+
+def _blocker_section(view, node_ids: set[str], *, back_to_work: bool) -> str:
+    """The Session's open Blockers, then its resolved history.
+
+    Both halves are scoped to the skills the Session has worked: the cockpit
+    is one Session's timeline. An open Blocker shows its obstacle, the
+    available study material and the available remediation actions; none of
+    those is a resolution. Only the explicit resolve action clears it, and
+    that changes no other record. Blockers on other skills are named by
+    count rather than silently omitted (SC-00a).
+    """
+    open_blockers = sorted(
+        (
+            blocker
+            for blocker in view.blockers
+            if blocker.status == "open" and blocker.node_id in node_ids
+        ),
+        key=lambda b: b.created_at or "",
+    )
+    elsewhere = [
+        blocker
+        for blocker in view.blockers
+        if blocker.status == "open" and blocker.node_id not in node_ids
+    ]
+    resolved = _resolved_blockers(view, node_ids)
+    if not open_blockers and not resolved:
+        if elsewhere:
+            return (
+                '<div class="state state-empty">\n'
+                '<p class="state-title">No blockers on this session\'s skills'
+                "</p>\n"
+                '<p class="state-body">'
+                f"{len(elsewhere)} open blocker{plural(len(elsewhere))} "
+                f"{plural(len(elsewhere), 'exists', 'exist')} on other skills. "
+                "They appear here when you work on those skills; nothing is "
+                "hidden.</p>\n"
+                "</div>\n"
+            )
         return (
             '<div class="state state-empty">\n'
             '<p class="state-title">No blockers</p>\n'
@@ -326,15 +504,20 @@ def _blocker_section(view) -> str:
             "never creates a blocker on its own.</p>\n"
             "</div>\n"
         )
-    rows = [
-        [
-            _esc(view.titles.get(b.node_id) or b.node_id),
-            _esc(b.description),
-            _resolve_blocker_form(b.id, "/session"),
-        ]
-        for b in open_blockers
-    ]
-    return _table(["Skill", "What is in the way", "Resolve"], rows)
+    other_note = _other_open_note(len(elsewhere))
+    if not open_blockers:
+        return (
+            "<p class=\"small mut\">No blockers are open on this session's "
+            f"skills.</p>\n{other_note}{resolved}"
+        )
+    return (
+        "".join(
+            _open_blocker_detail(view, blocker, back_to_work=back_to_work)
+            for blocker in open_blockers
+        )
+        + other_note
+        + resolved
+    )
 
 
 def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
@@ -375,7 +558,11 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
     now = _clock.now_utc()
     stale_hours = _stale(root, session, now=now)
     work_rows = _session_rows(view, session)
-    blockers = _blocker_section(view)
+    session_nodes = {
+        item.node_id for item in view.work if item.session_id == session.id
+    }
+    has_bound_node = bool(node_id)
+    blockers = _blocker_section(view, session_nodes, back_to_work=has_bound_node)
     blocked_work = _blocked_work(view, session)
     create_blocker = _create_blocker_offer(view, session)
     skill_link = (
@@ -384,7 +571,7 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
         if node_id
         else ""
     )
-    if node_id:
+    if has_bound_node:
         work_section = section(
             "Work in this session",
             "Recording work saves the minutes and the notes you type, against "
@@ -400,6 +587,7 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
             "</button>\n"
             "</form>\n",
             frame=INLINE,
+            anchor="work",
         )
     else:
         # A session with no work has no bound skill (corrupt or hand-edited
@@ -458,7 +646,7 @@ def session_body(root, query: dict | None = None) -> tuple[str, str, int]:
         + section(
             "Blockers",
             "A blocker is persistent stuckness you recorded deliberately. It "
-            "is a different thing from blocked work above.",
+            "is a different thing from blocked work.",
             f"{blockers}",
             frame=INLINE,
         )

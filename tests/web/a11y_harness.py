@@ -700,6 +700,38 @@ def route_cases() -> tuple[RouteCase, ...]:
             lambda r: views.session_body(build_session_variant(r, "stale"), {}),
         ),
         RouteCase(
+            "session-no-blocker",
+            "GET /session",
+            "guided",
+            "session_body",
+            lambda r: views.session_body(build_session_variant(r, "no-blocker"), {}),
+        ),
+        RouteCase(
+            "session-open-blocker",
+            "GET /session",
+            "guided",
+            "session_body",
+            lambda r: views.session_body(build_session_variant(r, "open-blocker"), {}),
+        ),
+        RouteCase(
+            "session-blocked-work",
+            "GET /session",
+            "guided",
+            "session_body",
+            lambda r: views.session_body(
+                build_session_variant(r, "blocked-work"), {}
+            ),
+        ),
+        RouteCase(
+            "session-blocker-resolved",
+            "GET /session",
+            "guided",
+            "session_body",
+            lambda r: views.session_body(
+                build_session_variant(r, "blocker-resolved"), {}
+            ),
+        ),
+        RouteCase(
             "session-start-refused",
             "GET /session (after a refused start)",
             "guided",
