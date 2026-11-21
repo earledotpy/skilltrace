@@ -56,7 +56,12 @@ route                   case
                         through the write path, which writes nothing)
 ``GET /session/close`` ``session-close``; plus ``session-close-stale`` (the
                         honest past-end closure offered for a stale Session)
-``GET /nodes/{id}/evidence``  ``node-evidence``
+``GET /nodes/{id}/evidence``  ``node-evidence``; plus the named workspace
+                        states (§10.9, SC-00a) ``node-evidence-empty``,
+                        ``node-evidence-limited``, ``node-evidence-failure``
+                        and ``node-evidence-manual`` (each the served body
+                        for one reshaped fixture repo, from
+                        ``tests/web/evidence_fixtures.py``)
 ``GET /evidence``      ``evidence-index``, ``evidence-inspector``
                         (``?record=…``), ``evidence-inspector-refusal``
 ``GET /reviews``       ``reviews``
@@ -108,6 +113,7 @@ from pathlib import Path
 import pytest
 import yaml
 from discovery_fixtures import build_discovery_variant
+from evidence_fixtures import build_evidence_variant
 from node_fixtures import build_node_variant
 from session_fixtures import build_session_variant, refused_start_body
 from today_fixtures import build_today_variant
@@ -343,8 +349,21 @@ def _pin_evidence(path: Path) -> None:
                     "artifact_spec_id": spec_id,
                     "location": "evidence/artifacts/data/pandas_basics.py",
                     "accepted": True,
-                    "accepted_by": "learner_manual",
+                    "accepted_by": "objective_gate",
                     "artifact_hash": "sha256:" + "1" * 64,
+                    "gate_run": {
+                        "command_argv": [
+                            "python",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "inputs": [
+                            "evidence/artifacts/data/pandas_basics.py",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "exit_class": "passed",
+                        "exit_code": 0,
+                        "stdout_hash": "sha256:" + "a" * 64,
+                    },
                     "created_at": _ago(days=5),
                 },
                 {
@@ -352,8 +371,21 @@ def _pin_evidence(path: Path) -> None:
                     "artifact_spec_id": spec_id,
                     "location": "evidence/artifacts/data/pandas_basics.py",
                     "accepted": False,
-                    "accepted_by": "learner_manual",
+                    "accepted_by": "objective_gate",
                     "artifact_hash": "sha256:" + "2" * 64,
+                    "gate_run": {
+                        "command_argv": [
+                            "python",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "inputs": [
+                            "evidence/artifacts/data/pandas_basics.py",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "exit_class": "failed",
+                        "exit_code": 1,
+                        "stderr_hash": "sha256:" + "b" * 64,
+                    },
                     "created_at": _ago(days=3),
                     "note": "the revenue column was summed, not listed",
                 },
@@ -362,8 +394,21 @@ def _pin_evidence(path: Path) -> None:
                     "artifact_spec_id": spec_id,
                     "location": "evidence/artifacts/data/pandas_basics.py",
                     "accepted": True,
-                    "accepted_by": "learner_manual",
+                    "accepted_by": "objective_gate",
                     "artifact_hash": "sha256:" + "3" * 64,
+                    "gate_run": {
+                        "command_argv": [
+                            "python",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "inputs": [
+                            "evidence/artifacts/data/pandas_basics.py",
+                            "evidence/checks/data.pandas.dataframe_basics_check.py",
+                        ],
+                        "exit_class": "passed",
+                        "exit_code": 0,
+                        "stdout_hash": "sha256:" + "c" * 64,
+                    },
                     "created_at": _ago(days=1),
                     "supersedes": f"ev.{NODE_ACTIVE}.001",
                     "supersede_reason": "corrected the region_rows column",
@@ -671,6 +716,44 @@ CASES: tuple[RouteCase, ...] = (
         200,
         lambda r: views.node_evidence_body(r, NODE_ACTIVE, {}),
     ),
+    # The named evidence-workspace states (§10.9, SC-00a): empty, limited,
+    # a store that cannot be read, and the manual gate's explicit verdict.
+    RouteCase(
+        "node-evidence-empty",
+        f"GET /nodes/{NODE_ACTIVE}/evidence",
+        "Evidence",
+        200,
+        lambda r: views.node_evidence_body(
+            build_evidence_variant(r, "empty"), NODE_ACTIVE, {}
+        ),
+    ),
+    RouteCase(
+        "node-evidence-limited",
+        f"GET /nodes/{NODE_ACTIVE}/evidence",
+        "Evidence",
+        200,
+        lambda r: views.node_evidence_body(
+            build_evidence_variant(r, "limited"), NODE_ACTIVE, {}
+        ),
+    ),
+    RouteCase(
+        "node-evidence-failure",
+        f"GET /nodes/{NODE_ACTIVE}/evidence",
+        "Evidence",
+        200,
+        lambda r: views.node_evidence_body(
+            build_evidence_variant(r, "failure"), NODE_ACTIVE, {}
+        ),
+    ),
+    RouteCase(
+        "node-evidence-manual",
+        f"GET /nodes/{NODE_ACTIVE}/evidence",
+        "Evidence",
+        200,
+        lambda r: views.node_evidence_body(
+            build_evidence_variant(r, "manual"), NODE_ACTIVE, {}
+        ),
+    ),
     RouteCase(
         "evidence-index",
         "GET /evidence",
@@ -917,6 +1000,19 @@ def test_golden_snapshots_cover_the_normative_route_table() -> None:
     assert missing == [], (
         "destinations with no golden snapshot: " + ", ".join(sorted(missing))
     )
+
+
+def test_evidence_workspace_goldens_cover_the_named_states() -> None:
+    """The workspace's populated, empty, limited and failure states are pinned."""
+    covered = {case.name for case in CASES}
+    required = {
+        "node-evidence",
+        "node-evidence-empty",
+        "node-evidence-limited",
+        "node-evidence-failure",
+        "node-evidence-manual",
+    }
+    assert required <= covered, sorted(required - covered)
 
 
 def test_golden_snapshots_cover_the_tables_extra_destinations() -> None:

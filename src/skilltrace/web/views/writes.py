@@ -90,6 +90,7 @@ def _finish_write(
     exit_code: int,
     *,
     refusal_url: str | None = None,
+    failure_detail: str | None = None,
 ) -> Redirect:
     """Map a dispatched write's exit code per the locked T5 contract (§D1+S5).
 
@@ -97,13 +98,17 @@ def _finish_write(
     write. ``0`` → ok flash to ``next_url``; ``2`` (domain refusal) →
     warning flash to ``refusal_url`` (the acceptance step for pass/master,
     else ``next_url``); ``1`` (operational failure) → error flash to
-    ``next_url`` pointing at /health for the detail.
+    ``next_url`` pointing at /health for the detail, or at the caller's own
+    precise recovery line when it supplies one (IC-8).
     """
     if exit_code == 0:
         return _redirect_with_notice(next_url, lines, "ok")
     if exit_code == 2:
         return _redirect_with_notice(refusal_url or next_url, lines, "warning")
-    lines = [*lines, "Something went wrong — see /health for the detail."]
+    if failure_detail:
+        lines = [*lines, failure_detail]
+    else:
+        lines = [*lines, "Something went wrong — see /health for the detail."]
     return _redirect_with_notice(next_url, lines, "error")
 
 
@@ -218,7 +223,7 @@ def post_blocker_resolve(root, blocker_id: str, form: dict):
 
 
 def post_evidence(root, node_id: str, form: dict):
-    next_url = _safe_next(form, f"/nodes/{node_id}")
+    next_url = _safe_next(form, f"/nodes/{node_id}/evidence")
     location = _field(form, "location")
     if not location:
         return _redirect_with_notice(
@@ -239,7 +244,20 @@ def post_evidence(root, node_id: str, form: dict):
         supersedes=_field(form, "supersedes"),
         reason=_field(form, "reason"),
     )
-    return _finish_write(next_url, lines, exit_code)
+    # A gate that cannot run is an operational failure, not a verdict: no
+    # record is written, and the recovery is precise enough to act on
+    # without a trip through the CLI (IC-8).
+    failure_detail = (
+        "Nothing was recorded. Check the artifact location and that the "
+        "automatic check can run, then submit again from the evidence "
+        "workspace."
+    )
+    return _finish_write(
+        next_url,
+        lines,
+        exit_code,
+        failure_detail=failure_detail if exit_code == 1 else None,
+    )
 
 
 def post_review_schedule(root, form: dict):

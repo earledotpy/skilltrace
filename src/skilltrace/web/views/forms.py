@@ -97,6 +97,64 @@ def _resolve_blocker_form(blocker_id: str, next_url: str = "/") -> str:
     )
 
 
+def _spec_field(view: JoinedView, node_id: str, *, field_id: str) -> str:
+    """The artifact-spec control, or the one spec as hidden context."""
+    specs = view.specs_by_node.get(node_id, [])
+    if len(specs) == 1:
+        return f'<input type="hidden" name="spec" value="{_esc(specs[0].id)}">'
+    options = "".join(
+        f'<option value="{_esc(s.id)}">{_esc(s.title or s.id)}</option>'
+        for s in specs
+    )
+    return (
+        '<div class="form-row">'
+        f'<label for="{_esc(field_id)}">Artifact spec</label>'
+        f'<select name="spec" id="{_esc(field_id)}">{options}</select>'
+        '<p class="small mut">Which artifact definition this proof satisfies.</p>'
+        "</div>"
+    )
+
+
+def _location_field(*, field_id: str) -> str:
+    return (
+        '<div class="form-row">'
+        f'<label for="{_esc(field_id)}">Location (repo-relative path or URL)</label>'
+        f'<input type="text" name="location" id="{_esc(field_id)}" required>'
+        '<p class="small mut">Where the proof lives.</p></div>'
+    )
+
+
+def _note_field(*, field_id: str) -> str:
+    return (
+        '<div class="form-row">'
+        f'<label for="{_esc(field_id)}">Note (optional)</label>'
+        f'<input type="text" name="note" id="{_esc(field_id)}">'
+        '<p class="small mut">Context a reviewer needs to judge this proof.</p>'
+        "</div>"
+    )
+
+
+def _manual_verdict_field() -> str:
+    """The mandatory manual verdict — no radio is selected by default.
+
+    ``required`` makes the browser demand a choice before the form leaves the
+    page, and the engine still refuses a submission that arrives without one.
+    A rejection is a recorded judgment, not a command failure.
+    """
+    return (
+        '<div class="form-row"><label>Your verdict (required)</label>'
+        '<span class="inline-check">'
+        '<label><input type="radio" name="verdict" value="accept" required> '
+        "Accept</label> "
+        '<label><input type="radio" name="verdict" value="reject" required> '
+        "Reject</label>"
+        "</span>"
+        '<p class="small mut">There is no default verdict. Either choice writes '
+        "an immutable record; a rejection is an honest record, not a failure.</p>"
+        "</div>"
+    )
+
+
 def _evidence_submit_form(view: JoinedView, node_id: str) -> str:
     """Evidence submit (G5) — the CLI's fields, judged at submission.
 
@@ -104,78 +162,131 @@ def _evidence_submit_form(view: JoinedView, node_id: str) -> str:
     no gate renders the explanation only — a form the domain would always
     refuse never renders. Spec select auto-resolves when the node has
     exactly one spec; accept/reject radios render only on manual-gate
-    nodes; the supersede flow hides behind an advanced toggle.
+    nodes, and neither is preselected.
     """
     specs = view.specs_by_node.get(node_id, [])
     gate = view.gates_by_node.get(node_id)
 
+    if "records" in view.degraded:
+        return (
+            '<p class="mut">Evidence cannot be submitted while the history '
+            'cannot be read. <a href="/health">Open Health</a> for the '
+            "detail, then reload this workspace.</p>"
+        )
     if not specs:
         return ""
     if gate is None:
         return ""
 
-    if len(specs) == 1:
-        spec_field = f'<input type="hidden" name="spec" value="{_esc(specs[0].id)}">'
-    else:
-        options = "".join(
-            f'<option value="{_esc(s.id)}">{_esc(s.title or s.id)}</option>' for s in specs
-        )
-        spec_field = (
-            '<div class="form-row">'
-            '<label for="evidence-spec">Artifact spec</label>'
-            f'<select name="spec" id="evidence-spec">{options}</select>'
-            '<p class="small mut">Which artifact definition this proof satisfies.</p></div>'
-        )
-
     if gate.command:
         verdict_field = (
-            '<p class="mut">Objective gate — running it decides the verdict.</p>'
+            '<p class="mut">Objective gate — running it decides the verdict. '
+            "If the check cannot run, no record is written.</p>"
         )
     else:
-        verdict_field = (
-            '<div class="form-row"><label>Gate verdict (manual)</label>'
-            '<span class="inline-check">'
-            '<label><input type="radio" name="verdict" value="accept"> accept</label> '
-            '<label><input type="radio" name="verdict" value="reject"> reject</label>'
-            "</span>"
-            '<p class="small mut">Your judgment on this proof — accept moves it forward.</p></div>'
-        )
-
-    record_ids = [r.id for r in view.records if r.artifact_spec_id in {s.id for s in specs}]
-    datalist = ""
-    if record_ids:
-        options = "".join(f'<option value="{_esc(rid)}"></option>' for rid in record_ids)
-        datalist = f'<datalist id="records-{_esc(node_id)}">{options}</datalist>'
-    supersedes_field = (
-        "<details><summary>Advanced: correct an earlier record</summary>"
-        '<div class="form-row"><label>Supersedes</label>'
-        f'<input type="text" name="supersedes" list="records-{_esc(node_id)}">{datalist}'
-        '<p class="small mut">Id of the record this corrects — records are never edited.</p></div>'
-        '<div class="form-row"><label>Reason (required with supersedes)</label>'
-        '<input type="text" name="reason">'
-        '<p class="small mut">Why the earlier record is being replaced.</p></div>'
-        "</details>"
-    )
+        verdict_field = _manual_verdict_field()
 
     return (
         "<details><summary>Submit evidence</summary>"
         '<form method="post" action="/nodes/'
         + _esc(node_id)
         + '/evidence">'
-        f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}">'
-        '<div class="form-row"><label>Location (repo-relative path or URL)</label>'
-        '<input type="text" name="location" required>'
-        '<p class="small mut">Where the proof lives.</p></div>'
-        f"{spec_field}"
-        '<div class="form-row"><label>Note (optional)</label>'
-        '<input type="text" name="note">'
-        '<p class="small mut">Context a reviewer needs to judge this proof.</p></div>'
-        f"{verdict_field}"
-        f"{supersedes_field}"
-        '<button type="submit" class="btn secondary">Submit evidence</button>'
+        f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}/evidence">'
+        + _location_field(field_id=f"evidence-location-{node_id}")
+        + _spec_field(view, node_id, field_id=f"evidence-spec-{node_id}")
+        + _note_field(field_id=f"evidence-note-{node_id}")
+        + verdict_field
+        + '<button type="submit" class="btn secondary">Submit evidence</button>'
         "</form>"
         '<p class="mut">Acceptance freezes at submission — the gate '
         "verdict renders loudly; records are immutable and corrected by "
         "superseding, never edited.</p></details>"
+    )
+
+
+def _evidence_correction_form(view: JoinedView, node_id: str) -> str:
+    """The separate **Correct earlier evidence** action (R3, HB-5).
+
+    A correction is a *new* submission that supersedes an earlier record and
+    must state why. The prior record stays visible with its derived
+    superseded standing; there is no edit or delete path. The action is kept
+    out of the normal submit form so it reads as its own decision, not an
+    advanced option on a fresh submission.
+    """
+    specs = view.specs_by_node.get(node_id, [])
+    gate = view.gates_by_node.get(node_id)
+    if "records" in view.degraded:
+        return (
+            '<p class="mut">A correction cannot be offered while the history '
+            'cannot be read. <a href="/health">Open Health</a> for the '
+            "detail, then reload this workspace.</p>"
+        )
+    if not specs or gate is None:
+        return ""
+
+    spec_ids = {spec.id for spec in specs}
+    superseded = {r.supersedes for r in view.records if r.supersedes}
+    # Only an accepted, still-live record can be corrected. A rejected record
+    # stays rejected as honest history; the way forward from a rejection is a
+    # new attempt, not a correction that would rewrite its standing.
+    records = [
+        record
+        for record in view.records
+        if record.artifact_spec_id in spec_ids
+        and record.accepted
+        and record.id not in superseded
+    ]
+    if not records:
+        return (
+            '<p class="mut">There is no accepted earlier record to correct. '
+            "Submit evidence first, or make a new attempt; a rejected record "
+            "stays in history as rejected.</p>"
+        )
+
+    options = "".join(
+        f'<option value="{_esc(record.id)}">'
+        f"{_esc(record.location)} — "
+        f"{'accepted' if record.accepted else 'rejected'}, "
+        f"{_esc(str(record.created_at or 'undated'))}</option>"
+        for record in sorted(records, key=lambda r: (r.created_at or "", r.id))
+    )
+    record_field = (
+        '<div class="form-row">'
+        '<label for="correction-record">Earlier record to correct</label>'
+        f'<select name="supersedes" id="correction-record" required>'
+        f'<option value="">Choose a record</option>{options}</select>'
+        '<p class="small mut">The record this correction replaces. It stays '
+        "in history and is shown as superseded.</p></div>"
+    )
+    reason_field = (
+        '<div class="form-row">'
+        '<label for="correction-reason">Reason (required)</label>'
+        '<input type="text" name="reason" id="correction-reason" required>'
+        '<p class="small mut">Why the earlier record is being replaced.</p>'
+        "</div>"
+    )
+    verdict_field = (
+        '<p class="mut">Objective gate — running it decides the corrected '
+        "record's verdict.</p>"
+        if gate.command
+        else _manual_verdict_field()
+    )
+
+    return (
+        '<details class="disclosure"><summary>Correct earlier evidence</summary>'
+        '<form method="post" action="/nodes/'
+        + _esc(node_id)
+        + '/evidence">'
+        f'<input type="hidden" name="next" value="/nodes/{_esc(node_id)}/evidence">'
+        + record_field
+        + reason_field
+        + _location_field(field_id=f"correction-location-{node_id}")
+        + _spec_field(view, node_id, field_id=f"correction-spec-{node_id}")
+        + _note_field(field_id=f"correction-note-{node_id}")
+        + verdict_field
+        + '<button type="submit" class="btn secondary">Submit correction'
+        "</button></form>"
+        '<p class="mut">A correction is a new record; the earlier record is '
+        "never edited or deleted.</p></details>"
     )
 

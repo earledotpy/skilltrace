@@ -25,6 +25,7 @@ from __future__ import annotations
 from urllib.parse import urlencode
 
 from ._shared import _esc, record_standing
+from .receipts import receipt_disclosure
 from .sections import NONE, Markup, Rows, Section
 
 __all__ = ["SELECTED_PARAM", "evidence_inspector", "selected_value"]
@@ -212,6 +213,18 @@ def evidence_inspector(view, record_id: str, *, query: dict | None = None) -> st
     if record.note:
         pairs.append(("Note", _esc(record.note)))
 
+    # The gate-run receipt is record detail, so it belongs here when the
+    # objective gate froze one. A manual judgment (and a pre-receipt
+    # objective record) honestly has none.
+    receipt = ""
+    if record.gate_run:
+        receipt = receipt_disclosure(record, summary="Gate-run receipt")
+    elif gate is not None and gate.authority == "objective":
+        receipt = (
+            '<p class="small mut">No gate-run receipt is recorded for this '
+            "judgment.</p>\n"
+        )
+
     inner = (
         '<aside class="inspector" aria-labelledby="inspector-title">\n'
         '<div class="section-head">\n'
@@ -221,6 +234,7 @@ def evidence_inspector(view, record_id: str, *, query: dict | None = None) -> st
         "</div>\n"
         f'<p class="inspector-raw"><code>{_esc(record.id)}</code></p>\n'
         + Rows(tuple(pairs), separated=True).render()
+        + receipt
         + _provenance(view, record)
         + '<p class="command-bar">'
         f'<a class="btn secondary" href="{_esc(close)}">Close inspector</a></p>\n'
