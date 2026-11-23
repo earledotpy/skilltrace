@@ -18,6 +18,7 @@ never by matching the request path.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -308,67 +309,99 @@ def _page_head(
     return view, head, None
 
 
-def _modal_dismiss(node_id: str, heading: str) -> str:
-    """The flash-dismiss path for a pass/master panel — the panel's own URL."""
-    if heading.startswith("Step 1"):
-        return f"/nodes/{node_id}/master"
-    if heading.startswith("Step 2"):
-        return f"/nodes/{node_id}/master/confirm"
-    if heading.startswith("Confirm pass"):
-        return f"/nodes/{node_id}/pass"
-    return f"/nodes/{node_id}"
+@dataclass(frozen=True)
+class PanelKind:
+    """One confirmation panel: its heading, its status, and its own route.
 
-
-def _panel_status(heading: str) -> str:
-    """The panel's status word — the text that carries the meaning.
-
-    The colour is the accent of the status token; this word is what makes
-    the state legible without colour (AX-1, VS-3).
+    The panel's identity is a declared value, never a string the caller
+    compares against — the shell used to read the heading's first words to
+    decide the status word, the status colour and the flash-dismiss path,
+    which made the copy load-bearing for three behaviours at once.
     """
-    if heading.startswith("Step 1"):
-        return "Advisory attention"
-    if heading.startswith("Step 2"):
-        return "Permanent — check before continuing"
-    if heading.startswith("Passed"):
-        return "Passed"
-    return "Confirmation"
+
+    name: str
+    heading: str
+    status: str
+    status_class: str
+    route: str
 
 
-def _modal_card(
+#: The four panels the product serves: the pass panel, the pass result, and
+#: the two mastery steps. Each is a full-page route (IC-2).
+PASS_PANEL = PanelKind(
+    name="pass",
+    heading="Confirm pass",
+    status="Confirmation",
+    status_class="info",
+    route="/pass",
+)
+PASSED_PANEL = PanelKind(
+    name="passed",
+    heading="Passed",
+    status="Passed",
+    status_class="info",
+    route="/pass",
+)
+MASTER_FACTS_PANEL = PanelKind(
+    name="master-facts",
+    heading="Step 1 — Mastery facts",
+    status="Advisory attention",
+    status_class="warning",
+    route="/master",
+)
+MASTER_CONFIRM_PANEL = PanelKind(
+    name="master-confirm",
+    heading="Step 2 — This is permanent",
+    status="Permanent — check before continuing",
+    status_class="failure",
+    route="/master/confirm",
+)
+
+
+def _panel_dismiss(node_id: str, kind: PanelKind) -> str:
+    """The flash-dismiss path for a confirmation panel — the panel's own URL."""
+    return f"/nodes/{node_id}{kind.route}"
+
+
+def _panel_card(
     view: JoinedView,
     node_id: str,
-    heading: str,
+    kind: PanelKind,
     inner: str,
+    anchor: str = "",
 ) -> tuple[str, str]:
-    """The safety panel card — title plus panel HTML, no chrome or flash."""
+    """The safety panel card — title plus panel HTML, no chrome or flash.
+
+    The card carries the panel's anchor and is programmatically focusable
+    (``tabindex="-1"``): after a redirect the browser lands the learner on
+    the panel itself rather than at the top of the document, so a refusal
+    or a result is where the eye and the keyboard start (IC-5, AX-7).
+    """
     node = view.node_map[node_id]
     state = view.store.state_of(node_id)
-    safety_class = (
-        "status-label warning"
-        if heading.startswith("Step 1")
-        else "status-label failure" if heading.startswith("Step 2") else "status-label info"
-    )
-    modal = (
-        '<section class="card">\n'
-        f'<p class="kicker">{_esc(heading)}</p>\n'
+    anchor_attr = f' id="{_esc(anchor)}"' if anchor else ""
+    panel = (
+        f'<section class="card"{anchor_attr} tabindex="-1">\n'
+        f'<p class="kicker">{_esc(kind.heading)}</p>\n'
         f'<p class="lead">{_esc(node.title)}</p>\n'
         f'<p><span class="pill {_esc(_slug(state))}">{_esc(_normalize_pill_label(state))}</span> '
-        f'<span class="{_esc(safety_class)}">{_esc(_panel_status(heading))}</span></p>\n'
+        f'<span class="status-label {_esc(kind.status_class)}">{_esc(kind.status)}</span></p>\n'
         f"{inner}"
         "</section>\n"
     )
-    return node.title, modal
+    return node.title, panel
 
 
-def _modal_shell(
+def _panel_shell(
     view: JoinedView,
     node_id: str,
-    heading: str,
+    kind: PanelKind,
     inner: str,
     query: dict | None = None,
     root=None,
     *,
     head: str | None = None,
+    anchor: str = "",
 ) -> tuple[str, str, int]:
     """The page-level safety panel enclosing a pass/master body.
 
@@ -377,10 +410,10 @@ def _modal_shell(
     full-page routes, never overlays (tier 0, AX-2). Server-fresh per
     request; writes are 303+flash-only.
     """
-    title, modal = _modal_card(view, node_id, heading, inner)
+    title, panel = _panel_card(view, node_id, kind, inner, anchor=anchor)
     if head is None:
         head = _chrome(root) + _flash_html(
-            query or {}, _modal_dismiss(node_id, heading)
+            query or {}, _panel_dismiss(node_id, kind)
         )
-    body = head + _degraded_banner(view) + modal
+    body = head + _degraded_banner(view) + panel
     return title, body, 200

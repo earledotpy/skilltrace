@@ -2,7 +2,7 @@
 
 Spec-value gates for the locked §B modal + §F + P3.5 treatment: the
 page-level safety panel borders resolve to --accent/--warn/--err, no
-.modal style survives, every POST → 303 + translated flash, master
+overlay style survives, every POST → 303 + translated flash, master
 two-step gating holds per P4.1/P4.4, and refusals carry no flags, exit
 classes, command names or record ids.
 """
@@ -67,7 +67,7 @@ def _form(**fields) -> dict:
 
 
 def _notice_of(redirect: Redirect) -> tuple[str, str]:
-    query = parse_qs(redirect.location.partition("?")[2])
+    query = parse_qs(redirect.location.partition("?")[2].partition("#")[0])
     return (query.get("notice") or [""])[0], (query.get("kind") or [""])[0]
 
 
@@ -82,10 +82,10 @@ def _first_locked_node(root: Path) -> str:
 # --- Panel tokens ------------------------------------------------------------
 
 
-def test_no_modal_style_survives_and_no_overlay_or_script(repo):
+def test_no_overlay_style_survives_and_no_overlay_or_script(repo):
     assert ".modal" not in _STYLE
     assert "<dialog" not in views.page("t", "<p>x</p>").lower()
-    _, pass_body, _ = views.pass_modal_body(repo, NODE)
+    _, pass_body, _ = views.pass_body(repo, NODE)
     assert "<dialog" not in pass_body.lower()
     assert "popover" not in pass_body.lower()
     assert "backdrop" not in pass_body.lower()
@@ -115,7 +115,7 @@ def test_panel_status_resolves_to_locked_tokens():
 
 
 def test_pass_panel_is_information_master_steps_are_warning_and_failure(repo):
-    _, pass_body, _ = views.pass_modal_body(repo, NODE)
+    _, pass_body, _ = views.pass_body(repo, NODE)
     assert "status-label info" in pass_body
     _, step1, _ = views.master_body(repo, NODE)
     assert "status-label warning" in step1
@@ -124,7 +124,7 @@ def test_pass_panel_is_information_master_steps_are_warning_and_failure(repo):
 
 
 def test_panels_carry_flash_dismissal_link(repo):
-    _, body, _ = views.pass_modal_body(
+    _, body, _ = views.pass_body(
         repo, NODE, {"notice": ["Marked as passed."], "kind": ["ok"]}
     )
     assert "Dismiss" in body
@@ -135,7 +135,7 @@ def test_panels_carry_flash_dismissal_link(repo):
 
 
 def test_pass_copy_states_change_side_effects_no_internals(repo):
-    _, body, _ = views.pass_modal_body(repo, NODE)
+    _, body, _ = views.pass_body(repo, NODE)
     assert "never moves backward" in body.lower()
     assert "reviews for" in body.lower() and "days after the pass" in body.lower()
     assert SPEC_ID not in body

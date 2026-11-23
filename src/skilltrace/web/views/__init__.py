@@ -19,8 +19,8 @@ pointing at /health). Pass/master refusals flash back to their own acceptance
 step; every other write flashes back to the host page. Heavyweight confirmation stays
 exclusive to ``pass``/``master`` (P4.3); every other daily write is a plain
 single-step form. Buttons are never pre-disabled by derived preconditions — the domain's refusal
-on click is the truth (G2), so a stale modal can never assert what eligibility
-no longer supports.
+on click is the truth (G2), so a stale confirmation panel can never assert what
+eligibility no longer supports.
 
 Information architecture: the unified single-page home (v2.4 §A as amended by
 map #243) — one hero focus viewport plus a six-card bento at the dense
@@ -314,30 +314,45 @@ from .shell import (  # noqa: F401  # noqa: F401
     _GUIDED_ORDER,
     _OPERATIONS_ORDER,
     _STYLE,
+    MASTER_CONFIRM_PANEL,
+    MASTER_FACTS_PANEL,
+    PASS_PANEL,
+    PASSED_PANEL,
+    PanelKind,
     _chrome,
     _error_body,
     _fresh_join,
-    _modal_card,
-    _modal_dismiss,
-    _modal_shell,
     _mode_from,
     _mode_link,
     _nav_html,
     _nav_links,
     _page_head,
-    _panel_status,
+    _panel_card,
+    _panel_dismiss,
+    _panel_shell,
     _status_page,
     not_found_body,
     page,
     route_default_mode,
 )
 from .steps import (  # noqa: F401  # noqa: F401
-    _STATUS_PILL_CLASSES,
+    PASS_PANEL_ANCHOR,
+    _accepted_records,
+    _accepted_table,
+    _confirm_form,
+    _eligibility_facts,
+    _eligibility_section,
+    _gate_decision,
+    _gate_kind_line,
     _mastery_facts_html,
+    _next_step,
+    _pass_wanted_rows,
+    _rejected_note,
     _review_consequence,
+    _review_note,
     master_body,
     master_confirm_body,
-    pass_modal_body,
+    pass_body,
 )
 from .styles import (  # noqa: F401
     _COMPONENT_RULES,
@@ -369,6 +384,7 @@ from .today import (  # noqa: F401  # noqa: F401
 )
 from .writes import (  # noqa: F401
     Redirect,
+    _context_params,
     _dispatch_web,
     _finish_write,
     _redirect_with_notice,
@@ -490,7 +506,7 @@ __all__ = [
     "open_session",
     "operations_body",
     "page",
-    "pass_modal_body",
+    "pass_body",
     "passed_at_of",
     "plural",
     "portfolio_body",

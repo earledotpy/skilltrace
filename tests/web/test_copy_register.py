@@ -106,8 +106,8 @@ def _all_route_bodies(repo: Path) -> list[tuple[str, str]]:
     _, health_html, _ = views.health_body(repo)
     pairs.append(("health /health", health_html))
 
-    _, pass_html, _ = views.pass_modal_body(repo, available_id)
-    pairs.append((f"pass-modal /nodes/{available_id}/pass", pass_html))
+    _, pass_html, _ = views.pass_body(repo, available_id)
+    pairs.append((f"pass-panel /nodes/{available_id}/pass", pass_html))
 
     return pairs
 
@@ -195,13 +195,13 @@ def test_no_banned_synonym_on_health(repo):
         )
 
 
-def test_no_banned_synonym_on_pass_modal(repo):
-    """P3.4: pass modal uses canonical state words."""
+def test_no_banned_synonym_on_pass_panel(repo):
+    """P3.4: the pass panel uses canonical state words."""
     node_id = _first_node_id(repo, state="available")
-    _, body, _ = views.pass_modal_body(repo, node_id)
+    _, body, _ = views.pass_body(repo, node_id)
     for synonym in BANNED_SYNONYMS:
         assert synonym not in body, (
-            f"Banned synonym {synonym!r} found in pass modal HTML"
+            f"Banned synonym {synonym!r} found in pass panel HTML"
         )
 
 
@@ -377,14 +377,14 @@ def test_e_affordance_start_label_appears_in_write_actions(repo):
 
 
 
-def test_e_affordance_mark_passed_label_in_pass_modal(repo):
-    """§E: 'Mark <title> passed' appears as the pass-modal submit button."""
+def test_e_affordance_mark_passed_label_in_pass_panel(repo):
+    """§E: 'Mark <title> passed' appears as the pass-panel submit button."""
     node_id = _first_node_id(repo, state="available")
     view = load_context_lenient(repo)
     node_title = view.node_map[node_id].title
-    _, body, _ = views.pass_modal_body(repo, node_id)
+    _, body, _ = views.pass_body(repo, node_id)
     assert f"Mark {node_title} passed" in body, (
-        f"§E affordance 'Mark <title> passed' absent from pass modal; "
+        f"§E affordance 'Mark <title> passed' absent from pass panel; "
         f"expected 'Mark {node_title} passed'"
     )
 
@@ -405,10 +405,10 @@ def test_e_affordance_mark_mastered_label_in_master_confirm(repo):
     node_id = _first_node_id(repo, state="available")
     view = load_context_lenient(repo)
     node_title = view.node_map[node_id].title
-    # Structurally render the confirm modal directly (no pre-condition on state).
+    # Structurally render the confirm panel directly (no pre-condition on state).
     _, body, _ = views.master_confirm_body(repo, node_id)
     assert f"Mark {node_title} mastered" in body, (
-        "§E affordance 'Mark <title> mastered' absent from master confirm modal"
+        "§E affordance 'Mark <title> mastered' absent from master confirm panel"
     )
 
 
@@ -438,7 +438,7 @@ def test_no_script_tags_on_any_route(repo):
         ("next", views.next_body(repo, {})[1]),
         ("node", views.node_body(repo, _first_node_id(repo))[1]),
         ("health", views.health_body(repo)[1]),
-        ("pass", views.pass_modal_body(repo, _first_node_id(repo, state="available"))[1]),
+        ("pass", views.pass_body(repo, _first_node_id(repo, state="available"))[1]),
     ]
     for route_name, html in routes:
         assert "<script" not in html.lower(), (

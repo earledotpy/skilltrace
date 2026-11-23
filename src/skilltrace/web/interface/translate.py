@@ -114,6 +114,45 @@ _PHRASES: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\bexport blocked:"), "Exporting is refused:"),
     (re.compile(r"\bthe domain refuses\b"), "it's refused"),
     (re.compile(r"\bThe domain refuses\b"), "It's refused"),
+    # The pass refusals: the CLI names the node and the specification by id;
+    # the page names the skill and the evidence it still needs (R1, R5). The
+    # wording avoids an em dash, so the punctuation tidy below never closes
+    # the gap it reads in.
+    (
+        re.compile(
+            r"\bnode\s+\S+\s+is locked\s*[—-]\s*a hard prerequisite is unmet, "
+            r"and there is no hard-prerequisite override; nothing passed\."
+        ),
+        "This skill is locked: a hard prerequisite is unmet, and there is no "
+        "hard-prerequisite override; nothing passed.",
+    ),
+    (
+        re.compile(r"\bnode\s+\S+\s+is not pass-eligible\b"),
+        "This skill is not pass-eligible",
+    ),
+    (
+        re.compile(r"\bnode\s+\S+\s+is already (\w+);"),
+        r"This skill is already \1;",
+    ),
+    (
+        re.compile(r"\bnode\s+\S+\s+has no gate\s*[—-]\s*"),
+        "This skill has no checking method: ",
+    ),
+    (
+        re.compile(r"\bnode\s+\S+\s+has no required artifact spec\s*[—-]\s*"),
+        "This skill names no required artifact: ",
+    ),
+    (
+        re.compile(
+            r"\bspec\s+spec\.\S+:\s*(\d+)\s+of\s+(\d+)\s+required accepted "
+            r"records\s*[—-]\s*below minimum\."
+        ),
+        r"Required evidence: \1 of \2 accepted records so far, below the minimum.",
+    ),
+    (
+        re.compile(r"\bRefused for node\s+\S+\s*[—-]\s*nothing passed\."),
+        "Nothing was passed.",
+    ),
 )
 
 _ADVISORY_TAG = re.compile(r"^\[advisory\]\s*")

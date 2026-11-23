@@ -41,7 +41,7 @@ from .views import (
     node_evidence_body,
     operations_body,
     page,
-    pass_modal_body,
+    pass_body,
     portfolio_body,
     post_analytics_export,
     post_blocker_create,
@@ -82,7 +82,7 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
 
         master_confirm = _NODE_MASTER_CONFIRM_RE.match(path)
         master_step = _NODE_MASTER_RE.match(path)
-        pass_modal = _NODE_PASS_RE.match(path)
+        pass_panel = _NODE_PASS_RE.match(path)
         node_evidence = _NODE_EVIDENCE_RE.match(path)
         graph_node = _GRAPH_NODE_RE.match(path)
         review_action = _REVIEW_ID_RE.match(path)
@@ -128,9 +128,9 @@ class SkillTraceHandler(BaseHTTPRequestHandler):
             title, body, status = master_body(
                 self.server.root, unquote(master_step.group(1)), query
             )
-        elif pass_modal is not None:
-            title, body, status = pass_modal_body(
-                self.server.root, unquote(pass_modal.group(1)), query
+        elif pass_panel is not None:
+            title, body, status = pass_body(
+                self.server.root, unquote(pass_panel.group(1)), query
             )
         elif node_evidence is not None:
             title, body, status = node_evidence_body(

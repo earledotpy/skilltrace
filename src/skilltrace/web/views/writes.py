@@ -24,6 +24,7 @@ from ._shared import (
     _field,
     _int_field,
 )
+from .steps import PASS_PANEL_ANCHOR
 
 
 @dataclass
@@ -55,13 +56,26 @@ def _dispatch_web(root, command_name: str, **arg_fields) -> tuple[int, list[str]
     return exit_code, buffer.getvalue().splitlines()
 
 
-def _redirect_with_notice(location: str, lines: list[str], kind: str) -> Redirect:
+def _redirect_with_notice(
+    location: str,
+    lines: list[str],
+    kind: str,
+    *,
+    params: dict | None = None,
+    fragment: str = "",
+) -> Redirect:
     """PRG redirect carrying translated human copy as the flash notice (T5 P3.5+D2).
 
     The URL is a copy surface: copy is fixed at its source by the one
     translation module (no flags, command names, exit classes, paths,
     record ids or ADR numbers) and never redacted at the address bar.
     Banner-kind tags ride the ``kind`` param, never the notice text.
+
+    ``params`` carries the learner's own context across the redirect (the
+    presentation mode, say) so a refusal lands back where they were, not
+    on a bare page. The extra parameters never carry copy. ``fragment``
+    names the region of the destination the browser should land on, so the
+    result or the refusal is where the learner starts (IC-5, AX-7).
     """
     from ..interface import translate_lines
 
@@ -71,9 +85,15 @@ def _redirect_with_notice(location: str, lines: list[str], kind: str) -> Redirec
         if line:
             clean.append(line)
     notice = "\n".join(clean)
-    params = urlencode({"notice": notice, "kind": kind})
+    query = {"notice": notice, "kind": kind}
+    for key, value in (params or {}).items():
+        if value:
+            query[key] = value
     separator = "&" if "?" in location else "?"
-    return Redirect(location=f"{location}{separator}{params}")
+    location = f"{location}{separator}{urlencode(query)}"
+    if fragment:
+        location = f"{location}#{fragment}"
+    return Redirect(location=location)
 
 
 def _safe_next(form: dict, fallback: str) -> str:
@@ -84,6 +104,23 @@ def _safe_next(form: dict, fallback: str) -> str:
     return fallback
 
 
+def _context_params(form: dict) -> dict:
+    """The learner's own context, carried across a redirect.
+
+    The presentation mode is presentation context, not domain state
+    (spec-v3-study-day IA-1): a learner who was reading in one mode and
+    is refused lands back in that same mode, on the same step. Only the
+    declared modes are carried — a crafted form cannot smuggle anything
+    else into the URL.
+    """
+    from .shell import MODES
+
+    mode = _field(form, "mode")
+    if mode in MODES:
+        return {"mode": mode}
+    return {}
+
+
 def _finish_write(
     next_url: str,
     lines: list[str],
@@ -91,6 +128,8 @@ def _finish_write(
     *,
     refusal_url: str | None = None,
     failure_detail: str | None = None,
+    params: dict | None = None,
+    fragment: str = "",
 ) -> Redirect:
     """Map a dispatched write's exit code per the locked T5 contract (§D1+S5).
 
@@ -99,17 +138,29 @@ def _finish_write(
     warning flash to ``refusal_url`` (the acceptance step for pass/master,
     else ``next_url``); ``1`` (operational failure) → error flash to
     ``next_url`` pointing at /health for the detail, or at the caller's own
-    precise recovery line when it supplies one (IC-8).
+    precise recovery line when it supplies one (IC-8). ``params`` carries
+    the learner's context across the redirect; ``fragment`` names the
+    region of the destination the browser lands on.
     """
     if exit_code == 0:
-        return _redirect_with_notice(next_url, lines, "ok")
+        return _redirect_with_notice(
+            next_url, lines, "ok", params=params, fragment=fragment
+        )
     if exit_code == 2:
-        return _redirect_with_notice(refusal_url or next_url, lines, "warning")
+        return _redirect_with_notice(
+            refusal_url or next_url,
+            lines,
+            "warning",
+            params=params,
+            fragment=fragment,
+        )
     if failure_detail:
         lines = [*lines, failure_detail]
     else:
         lines = [*lines, "Something went wrong — see /health for the detail."]
-    return _redirect_with_notice(next_url, lines, "error")
+    return _redirect_with_notice(
+        next_url, lines, "error", params=params, fragment=fragment
+    )
 
 
 def post_pass(root, node_id: str, form: dict):
@@ -121,6 +172,11 @@ def post_pass(root, node_id: str, form: dict):
     consequence behind a flash the learner has to remember — the spec
     requires the pass result to show the Review change, not merely to
     have caused one.
+
+    A refusal lands on the same panel, not on the host page: the facts are
+    refreshed there and the next valid route is named (IC-8, R5). The
+    learner's presentation mode rides along, so a refusal returns them to
+    the context they were in.
     """
     exit_code, lines = _dispatch_web(root, "pass", node_id=node_id)
     return _finish_write(
@@ -128,6 +184,8 @@ def post_pass(root, node_id: str, form: dict):
         lines,
         exit_code,
         refusal_url=f"/nodes/{node_id}/pass",
+        params=_context_params(form),
+        fragment=PASS_PANEL_ANCHOR,
     )
 
 

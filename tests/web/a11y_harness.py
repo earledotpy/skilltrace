@@ -911,8 +911,18 @@ def route_cases() -> tuple[RouteCase, ...]:
             "pass",
             f"GET /nodes/{NODE_ACTIVE}/pass",
             "guided",
-            "pass_modal_body",
-            lambda r: views.pass_modal_body(r, NODE_ACTIVE, {}),
+            "pass_body",
+            lambda r: views.pass_body(r, NODE_ACTIVE, {}),
+        ),
+        # The ineligible panel — the state a stale or refused submission
+        # lands on. It carries its own state block and its next route, so
+        # the gate must scan it too (AX-11).
+        RouteCase(
+            "pass-ineligible",
+            f"GET /nodes/{NODE_THIRD}/pass",
+            "guided",
+            "pass_body",
+            lambda r: views.pass_body(r, NODE_THIRD, {}),
         ),
         RouteCase(
             "master",
