@@ -1,7 +1,7 @@
 """Golden route-body snapshots — every served GET route, byte-exact (#312).
 
 What only this module shows: the exact HTML every served GET route and every
-step/modal body renders for one pinned learner state. The goldens live beside
+step/panel body renders for one pinned learner state. The goldens live beside
 this module in ``snapshots/*.html``; a later structural refactor of the web
 layer can prove "structure changed, output didn't" by diffing against them,
 and any byte that moves fails with a unified diff naming the file.
@@ -76,7 +76,10 @@ route                   case
 ``GET /health``         ``health``
 ``GET /analytics``      ``analytics-velocity``, ``-blockers``, ``-reviews``,
                         ``-evidence`` (one per theme)
-``GET /nodes/{id}/pass``  ``pass``
+``GET /nodes/{id}/pass``  ``pass`` (the eligible panel) and
+                        ``pass-ineligible`` (the panel whose requirement is
+                        not met yet — the refusal state the learner lands
+                        on after a stale submission)
 ``GET /nodes/{id}/master``  ``master``
 ``GET /nodes/{id}/master/confirm``  ``master-confirm``
 anything else           ``error-404`` (the one unified error body)
@@ -853,7 +856,14 @@ CASES: tuple[RouteCase, ...] = (
         f"GET /nodes/{NODE_ACTIVE}/pass",
         "Use basic Pandas DataFrame operations",
         200,
-        lambda r: views.pass_modal_body(r, NODE_ACTIVE, {}),
+        lambda r: views.pass_body(r, NODE_ACTIVE, {}),
+    ),
+    RouteCase(
+        "pass-ineligible",
+        f"GET /nodes/{NODE_THIRD}/pass",
+        "Query rows and columns with SELECT",
+        200,
+        lambda r: views.pass_body(r, NODE_THIRD, {}),
     ),
     RouteCase(
         "master",

@@ -156,7 +156,7 @@ def test_the_current_section_is_marked_exactly_once(repo):
     # A destination that is not a nav stop marks nothing.
     for name, html in (
         ("node", views.node_body(repo, node_id)[1]),
-        ("pass", views.pass_modal_body(repo, node_id)[1]),
+        ("pass", views.pass_body(repo, node_id)[1]),
     ):
         assert 'aria-current="page"' not in _nav(html), name
 
@@ -249,7 +249,7 @@ def test_no_unterminated_class_attribute_anywhere(repo):
         "operations": views.operations_body(repo)[1],
         "graph": views.graph_body(repo)[1],
         "portfolio": views.portfolio_body(repo)[1],
-        "pass": views.pass_modal_body(repo, node_id)[1],
+        "pass": views.pass_body(repo, node_id)[1],
         "404": views._status_page(404, "Unknown node x.", repo)[0],
     }
     pattern = re.compile(r'class="[^">]*>')

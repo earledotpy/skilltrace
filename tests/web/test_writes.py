@@ -1,10 +1,10 @@
-"""Browser writes — Tier-1 slice T4 (issue #73): safety modals + daily writes.
+"""Browser writes — Tier-1 slice T4 (issue #73): safety panels + daily writes.
 
 What only the wired write surface can show: every mutation nests-dispatch
 through the *same* registry the CLI uses (`Context.source="web"`, canonical
 command name, one audit event), hard-boundary refusals match the CLI's own
-output verbatim, the pass/master modals render server-fresh facts and never
-pre-disable (a stale modal is proven unable to assert what eligibility no
+output verbatim, the pass/master panels render server-fresh facts and never
+pre-disable (a stale panel is proven unable to assert what eligibility no
 longer supports), heavyweight confirmation stays exclusive to pass/master,
 and the G5 daily writes round-trip through their forms with redirect-after-POST.
 """
@@ -135,12 +135,12 @@ def _evidence_records(root: Path) -> list[dict]:
     ) or []
 
 
-# --- Pass flow: modal facts, forward-only write, verbatim refusals -----------------
+# --- Pass flow: panel facts, forward-only write, verbatim refusals ------------------
 
 
-def test_pass_modal_renders_server_fresh_facts(repo):
+def test_pass_panel_renders_server_fresh_facts(repo):
     _make_eligible(repo)
-    title, body, status = views.pass_modal_body(repo, NODE)
+    title, body, status = views.pass_body(repo, NODE)
     assert status == 200
     assert title != ""
     # T5 §F: confirmation copy uses the human title; raw spec ids never render.
@@ -155,7 +155,7 @@ def test_pass_modal_renders_server_fresh_facts(repo):
 
 
 def _notice_of(redirect: Redirect) -> tuple[str, str]:
-    query = parse_qs(redirect.location.partition("?")[2])
+    query = parse_qs(redirect.location.partition("?")[2].partition("#")[0])
     return (query.get("notice") or [""])[0], (query.get("kind") or [""])[0]
 
 
@@ -206,20 +206,112 @@ def test_locked_node_refusal_names_the_hard_boundary(repo):
     assert "no hard-prerequisite override" in notice
 
 
-def test_stale_modal_cannot_assert_what_eligibility_no_longer_supports(repo):
+def test_stale_panel_cannot_assert_what_eligibility_no_longer_supports(repo):
     _set_state(repo, NODE, "available")
     _make_eligible(repo)
-    _, before, _ = views.pass_modal_body(repo, NODE)
+    _, before, _ = views.pass_body(repo, NODE)
     assert "ready to mark as passed" in before
 
-    # The world moves under the open modal: two of three records vanish.
+    # The world moves under the open panel: two of three records vanish.
     _make_eligible(repo, count=2)
     result = views.post_pass(repo, NODE, _form())
     assert isinstance(result, Redirect)
     notice, kind = _notice_of(result)
     assert kind == "warning"
-    assert "below minimum" in notice  # refusal flashes back to the step
+    assert "below the minimum" in notice  # refusal flashes back to the step
     assert _state_of(repo, NODE) == "available"
+    assert _events(repo) == []
+
+
+def test_the_pass_refusal_carries_the_clis_own_refusal_text(repo):
+    """The flash is the dispatcher's refusal, rendered — not web prose (#357).
+
+    The notice is the command's own refusal line through the one
+    translation module (P3.1): the web never invents its own refusal.
+    """
+    from skilltrace.web.interface import translate
+    from skilltrace.web.views.writes import _dispatch_web
+
+    _set_state(repo, NODE, "available")  # no evidence — ineligible
+    result = views.post_pass(repo, NODE, _form())
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+
+    exit_code, lines = _dispatch_web(repo, "pass", node_id=NODE)
+    assert exit_code == 2
+    cli_line = next(line for line in lines if "is not pass-eligible" in line)
+    stripped = re.sub(r"^\[(?:error|warning|advisory)\]\s*", "", cli_line).strip()
+    assert translate(stripped) in notice
+    # The refusal names the skill, never a raw record id (R1).
+    assert NODE not in notice
+    assert SPEC not in notice
+
+
+def test_a_refused_pass_keeps_the_context_and_refreshes_the_facts(repo):
+    """IC-9/R4/R5: the refusal returns to the step, in the same context.
+
+    The learner is put back where they were — the pass step, in the
+    presentation they were reading — with the facts re-read from current
+    truth and the next valid route named. Nothing changed on disk.
+    """
+    _set_state(repo, NODE, "available")
+    _make_eligible(repo)
+    _, before, _ = views.pass_body(repo, NODE, {"mode": ["operations"]})
+    assert "ready to mark as passed" in before
+
+    # The world moves under the open panel: the proof falls short.
+    _make_eligible(repo, count=2)
+    result = views.post_pass(repo, NODE, _form(mode="operations"))
+    assert isinstance(result, Redirect)
+    assert result.location.startswith(f"/nodes/{NODE}/pass?")
+    assert "mode=operations" in result.location
+    _, kind = _notice_of(result)
+    assert kind == "warning"
+
+    # No partial state change: the state stands, no event, no record.
+    assert _state_of(repo, NODE) == "available"
+    assert _events(repo) == []
+    assert _evidence_records(repo)
+
+    # The refreshed panel states the current facts and names the next route.
+    _, after, _ = views.pass_body(repo, NODE, {"mode": ["operations"]})
+    assert "ready to mark as passed" not in after
+    assert "Next step" in after
+    assert f'href="/nodes/{NODE}/evidence"' in after
+
+
+def test_a_pass_refusal_never_lands_on_the_host_page(repo):
+    """The refusal flashes back to the pass step, not to the skill page."""
+    _set_state(repo, NODE, "available")
+    result = views.post_pass(repo, NODE, _form(next=f"/nodes/{NODE}"))
+    assert isinstance(result, Redirect)
+    assert result.location.startswith(f"/nodes/{NODE}/pass?")
+    assert f"/nodes/{NODE}?" not in result.location
+
+
+def test_the_pass_write_lands_the_learner_on_the_panel(repo):
+    """IC-5/AX-7: the fresh page starts at the panel, not at the top."""
+    _set_state(repo, NODE, "available")
+    _make_eligible(repo)
+    result = views.post_pass(repo, NODE, _form())
+    assert isinstance(result, Redirect)
+    assert result.location.endswith("#pass-panel")
+    # And the panel the redirect lands on carries that anchor.
+    _, body, _ = views.pass_body(repo, NODE, {})
+    assert 'id="pass-panel"' in body
+
+
+def test_a_pass_operational_failure_writes_nothing(repo):
+    """An unreadable store is an operational failure, never a silent pass."""
+    _set_state(repo, NODE, "available")
+    _make_eligible(repo)
+    (repo / "graph" / "state.yaml").write_text("progress: [oops\n", encoding="utf-8")
+
+    result = views.post_pass(repo, NODE, _form())
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "error"
+    assert "/health" in notice
     assert _events(repo) == []
 
 
@@ -1236,7 +1328,7 @@ def test_flash_notice_escapes_hostile_text(repo):
     assert "&lt;script&gt;" in body
 
 
-# --- Full HTTP round-trip: PRG, modal stays, audit source --------------------------
+# --- Full HTTP round-trip: PRG, the panel stays, audit source ------------------------
 
 REVIEW_REASONS = {"min_accepted_evidence": 1, "min_days_pass_to_review": 3}
 
