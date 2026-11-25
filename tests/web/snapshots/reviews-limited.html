@@ -1,0 +1,18 @@
+<header><div class="shell"><h1 class="brand"><a href="/">SkillTrace</a></h1><nav class="nav guided" aria-label="Guided"><span class="section-nav-label">Guided</span><a href="/">Today</a><a href="/next">Next</a><a href="/find">Find a skill</a><span class="mode-switch"><span class="nav-label">Mode</span><a href="/reviews?mode=guided" aria-current="true">Guided</a><a href="/reviews?mode=operations">Operations</a></span></nav></div></header>
+<div class="state state-limited">
+<p class="state-title">No checks are scheduled</p>
+<p class="state-body">A check is created only by your own scheduling action — nothing schedules itself, and a suggested check is never scheduled or overdue. Suggested checks are below: advisory only, never scheduled.</p>
+</div>
+<section class="section">
+<h2 class="section-title">Schedule a check</h2>
+<form method="post" action="/reviews/schedule">
+<input type="hidden" name="next" value="/reviews">
+<div class="form-row"><label for="schedule-node">Skill</label><select id="schedule-node" name="node_id" required><option value="" selected disabled>Choose a skill</option><option value="demo.single_01">The one skill in this curriculum</option></select></div>
+<div class="form-row"><label for="schedule-date">Due date</label><input id="schedule-date" type="date" name="date" required></div>
+<button type="submit" class="btn secondary">Schedule this check</button>
+</form>
+</section>
+<section class="section">
+<h2 class="section-title">Suggested checks</h2>
+<p class="section-meta">Advisory only. Nothing here is scheduled or overdue, and nothing here creates a record — scheduling a check is always your explicit action.</p>
+<table class="data"><caption>Skill / Retention status / Suggested for / Schedule</caption><thead><tr><th scope="col">Skill</th><th scope="col">Retention status</th><th scope="col">Suggested for</th><th scope="col">Schedule</th></tr></thead><tbody><tr><td><a href="/nodes/demo.single_01">The one skill in this curriculum</a></td><td>fading — a check is suggested</td><td>2026-11-13</td><td><details class="disclosure"><summary>Schedule</summary><form method="post" action="/reviews/schedule"><input type="hidden" name="next" value="/reviews"><input type="hidden" name="node_id" value="demo.single_01"><div class="form-row"><label>Due date</label><input type="date" name="date" required></div><button type="submit" class="btn secondary">Schedule this check</button></form></details></td></tr></tbody></table></section>

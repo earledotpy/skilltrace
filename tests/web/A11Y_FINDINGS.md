@@ -20,7 +20,7 @@ gate; a stale record also fails it, so a fixed finding cannot linger.
 
 ## 1. axe-core findings (serious/critical, WCAG 2.2 AA)
 
-None. The sweep covers forty-nine served documents — every destination in
+None. The sweep covers fifty-two served documents — every destination in
 `docs/spec-v3-study-day.md` §6, the table's node-centred graph
 (`/graph/{id}`) and non-writing portfolio preview (`/portfolio/preview`),
 the contextual inspector over a selected evidence record, and the one
@@ -43,6 +43,11 @@ zero-minimum ArtifactSpec that remains visible without becoming an
 eligibility gap. The pass panel is scanned in both of its states — the
 eligible panel and the ineligible one a stale or refused submission lands on
 — because the second carries its own state block and its own next route.
+The Reviews destination's named states (`reviews-empty` — no review-worthy
+node, `reviews-limited` — a passed skill with nothing scheduled,
+`reviews-derivation-failed` — the retention model's policy gone) are covered
+the same way, so the three non-success states the retention loop names are
+scanned, never merged.
 
 ## 2. Colour-contrast deviations
 

@@ -196,6 +196,44 @@ _PHRASES: tuple[tuple[re.Pattern[str], str], ...] = (
         re.compile(r"\bRefused for node\s+\S+\s*[—-]\s*nothing mastered\."),
         "Nothing was mastered.",
     ),
+    # The review refusals and results: the CLI names the node and the review
+    # by raw id; the page names the skill and the check (R1, R5). The
+    # wording avoids an em dash, so the punctuation tidy below never closes
+    # the gap it reads in.
+    (
+        re.compile(
+            r"\b\S+\s+is\s+(available|locked|active)\s*[—-]\s*"
+            r"a review needs something to retain \(passed or mastered only\)\."
+        ),
+        r"This skill is \1, not passed: a check needs a passed skill.",
+    ),
+    (
+        re.compile(r"\breview\s+\S+\s+does not exist\."),
+        "That check does not exist.",
+    ),
+    (
+        re.compile(
+            r"\breview\s+\S+\s+is already (scheduled|completed|cancelled)"
+            r"\s*[—-]\s*refused\."
+        ),
+        r"That check is already \1.",
+    ),
+    (
+        re.compile(
+            r"\bscheduled review\s+\S+(?:\s+\([^)]*\))?\s+for\s+([^.]+)\."
+        ),
+        r"A check is scheduled for \1.",
+    ),
+    (
+        re.compile(
+            r"\bcompleted review\s+\S+\s+\((satisfactory|unsatisfactory)\)\."
+        ),
+        r"The check is completed with a \1 outcome.",
+    ),
+    (
+        re.compile(r"\bcancelled review\s+\S+\."),
+        "The check is cancelled; the record stays as history.",
+    ),
 )
 
 _ADVISORY_TAG = re.compile(r"^\[advisory\]\s*")

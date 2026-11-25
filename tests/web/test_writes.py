@@ -26,6 +26,7 @@ import yaml
 from skilltrace.commands.eligibility import passed_at_of
 from skilltrace.context import load_context_lenient
 from skilltrace.web import views
+from skilltrace.web.interface.translate import forbidden_matches
 from skilltrace.web.views import Redirect
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -1240,6 +1241,193 @@ def test_optional_evidence_never_counts_toward_pass_eligibility(repo):
     )
     assert eligibility.eligible is False
     assert [spec.spec_id for spec in eligibility.specs] == [SPEC]
+
+
+# --- Review write round-trips: schedule, complete, cancel ----------------------------
+
+
+def _seed_a_passed_review(repo: Path, *, scheduled_for: str = "2026-12-20") -> str:
+    """A passed skill with one scheduled Review, scheduled through the web."""
+    _set_state(repo, NODE, "passed")
+    result = views.post_review_schedule(
+        repo, _form(node_id=NODE, date=scheduled_for, next="/reviews")
+    )
+    assert isinstance(result, Redirect)
+    reviews = _read_yaml(repo, "execution/reviews.yaml").get("reviews") or []
+    assert len(reviews) == 1
+    return reviews[0]["id"]
+
+
+def test_review_schedule_round_trip_writes_one_record_and_one_event(repo):
+    """Scheduling is the learner's explicit action: one record, one event."""
+    _set_state(repo, NODE, "passed")
+    result = views.post_review_schedule(
+        repo, _form(node_id=NODE, date="2026-12-20", next="/reviews")
+    )
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "ok"
+    assert "scheduled for 2026-12-20" in notice
+    assert forbidden_matches(notice) == []
+    # Raw ids never reach the flash (R1): not the skill's, not the record's.
+    assert NODE not in notice
+    assert "rev." not in notice
+
+    reviews = _read_yaml(repo, "execution/reviews.yaml").get("reviews") or []
+    assert [r["status"] for r in reviews] == ["scheduled"]
+    assert reviews[0]["scheduled_for"] == "2026-12-20"
+    events = _events(repo)
+    assert [e["command"] for e in events] == ["review schedule"]
+    assert events[0]["args"]["source"] == "web"
+    assert events[0]["records_touched"] == [reviews[0]["id"]]
+
+
+def test_scheduling_on_a_skill_with_nothing_to_retain_refuses_like_the_cli(repo):
+    """The refusal is the dispatcher's own line, translated — no web prose."""
+    from skilltrace.web.interface import translate
+    from skilltrace.web.views.writes import _dispatch_web
+
+    result = views.post_review_schedule(
+        repo, _form(node_id=NODE, date="2026-12-20", next="/reviews")
+    )
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+
+    exit_code, lines = _dispatch_web(
+        repo, "review schedule", node_id=NODE, date="2026-12-20"
+    )
+    assert exit_code == 2
+    cli_line = next(line for line in lines if "something to retain" in line)
+    stripped = re.sub(r"^\[(?:error|warning|advisory)\]\s*", "", cli_line).strip()
+    assert translate(stripped) in notice
+    # The refusal names the skill's state, never a raw node id (R1).
+    assert NODE not in notice
+    assert "not passed" in notice
+    # A refusal writes nothing.
+    assert _read_yaml(repo, "execution/reviews.yaml").get("reviews") in (None, [])
+    assert _events(repo) == []
+
+
+def test_review_complete_round_trip_is_independent_of_any_session(repo):
+    """Completing needs no Session: outcome + summary, one event, no session."""
+    review_id = _seed_a_passed_review(repo)
+    assert not (repo / "execution" / "sessions.yaml").exists()
+
+    result = views.post_review_complete(
+        repo,
+        review_id,
+        _form(outcome="satisfactory", summary="recalled it cold", next="/reviews"),
+    )
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "ok"
+    assert "completed with a satisfactory outcome" in notice
+    assert forbidden_matches(notice) == []
+    assert "rev." not in notice
+
+    reviews = _read_yaml(repo, "execution/reviews.yaml").get("reviews") or []
+    assert reviews[0]["status"] == "completed"
+    assert reviews[0]["outcome"] == "satisfactory"
+    assert reviews[0]["result_summary"] == "recalled it cold"
+    events = _events(repo)
+    assert [e["command"] for e in events] == ["review schedule", "review complete"]
+    assert events[-1]["args"]["source"] == "web"
+    assert events[-1]["records_touched"] == [review_id]
+
+
+def test_completing_requires_an_explicit_outcome_and_a_summary(repo):
+    """A missing outcome or summary is refused before anything is written."""
+    review_id = _seed_a_passed_review(repo)
+    before = _read_yaml(repo, "execution/reviews.yaml")
+
+    no_outcome = views.post_review_complete(
+        repo, review_id, _form(summary="recalled it cold", next="/reviews")
+    )
+    notice, kind = _notice_of(no_outcome)
+    assert kind == "warning"
+    assert "explicit outcome" in notice
+
+    no_summary = views.post_review_complete(
+        repo, review_id, _form(outcome="satisfactory", next="/reviews")
+    )
+    notice, kind = _notice_of(no_summary)
+    assert kind == "warning"
+    assert "result summary" in notice
+
+    assert _read_yaml(repo, "execution/reviews.yaml") == before
+    assert [e["command"] for e in _events(repo)] == ["review schedule"]
+
+
+def test_completing_twice_refuses_with_the_clis_own_text(repo):
+    """A completed check is history: the second attempt writes nothing."""
+    review_id = _seed_a_passed_review(repo)
+    views.post_review_complete(
+        repo, review_id, _form(outcome="satisfactory", summary="recalled it cold")
+    )
+    events = _events(repo)
+
+    again = views.post_review_complete(
+        repo, review_id, _form(outcome="satisfactory", summary="again")
+    )
+    notice, kind = _notice_of(again)
+    assert kind == "warning"
+    assert "That check is already completed." in notice
+    assert "rev." not in notice
+    assert _events(repo) == events
+
+
+def test_review_cancel_round_trip_keeps_the_record_with_its_reason(repo):
+    """Cancelling preserves the cancelled history; a reason is required."""
+    review_id = _seed_a_passed_review(repo)
+
+    missing = views.post_review_cancel(
+        repo, review_id, _form(reason="", next="/reviews")
+    )
+    notice, kind = _notice_of(missing)
+    assert kind == "warning"
+    assert "reason" in notice
+    assert [e["command"] for e in _events(repo)] == ["review schedule"]
+
+    result = views.post_review_cancel(
+        repo, review_id, _form(reason="the material moved", next="/reviews")
+    )
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "ok"
+    assert "record stays as history" in notice
+    assert forbidden_matches(notice) == []
+
+    reviews = _read_yaml(repo, "execution/reviews.yaml").get("reviews") or []
+    assert [r["status"] for r in reviews] == ["cancelled"]
+    assert reviews[0]["cancel_reason"] == "the material moved"
+    events = _events(repo)
+    assert [e["command"] for e in events] == ["review schedule", "review cancel"]
+    assert events[-1]["records_touched"] == [review_id]
+
+    events = _events(repo)
+    again = views.post_review_cancel(repo, review_id, _form(reason="again"))
+    notice, kind = _notice_of(again)
+    assert kind == "warning"
+    assert "That check is already cancelled." in notice
+    assert _events(repo) == events
+
+
+def test_a_review_operational_failure_writes_nothing_and_points_at_health(repo):
+    """A record store that cannot be read is an operational failure, not a verdict."""
+    review_id = _seed_a_passed_review(repo)
+    (repo / "execution" / "reviews.yaml").write_text(
+        "reviews: [ { broken", encoding="utf-8"
+    )
+    events = _events(repo)
+
+    result = views.post_review_complete(
+        repo, review_id, _form(outcome="satisfactory", summary="recalled it cold")
+    )
+    notice, kind = _notice_of(result)
+    assert kind == "error"
+    assert "/health" in notice
+    assert _events(repo) == events
 
 
 # --- Host pages carry the forms; degradation warns but never blocks ----------------
