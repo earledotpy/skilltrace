@@ -6,21 +6,27 @@ What only this module shows: the two journeys are **separate decisions**.
   shows the visible Review-state consequence (R3).
 * **Mastery** is a two-step journey, visibly distinct from passing, whose
   final confirmation revalidates eligibility against current truth
-  (R3 extension).
+  (R3 extension). Step 1 explains what mastery asks and why it is or is
+  not eligible; step 2 is the permanent confirmation. A stale or
+  ineligible confirmation refuses, preserves the learner's context,
+  refreshes the facts, offers the next valid route, and writes nothing.
 * No surface anywhere offers a combined pass-and-master action (HB-1).
 """
 
 from __future__ import annotations
 
+import re
 import shutil
 import tempfile
 from pathlib import Path
+from urllib.parse import parse_qs
 
 import pytest
 import yaml
 
 from skilltrace.context import load_context_lenient
 from skilltrace.web import views
+from skilltrace.web.views import Redirect
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -142,15 +148,23 @@ def test_no_surface_offers_a_combined_pass_and_master_action(repo):
         ) or body.count("<form") == 1
 
 
-def test_the_two_journeys_have_different_titles(repo):
-    """Different titles, so the learner never conflates them (C11)."""
+def test_the_two_journeys_have_different_headings(repo):
+    """Different panel headings, so the learner never conflates them (C11).
+
+    The heading is the panel's own declared title — "Confirm pass" for the
+    one-step pass journey, "Step 1 — Mastery facts" and "Step 2 — This is
+    permanent" for the two-step mastery journey.
+    """
     node_id = _eligible_node(repo)
-    _, pass_title, _ = views.pass_body(repo, node_id)
-    _, master_title, _ = views.master_body(repo, node_id)
-    _, confirm_title, _ = views.master_confirm_body(repo, node_id)
-    assert pass_title != master_title
-    assert master_title != confirm_title
-    assert "Mastery" in master_title or "mastered" in master_title.lower()
+    _, pass_body, _ = views.pass_body(repo, node_id)
+    _, step1, _ = views.master_body(repo, node_id)
+    _, step2, _ = views.master_confirm_body(repo, node_id)
+    assert "Confirm pass" in pass_body
+    assert "Step 1" in step1 and "Mastery" in step1
+    assert "Step 2" in step2 and "permanent" in step2.lower()
+    # The mastery journey's steps are its own — the pass journey's heading
+    # names neither step.
+    assert "Step 1" not in pass_body and "Step 2" not in pass_body
 
 
 def test_the_mastery_journey_is_two_steps(repo):
@@ -396,3 +410,276 @@ def test_optional_evidence_never_counts_toward_the_pass(panel_repo):
     # The optional record is not listed as evidence the pass rests on.
     assert "optional_notes.md" not in body
     assert "Optional worked notes" not in body
+
+
+# --- the mastery steps disclose what mastery asks (§10.8) -----------------------
+
+MASTER_READY_PASS_DAY = "2026-11-07"
+
+
+def _fresh_root(prefix: str) -> Path:
+    root = Path(tempfile.mkdtemp(prefix=prefix))
+    for dirname in ("graph", "evidence", "policy"):
+        shutil.copytree(REPO_ROOT / dirname, root / dirname)
+    return root
+
+
+def _read_yaml(root: Path, relpath: str) -> dict:
+    path = root / relpath
+    if not path.exists():
+        return {}
+    return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+
+
+def _set_state(root: Path, node_id: str, state: str) -> None:
+    doc = _read_yaml(root, "graph/state.yaml")
+    doc.setdefault("progress", {})[node_id] = {"state": state}
+    _write_yaml(root, "graph/state.yaml", doc)
+
+
+def _author_passed_state(root: Path, node_id: str, *, passed_on: str) -> None:
+    """A passed skill with its transition trail — authored fixture data.
+
+    The pass date is what the mastery derivation spaces the satisfactory
+    review against, so the fixture authors it explicitly; no engine
+    pass/master path runs here (see AGENTS.md safety rule).
+    """
+    doc = _read_yaml(root, "graph/state.yaml")
+    doc.setdefault("progress", {})[node_id] = {
+        "state": "passed",
+        "changed_at": f"{passed_on}T09:00:00+00:00",
+        "transitions": {
+            "active": f"{passed_on}T08:00:00+00:00",
+            "passed": f"{passed_on}T09:00:00+00:00",
+        },
+    }
+    _write_yaml(root, "graph/state.yaml", doc)
+
+
+def _author_spaced_satisfactory_review(
+    root: Path, node_id: str, *, passed_on: str, days_after_pass: int
+) -> None:
+    """One satisfactory completed review, spaced after the pass."""
+    from datetime import date, timedelta
+
+    completed = date.fromisoformat(passed_on) + timedelta(days=days_after_pass)
+    reviews = _read_yaml(root, "execution/reviews.yaml").get("reviews") or []
+    reviews.append(
+        {
+            "id": f"rev.{node_id}.mastery",
+            "node_id": node_id,
+            "status": "completed",
+            "scheduled_for": (date.fromisoformat(passed_on) + timedelta(days=1)).isoformat(),
+            "created_at": f"{completed.isoformat()}T09:00:00+00:00",
+            "completed_at": f"{completed.isoformat()}T10:00:00+00:00",
+            "outcome": "satisfactory",
+            "result_summary": "Recalled cleanly.",
+        }
+    )
+    _write_yaml(root, "execution/reviews.yaml", {"reviews": reviews})
+
+
+def _master_ready_root() -> tuple[Path, str]:
+    """A passed skill with its proof on file and a spaced satisfactory review."""
+    root = _fresh_root("t5-master-ready-")
+    node_id = _panel_node(root)
+    _author_passed_state(root, node_id, passed_on=MASTER_READY_PASS_DAY)
+    _accept_records(root, node_id, count=1)
+    _author_spaced_satisfactory_review(
+        root, node_id, passed_on=MASTER_READY_PASS_DAY, days_after_pass=3
+    )
+    return root, node_id
+
+
+def test_step_one_discloses_the_satisfactory_review_and_its_date():
+    """§10.8 facts: the satisfactory Review and its date, on the step."""
+    root, node_id = _master_ready_root()
+    _, body, _ = views.master_body(root, node_id, {})
+    assert "Satisfactory review" in body
+    assert "completed 2026-11-10, 3 day(s) after the pass" in body
+    # The current passed state is a named fact, not just a pill.
+    assert "Current state" in body
+    _, step2, _ = views.master_confirm_body(root, node_id, {})
+    assert "completed 2026-11-10, 3 day(s) after the pass" in step2
+
+
+def test_step_one_explains_each_gap_in_the_learners_words():
+    """The engine's verdict in plain words — never a raw node id (R1)."""
+    node_id = _panel_node(_fresh_root("t5-master-avail-"))
+    root = _fresh_root("t5-master-why-")
+    _set_state(root, node_id, "available")
+    _, body, _ = views.master_body(root, node_id, {})
+    assert "mastery needs a passed skill first" in body
+    # R1: the engine's raw "node <id>" phrasing never reaches the page;
+    # the panel names the skill.
+    assert f"node {node_id}" not in body
+
+    # A passed skill with no recorded pass date: the spacing cannot be checked.
+    root = _fresh_root("t5-master-nodate-")
+    _set_state(root, node_id, "passed")
+    _, body, _ = views.master_body(root, node_id, {})
+    assert "The pass date is not recorded" in body
+    assert f"node {node_id}" not in body
+
+    # Passed with a date, but no accepted proof on file.
+    root = _fresh_root("t5-master-noev-")
+    _author_passed_state(root, node_id, passed_on=MASTER_READY_PASS_DAY)
+    _, body, _ = views.master_body(root, node_id, {})
+    assert "Accepted evidence: 0 of 1 required records on file so far." in body
+
+    # Proof on file, but no satisfactory spaced review yet.
+    root = _fresh_root("t5-master-norev-")
+    _author_passed_state(root, node_id, passed_on=MASTER_READY_PASS_DAY)
+    _accept_records(root, node_id, count=1)
+    _, body, _ = views.master_body(root, node_id, {})
+    assert (
+        "No satisfactory review has been completed at least 3 day(s) "
+        "after the pass yet." in body
+    )
+
+
+def test_the_ineligible_steps_name_the_next_valid_route():
+    """IC-8/R5: each gap names the one route that actually moves forward."""
+    node_id = _panel_node(_fresh_root("t5-master-route-"))
+
+    # Not passed: the pass journey is the way toward mastery.
+    root = _fresh_root("t5-master-route-a-")
+    _set_state(root, node_id, "available")
+    _, step1, _ = views.master_body(root, node_id, {})
+    _, step2, _ = views.master_confirm_body(root, node_id, {})
+    for body in (step1, step2):
+        assert f'href="/nodes/{node_id}/pass"' in body
+
+    # Passed but the proof is short: the evidence workspace.
+    root = _fresh_root("t5-master-route-b-")
+    _author_passed_state(root, node_id, passed_on=MASTER_READY_PASS_DAY)
+    _, body, _ = views.master_body(root, node_id, {})
+    assert f'href="/nodes/{node_id}/evidence"' in body
+
+    # Proof on file, review missing: Reviews.
+    root = _fresh_root("t5-master-route-c-")
+    _author_passed_state(root, node_id, passed_on=MASTER_READY_PASS_DAY)
+    _accept_records(root, node_id, count=1)
+    _, body, _ = views.master_body(root, node_id, {})
+    assert 'href="/reviews"' in body
+
+
+def test_an_already_mastered_skill_shows_the_completed_journey():
+    """A mastered skill has nothing left to confirm (mastered never demotes)."""
+    root = _fresh_root("t5-master-done-")
+    node_id = _panel_node(root)
+    _set_state(root, node_id, "mastered")
+    _, step1, _ = views.master_body(root, node_id, {})
+    _, step2, _ = views.master_confirm_body(root, node_id, {})
+    for body in (step1, step2):
+        assert "already mastered" in body
+        assert 'type="submit"' not in body
+        assert f'action="/nodes/{node_id}/master/confirm"' not in body
+
+
+def test_step_two_omits_the_confirmation_on_a_structural_wall():
+    """RT-09: no confirmation is offered where mastery can never succeed."""
+    root = _fresh_root("t5-master-wall-")
+    node_id = _panel_node(root)
+    _set_state(root, node_id, "available")
+    _, body, _ = views.master_confirm_body(root, node_id, {})
+    assert 'type="submit"' not in body
+    assert "Confirming is unavailable" in body
+    assert f'href="/nodes/{node_id}/pass"' in body
+
+
+def test_step_two_keeps_the_confirmation_live_when_passed_but_not_yet_eligible():
+    """The engine's refusal on click is the truth — never a greyed button."""
+    root = _fresh_root("t5-master-live-")
+    node_id = _panel_node(root)
+    _author_passed_state(root, node_id, passed_on=MASTER_READY_PASS_DAY)
+    _accept_records(root, node_id, count=1)
+    _, body, _ = views.master_confirm_body(root, node_id, {})
+    assert f'action="/nodes/{node_id}/master/confirm"' in body
+    button = body.split('type="submit"', 1)[1].split("</button>", 1)[0]
+    assert "disabled" not in button
+    # And the step still names what is missing and the way forward.
+    assert "No satisfactory review" in body
+    assert 'href="/reviews"' in body
+
+
+# --- the permanent confirmation refuses without writing (IC-9, R4, R5) ----------
+
+
+def _form(**fields) -> dict:
+    return {key: [str(value)] for key, value in fields.items()}
+
+
+def _notice_of(redirect: Redirect) -> tuple[str, str]:
+    query = parse_qs(redirect.location.partition("?")[2].partition("#")[0])
+    return (query.get("notice") or [""])[0], (query.get("kind") or [""])[0]
+
+
+def _events(root: Path) -> list[dict]:
+    return _read_yaml(root, "execution/events.yaml").get("events") or []
+
+
+def test_an_ineligible_confirmation_refuses_preserves_context_and_writes_nothing():
+    """§10.8: a stale or ineligible confirmation refuses with no partial state.
+
+    The refusal lands back on the confirmation step, in the presentation
+    the learner was reading, on the panel itself; the refreshed step states
+    the facts and names the next valid route. Nothing is written.
+    """
+    from skilltrace.web.interface import forbidden_matches
+
+    root, node_id = _master_ready_root()
+    # The world moves under the open panel: the satisfactory review vanishes.
+    _write_yaml(root, "execution/reviews.yaml", {"reviews": []})
+
+    result = views.post_master_confirm(root, node_id, _form(mode="operations"))
+    assert isinstance(result, Redirect)
+    assert result.location.startswith(f"/nodes/{node_id}/master/confirm?")
+    assert "mode=operations" in result.location
+    assert result.location.endswith("#master-confirm")
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+    assert notice
+    assert forbidden_matches(notice) == []
+    assert node_id not in notice  # R1: the skill, never a raw id
+
+    # No partial state change: the state stands, no event, no record moved.
+    view = load_context_lenient(root)
+    assert view.store.state_of(node_id) == "passed"
+    assert _events(root) == []
+    records = _read_yaml(root, "evidence/evidence_records.yaml")
+    assert records["evidence_records"]
+
+    # The refreshed confirmation step names the next valid route.
+    _, body, _ = views.master_confirm_body(root, node_id, {"mode": ["operations"]})
+    assert "No satisfactory review" in body
+    assert 'href="/reviews"' in body
+
+
+def test_the_mastery_refusal_carries_the_clis_own_refusal_text():
+    """The flash is the dispatcher's refusal, rendered — not web prose.
+
+    The notice is the command's own refusal line through the one
+    translation module (P3.1): the web never invents its own refusal.
+    """
+    from skilltrace.web.interface import translate
+    from skilltrace.web.views.writes import _dispatch_web
+
+    root = _fresh_root("t5-master-verbatim-")
+    node_id = _panel_node(root)
+    _author_passed_state(root, node_id, passed_on=MASTER_READY_PASS_DAY)
+    _accept_records(root, node_id, count=1)
+
+    result = views.post_master_confirm(root, node_id, _form())
+    assert isinstance(result, Redirect)
+    notice, kind = _notice_of(result)
+    assert kind == "warning"
+
+    exit_code, lines = _dispatch_web(root, "master", node_id=node_id)
+    assert exit_code == 2
+    cli_line = next(line for line in lines if "is not mastery-eligible" in line)
+    stripped = re.sub(r"^\[(?:error|warning|advisory)\]\s*", "", cli_line).strip()
+    assert translate(stripped) in notice
+    # The refusal names the skill, never a raw node id (R1).
+    assert node_id not in notice
+    assert "Nothing was mastered." in notice

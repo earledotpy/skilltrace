@@ -24,7 +24,7 @@ from ._shared import (
     _field,
     _int_field,
 )
-from .steps import PASS_PANEL_ANCHOR
+from .steps import MASTER_CONFIRM_ANCHOR, PASS_PANEL_ANCHOR
 
 
 @dataclass
@@ -190,13 +190,26 @@ def post_pass(root, node_id: str, form: dict):
 
 
 def post_master_confirm(root, node_id: str, form: dict):
-    """POST `/nodes/{id}/master/confirm` — always 303 (T5 §D1+P4.4)."""
+    """POST `/nodes/{id}/master/confirm` — the permanent confirmation, always
+    303 (RT-09, §10.8).
+
+    A successful mastery returns to the skill page, which now shows the
+    mastered state. A refusal lands back on this confirmation step, not on
+    the host page: the facts are refreshed there and the next valid route
+    is named (IC-8, R5). The learner's presentation mode rides along, so a
+    refusal returns them to the context they were in, and the redirect
+    lands the browser on the panel itself (IC-5, AX-7).
+    """
     exit_code, lines = _dispatch_web(root, "master", node_id=node_id)
     return _finish_write(
         f"/nodes/{node_id}",
         lines,
         exit_code,
         refusal_url=f"/nodes/{node_id}/master/confirm",
+        params=_context_params(form),
+        # Success lands on the skill page, which has no panel anchor; only
+        # the refusal returns to this step, and lands on the panel itself.
+        fragment=MASTER_CONFIRM_ANCHOR if exit_code == 2 else "",
     )
 
 

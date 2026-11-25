@@ -338,7 +338,7 @@ def _node_actions_card(view, node_id: str) -> str:
         f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/pass">'
         f"Mark {_esc(title)} passed&hellip;</a>\n"
         f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/master">'
-        "Open the mastery panel</a>\n"
+        f"Master {_esc(title)}&hellip;</a>\n"
         '<a class="btn secondary" href="/reviews">Open reviews</a>\n'
         "</div>\n"
         "</div>\n"

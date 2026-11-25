@@ -396,9 +396,29 @@ def test_master_round_trip_through_permanent_confirm(repo):
     assert isinstance(result, Redirect)
     assert _state_of(repo, NODE) == "mastered"
 
-    commands = [e["command"] for e in _events(repo)]
+    # One audit event per command, under the canonical command names, both
+    # through the web's single write path.
+    events = _events(repo)
+    commands = [e["command"] for e in events]
     assert commands == ["pass", "master"]
-    assert all(e["args"]["source"] == "web" for e in _events(repo))
+    assert all(e["args"]["source"] == "web" for e in events)
+    assert events[1]["args"]["node_id"] == NODE
+    assert events[1]["records_touched"] == [NODE]
+
+
+def test_a_mastery_refusal_writes_nothing_and_never_demotes(repo):
+    """A refused mastery confirmation writes nothing and moves nothing (HB-3)."""
+    _set_state(repo, NODE, "passed")  # passed, but not mastery-eligible
+    events_before = _events(repo)
+    state_before = _read_yaml(repo, "graph/state.yaml")
+
+    result = views.post_master_confirm(repo, NODE, _form())
+    assert isinstance(result, Redirect)
+    _, kind = _notice_of(result)
+    assert kind == "warning"
+    assert _state_of(repo, NODE) == "passed"  # asserted progress never demotes
+    assert _events(repo) == events_before
+    assert _read_yaml(repo, "graph/state.yaml") == state_before
 
 
 # --- G5 daily writes: lightweight forms over the same registry ---------------------

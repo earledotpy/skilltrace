@@ -153,6 +153,49 @@ _PHRASES: tuple[tuple[re.Pattern[str], str], ...] = (
         re.compile(r"\bRefused for node\s+\S+\s*[—-]\s*nothing passed\."),
         "Nothing was passed.",
     ),
+    # The mastery refusals: the same rule as the pass refusals — the page
+    # names the skill and the missing mastery fact, never a raw node id
+    # (R1, R5). The wording avoids an em dash, so the punctuation tidy
+    # below never closes the gap it reads in.
+    (
+        re.compile(r"\bnode\s+\S+\s+is not mastery-eligible\b"),
+        "This skill is not mastery-eligible",
+    ),
+    (
+        re.compile(
+            r"\bnode\s+\S+\s+is\s+'(\w+)'\s*[—-]\s*mastery requires a passed node\."
+        ),
+        r"This skill is \1, not passed: mastery needs a passed skill first.",
+    ),
+    (
+        re.compile(r"\bnode\s+\S+\s+is already mastered\."),
+        "This skill is already mastered.",
+    ),
+    (
+        re.compile(
+            r"\bnode\s+\S+\s+has no recorded pass date; spacing cannot be derived\."
+        ),
+        "The pass date is not recorded, so the required spacing cannot be checked.",
+    ),
+    (
+        re.compile(
+            r"\baccepted evidence:\s*(\d+)\s+of\s+(\d+)\s+required live accepted "
+            r"record\(s\)\."
+        ),
+        r"Accepted evidence: \1 of \2 required records on file so far.",
+    ),
+    (
+        re.compile(
+            r"\bno satisfactory completed review at least\s*(\d+)\s+day\(s\) "
+            r"after the pass\s*\((\d{4}-\d{2}-\d{2})\)\."
+        ),
+        r"No satisfactory review has been completed at least \1 day(s) after "
+        r"the pass on \2 yet.",
+    ),
+    (
+        re.compile(r"\bRefused for node\s+\S+\s*[—-]\s*nothing mastered\."),
+        "Nothing was mastered.",
+    ),
 )
 
 _ADVISORY_TAG = re.compile(r"^\[advisory\]\s*")
