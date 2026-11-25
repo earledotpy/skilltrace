@@ -44,6 +44,7 @@ from discovery_fixtures import build_discovery_variant
 from evidence_fixtures import build_evidence_variant
 from mastery_fixtures import build_mastery_variant
 from node_fixtures import build_node_variant
+from reviews_fixtures import build_reviews_variant
 from session_fixtures import build_session_variant, refused_start_body
 from today_fixtures import build_today_variant
 
@@ -407,6 +408,25 @@ def _pin_execution(path: Path) -> None:
                     "status": "scheduled",
                     "scheduled_for": (FROZEN_DAY + timedelta(days=7)).isoformat(),
                     "created_at": _ago(days=1),
+                },
+                {
+                    "id": "rvw.a11y.004",
+                    "node_id": NODE_PASSED,
+                    "status": "completed",
+                    "scheduled_for": (FROZEN_DAY - timedelta(days=9)).isoformat(),
+                    "created_at": _ago(days=40),
+                    "completed_at": _ago(days=8),
+                    "outcome": "unsatisfactory",
+                    "result_summary": "the join keys would not come back",
+                },
+                {
+                    "id": "rvw.a11y.005",
+                    "node_id": NODE_PASSED,
+                    "status": "cancelled",
+                    "scheduled_for": (FROZEN_DAY - timedelta(days=5)).isoformat(),
+                    "created_at": _ago(days=35),
+                    "cancelled_at": _ago(days=6),
+                    "cancel_reason": "the material moved into the next skill",
                 },
             ]
         },
@@ -858,6 +878,31 @@ def route_cases() -> tuple[RouteCase, ...]:
             "guided",
             "reviews_body",
             lambda r: views.reviews_body(r, {}),
+        ),
+        # The named Reviews states (§10.10, SC-00a): the same fixtures the
+        # golden suite pins, so axe scans every state the page can render.
+        RouteCase(
+            "reviews-empty",
+            "GET /reviews",
+            "guided",
+            "reviews_body",
+            lambda r: views.reviews_body(build_reviews_variant(r, "empty"), {}),
+        ),
+        RouteCase(
+            "reviews-limited",
+            "GET /reviews",
+            "guided",
+            "reviews_body",
+            lambda r: views.reviews_body(build_reviews_variant(r, "limited"), {}),
+        ),
+        RouteCase(
+            "reviews-derivation-failed",
+            "GET /reviews",
+            "guided",
+            "reviews_body",
+            lambda r: views.reviews_body(
+                build_reviews_variant(r, "derivation-failed"), {}
+            ),
         ),
         RouteCase(
             "operations",

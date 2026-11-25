@@ -64,7 +64,16 @@ route                   case
                         ``tests/web/evidence_fixtures.py``)
 ``GET /evidence``      ``evidence-index``, ``evidence-inspector``
                         (``?record=…``), ``evidence-inspector-refusal``
-``GET /reviews``       ``reviews``
+``GET /reviews``       ``reviews``; plus the named Reviews states (§10.10,
+                        SC-00a) ``reviews-empty`` (no review-worthy node —
+                        nothing is passed, so no check could watch
+                        anything), ``reviews-limited`` (a passed skill, no
+                        review records — checkable, nothing scheduled) and
+                        ``reviews-derivation-failed`` (the retention
+                        model's policy gone — the advisory half claims
+                        nothing, the records stay readable), each the served
+                        body for one reshaped fixture repo
+                        (``tests/web/reviews_fixtures.py``)
 ``GET /operations``    ``operations``
 ``GET /graph``         ``graph``, ``graph-node`` (``/graph/{id}``)
 ``GET /portfolio``     ``portfolio``, ``portfolio-preview``
@@ -122,6 +131,7 @@ from discovery_fixtures import build_discovery_variant
 from evidence_fixtures import build_evidence_variant
 from mastery_fixtures import build_mastery_variant
 from node_fixtures import build_node_variant
+from reviews_fixtures import build_reviews_variant
 from session_fixtures import build_session_variant, refused_start_body
 from today_fixtures import build_today_variant
 
@@ -328,6 +338,25 @@ def _pin_execution(path: Path) -> None:
                     "completed_at": _ago(days=19),
                     "outcome": "satisfactory",
                     "result_summary": "recalled it cold",
+                },
+                {
+                    "id": "rvw.snapshot.005",
+                    "node_id": NODE_PASSED,
+                    "status": "completed",
+                    "scheduled_for": (FROZEN_DAY - timedelta(days=9)).isoformat(),
+                    "created_at": _ago(days=40),
+                    "completed_at": _ago(days=8),
+                    "outcome": "unsatisfactory",
+                    "result_summary": "the join keys would not come back",
+                },
+                {
+                    "id": "rvw.snapshot.006",
+                    "node_id": NODE_PASSED,
+                    "status": "cancelled",
+                    "scheduled_for": (FROZEN_DAY - timedelta(days=5)).isoformat(),
+                    "created_at": _ago(days=35),
+                    "cancelled_at": _ago(days=6),
+                    "cancel_reason": "the material moved into the next skill",
                 },
             ]
         },
@@ -790,6 +819,32 @@ CASES: tuple[RouteCase, ...] = (
         "Reviews",
         200,
         lambda r: views.reviews_body(r, {}),
+    ),
+    # The named Reviews states (§10.10, SC-00a): the same fixtures the
+    # axe gate scans, so the queue's empty, limited and could-not-compute
+    # states are pinned and scanned, never merged.
+    RouteCase(
+        "reviews-empty",
+        "GET /reviews",
+        "Reviews",
+        200,
+        lambda r: views.reviews_body(build_reviews_variant(r, "empty"), {}),
+    ),
+    RouteCase(
+        "reviews-limited",
+        "GET /reviews",
+        "Reviews",
+        200,
+        lambda r: views.reviews_body(build_reviews_variant(r, "limited"), {}),
+    ),
+    RouteCase(
+        "reviews-derivation-failed",
+        "GET /reviews",
+        "Reviews",
+        200,
+        lambda r: views.reviews_body(
+            build_reviews_variant(r, "derivation-failed"), {}
+        ),
     ),
     RouteCase(
         "operations",

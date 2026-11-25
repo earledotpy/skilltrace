@@ -32,6 +32,7 @@ from __future__ import annotations
 import re
 import shutil
 import tempfile
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -131,6 +132,113 @@ def test_the_dominant_action_is_the_resume_when_a_session_is_open(repo):
     assert items, "the open session must produce a queue item"
     assert "Resume your session" in items[0]
     assert 'class="queue-item dominant"' in body
+
+
+def test_an_overdue_review_sits_between_the_session_and_the_recommendation(repo):
+    """Priority 2: due Reviews at the exact position the priority order gives.
+
+    After the Session resume, before ordinary recommendations — never
+    buried, never ahead of the Session (§10.1, §10.10).
+    """
+    root = Path(tempfile.mkdtemp(prefix="t1-today-review-"))
+    for dirname in ("graph", "evidence", "policy"):
+        shutil.copytree(REPO_ROOT / dirname, root / dirname)
+    root.joinpath("execution").mkdir(exist_ok=True)
+    (root / "execution" / "sessions.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "sessions": [
+                    {
+                        "id": "ses.today.002",
+                        "status": "open",
+                        "started_at": "2026-11-17T07:00:00+00:00",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (root / "execution" / "session_work.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "session_work": [
+                    {
+                        "id": "wk.ses.today.002.01",
+                        "session_id": "ses.today.002",
+                        "node_id": _first_node_id(root, state="available"),
+                        "created_at": "2026-11-17T07:30:00+00:00",
+                        "minutes": 30,
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (root / "execution" / "reviews.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "reviews": [
+                    {
+                        "id": "rvw.today.001",
+                        "node_id": _first_node_id(root, state="available"),
+                        "status": "scheduled",
+                        "scheduled_for": "2020-01-01",
+                        "created_at": "2026-11-01T09:00:00+00:00",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    _, body, _ = views.home_body(root)
+    items = _queue_items(body)
+    assert len(items) >= 3, "session, overdue review and recommendation"
+    assert "Resume your session" in items[0]
+    assert "is overdue" in items[1]
+    assert "Open reviews" in items[1]
+    # The recommendation — ordinary priority — comes after the review.
+    assert "is overdue" not in "".join(items[2:])
+
+
+def test_a_suggested_check_is_never_a_today_queue_item(repo):
+    """A retention suggestion is advisory: it never becomes a queue item.
+
+    Nothing is scheduled, so nothing is due — a below-threshold passed
+    skill must not read as retention work on Today (§10.1, §10.10).
+    """
+    root = Path(tempfile.mkdtemp(prefix="t1-today-suggestion-"))
+    for dirname in ("graph", "evidence", "policy"):
+        shutil.copytree(REPO_ROOT / dirname, root / dirname)
+    node_id = _first_node_id(root, state="available")
+    passed = date.today() - timedelta(days=30)
+    state_path = root / "graph" / "state.yaml"
+    doc = yaml.safe_load(state_path.read_text(encoding="utf-8")) or {}
+    doc.setdefault("progress", {})[node_id] = {
+        "state": "passed",
+        "changed_at": passed.isoformat(),
+        "transitions": {"passed": passed.isoformat()},
+    }
+    state_path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+    _, body, _ = views.home_body(root)
+    for item in _queue_items(body):
+        assert "is overdue" not in item
+        assert "A check on" not in item
+    # The engine's own derivation does produce a suggestion for this skill —
+    # the assertion above is about the queue, not about the model being mute.
+    from skilltrace.policy.retention_model import derive_memory_states
+
+    view = load_context_lenient(root)
+    seed = view.policy.retention
+    assert seed is not None
+    states = derive_memory_states(
+        nodes=view.nodes,
+        store=view.store,
+        reviews=view.reviews,
+        seed=seed,
+        today=date.today(),
+    )
+    assert any(s.below_threshold for s in states)
 
 
 def test_next_and_find_are_secondary_discovery_paths(repo):
