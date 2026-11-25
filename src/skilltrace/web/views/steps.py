@@ -15,9 +15,24 @@ the review-scheduling consequence. The confirming POST revalidates against
 current truth, so a stale panel can never assert what eligibility no
 longer supports: a refusal writes nothing, returns to this same step with
 refreshed facts, and names the next valid route (IC-8, IC-9, R4, R5).
+
+The mastery journey is **two steps** (§10.8, R3 extension): step 1 (RT-08)
+explains what mastery asks and why it is or is not eligible; step 2
+(RT-09) is the permanent confirmation, disclosing the current passed
+state, the satisfactory Review and its date, the required spacing, that
+`mastered` is permanent, and that later unsatisfactory Reviews create
+failure-side pressure but never demote progress. Its titles, copy and
+step affordances are its own — visibly distinct from the one-step pass
+journey, so the learner never conflates the two (C11). The final POST
+revalidates mastery eligibility against current truth; a stale or
+ineligible confirmation refuses, preserves the learner's context,
+refreshes the facts, offers the next valid route, and writes nothing.
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date
 
 from ...commands.eligibility import passed_at_of
 from ...context import JoinedView
@@ -25,7 +40,12 @@ from ...evidence.eligibility import (
     compute_eligibility,
     live_accepted_count,
 )
-from ...policy.mastery import compute_mastery_eligibility
+from ...execution.overdue import parse_date
+from ...policy.mastery import (
+    MasteryEligibility,
+    compute_mastery_eligibility,
+    first_spaced_satisfactory_review,
+)
 from ..interface.text import plural
 from ._shared import (
     _esc,
@@ -61,6 +81,11 @@ from .shell import (
 #: the learner (and the keyboard) start at the panel, not at the top of the
 #: document (IC-5, AX-7).
 PASS_PANEL_ANCHOR = "pass-panel"
+
+#: The anchor the permanent confirmation carries — a mastery refusal lands
+#: back on step 2 itself, on the panel, not at the top of the page (IC-5,
+#: AX-7). It is the panel's own declared name, not a second spelling of it.
+MASTER_CONFIRM_ANCHOR = MASTER_CONFIRM_PANEL.name
 
 
 def _accepted_records(view: JoinedView, node_id: str) -> list:
@@ -541,12 +566,111 @@ def pass_body(
     )
 
 
-def _mastery_facts_html(view: JoinedView, node_id: str) -> tuple[str, str]:
-    """Fresh mastery facts table + eligibility banners, shared by both steps (T5 §F).
+@dataclass(frozen=True)
+class MasteryReading:
+    """The fresh mastery reading both steps render from one derivation.
 
-    Recomputed from a fresh join on every render — step 2 re-renders the
-    node and facts freshly rather than trusting step 1's read (P4.4).
+    Every field is recomputed from a fresh join on every render — step 2
+    re-reads the node and its facts rather than trusting step 1's read, so
+    a stale panel can never assert what current truth no longer supports
+    (IC-9). ``reasons`` are the panel's own learner-first lines (R1): the
+    engine's reasons name the node by id, and the panel names the skill.
     """
+
+    state: str
+    passed_at: str | None
+    mastery: MasteryEligibility
+    accepted_total: int
+    facts_table: str
+    verdict_html: str
+
+
+def _satisfactory_review_line(
+    view: JoinedView, node_id: str, pass_day: date | None, min_days: int
+) -> str:
+    """The satisfactory Review that carries mastery, with its date.
+
+    The fact §10.8 names for both steps: the satisfactory Review and its
+    date. Which review qualifies is the engine's own rule —
+    :func:`policy.mastery.first_spaced_satisfactory_review`, the same
+    function the derivation applies — so the panel can never name a review
+    the engine would not count. Without a recorded pass date the spacing
+    cannot be checked, and the line says exactly that.
+    """
+    if pass_day is None:
+        # The spacing cannot be checked without the pass date; a
+        # satisfactory review may still be on file, and the line says so
+        # rather than silently claiming or denying it.
+        for review in view.reviews:
+            if (
+                review.node_id == node_id
+                and review.status == "completed"
+                and review.outcome == "satisfactory"
+                and review.completed_at is not None
+            ):
+                day = parse_date(review.completed_at)
+                if day is not None:
+                    return (
+                        f"completed {day.isoformat()}; the spacing cannot be "
+                        "checked without the pass date"
+                    )
+        return "none yet"
+    review = first_spaced_satisfactory_review(
+        view.reviews, node_id, pass_day, min_days
+    )
+    if review is None:
+        return "none yet"
+    day = parse_date(review.completed_at)
+    assert day is not None  # noqa: S101 — the engine only returns dated reviews
+    return f"completed {day.isoformat()}, {(day - pass_day).days} day(s) after the pass"
+
+
+def _mastery_reason_lines(
+    state: str,
+    mastery: MasteryEligibility,
+    *,
+    accepted_total: int,
+    min_accepted: int,
+    min_days: int,
+) -> list[str]:
+    """Why mastery is not eligible — in the learner's words (R1).
+
+    The engine's reasons name the node by id; the panel states the same
+    facts about *the skill*. Each known reason shape maps to its plain
+    line; an unmatched shape falls back to a safe generic line, so an
+    engine rewording can never leak a raw id into the page.
+    """
+    lines: list[str] = []
+    for reason in mastery.reasons:
+        if "is already mastered" in reason:
+            lines.append("This skill is already mastered.")
+        elif "mastery requires a passed node" in reason:
+            lines.append(
+                f"This skill is {_normalize_pill_label(state).lower()}, not "
+                "passed; mastery needs a passed skill first."
+            )
+        elif reason.startswith("accepted evidence:"):
+            lines.append(
+                f"Accepted evidence: {accepted_total} of {min_accepted} "
+                "required records on file so far."
+            )
+        elif "no recorded pass date" in reason:
+            lines.append(
+                "The pass date is not recorded, so the required spacing "
+                "cannot be checked."
+            )
+        elif "no satisfactory completed review" in reason:
+            lines.append(
+                "No satisfactory review has been completed at least "
+                f"{min_days} day(s) after the pass yet."
+            )
+        else:
+            lines.append("This skill is not mastery-eligible yet.")
+    return lines
+
+
+def _mastery_reading(view: JoinedView, node_id: str) -> MasteryReading:
+    """Derive everything both mastery steps display, from one fresh join."""
     state = view.store.state_of(node_id)
     values = view.policy.mastery
     passed_at = passed_at_of(view.store, node_id)
@@ -559,35 +683,250 @@ def _mastery_facts_html(view: JoinedView, node_id: str) -> tuple[str, str]:
         reviews=view.reviews,
         values=values,
     )
-    accepted_total = sum(
-        live_accepted_count(view.records, s.id)
-        for s in view.specs_by_node.get(node_id, [])
-    )
-    fact_rows = [
+    accepted_total = _accepted_total(view, node_id)
+    rows = [
+        ["Current state", _esc(_normalize_pill_label(state))],
         ["Passed on", _esc(str(passed_at)[:10]) if passed_at else "—"],
         [
             "Live proof accepted",
-            f"{accepted_total} of {values.min_accepted_evidence} required",
+            _esc(f"{accepted_total} of {values.min_accepted_evidence} required"),
+        ],
+        [
+            "Satisfactory review",
+            _esc(
+                _satisfactory_review_line(
+                    view,
+                    node_id,
+                    parse_date(passed_at),
+                    values.min_days_pass_to_review,
+                )
+            ),
         ],
         [
             "Review spacing",
-            f"a satisfactory completed review at least "
-            f"{values.min_days_pass_to_review} day(s) after the pass",
+            _esc(
+                "a satisfactory completed review at least "
+                f"{values.min_days_pass_to_review} day(s) after the pass"
+            ),
         ],
     ]
+    facts_table = Table(
+        ("Fact", "Value"), tuple(tuple(row) for row in rows)
+    ).render()
+    reasons = _mastery_reason_lines(
+        state,
+        mastery,
+        accepted_total=accepted_total,
+        min_accepted=values.min_accepted_evidence,
+        min_days=values.min_days_pass_to_review,
+    )
     verdict_html = _output_banners(
-        ["This skill is ready for the permanent confirm, on this fresh read."]
+        ["This skill is ready to be marked mastered, on this fresh read."]
         if mastery.eligible
-        else list(mastery.reasons),
+        else reasons,
         default_class="ok" if mastery.eligible else "warning",
     )
-    return Table(("Fact", "Value"), tuple(tuple(row) for row in fact_rows)).render(), verdict_html
+    return MasteryReading(
+        state=state,
+        passed_at=passed_at,
+        mastery=mastery,
+        accepted_total=accepted_total,
+        facts_table=facts_table,
+        verdict_html=verdict_html,
+    )
+
+
+def _mastery_next_step(
+    view: JoinedView, node_id: str, reading: MasteryReading, *, action_word: str
+) -> str:
+    """The next valid route, named on the panel itself (IC-8, R5).
+
+    A step the learner cannot act on names the way forward in the same
+    view: the pass journey when the skill is not passed yet, the evidence
+    workspace when proof is the gap, Reviews when the spaced satisfactory
+    review is. The route offered is always one that can actually move the
+    learner toward mastery. ``action_word`` names the step's own command
+    ("Continue" on step 1, "Confirming" on step 2), so each step speaks
+    for itself.
+    """
+    state = reading.state
+    values = view.policy.mastery
+    if state == "locked":
+        kind, title = REFUSAL, f"{action_word} is unavailable"
+        body = (
+            "This skill is locked until its prerequisites are passed. "
+            "Mastery starts from a passed skill, and no evidence can unlock "
+            "it; nothing here offers a way around that."
+        )
+        actions = (
+            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">'
+            "See what this skill depends on</a>"
+        )
+    elif state != "passed":
+        kind, title = REFUSAL, f"{action_word} is unavailable"
+        body = (
+            "Mastery needs a passed skill first. Mastering comes after "
+            "passing, and this skill is not passed yet, so there is nothing "
+            "to confirm."
+        )
+        actions = (
+            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/pass">'
+            "See the pass journey</a>"
+            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">'
+            "Back to the skill</a>"
+        )
+    elif reading.accepted_total < values.min_accepted_evidence:
+        kind, title = LIMITED, "Some accepted proof is still short"
+        body = (
+            "Mastery asks for accepted proof on file. The records on file "
+            "stand; the requirement is simply not met yet."
+        )
+        actions = (
+            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/evidence">'
+            "Record the missing evidence</a>"
+            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">'
+            "Back to the skill</a>"
+        )
+    elif reading.passed_at is None:
+        kind, title = REFUSAL, "The pass date is not recorded"
+        body = (
+            "Without the recorded pass date the required spacing cannot be "
+            "checked, so mastery cannot be confirmed."
+        )
+        actions = (
+            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">'
+            "Back to the skill</a>"
+        )
+    else:
+        kind, title = LIMITED, "No satisfactory review yet"
+        body = (
+            "The proof is on file. What is missing is a satisfactory review "
+            "completed at least "
+            f"{values.min_days_pass_to_review} day(s) after the pass."
+        )
+        actions = (
+            '<a class="btn secondary" href="/reviews">Open reviews</a>'
+            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">'
+            "Back to the skill</a>"
+        )
+    return Section(
+        "Next step",
+        "The way forward from here, named so you never have to hunt for it.",
+        (
+            Markup(
+                State(kind, title, body).render()
+                + '<div class="command-bar"><div class="actions">'
+                + actions
+                + "</div></div>"
+            ),
+        ),
+    ).render()
+
+
+def _mastery_state_rows(reading: MasteryReading) -> Rows:
+    """The before/after rows both mastery steps open with."""
+    return Rows(
+        (
+            ("Current state", _esc(_normalize_pill_label(reading.state))),
+            ("After you confirm", "Mastered — permanent"),
+        ),
+        separated=True,
+    )
+
+
+def _accepted_total(view: JoinedView, node_id: str) -> int:
+    """The live accepted records across the skill's specifications."""
+    return sum(
+        live_accepted_count(view.records, spec.id)
+        for spec in view.specs_by_node.get(node_id, [])
+    )
+
+
+def _mastery_commands(node_id: str, *, continue_live: bool) -> str:
+    """Step 1's command bar: continue to the permanent confirm, or cancel.
+
+    The continue affordance is omitted, never greyed out, on a structural
+    wall — a skill that is not passed cannot be mastered as things stand,
+    and no evidence recorded from this panel changes that (ADR 0007
+    §Validation). The wall itself is stated by the next-step section.
+    """
+    continue_action = (
+        f'<a class="btn master" href="/nodes/{_esc(node_id)}/master/confirm">'
+        "Continue to permanent confirm &rarr;</a>"
+        if continue_live
+        else ""
+    )
+    return (
+        '<div class="command-bar"><div class="actions">'
+        + continue_action
+        + f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
+        + "</div></div>"
+    )
+
+
+def _master_confirm_form(node_id: str, node_title: str, mode: str) -> str:
+    """The one explicit mastery command — the permanent confirmation.
+
+    The button is never pre-disabled by a derived precondition: the
+    engine's refusal on click is the truth, so a stale panel cannot
+    pretend to know what eligibility no longer supports. The hidden mode
+    field carries the learner's presentation context through a refusal
+    redirect, the same way the pass panel carries it.
+    """
+    return (
+        f'<form method="post" action="/nodes/{_esc(node_id)}/master/confirm">'
+        f'<input type="hidden" name="mode" value="{_esc(mode)}">'
+        '<div class="actions">'
+        f'<button type="submit" class="btn master">Mark {_esc(node_title)} mastered</button>'
+        f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/master">Back</a>'
+        "</div></form>"
+    )
+
+
+def _already_mastered_section(node_id: str) -> str:
+    """The journey's end state, shown instead of a confirmation (HB-3).
+
+    A mastered skill has nothing left to confirm — mastered never moves
+    backward, so the panel states the completion and offers no command
+    that could only be refused.
+    """
+    return (
+        Section(
+            "Already mastered",
+            "",
+            (
+                Markup(
+                    "<p>This skill is already mastered. The journey is "
+                    "complete, and there is nothing left to confirm; "
+                    "mastered never moves backward.</p>"
+                ),
+            ),
+            frame=BARE,
+        ).render()
+        + '<div class="command-bar"><div class="actions">'
+        + f'<a class="btn primary" href="/nodes/{_esc(node_id)}">'
+        + "Back to the skill</a>"
+        + "</div></div>"
+    )
 
 
 def master_body(
     root, node_id: str, query: dict | None = None
 ) -> tuple[str, str, int]:
-    """GET `/nodes/{id}/master` — step 1 of 2: mastery facts (T5 §B+§F+P4.1)."""
+    """GET `/nodes/{id}/master` — step 1 of 2: the eligibility explanation
+    (RT-08, §10.8).
+
+    The first step explains what mastery asks and why it is or is not
+    eligible: the current passed state, the pass date, the accepted proof,
+    the satisfactory Review and its date, and the required spacing — all
+    read fresh. When mastery is not eligible the step names the next valid
+    route; when the skill is not passed at all the continue affordance is
+    omitted (a structural wall, never a disabled control), and when the
+    skill is already mastered the panel shows the journey's end state.
+    Passing and mastering are never combined: this journey is about
+    mastery only.
+    """
+    query = query or {}
     view, head, failure = _page_head(
         root,
         query,
@@ -601,52 +940,72 @@ def master_body(
         body, status = _status_page(404, f"Unknown node {node_id}.", root)
         return "Not found", body, status
 
-    state = view.store.state_of(node_id)
-    facts_table, verdict_html = _mastery_facts_html(view, node_id)
+    reading = _mastery_reading(view, node_id)
 
-    if state == "locked" or state != "passed":
-        # P4.1 structural omission: Continue is omitted on a structural wall —
-        # locked, or anything that is not passed — and the wall is shown with
-        # its unmet prerequisites in plain words.
-        if state == "locked":
-            wall_note = (
-                '<p class="mut">Continue is unavailable — this skill is locked '
-                "until its prerequisites are passed.</p>"
-            )
-        else:
-            wall_note = (
-                '<p class="mut">Continue is unavailable — mastery needs '
-                "a passed skill first.</p>"
-            )
-        actions = (
-            '<div class="actions">'
-            f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
-            "</div>"
+    if reading.state == "mastered":
+        inner = (
+            Section(
+                "Master this skill",
+                "Mastering is a separate, later step from passing. This "
+                "panel is about mastery only, and mastering is never "
+                "combined with passing.",
+                (Markup(_already_mastered_section(node_id)),),
+                frame=INLINE,
+            ).render()
         )
-    else:
-        # Judgment eligibility stays live with advisory text beside the action.
-        wall_note = (
-            '<p class="mut">Mastery needs a passed skill with accepted proof '
-            "and a satisfactory spaced review.</p>"
-        )
-        actions = (
-            '<div class="actions">'
-            + f'<a class="btn master" href="/nodes/{_esc(node_id)}/master/confirm">'
-            "Continue to permanent confirm &rarr;</a>"
-            + f'<a class="btn secondary" href="/nodes/{_esc(node_id)}">Cancel</a>'
-            "</div>"
+        return _panel_shell(
+            view,
+            node_id,
+            MASTER_FACTS_PANEL,
+            inner,
+            head=head,
+            anchor=MASTER_FACTS_PANEL.name,
         )
 
+    continue_live = reading.state == "passed"
+    next_step = (
+        ""
+        if reading.mastery.eligible
+        else _mastery_next_step(view, node_id, reading, action_word="Continue")
+    )
     inner = (
-        '<div class="kicker">Mastery facts</div>'
-        '<p class="big">Mastering is a separate, later step from passing. '
-        "This panel is about mastery only — passing has its own journey, and "
-        "mastering is never combined with passing.</p>"
-        + facts_table
-        + "<p><strong>Eligibility</strong></p>"
-        + verdict_html
-        + wall_note
-        + actions
+        Section(
+            "Master this skill",
+            "Mastering is a separate, later step from passing. This journey "
+            "has two steps: this explanation of what mastery asks, then a "
+            "permanent confirmation. This panel is about mastery only, and "
+            "mastering is never combined with passing.",
+            (_mastery_state_rows(reading),),
+            frame=INLINE,
+        ).render()
+        + Section(
+            "What mastery asks",
+            "The facts, read fresh just now — mastery needs a passed skill "
+            "with accepted proof and a satisfactory spaced review.",
+            (Markup(reading.facts_table),),
+        ).render()
+        + Section(
+            "Eligibility",
+            "Decided just now from the records above.",
+            (Markup(reading.verdict_html),),
+        ).render()
+        + Section(
+            "What mastering changes",
+            "",
+            (
+                Markup(
+                    "<p><strong>Mastering is permanent.</strong> Marking "
+                    "this skill as mastered records it as mastered; "
+                    "mastered never moves backward.</p>"
+                    "<p>A later unsatisfactory review creates pressure to "
+                    "study the skill again, but it never moves your "
+                    "progress backward.</p>"
+                ),
+            ),
+            frame=BARE,
+        ).render()
+        + next_step
+        + _mastery_commands(node_id, continue_live=continue_live)
     )
     return _panel_shell(
         view,
@@ -661,7 +1020,23 @@ def master_body(
 def master_confirm_body(
     root, node_id: str, query: dict | None = None
 ) -> tuple[str, str, int]:
-    """GET `/nodes/{id}/master/confirm` — step 2 of 2: permanence (T5 §B+§F+P4.4)."""
+    """GET `/nodes/{id}/master/confirm` — step 2 of 2: the permanent
+    confirmation (RT-09, §10.8).
+
+    The second step re-reads every fact freshly and discloses what the
+    confirmation means: the current passed state, the satisfactory Review
+    and its date, the required spacing, that `mastered` is permanent, and
+    that later unsatisfactory Reviews create failure-side pressure but
+    never demote progress. The confirming POST revalidates mastery
+    eligibility against current truth: a stale or ineligible confirmation
+    refuses, writes nothing, and returns to this step with refreshed
+    facts and the next valid route named. On a skill that is not passed
+    the confirmation is omitted — a structural wall, not a disabled
+    control — and on a skill already mastered the journey's end state is
+    shown instead.
+    """
+    query = query or {}
+    mode = _mode_from(query, "guided")
     view, head, failure = _page_head(
         root,
         query,
@@ -676,24 +1051,78 @@ def master_confirm_body(
         return "Not found", body, status
 
     node_title = view.node_map[node_id].title
-    facts_table, verdict_html = _mastery_facts_html(view, node_id)
+    reading = _mastery_reading(view, node_id)
+
+    if reading.state == "mastered":
+        inner = (
+            Section(
+                "The permanent confirmation",
+                "This is the second and final step. Mastering is permanent; "
+                "confirm only if you intend this skill to remain mastered "
+                "forever. Mastering is never combined with passing: passing "
+                "has its own journey.",
+                (Markup(_already_mastered_section(node_id)),),
+                frame=INLINE,
+            ).render()
+        )
+        return _panel_shell(
+            view,
+            node_id,
+            MASTER_CONFIRM_PANEL,
+            inner,
+            head=head,
+            anchor=MASTER_CONFIRM_PANEL.name,
+        )
+
+    # A skill that is not passed is a structural wall: the confirmation is
+    # omitted, never greyed out, and the next route (the pass journey) is
+    # named. On a passed skill the confirmation stays live even when the
+    # fresh reading says not yet — the engine's refusal on click is the
+    # truth, so a stale panel can never assert what eligibility no longer
+    # supports.
+    confirm_section = ""
+    if reading.state == "passed":
+        confirm_section = Section(
+            "Confirm",
+            "Marking as mastered is your own explicit act. Nothing else "
+            "here can master this skill for you.",
+            (Markup(_master_confirm_form(node_id, node_title, mode)),),
+            frame=INLINE,
+        ).render()
+
+    next_step = (
+        ""
+        if reading.mastery.eligible
+        else _mastery_next_step(view, node_id, reading, action_word="Confirming")
+    )
     inner = (
-        '<div class="kicker">Mastery facts — checked again just now</div>'
-        '<p class="big">Mastering is permanent. This is not passing: '
-        "passing has its own journey, and mastering is never offered as part "
-        "of it.</p>"
-        + facts_table
-        + verdict_html
+        Section(
+            "The permanent confirmation",
+            "This is the second and final step. Mastering is permanent; "
+            "confirm only if you intend this skill to remain mastered "
+            "forever. Mastering is never combined with passing: passing "
+            "has its own journey.",
+            (_mastery_state_rows(reading),),
+            frame=INLINE,
+        ).render()
+        + Section(
+            "What mastery asks",
+            "Checked again just now, from the records as they stand.",
+            (Markup(reading.facts_table),),
+        ).render()
+        + Section(
+            "Eligibility",
+            "Decided again just now — this confirmation revalidates against "
+            "current truth.",
+            (Markup(reading.verdict_html),),
+        ).render()
         + '<p class="banner warning"><strong>This is permanent.</strong> '
         "Mastered never moves backward — this is permanent. "
         "A later unsatisfactory review creates pressure, but the state never "
         "moves backward. Confirm only if you intend this skill to remain mastered "
-        "forever.</p>"
-        f'<form method="post" action="/nodes/{_esc(node_id)}/master/confirm">'
-        '<div class="actions">'
-        f'<button type="submit" class="btn master">Mark {_esc(node_title)} mastered</button>'
-        f'<a class="btn secondary" href="/nodes/{_esc(node_id)}/master">Back</a>'
-        "</div></form>"
+        "forever.</p>\n"
+        + next_step
+        + confirm_section
     )
     return _panel_shell(
         view,

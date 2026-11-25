@@ -42,6 +42,7 @@ from pathlib import Path
 import yaml
 from discovery_fixtures import build_discovery_variant
 from evidence_fixtures import build_evidence_variant
+from mastery_fixtures import build_mastery_variant
 from node_fixtures import build_node_variant
 from session_fixtures import build_session_variant, refused_start_body
 from today_fixtures import build_today_variant
@@ -929,14 +930,33 @@ def route_cases() -> tuple[RouteCase, ...]:
             f"GET /nodes/{NODE_PASSED}/master",
             "guided",
             "master_body",
-            lambda r: views.master_body(r, NODE_PASSED, {}),
+            lambda r: views.master_body(build_mastery_variant(r), NODE_PASSED, {}),
         ),
         RouteCase(
             "master-confirm",
             f"GET /nodes/{NODE_PASSED}/master/confirm",
             "guided",
             "master_confirm_body",
-            lambda r: views.master_confirm_body(r, NODE_PASSED, {}),
+            lambda r: views.master_confirm_body(
+                build_mastery_variant(r), NODE_PASSED, {}
+            ),
+        ),
+        # The structural walls — the states a stale or ineligible journey
+        # lands on. They carry their own state blocks and next routes, so
+        # the gate must scan them too (AX-11).
+        RouteCase(
+            "master-ineligible",
+            f"GET /nodes/{NODE_THIRD}/master",
+            "guided",
+            "master_body",
+            lambda r: views.master_body(r, NODE_THIRD, {}),
+        ),
+        RouteCase(
+            "master-confirm-ineligible",
+            f"GET /nodes/{NODE_THIRD}/master/confirm",
+            "guided",
+            "master_confirm_body",
+            lambda r: views.master_confirm_body(r, NODE_THIRD, {}),
         ),
         RouteCase(
             "not-found",

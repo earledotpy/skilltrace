@@ -80,8 +80,11 @@ route                   case
                         ``pass-ineligible`` (the panel whose requirement is
                         not met yet — the refusal state the learner lands
                         on after a stale submission)
-``GET /nodes/{id}/master``  ``master``
-``GET /nodes/{id}/master/confirm``  ``master-confirm``
+``GET /nodes/{id}/master``  ``master`` and ``master-confirm`` (the eligible
+                        two-step journey, from the mastery-ready fixture)
+                        plus ``master-ineligible`` (step 1 on a skill that
+                        is not passed — the structural wall and its next
+                        route)
 anything else           ``error-404`` (the one unified error body)
 ======================  ==============================================
 
@@ -117,6 +120,7 @@ import pytest
 import yaml
 from discovery_fixtures import build_discovery_variant
 from evidence_fixtures import build_evidence_variant
+from mastery_fixtures import build_mastery_variant
 from node_fixtures import build_node_variant
 from session_fixtures import build_session_variant, refused_start_body
 from today_fixtures import build_today_variant
@@ -870,14 +874,21 @@ CASES: tuple[RouteCase, ...] = (
         f"GET /nodes/{NODE_PASSED}/master",
         "Use variables and expressions in Python",
         200,
-        lambda r: views.master_body(r, NODE_PASSED, {}),
+        lambda r: views.master_body(build_mastery_variant(r), NODE_PASSED, {}),
     ),
     RouteCase(
         "master-confirm",
         f"GET /nodes/{NODE_PASSED}/master/confirm",
         "Use variables and expressions in Python",
         200,
-        lambda r: views.master_confirm_body(r, NODE_PASSED, {}),
+        lambda r: views.master_confirm_body(build_mastery_variant(r), NODE_PASSED, {}),
+    ),
+    RouteCase(
+        "master-ineligible",
+        f"GET /nodes/{NODE_THIRD}/master",
+        "Query rows and columns with SELECT",
+        200,
+        lambda r: views.master_body(r, NODE_THIRD, {}),
     ),
     RouteCase("error-404", "GET <unrouted>", "Not found", 404, views.not_found_body),
 )

@@ -155,15 +155,33 @@ def plan_master(node_id: str, *, eligibility: MasteryEligibility) -> MasterOutco
     )
 
 
-def _has_spaced_satisfactory_review(
+def first_spaced_satisfactory_review(
     reviews: list[Review], node_id: str, pass_day: date, min_days: int
-) -> bool:
+) -> Review | None:
+    """The earliest satisfactory completed review spaced after the pass.
+
+    The one definition of "qualifies for mastery": completed, satisfactory,
+    and completed at least ``min_days`` calendar days after the recorded
+    pass day. The web's mastery panels read the same function the
+    derivation does, so a panel can never name a review the engine would
+    not count.
+    """
+    earliest: Review | None = None
+    earliest_day: date | None = None
     for review in reviews:
         if review.node_id != node_id or review.status != "completed":
             continue
         if review.outcome != "satisfactory" or review.completed_at is None:
             continue
         review_day = _day_of(review.completed_at)
-        if review_day is not None and (review_day - pass_day).days >= min_days:
-            return True
-    return False
+        if review_day is None or (review_day - pass_day).days < min_days:
+            continue
+        if earliest_day is None or review_day < earliest_day:
+            earliest, earliest_day = review, review_day
+    return earliest
+
+
+def _has_spaced_satisfactory_review(
+    reviews: list[Review], node_id: str, pass_day: date, min_days: int
+) -> bool:
+    return first_spaced_satisfactory_review(reviews, node_id, pass_day, min_days) is not None

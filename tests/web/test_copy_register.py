@@ -405,10 +405,14 @@ def test_e_affordance_mark_mastered_label_in_master_confirm(repo):
     node_id = _first_node_id(repo, state="available")
     view = load_context_lenient(repo)
     node_title = view.node_map[node_id].title
-    # Structurally render the confirm panel directly (no pre-condition on state).
+    # The confirmation exists only where mastery can actually happen: the
+    # skill is passed. On any other state the journey omits the action
+    # (a structural wall, never a disabled control).
+    _set_state(repo, node_id, "passed")
     _, body, _ = views.master_confirm_body(repo, node_id)
     assert f"Mark {node_title} mastered" in body, (
-        "§E affordance 'Mark <title> mastered' absent from master confirm panel"
+        f"§E affordance 'Mark <title> mastered' absent from master confirm panel; "
+        f"expected 'Mark {node_title} mastered'"
     )
 
 

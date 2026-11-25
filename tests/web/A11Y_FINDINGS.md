@@ -20,7 +20,7 @@ gate; a stale record also fails it, so a fixed finding cannot linger.
 
 ## 1. axe-core findings (serious/critical, WCAG 2.2 AA)
 
-None. The sweep covers forty-seven served documents — every destination in
+None. The sweep covers forty-nine served documents — every destination in
 `docs/spec-v3-study-day.md` §6, the table's node-centred graph
 (`/graph/{id}`) and non-writing portfolio preview (`/portfolio/preview`),
 the contextual inspector over a selected evidence record, and the one
