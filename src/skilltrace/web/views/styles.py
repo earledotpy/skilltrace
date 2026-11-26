@@ -150,7 +150,35 @@ _COMPONENT_RULES = """
   .section-nav-label{
     font-weight:600; color:var(--text-secondary); font-size:var(--text-sm);
   }
-  .section-nav-disclosure summary{cursor:pointer; font-weight:600}
+  /* The section nav is one labelled disclosure, open by default. Wide
+     windows style the summary away: the links ARE the persistent nav
+     (IA-3). Narrow windows show the summary as the labelled toggle, with
+     the current section named beside the label, so collapsing never hides
+     where you are. One DOM either way — ordinary links, coherent order. */
+  .section-nav-disclosure{display:inline-flex; align-items:center}
+  .section-nav-disclosure > summary{display:none}
+  .section-nav-disclosure .section-nav-links{
+    display:flex; gap:var(--space-4); flex-wrap:wrap; align-items:center;
+  }
+  .section-nav-current{color:var(--text-muted); font-weight:400; font-size:var(--text-sm)}
+
+  /* --- the Operations home's count cards (§11.1: cards live only here) - */
+  .capability-grid{
+    display:grid; gap:var(--space-4);
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .capability-card{
+    border:1px solid var(--border-subtle);
+    border-radius:var(--radius-md);
+    background:var(--canvas-raised);
+    padding:var(--space-4);
+  }
+  .capability-title{font-size:var(--text-md); margin:0 0 var(--space-1)}
+  .capability-title a{color:var(--text-primary); text-decoration:none}
+  .capability-title a:hover{text-decoration:underline}
+  .capability-value{font-size:var(--text-lg); font-weight:600; margin:0 0 var(--space-1)}
+  .capability-why{color:var(--text-secondary); margin:0 0 var(--space-1)}
+  .capability-detail{color:var(--text-muted); font-size:var(--text-sm); margin:0}
 
   /* --- the page frame: sections, not cards ---------------------------- */
   .page-title{font-size:var(--text-display); margin-bottom:var(--space-2)}
@@ -458,6 +486,9 @@ _COMPONENT_RULES = """
     .row-label{flex:1 1 auto; min-width:0}
     .nav{gap:var(--space-3)}
     .mode-switch{margin-left:0; width:100%}
+    .section-nav-disclosure{display:block; width:100%}
+    .section-nav-disclosure > summary{display:flex; gap:var(--space-2); align-items:baseline; padding:var(--space-1) 0; min-height:2.75rem; cursor:pointer; font-weight:600}
+    .capability-grid{grid-template-columns:1fr}
     .inspector{border-left:0; border-top:3px solid var(--accent)}
     .analytics-grid{grid-template-columns:1fr}
     .chart-table thead{display:none}

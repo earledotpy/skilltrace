@@ -24,14 +24,27 @@ from __future__ import annotations
 
 from urllib.parse import urlencode
 
-from ._shared import _esc, record_standing
+from ._shared import _esc, _normalize_pill_label, _slug, record_standing
 from .receipts import receipt_disclosure
 from .sections import NONE, Markup, Rows, Section
 
-__all__ = ["SELECTED_PARAM", "evidence_inspector", "selected_value"]
+__all__ = [
+    "SELECTED_PARAM",
+    "evidence_inspector",
+    "graph_edge_inspector",
+    "graph_node_inspector",
+    "graph_selection",
+    "selected_value",
+]
 
 # The parameter that carries the selected context on a route that owns a fact.
 SELECTED_PARAM = "record"
+
+# The parameters that carry a graph selection on the graph routes (RT-14):
+# a selected skill or a selected relationship. The selection is presentation
+# context on the owning route — never a record, never a command (HB-6).
+GRAPH_NODE_PARAM = "node"
+GRAPH_EDGE_PARAM = "edge"
 
 # The selection-owning route's own filters — preserved when the inspector
 # links back, so closing the inspector never loses the learner's filter set.
@@ -83,18 +96,20 @@ def _accepted_by_words(value: str) -> str:
     return _esc(words)
 
 
-def _provenance(view, record) -> str:
-    """The record's recent event provenance, behind a disclosure.
+def _provenance(view, key: str, noun: str) -> str:
+    """The record's or skill's recent event provenance, behind a disclosure.
 
-    ``records_touched`` is how a mutation names the record it wrote; the
-    index is precomputed once per join, so this is a display read, not a
-    second derivation of state. The five most recent events are enough to
-    answer "what happened to this record", and the count says how many
-    there are.
+    ``records_touched`` is how a mutation names what it wrote — a record id
+    or a node id. The index is precomputed once per join, so this is a
+    display read, not a second derivation of state. The five most recent
+    events are enough to answer "what happened here", and the count says
+    how many there are.
     """
-    events = view.events_by_node.get(record.id) or []
+    events = view.events_by_node.get(key) or []
     if not events:
-        inner = '<p class="small mut">No audit event names this record yet.</p>\n'
+        inner = (
+            f'<p class="small mut">No audit event names this {noun} yet.</p>\n'
+        )
     else:
         items = []
         for event in events[-5:]:
@@ -235,7 +250,190 @@ def evidence_inspector(view, record_id: str, *, query: dict | None = None) -> st
         f'<p class="inspector-raw"><code>{_esc(record.id)}</code></p>\n'
         + Rows(tuple(pairs), separated=True).render()
         + receipt
-        + _provenance(view, record)
+        + _provenance(view, record.id, "record")
+        + '<p class="command-bar">'
+        f'<a class="btn secondary" href="{_esc(close)}">Close inspector</a></p>\n'
+        "</aside>\n"
+    )
+    return Section("", "", (Markup(inner),), frame=NONE).render()
+
+
+# --- the graph selections (RT-14) -----------------------------------------------
+
+
+def graph_selection(query: dict | None) -> tuple[str, str] | None:
+    """The graph route's selected context, or ``None`` for no selection.
+
+    ``?node=`` selects a skill, ``?edge=`` a relationship; when both ride
+    one URL the skill wins, so the rendering is a function of the URL and
+    never of parameter order.
+    """
+    query = query or {}
+
+    def _first(param: str) -> str:
+        values = query.get(param) or []
+        return (values[0] if values else "").strip()
+
+    node = _first(GRAPH_NODE_PARAM)
+    if node:
+        return "node", node
+    edge = _first(GRAPH_EDGE_PARAM)
+    if edge:
+        return "edge", edge
+    return None
+
+
+def _graph_refusal(kind: str, value: str, close: str) -> str:
+    """A selection that names nothing here: refusal, with the way back."""
+    if kind == "node":
+        title = "That skill is not in this curriculum"
+        body = (
+            "Nothing in the curriculum has the id "
+            f"<code>{_esc(value)}</code>. Node ids are never reused, so an id "
+            "that resolves to nothing was never a skill here."
+        )
+    else:
+        title = "That relationship is not in the edge table"
+        body = (
+            "No relationship in <code>graph/edges.yaml</code> carries the id "
+            f"<code>{_esc(value)}</code>. The edge table is the sole "
+            "relationship truth, so there is nothing to select."
+        )
+    return (
+        '<aside class="inspector" aria-labelledby="inspector-title">\n'
+        '<h2 class="inspector-title" id="inspector-title">'
+        f"{'Selected skill' if kind == 'node' else 'Selected relationship'}</h2>\n"
+        '<div class="state state-refusal">\n'
+        f'<p class="state-title">{title}</p>\n'
+        f'<p class="state-body">{body}</p>\n'
+        f'<p><a href="{_esc(close)}">Back to the graph</a></p>\n'
+        "</div>\n"
+        "</aside>\n"
+    )
+
+
+def _related_lines(view, edges, direction: str) -> str:
+    """One side of a skill's relationship context, as readable list items.
+
+    Only valid relationships render — a dangling endpoint names no skill.
+    """
+    edges = [
+        e
+        for e in edges
+        if e.source in view.node_map and e.target in view.node_map
+    ]
+    if not edges:
+        empty = (
+            "No prerequisites are recorded in the edge table."
+            if direction == "prerequisites"
+            else "No relationship names this skill as a source yet."
+        )
+        return f'<p class="small mut">{empty}</p>\n'
+    items = []
+    for edge in sorted(edges, key=lambda e: e.target if direction == "unlocks" else e.source):
+        other_id = edge.target if direction == "unlocks" else edge.source
+        title = view.titles.get(other_id) or other_id
+        items.append(
+            '<li class="history-item">'
+            f'<a href="/nodes/{_esc(other_id)}">{_esc(title)}</a> '
+            f'<span class="small mut">{_esc(edge.edge_type)}</span>'
+            "</li>"
+        )
+    return '<ul class="history-list">\n' + "\n".join(items) + "\n</ul>\n"
+
+
+def graph_node_inspector(view, node_id: str, close: str) -> str:
+    """The selected ``SkillNode`` as the contextual inspector (markup).
+
+    The canonical record is the node's own curriculum facts plus its live
+    state; the related SkillNodes are the partners of its edges — read from
+    the edge table, the sole relationship truth (HB-8). A node id that
+    names nothing is a refusal with the way back, never a silent fallback.
+    """
+    node = view.node_map.get(node_id)
+    if node is None:
+        return _graph_refusal("node", node_id, close)
+
+    incoming = [e for e in view.edges if e.target == node_id]
+    outgoing = [e for e in view.edges if e.source == node_id]
+    state = view.store.state_of(node_id)
+    pairs: list[tuple[str, str]] = [
+        (
+            "Skill",
+            f'<a href="/nodes/{_esc(node_id)}">{_esc(node.title)}</a>',
+        ),
+        (
+            "State",
+            f'<span class="pill {_esc(_slug(state))}">'
+            f"{_esc(_normalize_pill_label(state))}</span>",
+        ),
+    ]
+    if node.track:
+        pairs.append(("Track", _esc(node.track)))
+    if node.summary:
+        pairs.append(("Summary", _esc(node.summary)))
+    pairs.append(
+        (
+            "Prerequisites",
+            _related_lines(view, incoming, "prerequisites"),
+        )
+    )
+    pairs.append(("Unlocks", _related_lines(view, outgoing, "unlocks")))
+
+    inner = (
+        '<aside class="inspector" aria-labelledby="inspector-title">\n'
+        '<div class="section-head">\n'
+        '<h2 class="inspector-title" id="inspector-title">Selected skill</h2>\n'
+        '<p class="section-meta"><span class="status-label info">Selected</span></p>\n'
+        "</div>\n"
+        f'<p class="inspector-raw"><code>{_esc(node_id)}</code></p>\n'
+        + Rows(tuple(pairs), separated=True).render()
+        + _provenance(view, node_id, "skill")
+        + '<p class="command-bar">'
+        f'<a class="btn secondary" href="{_esc(close)}">Close inspector</a></p>\n'
+        "</aside>\n"
+    )
+    return Section("", "", (Markup(inner),), frame=NONE).render()
+
+
+def graph_edge_inspector(view, edge_id: str, close: str) -> str:
+    """The selected ``GraphEdge`` as the contextual inspector (markup).
+
+    The edge table is the sole relationship truth (HB-8): this shows the
+    edge exactly as it is recorded — its endpoints, type, reason and
+    whether it is in force — and invents nothing. An edge id that names
+    nothing is a refusal with the way back.
+    """
+    edge = next((e for e in view.edges if e.id == edge_id), None)
+    if edge is None:
+        return _graph_refusal("edge", edge_id, close)
+
+    def _endpoint(node_id: str) -> str:
+        title = view.titles.get(node_id) or node_id
+        return (
+            f'<a href="/nodes/{_esc(node_id)}">{_esc(title)}</a> '
+            f"<code>{_esc(node_id)}</code>"
+        )
+
+    pairs: list[tuple[str, str]] = [
+        ("From", _endpoint(edge.source)),
+        ("To", _endpoint(edge.target)),
+        ("Relationship", _esc(edge.edge_type)),
+        ("In force", "Yes" if edge.active else "No"),
+    ]
+    if edge.reason:
+        pairs.append(("Reason", _esc(edge.reason)))
+
+    inner = (
+        '<aside class="inspector" aria-labelledby="inspector-title">\n'
+        '<div class="section-head">\n'
+        '<h2 class="inspector-title" id="inspector-title">'
+        "Selected relationship</h2>\n"
+        '<p class="section-meta"><span class="status-label info">Selected</span></p>\n'
+        "</div>\n"
+        f'<p class="inspector-raw"><code>{_esc(edge_id)}</code></p>\n'
+        + Rows(tuple(pairs), separated=True).render()
+        + _provenance(view, edge_id, "relationship")
         + '<p class="command-bar">'
         f'<a class="btn secondary" href="{_esc(close)}">Close inspector</a></p>\n'
         "</aside>\n"

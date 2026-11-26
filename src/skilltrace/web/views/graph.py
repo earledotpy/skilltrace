@@ -1,45 +1,92 @@
 """
 GET ``/graph`` and ``/graph/{id}`` — the graph inspection capability
-(spec-v3-study-day §11.4).
+(spec-v3-study-day §11.4, RT-14).
 
-``graph/edges.yaml`` is the sole relationship truth: this view renders it
-and never invents, hardcodes or implies a relationship. The node-centred
-view shows the selected SkillNode, its immediate incoming and outgoing
-edges, and the complete ancestor closure behind a disclosure.
+``graph/edges.yaml`` is the sole relationship truth (HB-8): this view renders
+it and never invents, hardcodes or implies a relationship. Normal rendering
+includes only valid relationships — an edge whose endpoint names no real skill
+renders nowhere here and is carried, with its exact reference, by the
+Repository diagnostics on Health.
 
-The **list equivalent** is not an optional extra: every node and edge is
-reachable by keyboard with a meaningful name, its current state and its
-prerequisite context (AX-9). No fact exists only in a picture — there is no
-picture: the graph is a table plus a list, both server-rendered.
+Two presentations of the same facts, both server-rendered:
+
+* the **complete list equivalent** (``/graph``) — every node with its current
+  state and prerequisite context, every relationship with its endpoints; each
+  row carries the same read and navigation actions (AX-9), and there is no
+  picture to hide a fact in (no pan, zoom or heatmap; no client-side tier-1);
+* the **learning-neighborhood view** (``/graph/{id}``) — the selected skill,
+  its immediate incoming and outgoing relationships, and its full
+  hard-prerequisite ancestor closure behind an expandable disclosure. The full
+  curriculum stays available explicitly, never the default burden.
+
+Selecting a node or an edge opens the contextual inspector inside the route
+(``?node=`` / ``?edge=``), with the selection carried on the URL so a shared
+or reloaded link reproduces exactly what was seen.
 """
 
 from __future__ import annotations
 
-from ._shared import _esc, _table
-from .sections import INLINE, NONE, section
-from .shell import _page_head
+from urllib.parse import urlencode
+
+from ._shared import _esc, _normalize_pill_label, _slug, _table
+from .inspector import (
+    graph_edge_inspector,
+    graph_node_inspector,
+    graph_selection,
+)
+from .sections import section
+from .shell import _page_head, _status_page
+
+#: The five canonical node states — the filter's whole population (SUP-P7).
+_STATES = ("locked", "available", "active", "passed", "mastered")
+
+
+def _valid_edges(view) -> list:
+    """The edges whose endpoints both name real skills.
+
+    The sole relationship truth is rendered as the relationships it actually
+    records between existing skills; a dangling endpoint is a data error that
+    belongs to Repository diagnostics, never to a rendered relationship.
+    """
+    return [
+        edge
+        for edge in view.edges
+        if edge.source in view.node_map and edge.target in view.node_map
+    ]
 
 
 def _edges_for(view, node_id: str):
-    """The incoming and outgoing edges of one node, from the edge table."""
-    incoming = [e for e in view.edges if e.target == node_id]
-    outgoing = [e for e in view.edges if e.source == node_id]
+    """The incoming and outgoing edges of one node, from the edge table.
+
+    Only valid relationships — an edge whose endpoint names no real skill
+    renders nowhere (it belongs to Repository diagnostics).
+    """
+    incoming = [
+        e for e in view.edges if e.target == node_id and e.source in view.node_map
+    ]
+    outgoing = [
+        e for e in view.edges if e.source == node_id and e.target in view.node_map
+    ]
     return incoming, outgoing
 
 
-def _ancestors(view, node_id: str) -> list[str]:
+def _ancestors(view, node_id: str, edges=None) -> list[str]:
     """The full hard-prerequisite ancestor closure of one node.
 
     Derived from the edge table only — the traversal never guesses a
-    relationship the edge table does not carry.
+    relationship the edge table does not carry. Only valid relationships
+    are walked; a dangling endpoint names no skill to walk to.
     """
+    edges = view.edges if edges is None else edges
     seen: set[str] = set()
     order: list[str] = []
     frontier = [node_id]
     while frontier:
         current = frontier.pop(0)
-        for edge in view.edges:
+        for edge in edges:
             if edge.target != current or edge.source in seen:
+                continue
+            if edge.source not in view.node_map:
                 continue
             seen.add(edge.source)
             order.append(edge.source)
@@ -47,30 +94,81 @@ def _ancestors(view, node_id: str) -> list[str]:
     return order
 
 
-def _node_rows(view, edges) -> str:
-    """The complete list equivalent: every node, with its state and context."""
+def _pill(state: str) -> str:
+    """A node state as the canonical word, never colour alone (VS-3)."""
+    return (
+        f'<span class="pill {_esc(_slug(state))}">'
+        f"{_esc(_normalize_pill_label(state))}</span>"
+    )
+
+
+def _graph_href(params: dict[str, str]) -> str:
+    return f"/graph?{urlencode(params)}" if params else "/graph"
+
+
+def _state_filter_form(state: str) -> str:
+    """The labelled GET filter — the narrowed list has its own URL (IC-4)."""
+    options = ['<option value="">All states</option>']
+    for value in _STATES:
+        chosen = " selected" if value == state else ""
+        options.append(
+            f'<option value="{value}"{chosen}>{_normalize_pill_label(value)}</option>'
+        )
+    return (
+        '<form class="filters" method="get" action="/graph">\n'
+        '<div class="form-row">'
+        '<label for="graph-state">State</label>'
+        f'<select name="state" id="graph-state">{"".join(options)}</select></div>\n'
+        '<button type="submit">Apply filter</button>\n'
+        "</form>\n"
+    )
+
+
+def _node_rows(view, edges, state_filter: str = "") -> str:
+    """The complete list equivalent: every node, with its state and context.
+
+    Each row carries the same read and navigation actions the graph offers
+    (AX-9): the title opens the skill's detail, *Neighborhood* moves the
+    learning-neighborhood view to that skill, and *Inspect* selects the
+    node in the contextual inspector without leaving the route.
+    """
     rows = []
     for node in sorted(view.nodes, key=lambda n: n.id):
         state = view.store.state_of(node.id)
+        if state_filter and state != state_filter:
+            continue
         incoming = [e for e in edges if e.target == node.id]
         prerequisites = ", ".join(
             view.titles.get(e.source) or e.source for e in incoming
         )
+        inspect = _graph_href({"node": node.id, **({"state": state_filter} if state_filter else {})})
         rows.append(
             [
                 f'<a href="/nodes/{_esc(node.id)}">{_esc(node.title)}</a>',
                 _esc(node.id),
-                _esc(state),
+                _pill(state),
                 _esc(prerequisites or "—"),
+                f'<a href="/graph/{_esc(node.id)}">Neighborhood</a>',
+                f'<a href="{_esc(inspect)}">Inspect</a>',
             ]
         )
-    return _table(["Skill", "Node ID", "State", "Prerequisites"], rows)
+    return _table(
+        [
+            "Skill",
+            "Node ID",
+            "State",
+            "Prerequisites",
+            "Neighborhood",
+            "Inspect",
+        ],
+        rows,
+    )
 
 
-def _edge_rows(view) -> str:
-    """The complete edge list — the same facts the neighbourhood shows."""
+def _edge_rows(view, edges) -> str:
+    """The complete edge list — the same facts the neighborhood shows."""
     rows = []
-    for edge in sorted(view.edges, key=lambda e: (e.source, e.target)):
+    for edge in sorted(edges, key=lambda e: (e.source, e.target)):
         rows.append(
             [
                 f'<a href="/nodes/{_esc(edge.source)}">'
@@ -78,26 +176,100 @@ def _edge_rows(view) -> str:
                 f'<a href="/nodes/{_esc(edge.target)}">'
                 f'{_esc(view.titles.get(edge.target) or edge.target)}</a>',
                 _esc(edge.edge_type),
-                "yes" if edge.active else "no",
+                "Yes" if edge.active else "No",
+                f'<a href="{_esc(_graph_href({"edge": edge.id}))}">Inspect</a>',
             ]
         )
-    return _table(["From", "To", "Relationship", "Affects readiness"], rows)
+    return _table(["From", "To", "Relationship", "In force", "Inspect"], rows)
+
+
+def _dangling_section(view) -> str:
+    """What the graph does not render, said out loud and pointed at Health."""
+    dangling = [
+        edge
+        for edge in view.edges
+        if edge.source not in view.node_map or edge.target not in view.node_map
+    ]
+    if not dangling:
+        return ""
+    return (
+        '<div class="banner advisory">'
+        f"{len(dangling)} relationship{'' if len(dangling) == 1 else 's'} in the "
+        "edge table name a skill that does not exist, so nothing is rendered "
+        "for them here and they change nothing about what is ready. The exact "
+        'references are in <a href="/health">Repository diagnostics</a>.</div>\n'
+    )
+
+
+def _neighborhood_rows(view, edges, direction: str) -> str:
+    """One side of the neighborhood: readable rows with the same actions."""
+    rows = []
+    for edge in sorted(edges, key=lambda e: e.source if direction == "in" else e.target):
+        other = edge.source if direction == "in" else edge.target
+        rows.append(
+            [
+                f'<a href="/nodes/{_esc(other)}">'
+                f'{_esc(view.titles.get(other) or other)}</a>',
+                _esc(edge.edge_type),
+                "Yes" if edge.active else "No",
+                f'<a href="{_esc(_graph_href({"edge": edge.id}))}">Inspect</a>',
+                f'<a href="/graph/{_esc(other)}">Neighborhood</a>',
+            ]
+        )
+    return _table(
+        ["Skill", "Relationship", "In force", "Inspect", "Neighborhood"], rows
+    )
+
+
+def _empty_side(title: str, body: str) -> str:
+    return (
+        '<div class="state state-empty">\n'
+        f'<p class="state-title">{_esc(title)}</p>\n'
+        f'<p class="state-body">{_esc(body)}</p>\n'
+        "</div>\n"
+    )
 
 
 def graph_body(
     root, query: dict | None = None, *, node_id: str | None = None
 ) -> tuple[str, str, int]:
     """GET `/graph` (or `/graph/{id}`) — the graph, with its list equivalent."""
+    path = "/graph" if node_id is None else f"/graph/{node_id}"
     view, head, failure = _page_head(
         root,
         query,
         dismiss_path="/graph",
         current_view="graph",
         default_mode="operations",
-        path="/graph" if node_id is None else f"/graph/{node_id}",
+        path=path,
     )
     if failure is not None:
         return failure
+
+    query = query or {}
+    state_filter = (query.get("state") or [""])[0].strip()
+    if state_filter not in _STATES:
+        state_filter = ""
+    selection = graph_selection(query)
+
+    if node_id is not None and node_id not in view.node_map:
+        body, status = _status_page(
+            404, "That skill is not in the curriculum.", root
+        )
+        return "Not found", body, status
+
+    edges = _valid_edges(view)
+    inspector = ""
+    if selection is not None:
+        kind, value = selection
+        if node_id is not None:
+            close = f"/graph/{node_id}"
+        else:
+            close = _graph_href({"state": state_filter} if state_filter else {})
+        if kind == "node":
+            inspector = graph_node_inspector(view, value, close)
+        else:
+            inspector = graph_edge_inspector(view, value, close)
 
     if not view.nodes:
         body = (
@@ -110,68 +282,94 @@ def graph_body(
             "curriculum, not about your progress.</p>\n"
             + "</div>\n"
             + "</section>\n"
+            + inspector
         )
         return "Graph", body, 200
 
-    if node_id is not None and node_id in view.node_map:
+    if node_id is not None:
+        node = view.node_map[node_id]
         incoming, outgoing = _edges_for(view, node_id)
-        title = view.node_map[node_id].title
-        neighbours = []
-        for edge in outgoing:
-            neighbours.append(
-                [
-                    _esc(view.titles.get(edge.target) or edge.target),
-                    _esc(edge.edge_type),
-                    "yes" if edge.active else "no",
-                ]
+        facts = (
+            '<div class="rows">\n'
+            '<div class="row"><span class="row-label">State</span>'
+            f'<span class="row-value">{_pill(view.store.state_of(node_id))}</span></div>\n'
+            f'<div class="row"><span class="row-label">Node ID</span>'
+            f'<span class="row-value"><code>{_esc(node_id)}</code></span></div>\n'
+            + (
+                f'<div class="row"><span class="row-label">Track</span>'
+                f'<span class="row-value">{_esc(node.track)}</span></div>\n'
+                if node.track
+                else ""
             )
-        for edge in incoming:
-            neighbours.append(
-                [
-                    _esc(view.titles.get(edge.source) or edge.source),
-                    _esc(edge.edge_type),
-                    "yes" if edge.active else "no",
-                ]
+            + (
+                f'<div class="row"><span class="row-label">Summary</span>'
+                f'<span class="row-value">{_esc(node.summary)}</span></div>\n'
+                if node.summary
+                else ""
             )
-        ancestors = _ancestors(view, node_id)
-        ancestor_rows = "".join(
-            f'<li><a href="/nodes/{_esc(a)}">'
-            f"{_esc(view.titles.get(a) or a)}</a></li>\n" for a in ancestors
+            + "</div>\n"
         )
+        ancestors = _ancestors(view, node_id, _valid_edges(view))
+        ancestry = ""
+        if ancestors:
+            items = "".join(
+                f'<li class="history-item"><a href="/nodes/{_esc(a)}">'
+                f"{_esc(view.titles.get(a) or a)}</a></li>\n"
+                for a in ancestors
+            )
+            ancestry = (
+                '<details class="disclosure">\n'
+                f"<summary>Full prerequisite ancestry ({len(ancestors)})</summary>\n"
+                '<ul class="history-list">\n'
+                f"{items}</ul>\n"
+                "</details>\n"
+            )
+        else:
+            ancestry = (
+                '<p class="small mut">No prerequisites beyond the immediate '
+                "ones.</p>\n"
+            )
         body = (
             head
             + section(
-                title,
-                "The selected skill, its immediate relationships, and its "
-                "full prerequisite ancestry.",
-                '<h3>Immediate relationships</h3>\n'
-                + (
-                    _table(
-                        ["Related skill", "Relationship", "Affects readiness"],
-                        neighbours,
-                    )
-                    if neighbours
-                    else '<div class="state state-empty"><p class="state-title">'
-                    "No relationships</p><p class=\"state-body\">This skill has no "
-                    "incoming or outgoing relationships in the edge table.</p></div>"
-                ),
-                frame=INLINE,
+                "This skill",
+                "The selected skill's own facts, read fresh from the "
+                "curriculum and the progress store.",
+                facts,
             )
             + section(
-                "",
-                "",
-                "<h3>Full prerequisite ancestry</h3>\n"
-                + (
-                    f'<ul class="history-list">{ancestor_rows}</ul>'
-                    if ancestors
-                    else '<div class="state state-empty"><p class="state-title">'
-                    "No prerequisites</p><p class=\"state-body\">Nothing stands "
-                    "between this skill and being ready.</p></div>"
+                "Prerequisites",
+                "The relationships that name this skill as their target — "
+                "read from the edge table, the sole relationship truth.",
+                _neighborhood_rows(view, incoming, "in")
+                if incoming
+                else _empty_side(
+                    "No prerequisites",
+                    "Nothing stands between this skill and being ready.",
                 ),
-                frame=NONE,
             )
+            + section(
+                "Unlocks",
+                "The relationships that name this skill as their source.",
+                _neighborhood_rows(view, outgoing, "out")
+                if outgoing
+                else _empty_side(
+                    "Nothing builds on this skill yet",
+                    "No relationship in the edge table names this skill as "
+                    "its source.",
+                ),
+            )
+            + section(
+                "Ancestry",
+                "Every hard prerequisite behind this skill, however far back "
+                "the edge table goes.",
+                ancestry,
+            )
+            + '<p class="command-bar"><a class="btn secondary" href="/graph">'
+            "The full curriculum</a></p>\n"
+            + inspector
         )
-        return title, body, 200
+        return node.title, body, 200
 
     body = (
         head
@@ -181,11 +379,18 @@ def graph_body(
         + '<p class="section-meta">The complete list equivalent — every node '
         "with its current state and its prerequisite context.</p>\n"
         + "</div>\n"
-        + f"{_node_rows(view, view.edges)}"
+        + _state_filter_form(state_filter)
+        + f"{_node_rows(view, edges, state_filter)}"
         + "</section>\n"
         + '<section class="section">\n'
-        + "<h2 class=\"section-title\">Every relationship</h2>\n"
-        + f"{_edge_rows(view)}"
+        + '<div class="section-head">\n'
+        + '<h2 class="section-title">Every relationship</h2>\n'
+        + '<p class="section-meta">Every relationship the edge table records, '
+        "whatever the state filter above shows.</p>\n"
+        + "</div>\n"
+        + f"{_edge_rows(view, edges)}"
         + "</section>\n"
+        + _dangling_section(view)
+        + inspector
     )
     return "Graph", body, 200

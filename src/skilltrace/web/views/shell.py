@@ -176,15 +176,47 @@ def _nav_html(
     task-led destinations (Today, Next, Find), Operations shows the six
     capabilities under their own home (IA-3). The mode switch is explicit,
     reversible, and preserves the destination and its query context.
+
+    The section links render once, inside a labelled **disclosure** that is
+    open by default: on wide windows the summary is styled away and the
+    navigation is the persistent section nav; on narrow windows the summary
+    becomes the labelled toggle, still holding ordinary links, the current
+    section named in both the summary (visible while collapsed) and on the
+    link itself (``aria-current``). One DOM, one focus order: skip link,
+    summary, section links, mode switch (IA-3, AX-10).
     """
+    from ..interface import VIEWS
+
     if mode == "operations":
         section_label = "Operations"
         nav_class = "nav operations"
-        links = _nav_links(_OPERATIONS_ORDER, current_view)
+        names: tuple[str, ...] = _OPERATIONS_ORDER
     else:
         section_label = "Guided"
         nav_class = "nav guided"
-        links = _nav_links(_GUIDED_ORDER, current_view)
+        names = _GUIDED_ORDER
+
+    current = VIEWS.get(current_view)
+    current_name = (
+        current.title if current is not None and current.name in names else ""
+    )
+    # On a capability's own home the summary would repeat the section label
+    # ("Operations · Operations"); the label alone already says where you are.
+    current_span = (
+        f'<span class="section-nav-current">{_esc(current_name)}</span>'
+        if current_name and current_name != section_label
+        else ""
+    )
+    links = _nav_links(names, current_view)
+    disclosure = (
+        '<details class="section-nav-disclosure" open>'
+        "<summary>"
+        f'<span class="section-nav-label">{_esc(section_label)}</span>'
+        f"{current_span}"
+        "</summary>"
+        f'<div class="section-nav-links">{links}</div>'
+        "</details>"
+    )
 
     switch = (
         f'<span class="nav-label">Mode</span>'
@@ -199,8 +231,7 @@ def _nav_html(
         '<div class="shell">'
         '<h1 class="brand"><a href="/">SkillTrace</a></h1>'
         f'<nav class="{nav_class}" aria-label="{_esc(section_label)}">'
-        f'<span class="section-nav-label">{_esc(section_label)}</span>'
-        f"{links}"
+        f"{disclosure}"
         f'<span class="mode-switch">{switch}</span>'
         "</nav>"
         "</div>"

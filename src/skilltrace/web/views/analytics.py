@@ -31,6 +31,11 @@ from .shell import (
     _status_page,
 )
 
+#: The four canonical analytics themes, in entry order (spec-v3-study-day
+#: §11.6). One source for the page's theme set and the Operations home's
+#: count card, so the two surfaces can never disagree (R7).
+THEMES: tuple[str, ...] = ("velocity", "blockers", "reviews", "evidence")
+
 
 def _analytics_view(view, query: dict, root) -> tuple[object | None, tuple[str, str, int] | None]:
     policy = view.policy.analytics_policy
@@ -155,7 +160,7 @@ def analytics_body(root, query: dict | None = None) -> tuple[str, str, int]:
         return failure
 
     theme = (query.get("theme") or ["velocity"])[0]
-    if theme not in {"velocity", "blockers", "reviews", "evidence"}:
+    if theme not in THEMES:
         theme = "velocity"
 
     warnings = analytics_warnings(Path(root), model)

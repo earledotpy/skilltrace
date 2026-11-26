@@ -161,6 +161,42 @@ def test_the_current_section_is_marked_exactly_once(repo):
         assert 'aria-current="page"' not in _nav(html), name
 
 
+def test_the_section_navigation_is_a_labelled_disclosure(repo):
+    """On narrow windows the section nav is a labelled disclosure (IA-3).
+
+    The disclosure keeps ordinary links, marks the current section both in
+    the summary (visible while collapsed) and on the link itself
+    (``aria-current``), and the mode switch stays outside the toggle so the
+    focus order stays coherent: skip link, summary, section links, mode.
+    """
+    _, body, _ = views.graph_body(repo, {})
+    nav = _nav(body)
+    assert '<details class="section-nav-disclosure" open>' in nav
+    summary = nav.split("<summary>", 1)[1].split("</summary>", 1)[0]
+    assert "Operations" in summary  # the labelled disclosure
+    assert "Graph" in summary  # the visible current-section state
+    links = nav.split("</summary>", 1)[1].split("</details>", 1)[0]
+    assert 'href="/graph"' in links  # ordinary links, never a script menu
+    assert 'aria-current="page"' in links
+    # The mode switch is chrome, not a section stop: outside the disclosure.
+    assert nav.index("mode-switch") > nav.index("</details>")
+
+
+def test_the_disclosure_summary_names_the_current_section(repo):
+    """Each mode's summary carries that mode's label and current section."""
+    _, guided, _ = views.home_body(repo, {})
+    summary = _nav(guided).split("<summary>", 1)[1].split("</summary>", 1)[0]
+    assert "Guided" in summary
+    assert "Today" in summary
+
+
+def test_the_disclosure_is_hidden_on_wide_windows(repo):
+    """Wide windows keep the persistent nav; the summary only shows narrow."""
+    assert ".section-nav-disclosure > summary{display:none}" in views._STYLE
+    narrow = views._STYLE.split("@media (max-width: 640px)", 1)[1]
+    assert ".section-nav-disclosure > summary{display:flex" in narrow
+
+
 def test_the_view_seam_carries_the_v3_route_table():
     """The seam is the route table's one source of truth (ARC-5)."""
     assert VIEWS["master-confirm"].route == "/nodes/{id}/master/confirm"
