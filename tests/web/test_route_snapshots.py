@@ -74,8 +74,14 @@ route                   case
                         nothing, the records stay readable), each the served
                         body for one reshaped fixture repo
                         (``tests/web/reviews_fixtures.py``)
-``GET /operations``    ``operations``
-``GET /graph``         ``graph``, ``graph-node`` (``/graph/{id}``)
+``GET /operations``    ``operations``, ``operations-empty`` (a curriculum
+                        with no skills — the directory stays reachable)
+``GET /graph``         ``graph``, ``graph-node`` (``/graph/{id}``);
+                       ``graph-empty`` (a curriculum with no skills),
+                       ``graph-node-inspector`` (``?node=…``),
+                       ``graph-edge-inspector`` (``?edge=…``) and
+                       ``graph-inspector-refusal`` (a selection that names
+                       nothing)
 ``GET /portfolio``     ``portfolio``, ``portfolio-preview``
                         (``/portfolio/preview``, non-writing)
 ``GET /nodes/{id}``     ``node``; plus the SkillNode detail states (§10.4)
@@ -127,6 +133,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from _builders import edge_id_between
 from discovery_fixtures import build_discovery_variant
 from evidence_fixtures import build_evidence_variant
 from mastery_fixtures import build_mastery_variant
@@ -153,6 +160,9 @@ FROZEN_STAMP = FROZEN_MOMENT.isoformat(timespec="seconds")
 NODE_ACTIVE = "data.pandas.dataframe_basics_01"
 NODE_PASSED = "programming.python.variables_01"
 NODE_THIRD = "data.sql.select_basics_01"
+# The seed edge into the active node — the graph edge-inspector golden's
+# selection, read from the edge table rather than hardcoded.
+PREREQ_OF_ACTIVE = "data.csv.clean_simple_dataset_01"
 
 
 # --- The pinned repo: curriculum copied, learner stores authored -------------
@@ -854,6 +864,15 @@ CASES: tuple[RouteCase, ...] = (
         lambda r: views.operations_body(r, {}),
     ),
     RouteCase(
+        "operations-empty",
+        "GET /operations",
+        "Operations",
+        200,
+        lambda r: views.operations_body(
+            build_discovery_variant(r, "next-empty-curriculum"), {}
+        ),
+    ),
+    RouteCase(
         "graph",
         "GET /graph",
         "Graph",
@@ -861,11 +880,43 @@ CASES: tuple[RouteCase, ...] = (
         lambda r: views.graph_body(r, {}),
     ),
     RouteCase(
+        "graph-empty",
+        "GET /graph",
+        "Graph",
+        200,
+        lambda r: views.graph_body(
+            build_discovery_variant(r, "next-empty-curriculum"), {}
+        ),
+    ),
+    RouteCase(
         "graph-node",
         f"GET /graph/{NODE_ACTIVE}",
         "Use basic Pandas DataFrame operations",
         200,
         lambda r: views.graph_body(r, {}, node_id=NODE_ACTIVE),
+    ),
+    RouteCase(
+        "graph-node-inspector",
+        "GET /graph?node=…",
+        "Graph",
+        200,
+        lambda r: views.graph_body(r, {"node": [NODE_ACTIVE]}),
+    ),
+    RouteCase(
+        "graph-edge-inspector",
+        "GET /graph?edge=…",
+        "Graph",
+        200,
+        lambda r: views.graph_body(
+            r, {"edge": [edge_id_between(r, PREREQ_OF_ACTIVE, NODE_ACTIVE)]}
+        ),
+    ),
+    RouteCase(
+        "graph-inspector-refusal",
+        "GET /graph?node=no.such.node_99",
+        "Graph",
+        200,
+        lambda r: views.graph_body(r, {"node": ["no.such.node_99"]}),
     ),
     RouteCase(
         "portfolio",

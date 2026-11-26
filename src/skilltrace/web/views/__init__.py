@@ -121,6 +121,8 @@ from ._shared import (  # noqa: F401  # noqa: F401
     ASSURANCE,
     _curriculum_unreadable_section,
     _degraded_banner,
+    _edge_is_valid,
+    _empty_side,
     _esc,
     _field,
     _flash_html,
@@ -133,6 +135,7 @@ from ._shared import (  # noqa: F401  # noqa: F401
     _sentence_case,
     _session_node_id,
     _slug,
+    _state_pill,
     _table,
     derive_status,
     plural,
@@ -191,10 +194,16 @@ from .forms import (  # noqa: F401
     _work_form_fields,
 )
 from .graph import (  # noqa: F401  # noqa: F401
+    _STATES,
     _ancestors,
+    _dangling_section,
     _edge_rows,
     _edges_for,
+    _graph_href,
+    _neighborhood_rows,
     _node_rows,
+    _state_filter_form,
+    _valid_edges,
     graph_body,
 )
 from .health import (  # noqa: F401  # noqa: F401
@@ -210,14 +219,22 @@ from .health import (  # noqa: F401  # noqa: F401
 from .inspector import (  # noqa: F401  # noqa: F401
     _ACCEPTED_BY_WORDS,
     _FILTER_PARAMS,
+    GRAPH_EDGE_PARAM,
+    GRAPH_NODE_PARAM,
     SELECTED_PARAM,
     _accepted_by_words,
+    _graph_refusal,
     _href,
+    _inspector_aside,
     _kept_params,
     _provenance,
     _refusal,
+    _related_lines,
     _status_label,
     evidence_inspector,
+    graph_edge_inspector,
+    graph_node_inspector,
+    graph_selection,
     selected_value,
 )
 from .next import (  # noqa: F401  # noqa: F401
@@ -264,9 +281,14 @@ from .node import (  # noqa: F401  # noqa: F401
     _unmet_specs,
     node_body,
 )
-from .operations import (  # noqa: F401  # noqa: F401
-    _capability_counts,
+from .operations import (  # noqa: F401
+    THEMES,
+    _capability_cards,
+    _cards_section,
+    _empty_curriculum_state,
+    _recent_facts_section,
     operations_body,
+    overdue_reviews,
 )
 from .portfolio import (  # noqa: F401  # noqa: F401
     _preview_section,

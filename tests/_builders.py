@@ -84,3 +84,19 @@ def write_node(
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f"---\n{block}---\n\n# {node_id}\n", encoding="utf-8")
     return path
+
+
+def edge_id_between(root: Path, source: str, target: str) -> str:
+    """One edge id read from the edge table — the sole relationship truth.
+
+    Reading the id from ``graph/edges.yaml`` through the loader keeps a
+    test's selection anchored to the truth file rather than a hardcoded
+    string that could drift from it.
+    """
+    from skilltrace.graph.edges import load_edges
+
+    return next(
+        edge.id
+        for edge in load_edges(root)
+        if edge.source == source and edge.target == target
+    )

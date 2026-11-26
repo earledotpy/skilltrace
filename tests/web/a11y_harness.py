@@ -40,6 +40,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import yaml
+from _builders import edge_id_between
 from discovery_fixtures import build_discovery_variant
 from evidence_fixtures import build_evidence_variant
 from mastery_fixtures import build_mastery_variant
@@ -82,6 +83,9 @@ FROZEN_MOMENT = datetime(2026, 11, 17, 9, 0, tzinfo=timezone.utc)
 NODE_ACTIVE = "data.pandas.dataframe_basics_01"
 NODE_PASSED = "programming.python.variables_01"
 NODE_THIRD = "data.sql.select_basics_01"
+# The seed edge into the active node — the graph edge-inspector case's
+# selection, read from the edge table rather than hardcoded.
+PREREQ_OF_ACTIVE = "data.csv.clean_simple_dataset_01"
 
 
 # --- Colour maths (WCAG 2.x) ------------------------------------------------
@@ -912,6 +916,15 @@ def route_cases() -> tuple[RouteCase, ...]:
             lambda r: views.operations_body(r, {}),
         ),
         RouteCase(
+            "operations-empty",
+            "GET /operations",
+            "operations",
+            "operations_body",
+            lambda r: views.operations_body(
+                build_discovery_variant(r, "next-empty-curriculum"), {}
+            ),
+        ),
+        RouteCase(
             "graph",
             "GET /graph",
             "operations",
@@ -919,11 +932,43 @@ def route_cases() -> tuple[RouteCase, ...]:
             lambda r: views.graph_body(r, {}),
         ),
         RouteCase(
+            "graph-empty",
+            "GET /graph",
+            "operations",
+            "graph_body",
+            lambda r: views.graph_body(
+                build_discovery_variant(r, "next-empty-curriculum"), {}
+            ),
+        ),
+        RouteCase(
             "graph-node",
             f"GET /graph/{NODE_ACTIVE}",
             "operations",
             "graph_body",
             lambda r: views.graph_body(r, {}, node_id=NODE_ACTIVE),
+        ),
+        RouteCase(
+            "graph-node-inspector",
+            "GET /graph?node=…",
+            "operations",
+            "graph_body",
+            lambda r: views.graph_body(r, {"node": [NODE_ACTIVE]}),
+        ),
+        RouteCase(
+            "graph-edge-inspector",
+            "GET /graph?edge=…",
+            "operations",
+            "graph_body",
+            lambda r: views.graph_body(
+                r, {"edge": [edge_id_between(r, PREREQ_OF_ACTIVE, NODE_ACTIVE)]}
+            ),
+        ),
+        RouteCase(
+            "graph-inspector-refusal",
+            "GET /graph?node=no.such.node_99",
+            "operations",
+            "graph_body",
+            lambda r: views.graph_body(r, {"node": ["no.such.node_99"]}),
         ),
         RouteCase(
             "health",
