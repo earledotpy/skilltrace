@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from urllib.parse import urlencode
 
-from ._shared import _esc, _normalize_pill_label, _slug, record_standing
+from ._shared import _edge_is_valid, _esc, _state_pill, record_standing
 from .receipts import receipt_disclosure
 from .sections import NONE, Markup, Rows, Section
 
@@ -148,6 +148,29 @@ def _refusal(record_id: str, close: str) -> str:
     )
 
 
+def _inspector_aside(title: str, raw_id: str, blocks: str, close: str) -> str:
+    """One selected-fact inspector: heading, raw id, fact blocks, way back.
+
+    The one scaffold every inspector renders through — the evidence
+    record, the selected skill and the selected relationship keep the same
+    anatomy (summary first, canonical record second, provenance last) and
+    cannot drift into three shapes.
+    """
+    inner = (
+        '<aside class="inspector" aria-labelledby="inspector-title">\n'
+        '<div class="section-head">\n'
+        f'<h2 class="inspector-title" id="inspector-title">{_esc(title)}</h2>\n'
+        '<p class="section-meta"><span class="status-label info">Selected</span></p>\n'
+        "</div>\n"
+        f'<p class="inspector-raw"><code>{_esc(raw_id)}</code></p>\n'
+        + blocks
+        + '<p class="command-bar">'
+        f'<a class="btn secondary" href="{_esc(close)}">Close inspector</a></p>\n'
+        "</aside>\n"
+    )
+    return Section("", "", (Markup(inner),), frame=NONE).render()
+
+
 def evidence_inspector(view, record_id: str, *, query: dict | None = None) -> str:
     """The selected ``EvidenceRecord`` as the contextual inspector (markup).
 
@@ -241,21 +264,11 @@ def evidence_inspector(view, record_id: str, *, query: dict | None = None) -> st
         )
 
     inner = (
-        '<aside class="inspector" aria-labelledby="inspector-title">\n'
-        '<div class="section-head">\n'
-        '<h2 class="inspector-title" id="inspector-title">'
-        "Selected evidence record</h2>\n"
-        f'<p class="section-meta">{_status_label("Selected", "info")}</p>\n'
-        "</div>\n"
-        f'<p class="inspector-raw"><code>{_esc(record.id)}</code></p>\n'
-        + Rows(tuple(pairs), separated=True).render()
+        Rows(tuple(pairs), separated=True).render()
         + receipt
         + _provenance(view, record.id, "record")
-        + '<p class="command-bar">'
-        f'<a class="btn secondary" href="{_esc(close)}">Close inspector</a></p>\n'
-        "</aside>\n"
     )
-    return Section("", "", (Markup(inner),), frame=NONE).render()
+    return _inspector_aside("Selected evidence record", record.id, inner, close)
 
 
 # --- the graph selections (RT-14) -----------------------------------------------
@@ -317,11 +330,7 @@ def _related_lines(view, edges, direction: str) -> str:
 
     Only valid relationships render — a dangling endpoint names no skill.
     """
-    edges = [
-        e
-        for e in edges
-        if e.source in view.node_map and e.target in view.node_map
-    ]
+    edges = [e for e in edges if _edge_is_valid(view, e)]
     if not edges:
         empty = (
             "No prerequisites are recorded in the edge table."
@@ -362,11 +371,7 @@ def graph_node_inspector(view, node_id: str, close: str) -> str:
             "Skill",
             f'<a href="/nodes/{_esc(node_id)}">{_esc(node.title)}</a>',
         ),
-        (
-            "State",
-            f'<span class="pill {_esc(_slug(state))}">'
-            f"{_esc(_normalize_pill_label(state))}</span>",
-        ),
+        ("State", _state_pill(state)),
     ]
     if node.track:
         pairs.append(("Track", _esc(node.track)))
@@ -381,19 +386,10 @@ def graph_node_inspector(view, node_id: str, close: str) -> str:
     pairs.append(("Unlocks", _related_lines(view, outgoing, "unlocks")))
 
     inner = (
-        '<aside class="inspector" aria-labelledby="inspector-title">\n'
-        '<div class="section-head">\n'
-        '<h2 class="inspector-title" id="inspector-title">Selected skill</h2>\n'
-        '<p class="section-meta"><span class="status-label info">Selected</span></p>\n'
-        "</div>\n"
-        f'<p class="inspector-raw"><code>{_esc(node_id)}</code></p>\n'
-        + Rows(tuple(pairs), separated=True).render()
+        Rows(tuple(pairs), separated=True).render()
         + _provenance(view, node_id, "skill")
-        + '<p class="command-bar">'
-        f'<a class="btn secondary" href="{_esc(close)}">Close inspector</a></p>\n'
-        "</aside>\n"
     )
-    return Section("", "", (Markup(inner),), frame=NONE).render()
+    return _inspector_aside("Selected skill", node_id, inner, close)
 
 
 def graph_edge_inspector(view, edge_id: str, close: str) -> str:
@@ -424,18 +420,15 @@ def graph_edge_inspector(view, edge_id: str, close: str) -> str:
     if edge.reason:
         pairs.append(("Reason", _esc(edge.reason)))
 
-    inner = (
-        '<aside class="inspector" aria-labelledby="inspector-title">\n'
-        '<div class="section-head">\n'
-        '<h2 class="inspector-title" id="inspector-title">'
-        "Selected relationship</h2>\n"
-        '<p class="section-meta"><span class="status-label info">Selected</span></p>\n'
-        "</div>\n"
-        f'<p class="inspector-raw"><code>{_esc(edge_id)}</code></p>\n'
-        + Rows(tuple(pairs), separated=True).render()
-        + _provenance(view, edge_id, "relationship")
-        + '<p class="command-bar">'
-        f'<a class="btn secondary" href="{_esc(close)}">Close inspector</a></p>\n'
-        "</aside>\n"
+    # No provenance disclosure here on purpose: every mutating command
+    # touches a record or a node, never an edge — relationships change only
+    # through human curriculum edits, which are hand edits by definition
+    # (CONTEXT.md Event log). A disclosure that could never hold an event
+    # would be vacuous, so the fact is stated plainly instead.
+    provenance = (
+        '<p class="small mut">Relationships are curriculum structure: the '
+        "event log records learner commands, so no audit event names an "
+        "edge.</p>\n"
     )
-    return Section("", "", (Markup(inner),), frame=NONE).render()
+    inner = Rows(tuple(pairs), separated=True).render() + provenance
+    return _inspector_aside("Selected relationship", edge_id, inner, close)

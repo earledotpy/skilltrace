@@ -40,6 +40,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import yaml
+from _builders import edge_id_between
 from discovery_fixtures import build_discovery_variant
 from evidence_fixtures import build_evidence_variant
 from mastery_fixtures import build_mastery_variant
@@ -85,17 +86,6 @@ NODE_THIRD = "data.sql.select_basics_01"
 # The seed edge into the active node — the graph edge-inspector case's
 # selection, read from the edge table rather than hardcoded.
 PREREQ_OF_ACTIVE = "data.csv.clean_simple_dataset_01"
-
-
-def _edge_id_between(root: Path, source: str, target: str) -> str:
-    """One edge id read from the edge table — the sole relationship truth."""
-    from skilltrace.graph.edges import load_edges
-
-    return next(
-        edge.id
-        for edge in load_edges(root)
-        if edge.source == source and edge.target == target
-    )
 
 
 # --- Colour maths (WCAG 2.x) ------------------------------------------------
@@ -970,7 +960,7 @@ def route_cases() -> tuple[RouteCase, ...]:
             "operations",
             "graph_body",
             lambda r: views.graph_body(
-                r, {"edge": [_edge_id_between(r, PREREQ_OF_ACTIVE, NODE_ACTIVE)]}
+                r, {"edge": [edge_id_between(r, PREREQ_OF_ACTIVE, NODE_ACTIVE)]}
             ),
         ),
         RouteCase(

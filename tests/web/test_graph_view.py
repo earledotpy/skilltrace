@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from _builders import edge_id_between
 
 from skilltrace.web import views
 
@@ -86,9 +87,7 @@ def test_the_node_inspector_carries_event_provenance(repo):
 def test_the_selection_is_url_addressable_and_closeable(repo):
     """The route's own URL carries the selection; closing returns to the list."""
     body = views.graph_body(repo, {"node": [NODE]})[1]
-    assert f'href="/graph?node={NODE}"' in body.replace("&", "&") or (
-        f"node={NODE}" in body
-    )
+    assert f"node={NODE}" in body  # a row's Inspect link shares the URL
     aside = _inspector(body)
     assert 'href="/graph">Close inspector</a>' in aside
 
@@ -110,19 +109,9 @@ def test_the_bare_graph_renders_no_inspector(repo):
 # --- the contextual inspector: a selected relationship --------------------------
 
 
-def _edge_id(repo: Path, source: str, target: str) -> str:
-    """One edge id read from the edge table — the sole relationship truth."""
-    from skilltrace.graph.edges import load_edges
-
-    edge = next(
-        e for e in load_edges(repo) if e.source == source and e.target == target
-    )
-    return edge.id
-
-
 def test_selecting_a_relationship_opens_the_inspector(repo):
     """``?edge=`` selects a relationship; the inspector shows its record."""
-    edge_id = _edge_id(repo, PREREQ_NODE, NODE)
+    edge_id = edge_id_between(repo, PREREQ_NODE, NODE)
     title, body, status = views.graph_body(repo, {"edge": [edge_id]})
     assert (title, status) == ("Graph", 200)
     aside = _inspector(body)
@@ -154,7 +143,7 @@ def test_every_node_row_carries_the_read_and_navigation_actions(repo):
 
 def test_every_relationship_row_carries_the_same_actions(repo):
     """An edge row reads (its endpoints) and inspects (the edge record)."""
-    edge_id = _edge_id(repo, PREREQ_NODE, NODE)
+    edge_id = edge_id_between(repo, PREREQ_NODE, NODE)
     body = views.graph_body(repo, {})[1]
     assert f'href="/nodes/{PREREQ_NODE}"' in body
     assert f'href="/nodes/{NODE}"' in body
@@ -198,7 +187,7 @@ def test_the_neighborhood_rows_carry_the_same_actions(repo):
     body = views.graph_body(repo, {}, node_id=NODE)[1]
     assert f'href="/nodes/{PREREQ_NODE}"' in body
     assert f'href="/graph/{PREREQ_NODE}"' in body
-    edge_id = _edge_id(repo, PREREQ_NODE, NODE)
+    edge_id = edge_id_between(repo, PREREQ_NODE, NODE)
     assert f"edge={edge_id}" in body
 
 

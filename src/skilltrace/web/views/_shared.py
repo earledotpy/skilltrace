@@ -146,6 +146,41 @@ def _slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
 
 
+def _state_pill(state: str) -> str:
+    """A node state as the canonical word in a pill — never colour alone (VS-3).
+
+    One pill builder for every surface that shows a node state, so the
+    five canonical words cannot grow a second rendering elsewhere.
+    """
+    return (
+        f'<span class="pill {_esc(_slug(state))}">'
+        f"{_esc(_normalize_pill_label(state))}</span>"
+    )
+
+
+def _edge_is_valid(view, edge) -> bool:
+    """Whether an edge names two skills that both exist.
+
+    The edge table is the sole relationship truth (HB-8); a dangling
+    endpoint is a data error that belongs to Repository diagnostics, so
+    normal rendering includes only valid relationships. One predicate for
+    every surface that renders relationships, so two pages can never
+    disagree about what counts as one.
+    """
+    return edge.source in view.node_map and edge.target in view.node_map
+
+
+def _empty_side(title: str, body: str, follow: str = "") -> str:
+    """The empty-state block for one side of a fact: title, body, then more."""
+    return (
+        '<div class="state state-empty">\n'
+        f'<p class="state-title">{_esc(title)}</p>\n'
+        f'<p class="state-body">{_esc(body)}</p>\n'
+        f"{follow}"
+        "</div>\n"
+    )
+
+
 def _sentence_case(text: str) -> str:
     text = text.strip()
     if not text:

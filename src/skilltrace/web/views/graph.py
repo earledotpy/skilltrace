@@ -28,7 +28,14 @@ from __future__ import annotations
 
 from urllib.parse import urlencode
 
-from ._shared import _esc, _normalize_pill_label, _slug, _table
+from ._shared import (
+    _edge_is_valid,
+    _empty_side,
+    _esc,
+    _normalize_pill_label,
+    _state_pill,
+    _table,
+)
 from .inspector import (
     graph_edge_inspector,
     graph_node_inspector,
@@ -48,11 +55,7 @@ def _valid_edges(view) -> list:
     records between existing skills; a dangling endpoint is a data error that
     belongs to Repository diagnostics, never to a rendered relationship.
     """
-    return [
-        edge
-        for edge in view.edges
-        if edge.source in view.node_map and edge.target in view.node_map
-    ]
+    return [edge for edge in view.edges if _edge_is_valid(view, edge)]
 
 
 def _edges_for(view, node_id: str):
@@ -70,14 +73,13 @@ def _edges_for(view, node_id: str):
     return incoming, outgoing
 
 
-def _ancestors(view, node_id: str, edges=None) -> list[str]:
+def _ancestors(view, node_id: str, edges: list) -> list[str]:
     """The full hard-prerequisite ancestor closure of one node.
 
     Derived from the edge table only — the traversal never guesses a
     relationship the edge table does not carry. Only valid relationships
     are walked; a dangling endpoint names no skill to walk to.
     """
-    edges = view.edges if edges is None else edges
     seen: set[str] = set()
     order: list[str] = []
     frontier = [node_id]
@@ -92,14 +94,6 @@ def _ancestors(view, node_id: str, edges=None) -> list[str]:
             order.append(edge.source)
             frontier.append(edge.source)
     return order
-
-
-def _pill(state: str) -> str:
-    """A node state as the canonical word, never colour alone (VS-3)."""
-    return (
-        f'<span class="pill {_esc(_slug(state))}">'
-        f"{_esc(_normalize_pill_label(state))}</span>"
-    )
 
 
 def _graph_href(params: dict[str, str]) -> str:
@@ -124,7 +118,7 @@ def _state_filter_form(state: str) -> str:
     )
 
 
-def _node_rows(view, edges, state_filter: str = "") -> str:
+def _node_rows(view, edges, state_filter: str) -> str:
     """The complete list equivalent: every node, with its state and context.
 
     Each row carries the same read and navigation actions the graph offers
@@ -146,7 +140,7 @@ def _node_rows(view, edges, state_filter: str = "") -> str:
             [
                 f'<a href="/nodes/{_esc(node.id)}">{_esc(node.title)}</a>',
                 _esc(node.id),
-                _pill(state),
+                _state_pill(state),
                 _esc(prerequisites or "—"),
                 f'<a href="/graph/{_esc(node.id)}">Neighborhood</a>',
                 f'<a href="{_esc(inspect)}">Inspect</a>',
@@ -204,8 +198,8 @@ def _dangling_section(view) -> str:
 def _neighborhood_rows(view, edges, direction: str) -> str:
     """One side of the neighborhood: readable rows with the same actions."""
     rows = []
-    for edge in sorted(edges, key=lambda e: e.source if direction == "in" else e.target):
-        other = edge.source if direction == "in" else edge.target
+    for edge in sorted(edges, key=lambda e: e.source if direction == "prerequisites" else e.target):
+        other = edge.source if direction == "prerequisites" else edge.target
         rows.append(
             [
                 f'<a href="/nodes/{_esc(other)}">'
@@ -218,15 +212,6 @@ def _neighborhood_rows(view, edges, direction: str) -> str:
         )
     return _table(
         ["Skill", "Relationship", "In force", "Inspect", "Neighborhood"], rows
-    )
-
-
-def _empty_side(title: str, body: str) -> str:
-    return (
-        '<div class="state state-empty">\n'
-        f'<p class="state-title">{_esc(title)}</p>\n'
-        f'<p class="state-body">{_esc(body)}</p>\n'
-        "</div>\n"
     )
 
 
@@ -292,7 +277,7 @@ def graph_body(
         facts = (
             '<div class="rows">\n'
             '<div class="row"><span class="row-label">State</span>'
-            f'<span class="row-value">{_pill(view.store.state_of(node_id))}</span></div>\n'
+            f'<span class="row-value">{_state_pill(view.store.state_of(node_id))}</span></div>\n'
             f'<div class="row"><span class="row-label">Node ID</span>'
             f'<span class="row-value"><code>{_esc(node_id)}</code></span></div>\n'
             + (
@@ -309,7 +294,7 @@ def graph_body(
             )
             + "</div>\n"
         )
-        ancestors = _ancestors(view, node_id, _valid_edges(view))
+        ancestors = _ancestors(view, node_id, edges)
         ancestry = ""
         if ancestors:
             items = "".join(
@@ -341,7 +326,7 @@ def graph_body(
                 "Prerequisites",
                 "The relationships that name this skill as their target — "
                 "read from the edge table, the sole relationship truth.",
-                _neighborhood_rows(view, incoming, "in")
+                _neighborhood_rows(view, incoming, "prerequisites")
                 if incoming
                 else _empty_side(
                     "No prerequisites",
@@ -351,7 +336,7 @@ def graph_body(
             + section(
                 "Unlocks",
                 "The relationships that name this skill as their source.",
-                _neighborhood_rows(view, outgoing, "out")
+                _neighborhood_rows(view, outgoing, "unlocks")
                 if outgoing
                 else _empty_side(
                     "Nothing builds on this skill yet",

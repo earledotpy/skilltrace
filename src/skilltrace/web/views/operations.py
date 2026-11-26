@@ -14,14 +14,14 @@ score, only its two named projections.
 from __future__ import annotations
 
 from ...execution.overdue import overdue_reviews, utc_today
-from ._shared import _degraded_banner, _esc, plural
+from ._shared import _degraded_banner, _empty_side, _esc, plural
 from .analytics import THEMES
 from .sections import section
 from .shell import _page_head
 
 
-def _capability_cards(view) -> list[tuple[str, str, str, str]]:
-    """One card per capability: label, route, the count, the one-line why.
+def _capability_cards(view) -> list[tuple[str, str, str, str, str]]:
+    """One card per capability: label, route, count, one-line why, detail.
 
     Every count is derived from the same facts the destination view reads —
     the card is a pointer, never a second derivation with its own opinion.
@@ -178,18 +178,21 @@ def _recent_facts_section(view) -> str:
 
 def _empty_curriculum_state() -> str:
     """The empty case: a fact about the curriculum, never about the learner."""
-    return (
-        '<section class="section">\n'
-        '<div class="state state-empty">\n'
-        '<p class="state-title">The curriculum is empty</p>\n'
-        '<p class="state-body">No skills were found in the graph source, so '
-        "there is nothing to inspect yet. This is a fact about the "
-        "curriculum, not about your progress.</p>\n"
+    follow = (
         '<p><a href="/find">Find a skill</a> once the curriculum has one — or '
         '<a href="/health">open Health</a> to see what the source check says.'
         "</p>\n"
-        "</div>\n"
-        "</section>\n"
+    )
+    return (
+        '<section class="section">\n'
+        + _empty_side(
+            "The curriculum is empty",
+            "No skills were found in the graph source, so there is nothing "
+            "to inspect yet. This is a fact about the curriculum, not about "
+            "your progress.",
+            follow,
+        )
+        + "</section>\n"
     )
 
 
