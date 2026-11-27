@@ -63,7 +63,11 @@ route                   case
                         for one reshaped fixture repo, from
                         ``tests/web/evidence_fixtures.py``)
 ``GET /evidence``      ``evidence-index``, ``evidence-inspector``
-                        (``?record=…``), ``evidence-inspector-refusal``
+                        (``?record=…``), ``evidence-inspector-refusal``;
+                        plus the named index states (§11.2, SC-00a)
+                        ``evidence-index-empty`` and
+                        ``evidence-index-failure`` (the store cannot be
+                        read — could-not-compute, never an empty history)
 ``GET /reviews``       ``reviews``; plus the named Reviews states (§10.10,
                         SC-00a) ``reviews-empty`` (no review-worthy node —
                         nothing is passed, so no check could watch
@@ -88,7 +92,12 @@ route                   case
                         ``node-empty`` and ``node-limited``, each the served
                         body for one reshaped fixture repo
                         (``tests/web/node_fixtures.py``)
-``GET /health``         ``health``
+``GET /health``         ``health``; plus the named states (§11.5, SC-00a)
+                        ``health-empty``, ``health-limited``,
+                        ``health-guidance-failure`` (the guidance sources
+                        did not load, diagnostics stays readable) and
+                        ``health-diagnostics-failure`` (the checks raised,
+                        guidance stays readable)
 ``GET /analytics``      ``analytics-velocity``, ``-blockers``, ``-reviews``,
                         ``-evidence`` (one per theme)
 ``GET /nodes/{id}/pass``  ``pass`` (the eligible panel) and
@@ -135,7 +144,8 @@ import pytest
 import yaml
 from _builders import edge_id_between
 from discovery_fixtures import build_discovery_variant
-from evidence_fixtures import build_evidence_variant
+from evidence_fixtures import build_evidence_index_variant, build_evidence_variant
+from health_fixtures import build_health_variant, diagnostics_failure_body
 from mastery_fixtures import build_mastery_variant
 from node_fixtures import build_node_variant
 from reviews_fixtures import build_reviews_variant
@@ -823,6 +833,26 @@ CASES: tuple[RouteCase, ...] = (
         200,
         lambda r: views.evidence_index_body(r, {"record": ["ev.nowhere.999"]}),
     ),
+    # The named repository-index states (§11.2, SC-00a): an empty history and
+    # a store that cannot be read are different facts, never merged.
+    RouteCase(
+        "evidence-index-empty",
+        "GET /evidence",
+        "Evidence",
+        200,
+        lambda r: views.evidence_index_body(
+            build_evidence_index_variant(r, "empty"), {}
+        ),
+    ),
+    RouteCase(
+        "evidence-index-failure",
+        "GET /evidence",
+        "Evidence",
+        200,
+        lambda r: views.evidence_index_body(
+            build_evidence_index_variant(r, "failure"), {}
+        ),
+    ),
     RouteCase(
         "reviews",
         "GET /reviews",
@@ -933,6 +963,38 @@ CASES: tuple[RouteCase, ...] = (
         lambda r: views.portfolio_body(r, {"preview": ["1"]}),
     ),
     RouteCase("health", "GET /health", "Health", 200, views.health_body),
+    # The named Health states (§11.5, SC-00a): guidance and diagnostics fail
+    # independently, so neither failure can erase the other projection.
+    RouteCase(
+        "health-empty",
+        "GET /health",
+        "Health",
+        200,
+        lambda r: views.health_body(build_health_variant(r, "empty"), {}),
+    ),
+    RouteCase(
+        "health-limited",
+        "GET /health",
+        "Health",
+        200,
+        lambda r: views.health_body(build_health_variant(r, "limited"), {}),
+    ),
+    RouteCase(
+        "health-guidance-failure",
+        "GET /health",
+        "Health",
+        200,
+        lambda r: views.health_body(
+            build_health_variant(r, "guidance-failure"), {}
+        ),
+    ),
+    RouteCase(
+        "health-diagnostics-failure",
+        "GET /health",
+        "Health",
+        200,
+        diagnostics_failure_body,
+    ),
     RouteCase(
         "analytics-velocity",
         "GET /analytics?theme=velocity",

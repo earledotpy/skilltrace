@@ -42,7 +42,8 @@ from pathlib import Path
 import yaml
 from _builders import edge_id_between
 from discovery_fixtures import build_discovery_variant
-from evidence_fixtures import build_evidence_variant
+from evidence_fixtures import build_evidence_index_variant, build_evidence_variant
+from health_fixtures import build_health_variant, diagnostics_failure_body
 from mastery_fixtures import build_mastery_variant
 from node_fixtures import build_node_variant
 from reviews_fixtures import build_reviews_variant
@@ -876,6 +877,26 @@ def route_cases() -> tuple[RouteCase, ...]:
                 r, {"record": [f"ev.{NODE_ACTIVE}.003"]}
             ),
         ),
+        # The named index states (§11.2, SC-00a): an empty history and an
+        # unreadable store are different facts, so both are scanned.
+        RouteCase(
+            "evidence-index-empty",
+            "GET /evidence",
+            "operations",
+            "evidence_index_body",
+            lambda r: views.evidence_index_body(
+                build_evidence_index_variant(r, "empty"), {}
+            ),
+        ),
+        RouteCase(
+            "evidence-index-failure",
+            "GET /evidence",
+            "operations",
+            "evidence_index_body",
+            lambda r: views.evidence_index_body(
+                build_evidence_index_variant(r, "failure"), {}
+            ),
+        ),
         RouteCase(
             "reviews",
             "GET /reviews",
@@ -976,6 +997,38 @@ def route_cases() -> tuple[RouteCase, ...]:
             "operations",
             "health_body",
             lambda r: views.health_body(r, {}),
+        ),
+        # The named Health states (§11.5, SC-00a): guidance and diagnostics
+        # fail independently, and both failure panels are scanned.
+        RouteCase(
+            "health-empty",
+            "GET /health",
+            "operations",
+            "health_body",
+            lambda r: views.health_body(build_health_variant(r, "empty"), {}),
+        ),
+        RouteCase(
+            "health-limited",
+            "GET /health",
+            "operations",
+            "health_body",
+            lambda r: views.health_body(build_health_variant(r, "limited"), {}),
+        ),
+        RouteCase(
+            "health-guidance-failure",
+            "GET /health",
+            "operations",
+            "health_body",
+            lambda r: views.health_body(
+                build_health_variant(r, "guidance-failure"), {}
+            ),
+        ),
+        RouteCase(
+            "health-diagnostics-failure",
+            "GET /health",
+            "operations",
+            "health_body",
+            diagnostics_failure_body,
         ),
         RouteCase(
             "analytics",

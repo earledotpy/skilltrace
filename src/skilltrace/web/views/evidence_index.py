@@ -25,6 +25,31 @@ from .shell import _page_head
 
 _STANDING_KINDS = {"live": "success", "superseded": "neutral", "rejected": "failure"}
 
+#: The evidence layers this index reads. A history built from only some of
+#: them would mislabel rows (a missing gate reads as "no gate declared"), so a
+#: failure in any of them is could-not-compute for the whole index (SC-00a).
+_REQUIRED_SOURCES = frozenset({"gates", "records", "specs"})
+
+
+_ACCEPTED_WORDS = {"true", "accepted"}
+_REJECTED_WORDS = {"false", "rejected"}
+
+
+def _outcome_matches(record, outcome: str) -> bool:
+    """Whether a record matches the ``outcome`` filter.
+
+    The select sends ``True``/``False``; a hand-written deep link may use the
+    learner words. An unrecognised value is not silently read as either side —
+    it matches nothing, so the page cannot present the opposite verdict as if
+    it were the filter's answer.
+    """
+    word = outcome.strip().lower()
+    if word in _ACCEPTED_WORDS:
+        return record.accepted
+    if word in _REJECTED_WORDS:
+        return not record.accepted
+    return False
+
 
 def _matches(record, view, node: str, outcome: str, standing: str) -> bool:
     if node and record.artifact_spec_id:
@@ -33,7 +58,7 @@ def _matches(record, view, node: str, outcome: str, standing: str) -> bool:
         )
         if spec is None or spec.node_id != node:
             return False
-    if outcome and outcome != record.accepted:
+    if outcome and not _outcome_matches(record, outcome):
         return False
     if standing and standing != record_standing(view, record):
         return False
@@ -168,6 +193,37 @@ def _empty_state() -> str:
     )
 
 
+def _failure_state(unavailable: list[str], *, selected: str = "") -> str:
+    """Could-not-compute: the evidence store failed to load (SC-00a).
+
+    An unreadable store is *not* an empty history: nothing is listed, counted
+    or inspected, and no claim is made about what records exist. The selection
+    is part of that refusal rather than a separate one, so a shared link never
+    tells the learner its record was deleted.
+    """
+    names = ", ".join(unavailable)
+    selection = (
+        '<p class="state-body">The selected record cannot be shown while the '
+        "store is unavailable.</p>\n"
+        if selected
+        else ""
+    )
+    return (
+        '<div class="state state-failure">\n'
+        '<p class="state-title">Evidence history could not be loaded</p>\n'
+        '<p class="state-body">The evidence store did not load, so no record '
+        "is listed, counted or inspected here. This is an operational failure, "
+        "not an empty history: nothing is claimed about what evidence exists, "
+        "and nothing about your progress changed.</p>\n"
+        '<p class="state-body">Sources unavailable: '
+        f"<code>{_esc(names)}</code></p>\n"
+        f"{selection}"
+        '<p><a href="/evidence">Try the index again</a>, or '
+        '<a href="/health">open Health</a> for the detail.</p>\n'
+        "</div>\n"
+    )
+
+
 def evidence_index_body(root, query: dict | None = None) -> tuple[str, str, int]:
     """GET `/evidence` — the repository-wide evidence history index."""
     view, head, failure = _page_head(
@@ -186,6 +242,15 @@ def evidence_index_body(root, query: dict | None = None) -> tuple[str, str, int]
     outcome = (query.get("outcome") or [""])[0].strip()
     standing = (query.get("standing") or [""])[0].strip()
     selected = selected_value(query)
+
+    unavailable = sorted(_REQUIRED_SOURCES & set(view.degraded))
+    if unavailable:
+        body = head + section(
+            "Evidence history",
+            "The repository's immutable evidence history.",
+            _failure_state(unavailable, selected=selected),
+        )
+        return "Evidence", body, 200
 
     records = [r for r in view.records if _matches(r, view, node, outcome, standing)]
     records.sort(

@@ -231,7 +231,10 @@ def _rhythm_card(view: JoinedView, today: date) -> tuple[GuidanceCard, str | Non
     threshold, the limited-data line that replaces any below-target advisory.
     """
     rhythm = rhythm_facts(view, today)
-    if rhythm.limited:
+    # Zero sessions is the *empty* case, not a limited sample: there are no
+    # valid values to retain, so the limited-data warning would claim a
+    # threshold against nothing (SC-00a: empty and limited are distinct).
+    if rhythm.limited and rhythm.sessions_in_window > 0:
         limited = (
             f"Limited data ({rhythm.sessions_in_window} sessions) — "
             "counts may not reflect your full activity."

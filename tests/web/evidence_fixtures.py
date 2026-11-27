@@ -31,6 +31,10 @@ GATE = "gate.data.pandas.dataframe_basics.closure"
 
 EVIDENCE_VARIANTS: tuple[str, ...] = ("empty", "limited", "failure", "manual")
 
+#: The repository-index states (spec-v3-study-day §11.2, SC-00a): the index
+#: has no per-record minimum, so ``limited`` is not one of its states.
+EVIDENCE_INDEX_VARIANTS: tuple[str, ...] = ("empty", "failure")
+
 
 def _read_yaml(root: Path, relpath: str) -> dict:
     return yaml.safe_load((root / relpath).read_text(encoding="utf-8")) or {}
@@ -87,4 +91,16 @@ def build_evidence_variant(pinned: Path, kind: str) -> Path:
     """A read-only copy of ``pinned`` reshaped into one evidence state."""
     return materialise_variant(
         pinned, kind, prefix=f"evidence-{kind}", mutations=_MUTATIONS
+    )
+
+
+def build_evidence_index_variant(pinned: Path, kind: str) -> Path:
+    """A read-only copy of ``pinned`` reshaped into one repository-index state.
+
+    ``empty`` and ``failure`` are the index's own named states; they share the
+    workspace's mutations so the two gates can never disagree about what an
+    unreadable store looks like.
+    """
+    return materialise_variant(
+        pinned, kind, prefix=f"evidence-index-{kind}", mutations=_MUTATIONS
     )

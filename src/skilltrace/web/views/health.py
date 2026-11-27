@@ -23,6 +23,7 @@ recovery path — never a zero and never a fabricated health fact (SC-00a).
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from ...commands.health import health_report
 from ...execution.overdue import utc_today
@@ -32,9 +33,27 @@ from ..health import (
 )
 from ..interface.cards import Affordance, Card
 from ..interface.render import render_guidance_cards
-from ._shared import _esc, _table
+from ._shared import _esc, _table, plural
 from .sections import section
 from .shell import _page_head
+
+#: The layers a study-guidance card reads. If any of them did not load, the
+#: section's facts are *unknown*, never empty or zero (SC-00a). ``events`` and
+#: ``remediations`` are not read by any guidance card, so their absence claims
+#: nothing here.
+_GUIDANCE_SOURCES = frozenset(
+    {
+        "attempts",
+        "blockers",
+        "policies",
+        "records",
+        "resources",
+        "reviews",
+        "sessions",
+        "specs",
+        "work",
+    }
+)
 
 
 def health_body(root, query: dict | None = None) -> tuple[str, str, int]:
@@ -75,7 +94,18 @@ def _layer_headline(layer) -> str:
 
 
 def _guidance_section(view) -> str:
-    """The study-guidance projection — the learner's own facts."""
+    """The study-guidance projection — the learner's own facts.
+
+    A source that did not load makes the section *unknown*, never empty and
+    never zero: the cards claim what they were derived from, so a degraded
+    source would turn "not known" into "none" (SC-00a). The section fails
+    alone — Repository diagnostics below is a different projection and stays
+    readable (spec-v3-study-day §11.5).
+    """
+    unavailable = sorted(_GUIDANCE_SOURCES & set(view.degraded))
+    if unavailable:
+        return _guidance_failure_section(unavailable)
+
     guidance = derive_study_guidance(view, utc_today())
     cards, banner = guidance_page_cards(guidance)
     return section(
@@ -94,6 +124,37 @@ def _guidance_section(view) -> str:
             },
             banner=banner[1] if banner else None,
         ),
+    )
+
+
+def _guidance_failure_section(unavailable: list[str]) -> str:
+    """Could-not-compute for study guidance: claim nothing, name the sources.
+
+    The wording never reads as a learner problem and never becomes a warning
+    about the learner: it is an operational failure of the repository's own
+    records. The recovery path is a fresh load of this same page; the
+    diagnostics section is unaffected.
+    """
+    names = ", ".join(unavailable)
+    return (
+        '<section class="section">\n'
+        '<div class="section-head">\n'
+        '<h2 class="section-title">Study guidance</h2>\n'
+        "</div>\n"
+        '<div class="state state-failure">\n'
+        '<p class="state-title">Study guidance could not be worked out</p>\n'
+        '<p class="state-body">Some of the records behind these facts did not '
+        "load, so nothing is claimed about your blockers, reviews, evidence "
+        "gaps, study rhythm or resources — not even that any of them are zero. "
+        "Nothing about your progress changed, and the repository diagnostics "
+        "below are unaffected.</p>\n"
+        '<p class="state-body">Sources unavailable: '
+        f"<code>{_esc(names)}</code></p>\n"
+        '<p>The repository diagnostics below name the source and its error. '
+        '<a href="/health">Try loading this page again</a> once it is '
+        "readable.</p>\n"
+        "</div>\n"
+        "</section>\n"
     )
 
 
@@ -117,21 +178,33 @@ def _diagnostics_section(root) -> str:
             '<p class="state-body">The repository checks did not run, so '
             "nothing is reported here. No health fact is being claimed, and "
             "your study guidance above is unaffected.</p>\n"
-            f'<p class="state-body">The reason: {_esc(str(exc))}</p>\n'
+            f'<p class="state-body">The reason: '
+            f"{_esc(_relative_detail(exc, root))}</p>\n"
+            '<p><a href="/health">Try the checks again</a>.</p>\n'
             "</div>\n"
             "</section>\n"
         )
 
     rows = []
+    details = []
     for layer in report.layers:
+        counts = (
+            _esc(_plain_counts(layer.counts))
+            if layer.ok
+            else "Not counted — this layer failed"
+        )
         rows.append(
             [
                 _esc(layer.target),
-                _esc(_plain_counts(layer.counts)),
+                counts,
                 "ok" if layer.ok else "failing",
                 _esc(_plain_counts(_layer_headline(layer))),
+                _findings_summary(layer),
             ]
         )
+        detail = _findings_details(layer, root)
+        if detail:
+            details.append(detail)
 
     failure_state = ""
     if not report.layers:
@@ -149,8 +222,75 @@ def _diagnostics_section(root) -> str:
         "repository, not your progress — and they never block anything you "
         "do.",
         failure_state
-        + _table(["Layer", "Counts", "Standing", "What was checked"], rows),
+        + _table(
+            ["Layer", "Counts", "Standing", "What was checked", "Findings"],
+            rows,
+        )
+        + "".join(details),
         meta_markup=True,
+    )
+
+
+def _findings_phrase(layer) -> str:
+    """One layer's own finding tally — never a total shared across layers.
+
+    Errors and warnings stay split so a reader never has to guess which kind
+    a merged count represents.
+    """
+    errors = len(layer.error_lines)
+    warnings = layer.warning_count
+    parts = []
+    if errors:
+        parts.append(f"{errors} error{plural(errors)}")
+    if warnings:
+        parts.append(f"{warnings} warning{plural(warnings)}")
+    return ", ".join(parts)
+
+
+def _findings_summary(layer) -> str:
+    phrase = _findings_phrase(layer)
+    return _esc(phrase) if phrase else "None"
+
+
+def _relative_detail(line, root) -> str:
+    """A validator finding with the repository root removed from its paths.
+
+    The command's lines name the file that failed; a served page must name the
+    *repository-relative* location, both because the absolute checkout path is
+    noise to a learner and because the page must not depend on where the repo
+    happens to live.
+    """
+    text = str(line)
+    bases = {str(Path(root).resolve()), str(root)}
+    for base in sorted(bases, key=len, reverse=True):
+        text = text.replace(base.rstrip("/") + "/", "")
+    return text
+
+
+def _findings_details(layer, root) -> str:
+    """The exact source/location detail behind one layer's findings.
+
+    A diagnostic warns; it never becomes an acceptance authority, so this is
+    plain technical detail behind a disclosure. Each line is escaped and
+    shown verbatim (repository-relative) — a summarised diagnostic would hide
+    the source a repository correction needs.
+    """
+    lines = [
+        _relative_detail(line, root)
+        for line in list(layer.error_lines) + list(layer.warning_lines)
+    ]
+    if not lines:
+        return ""
+    items = "".join(
+        f'<li class="history-item"><code>{_esc(line)}</code></li>' for line in lines
+    )
+    phrase = _findings_phrase(layer)
+    return (
+        '<details class="disclosure">\n'
+        f"<summary>{_esc(layer.target)} findings"
+        f"{f' ({_esc(phrase)})' if phrase else ''}</summary>\n"
+        f'<ul class="history-list">{items}</ul>\n'
+        "</details>\n"
     )
 
 
@@ -160,11 +300,14 @@ def _diagnostics_section(root) -> str:
 # guidance anatomy.
 _ROLLUP_CARD = Card(
     state="active",
-    title="Health roll-up",
-    why="Your study guidance for today.",
-    resources=["The Health page is study guidance only."],
+    title="Health",
+    why="Two independent projections: your study guidance and the "
+    "repository's diagnostics.",
+    resources=[
+        "Study guidance and repository diagnostics are separate projections."
+    ],
     affordances=(Affordance.from_intent("explore"),),
-    kicker="Health roll-up",
+    kicker="Health",
 )
 _ROLLUP_CHROME = (
     '<p class="mut">Study guidance and repository diagnostics are two '

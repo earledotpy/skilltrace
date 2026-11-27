@@ -151,6 +151,9 @@ def test_empty_copy_contract(repo, today):
     assert "No open blockers — smooth sailing." in body
     assert "Log one from a skill page" in body
     assert "No reviews scheduled — pass a skill to schedule checks" in body
+    # Zero sessions is the empty case, not a limited sample: there are no
+    # valid values to retain, so no limited-data warning is claimed.
+    assert "Limited data (0 sessions)" not in body
 
 
 def test_limited_data_prefix_under_soft_threshold(repo, today):
@@ -217,3 +220,112 @@ def test_health_is_reachable_from_the_operations_navigation(repo, today):
     _seed_activity(repo, today)
     _, body, _ = views.operations_body(repo)
     assert 'href="/health"' in body
+
+
+# --- could-not-compute: each section fails independently (SC-00a) ----------
+
+
+def test_a_degraded_guidance_source_claims_nothing(repo, today):
+    """An unreadable evidence store is not an empty study history.
+
+    The five guidance cards would otherwise turn "not known" into "none" (and
+    "0 work items"), which is exactly the fabricated health fact SC-00a
+    forbids. Diagnostics is a different projection and stays readable.
+    """
+    _seed_activity(repo, today)
+    (repo / "evidence" / "evidence_records.yaml").write_text(
+        "evidence_records: [ { broken", encoding="utf-8"
+    )
+    _, body, _ = views.health_body(repo)
+    assert "Study guidance could not be worked out" in body
+    assert "not even that any of them are zero" in body
+    assert "Sources unavailable: <code>records</code>" in body
+    assert "diagnostics below name the source and its error" in body
+    # No empty copy, no zero.
+    for fabricated in (
+        "No open blockers",
+        "No reviews scheduled",
+        "No gaps on active nodes",
+        "Logged 0 work items",
+        "All supporting materials",
+    ):
+        assert fabricated not in body, fabricated
+    # The other projection is unaffected, and a failed layer never presents
+    # its zero as a count.
+    assert "Repository diagnostics" in body
+    diagnostics = body.partition("Repository diagnostics")[2]
+    assert "<table" in diagnostics
+    assert "0 records" not in diagnostics
+    assert "Not counted — this layer failed" in diagnostics
+    assert "failing" in diagnostics
+
+
+def test_diagnostics_failure_does_not_erase_study_guidance(repo, today, monkeypatch):
+    """The other direction: a failed repository check leaves guidance intact."""
+    from skilltrace.web.views import health as health_view
+
+    _seed_activity(repo, today)
+
+    def unavailable(_root):
+        raise OSError("the repository checks are unavailable")
+
+    monkeypatch.setattr(health_view, "health_report", unavailable)
+    _, body, _ = views.health_body(repo)
+    assert "Diagnostics could not be run" in body
+    assert "your study guidance above is unaffected" in body
+    assert "Try the checks again" in body
+    assert "Study guidance" in body
+    assert "1 open blocker holding up work." in body
+    # The study-guidance projection still precedes the diagnostics one.
+    assert body.index("Study guidance") < body.index("Repository diagnostics")
+
+
+def test_diagnostics_carry_exact_source_detail(repo, today):
+    """A dangling relationship names its source, never just "failing"."""
+    _seed_activity(repo, today)
+    path = repo / "graph" / "edges.yaml"
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    doc["edges"].append(
+        {
+            "id": "edge.no.such.node_99__data.pandas.dataframe_basics_01",
+            "source": "no.such.node_99",
+            "target": "data.pandas.dataframe_basics_01",
+            "edge_type": "hard_prerequisite",
+            "reason": "Authored fixture: a dangling reference.",
+            "active": True,
+        }
+    )
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+    _, body, _ = views.health_body(repo)
+    diagnostics = body.partition("Repository diagnostics")[2]
+    assert "failing" in diagnostics
+    assert "graph findings" in diagnostics
+    assert "source names unknown node no.such.node_99" in diagnostics
+
+
+def test_a_diagnostic_warning_warns_without_authority(repo, today):
+    """A warning is a finding, not a learner fact and not a blocker."""
+    _seed_activity(repo, today)
+    path = repo / "graph" / "resources.yaml"
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    doc["resources"].append(
+        {
+            "id": "resource-with-no-skill",
+            "url": "https://example.com/unsupported",
+            "cost": "free",
+            "supports": [],
+            "last_verified": "2026-07-10",
+        }
+    )
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+    _, body, _ = views.health_body(repo)
+    diagnostics = body.partition("Repository diagnostics")[2]
+    assert "warning" in diagnostics
+    assert "supports no node" in diagnostics
+    # Warnings describe the repository, never the learner and never a block.
+    assert "blocked until" not in diagnostics.lower()
+    # The guidance section carries no repository finding.
+    guidance = body.partition("Repository diagnostics")[0]
+    assert "supports no node" not in guidance

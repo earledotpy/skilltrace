@@ -106,6 +106,14 @@ def _provenance(view, key: str, noun: str) -> str:
     how many there are.
     """
     events = view.events_by_node.get(key) or []
+    if "events" in view.degraded:
+        return (
+            '<details class="disclosure">\n'
+            "<summary>Event provenance unavailable</summary>\n"
+            '<p class="small mut">The event log did not load, so nothing is '
+            f"claimed about what happened to this {noun}.</p>\n"
+            "</details>\n"
+        )
     if not events:
         inner = (
             f'<p class="small mut">No audit event names this {noun} yet.</p>\n'
