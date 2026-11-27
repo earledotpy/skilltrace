@@ -15,7 +15,7 @@ this command. Read-only: it appends no audit event.
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from .. import render
@@ -177,7 +177,9 @@ class LayerHealth:
 
     ``warning_count`` carries this layer's warning count as a structured
     fact (v2.4 P2.4 — the CLI shows per-layer warning counts, and the web
-    silently discarded them). The CLI line text is unchanged.
+    silently discarded them). ``warning_lines`` carries each warning's exact
+    text, so a serving surface can show the source detail without re-running
+    a second validator pass. The CLI line text is unchanged.
     """
 
     target: str
@@ -186,6 +188,7 @@ class LayerHealth:
     line: str  # the exact line `skilltrace health` prints for this layer
     error_lines: list[str]  # verbatim errors printed beneath it
     warning_count: int = 0
+    warning_lines: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -236,6 +239,7 @@ def health_report(root: Path, *, clock=None) -> HealthReport:
                 line=line,
                 error_lines=list(error_lines),
                 warning_count=len(result.warnings),
+                warning_lines=list(result.warnings),
             )
         )
         error_count += len(result.errors)

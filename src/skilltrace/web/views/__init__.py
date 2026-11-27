@@ -163,12 +163,17 @@ from .evidence import (  # noqa: F401  # noqa: F401
     node_evidence_body,
 )
 from .evidence_index import (  # noqa: F401  # noqa: F401
+    _ACCEPTED_WORDS,
+    _REJECTED_WORDS,
+    _REQUIRED_SOURCES,
     _STANDING_KINDS,
     _empty_state,
+    _failure_state,
     _filter_form,
     _gate_words,
     _matches,
     _node_options,
+    _outcome_matches,
     _record_row,
     evidence_index_body,
 )
@@ -207,13 +212,19 @@ from .graph import (  # noqa: F401  # noqa: F401
     graph_body,
 )
 from .health import (  # noqa: F401  # noqa: F401
+    _GUIDANCE_SOURCES,
     _ROLLUP_CARD,
     _ROLLUP_CHROME,
     _card_chrome,
     _diagnostics_section,
+    _findings_details,
+    _findings_phrase,
+    _findings_summary,
+    _guidance_failure_section,
     _guidance_section,
     _layer_headline,
     _plain_counts,
+    _relative_detail,
     health_body,
 )
 from .inspector import (  # noqa: F401  # noqa: F401
