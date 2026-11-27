@@ -248,8 +248,8 @@ def test_per_route_script_budget_analytics_velocity_only():
 
     S5 landed the granted chart hover/focus tooltip script, so the interim
     "no script anywhere" assertion graduates: home/next/health carry none,
-    non-velocity themes carry none, and the velocity theme carries exactly
-    one. Tier-0 degradation (static SVG with native titles) is asserted in
+    and no theme spends the grant on an empty series. The velocity theme's
+    single granted script is proven on a real multi-point trend in
     tests/web/test_analytics_tooltip.py.
     """
     import re
@@ -265,8 +265,8 @@ def test_per_route_script_budget_analytics_velocity_only():
     for title, body, _status in plain_pages:
         assert not re.search(r"<script\b", body, re.IGNORECASE), title
     _, velocity, _ = views.analytics_body(repo, {"theme": ["velocity"]})
-    assert len(re.findall(r"<script\b", velocity, re.IGNORECASE)) == 1, (
-        "velocity theme must carry exactly the granted tooltip script"
+    assert not re.search(r"<script\b", velocity, re.IGNORECASE), (
+        "the bare repo has no real trend, so the grant must not be spent"
     )
     for theme in ("blockers", "reviews", "evidence"):
         _, body, _ = views.analytics_body(repo, {"theme": [theme]})

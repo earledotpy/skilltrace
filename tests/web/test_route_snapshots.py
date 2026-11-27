@@ -143,11 +143,13 @@ from pathlib import Path
 import pytest
 import yaml
 from _builders import edge_id_between
+from analytics_fixtures import build_analytics_variant
 from discovery_fixtures import build_discovery_variant
 from evidence_fixtures import build_evidence_index_variant, build_evidence_variant
 from health_fixtures import build_health_variant, diagnostics_failure_body
 from mastery_fixtures import build_mastery_variant
 from node_fixtures import build_node_variant
+from portfolio_fixtures import build_portfolio_variant
 from reviews_fixtures import build_reviews_variant
 from session_fixtures import build_session_variant, refused_start_body
 from today_fixtures import build_today_variant
@@ -960,7 +962,37 @@ CASES: tuple[RouteCase, ...] = (
         "GET /portfolio/preview",
         "Portfolio",
         200,
-        lambda r: views.portfolio_body(r, {"preview": ["1"]}),
+        lambda r: views.portfolio_body(r, {"preview": ["1"], "node": [NODE_PASSED]}),
+    ),
+    # The named Portfolio states (§11.7, SC-00a): an unconfigured export, a
+    # limited selection carrying the honesty banner, and a preview that could
+    # not be built. Each is the served body for one reshaped fixture repo.
+    RouteCase(
+        "portfolio-empty",
+        "GET /portfolio",
+        "Portfolio",
+        200,
+        lambda r: views.portfolio_body(build_portfolio_variant(r, "empty"), {}),
+    ),
+    RouteCase(
+        "portfolio-limited",
+        "GET /portfolio/preview",
+        "Portfolio",
+        200,
+        lambda r: views.portfolio_body(
+            build_portfolio_variant(r, "limited"),
+            {"preview": ["1"], "node": [NODE_PASSED]},
+        ),
+    ),
+    RouteCase(
+        "portfolio-failure",
+        "GET /portfolio/preview",
+        "Portfolio",
+        200,
+        lambda r: views.portfolio_body(
+            build_portfolio_variant(r, "failure"),
+            {"preview": ["1"], "node": [NODE_PASSED]},
+        ),
     ),
     RouteCase("health", "GET /health", "Health", 200, views.health_body),
     # The named Health states (§11.5, SC-00a): guidance and diagnostics fail
@@ -1022,6 +1054,36 @@ CASES: tuple[RouteCase, ...] = (
         "Analytics",
         200,
         lambda r: views.analytics_body(r, {"theme": ["evidence"]}),
+    ),
+    # The named Analytics states (§11.6, SC-00a): an honest empty population,
+    # a below-threshold window that retains its values, and a store failure
+    # that claims no zero. Each is the served body for one reshaped fixture.
+    RouteCase(
+        "analytics-empty",
+        "GET /analytics?theme=velocity",
+        "Analytics",
+        200,
+        lambda r: views.analytics_body(
+            build_analytics_variant(r, "empty"), {"theme": ["velocity"]}
+        ),
+    ),
+    RouteCase(
+        "analytics-limited",
+        "GET /analytics?theme=velocity",
+        "Analytics",
+        200,
+        lambda r: views.analytics_body(
+            build_analytics_variant(r, "limited"), {"theme": ["velocity"]}
+        ),
+    ),
+    RouteCase(
+        "analytics-failure",
+        "GET /analytics?theme=velocity",
+        "Analytics",
+        200,
+        lambda r: views.analytics_body(
+            build_analytics_variant(r, "failure"), {"theme": ["velocity"]}
+        ),
     ),
     RouteCase(
         "pass",
@@ -1189,6 +1251,25 @@ def test_golden_snapshots_cover_the_normative_route_table() -> None:
     assert missing == [], (
         "destinations with no golden snapshot: " + ", ".join(sorted(missing))
     )
+
+
+def test_analytics_and_portfolio_goldens_cover_the_named_states() -> None:
+    """Both capabilities pin populated, empty, limited and failure states."""
+    covered = {case.name for case in CASES}
+    required = {
+        "analytics-velocity",
+        "analytics-blockers",
+        "analytics-reviews",
+        "analytics-evidence",
+        "analytics-empty",
+        "analytics-limited",
+        "analytics-failure",
+        "portfolio",
+        "portfolio-empty",
+        "portfolio-limited",
+        "portfolio-failure",
+    }
+    assert required <= covered, sorted(required - covered)
 
 
 def test_evidence_workspace_goldens_cover_the_named_states() -> None:

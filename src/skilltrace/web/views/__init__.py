@@ -144,10 +144,19 @@ from ._shared import (  # noqa: F401  # noqa: F401
     superseded_ids,
 )
 from .analytics import (  # noqa: F401
+    _ANALYTICS_SOURCES,
+    _ANALYTICS_STATES,
     _analytics_card,
     _analytics_controls,
     _analytics_export_form,
+    _analytics_failure_section,
     _analytics_view,
+    _computation_failure_section,
+    _data_note,
+    _has_any_data,
+    _theme_page,
+    _velocity_chart,
+    _weekly_table,
     analytics_body,
 )
 from .evidence import (  # noqa: F401  # noqa: F401
@@ -302,8 +311,15 @@ from .operations import (  # noqa: F401
     overdue_reviews,
 )
 from .portfolio import (  # noqa: F401  # noqa: F401
+    _eligible_nodes,
+    _export_section,
+    _format_value,
+    _has_explicit_selection,
+    _outcome_sentence,
     _preview_section,
+    _redaction_outcome,
     _selection_form,
+    _track_value,
     portfolio_body,
 )
 from .receipts import (  # noqa: F401

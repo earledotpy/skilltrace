@@ -41,11 +41,13 @@ from pathlib import Path
 
 import yaml
 from _builders import edge_id_between
+from analytics_fixtures import build_analytics_variant
 from discovery_fixtures import build_discovery_variant
 from evidence_fixtures import build_evidence_index_variant, build_evidence_variant
 from health_fixtures import build_health_variant, diagnostics_failure_body
 from mastery_fixtures import build_mastery_variant
 from node_fixtures import build_node_variant
+from portfolio_fixtures import build_portfolio_variant
 from reviews_fixtures import build_reviews_variant
 from session_fixtures import build_session_variant, refused_start_body
 from today_fixtures import build_today_variant
@@ -1037,6 +1039,35 @@ def route_cases() -> tuple[RouteCase, ...]:
             "analytics_body",
             lambda r: views.analytics_body(r, {"theme": ["velocity"]}),
         ),
+        # The named Analytics states (§11.6, SC-00a): empty, limited and
+        # could-not-compute are scanned as served pages, never merged.
+        RouteCase(
+            "analytics-empty",
+            "GET /analytics?theme=velocity",
+            "operations",
+            "analytics_body",
+            lambda r: views.analytics_body(
+                build_analytics_variant(r, "empty"), {"theme": ["velocity"]}
+            ),
+        ),
+        RouteCase(
+            "analytics-limited",
+            "GET /analytics?theme=velocity",
+            "operations",
+            "analytics_body",
+            lambda r: views.analytics_body(
+                build_analytics_variant(r, "limited"), {"theme": ["velocity"]}
+            ),
+        ),
+        RouteCase(
+            "analytics-failure",
+            "GET /analytics?theme=velocity",
+            "operations",
+            "analytics_body",
+            lambda r: views.analytics_body(
+                build_analytics_variant(r, "failure"), {"theme": ["velocity"]}
+            ),
+        ),
         RouteCase(
             "portfolio",
             "GET /portfolio",
@@ -1049,7 +1080,34 @@ def route_cases() -> tuple[RouteCase, ...]:
             "GET /portfolio/preview",
             "operations",
             "portfolio_body",
-            lambda r: views.portfolio_body(r, {"preview": ["1"]}),
+            lambda r: views.portfolio_body(r, {"preview": ["1"], "node": [NODE_PASSED]}),
+        ),
+        RouteCase(
+            "portfolio-empty",
+            "GET /portfolio",
+            "operations",
+            "portfolio_body",
+            lambda r: views.portfolio_body(build_portfolio_variant(r, "empty"), {}),
+        ),
+        RouteCase(
+            "portfolio-limited",
+            "GET /portfolio/preview",
+            "operations",
+            "portfolio_body",
+            lambda r: views.portfolio_body(
+                build_portfolio_variant(r, "limited"),
+                {"preview": ["1"], "node": [NODE_PASSED]},
+            ),
+        ),
+        RouteCase(
+            "portfolio-failure",
+            "GET /portfolio/preview",
+            "operations",
+            "portfolio_body",
+            lambda r: views.portfolio_body(
+                build_portfolio_variant(r, "failure"),
+                {"preview": ["1"], "node": [NODE_PASSED]},
+            ),
         ),
         RouteCase(
             "pass",

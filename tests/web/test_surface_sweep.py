@@ -260,7 +260,9 @@ def test_per_route_script_budget_analytics_velocity_only(repo):
     for html in plain:
         assert "<script" not in html.lower()
     _, velocity, _ = views.analytics_body(repo, {"theme": ["velocity"]})
-    assert len(re.findall(r"<script\b", velocity, re.IGNORECASE)) == 1
+    # This seed has no work items, so there is no real trend to upgrade:
+    # the one granted script is never spent on an empty chart.
+    assert "<script" not in velocity.lower()
     for theme in ("blockers", "reviews", "evidence"):
         _, body, _ = views.analytics_body(repo, {"theme": [theme]})
         assert "<script" not in body.lower(), theme

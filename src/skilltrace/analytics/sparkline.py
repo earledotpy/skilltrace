@@ -12,18 +12,41 @@ def sparkline_svg(
     height: int = 40,
     color: str = "#4a90d9",
     with_points: bool = False,
+    label: str | None = None,
 ) -> str:
     """Return a self-contained SVG for an oldest-first ``(label, value)`` series.
+
+    ``label`` is the chart's accessible name (AX-9). Passing one also makes
+    the SVG one graphic with ``role="img"``, so assistive technology
+    announces that name rather than exposing the raw shape. Omitting it
+    keeps every existing caller byte-identical — the historical
+    ``aria-label="sparkline"`` default — so exported reports do not change
+    without a deliberate caller edit.
 
     ``with_points`` is the tier-1 narrow opt-in (ADR 0008): real multi-point
     series gain one focusable marker per point, each carrying a native
     ``<title>`` (the tier-0 tooltip — full function with script absent) plus
     a ``data-tip`` hook the single granted analytics script upgrades to a
     hover/focus tooltip. Single-point series never gain markers (P2.2 bans
-    pseudo-sparklines). Defaults keep every existing caller byte-identical.
+    pseudo-sparklines).
     """
-    if not points:
-        return f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg"></svg>'
+    if label is None:
+        if not points:
+            return f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg"></svg>'
+        aria = "sparkline"
+        opening = (
+            f'<svg width="{width}" height="{height}" '
+            f'xmlns="http://www.w3.org/2000/svg" aria-label="{aria}">'
+        )
+    else:
+        aria = html.escape(label, quote=True)
+        opening = (
+            f'<svg width="{width}" height="{height}" '
+            f'xmlns="http://www.w3.org/2000/svg" role="img" aria-label="{aria}">'
+        )
+        if not points:
+            return opening + "</svg>"
+
     values = [max(0, v) for _, v in points]
     max_val = max(values) or 1  # avoid divide-by-zero
     pad_x, pad_y = 4, 4
@@ -41,18 +64,18 @@ def sparkline_svg(
     points_attr = " ".join(coords)
     markers = ""
     if with_points and n >= 2:
-        for i, (label, value) in enumerate(points):
+        for i, (label_text, value) in enumerate(points):
             x = pad_x + i * scale_x
             y = pad_y + inner_h - max(0, value) * scale_y
-            tip = html.escape(f"{label}: {value}", quote=True)
+            tip = html.escape(f"{label_text}: {value}", quote=True)
             markers += (
                 f'<circle class="spark-point" cx="{x:.1f}" cy="{y:.1f}" r="3.5" '
                 f'fill="{color}" tabindex="0" data-tip="{tip}">'
                 f"<title>{tip}</title></circle>"
             )
     return (
-        f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg" '
-        f'aria-label="sparkline"><polyline points="{points_attr}" fill="none" '
+        opening
+        + f'<polyline points="{points_attr}" fill="none" '
         f'stroke="{color}" stroke-width="1.5"/>'
         f"{markers}</svg>"
     )
