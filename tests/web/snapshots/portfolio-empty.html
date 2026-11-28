@@ -1,0 +1,36 @@
+<header><div class="shell"><h1 class="brand"><a href="/">SkillTrace</a></h1><nav class="nav operations" aria-label="Operations"><details class="section-nav-disclosure" open><summary><span class="section-nav-label">Operations</span><span class="section-nav-current">Portfolio</span></summary><div class="section-nav-links"><a href="/operations">Operations</a><a href="/graph">Graph</a><a href="/evidence">Evidence</a><a href="/reviews">Reviews</a><a href="/health">Health</a><a href="/analytics">Analytics</a><a href="/portfolio" aria-current="page">Portfolio</a></div></details><span class="mode-switch"><span class="nav-label">Mode</span><a href="/portfolio?mode=guided">Guided</a><a href="/portfolio?mode=operations" aria-current="true">Operations</a></span></nav></div></header>
+<section class="section">
+<div class="section-head">
+<h2 class="section-title">What to include</h2>
+<p class="section-meta">Choose finished skills, or use a track preset. Nothing is shared unless you enable it: the default share profile keeps every redaction on.</p>
+</div>
+<form method="get" action="/portfolio/preview">
+<div class="form-row"><label for="portfolio-track">Track preset (optional)</label><input type="text" name="track" id="portfolio-track" value=""><p class="small mut">Narrows the selection. Checked skills below take precedence; leave this blank to use them across tracks.</p></div>
+<div class="form-row"><label for="portfolio-format">Format</label><select name="format" id="portfolio-format"><option value="md" selected>md</option><option value="html">html</option><option value="json">json</option></select></div>
+<fieldset class="selection"><legend>Skills</legend>
+<p class="small mut">No finished skills to choose yet. Include work in progress below to export an active skill.</p>
+</fieldset>
+<fieldset class="selection"><legend>Selection overrides</legend>
+<div class="row"><span class="row-label">Work in progress</span><span class="row-value">Skills you started but did not pass</span><span class="row-value"><label><input type="checkbox" name="include_active" value="1"> include</label></span></div><div class="row"><span class="row-label">Rejected evidence</span><span class="row-value">Evidence that did not pass</span><span class="row-value"><label><input type="checkbox" name="include_rejected" value="1"> include</label></span></div><div class="row"><span class="row-label">Superseded evidence</span><span class="row-value">Evidence replaced by a later record</span><span class="row-value"><label><input type="checkbox" name="include_superseded" value="1"> include</label></span></div></fieldset>
+<fieldset class="selection"><legend>Redaction overrides</legend>
+<div class="row"><span class="row-label">File paths</span><span class="row-value">Where each artifact lives</span><span class="row-value"><label><input type="checkbox" name="include_paths" value="1"> include</label></span></div><div class="row"><span class="row-label">Your notes</span><span class="row-value">The notes you wrote on each record</span><span class="row-value"><label><input type="checkbox" name="include_notes" value="1"> include</label></span></div><div class="row"><span class="row-label">Free text</span><span class="row-value">Unstructured text you typed</span><span class="row-value"><label><input type="checkbox" name="include_free_text" value="1"> include</label></span></div><div class="row"><span class="row-label">External links</span><span class="row-value">Links to resources outside the repo</span><span class="row-value"><label><input type="checkbox" name="include_urls" value="1"> include</label></span></div><div class="row"><span class="row-label">Blockers</span><span class="row-value">What you recorded as stuck</span><span class="row-value"><label><input type="checkbox" name="include_blockers" value="1"> include</label></span></div><div class="row"><span class="row-label">Reviews</span><span class="row-value">Your retention-check history</span><span class="row-value"><label><input type="checkbox" name="include_reviews" value="1"> include</label></span></div></fieldset>
+<div class="command-bar"><div class="actions"><button type="submit">Preview</button></div></div>
+</form>
+</section>
+<section class="section">
+<div class="section-head">
+<h2 class="section-title">Redaction outcome</h2>
+<p class="section-meta">This is what the preview and export would contain. The Share profile keeps every redaction on by default; an override applies to this invocation only.</p>
+</div>
+<div class="rows"><div class="row"><span class="row-label">File paths</span><span class="row-value">Redacted (default deny)</span></div><div class="row"><span class="row-label">Your notes</span><span class="row-value">Redacted (default deny)</span></div><div class="row"><span class="row-label">Free text</span><span class="row-value">Redacted (default deny)</span></div><div class="row"><span class="row-label">External links</span><span class="row-value">Redacted (default deny)</span></div><div class="row"><span class="row-label">Blockers</span><span class="row-value">Redacted (default deny)</span></div><div class="row"><span class="row-label">Reviews</span><span class="row-value">Redacted (default deny)</span></div></div></section>
+<section class="section">
+<div class="section-head">
+<h2 class="section-title">Export</h2>
+<p class="section-meta">An export is a dated, disposable snapshot — never live truth.</p>
+</div>
+<div class="state state-empty">
+<p class="state-title">This export has not been configured</p>
+<p class="state-body">No skill is ready to leave yet. A portfolio includes finished skills; work in progress joins only if you include it above.</p>
+<p><a href="/">Return to Today</a> to work on a skill.</p>
+</div>
+</section>

@@ -81,12 +81,11 @@ def test_dashboard_renders_one_theme_per_page_with_theme_control(tmp_path):
     title, body, status = views.analytics_body(root)
 
     assert (title, status) == ("Analytics", 200)
-    # One visible theme card, not four stacked charts (T4 §H: a plain card;
-    # the table detail sits collapsed behind one Details).
+    # One visible theme card, not four stacked charts (T4 §H: a plain card).
     assert body.count('<div class="card analytics-card">') == 1
-    assert body.count("<details>") == 1
-    # The velocity theme renders its real multi-point weekly series.
-    assert body.count("<svg") == 1
+    # This fixture has sessions but no SessionWork, so there is no real
+    # multi-point trend: no chart and no fabricated sparkline (P2.2).
+    assert "<svg" not in body
     assert 'name="theme"' in body
     assert "Velocity" in body
     # Plain-link theme switching reuses the export theme vocabulary.
@@ -108,7 +107,7 @@ def test_dashboard_theme_switch_selects_the_named_theme(tmp_path):
     _, blockers, _ = views.analytics_body(root, {"theme": ["blockers"]})
 
     assert "Velocity" in velocity
-    assert "Open blockers are counted now" in blockers
+    assert "Open Blocker records now" in blockers
     # Single-point series render no pseudo-sparkline (P2.2).
     assert "<svg" not in blockers
 
@@ -140,12 +139,13 @@ def test_dashboard_collapses_to_one_column_at_the_narrow_window():
     assert "grid-template-columns:1fr" in views._STYLE.replace(" ", "")
 
 
-def test_dashboard_shows_limited_data_banner_below_threshold(tmp_path):
+def test_dashboard_empty_is_not_a_limited_data_warning(tmp_path):
+    """Zero sessions is empty, not limited: there is no value to retain (SC-00a)."""
     title, body, status = views.analytics_body(_seed_repo(tmp_path))
 
     assert (title, status) == ("Analytics", 200)
-    assert "Limited data — fewer than 3 sessions in the last 30 days." in body
-    assert "Results may not reflect your full activity." in body
+    assert "No study activity in this window" in body
+    assert "Limited data" not in body
 
 
 def test_dashboard_hides_limited_data_banner_with_full_data(tmp_path):

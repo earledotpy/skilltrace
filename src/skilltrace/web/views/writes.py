@@ -414,9 +414,17 @@ def post_portfolio_export(root, form: dict):
         return _redirect_with_notice(
             "/portfolio", ["That export format is not available."], "warning"
         )
+    selected_nodes = [node for node in (form.get("node") or []) if node] or None
+    track = _field(form, "track") or None
+    if not selected_nodes and not track:
+        return _redirect_with_notice(
+            "/portfolio",
+            ["Choose at least one skill or a track preset before exporting."],
+            "warning",
+        )
     options = {
-        "node": form.get("node") or None,
-        "track": _field(form, "track"),
+        "node": selected_nodes,
+        "track": track,
         "include_active": "include_active" in form,
         "include_rejected": "include_rejected" in form,
         "include_superseded": "include_superseded" in form,
@@ -453,6 +461,12 @@ def post_analytics_export(root, form: dict):
         return _redirect_with_notice(
             "/analytics", ["That export shape is not available."], "warning"
         )
+    valid_states = {"locked", "available", "active", "passed", "mastered"}
+    states = form.get("state") or []
+    if any(state not in valid_states for state in states):
+        return _redirect_with_notice(
+            "/analytics", ["That node-state filter is not available."], "warning"
+        )
     exit_code, lines = _dispatch_web(
         root,
         "analytics export",
@@ -460,7 +474,7 @@ def post_analytics_export(root, form: dict):
         format=fmt,
         days=days,
         group_by=group_by,
-        state=[],
+        state=states,
         output=None,
     )
     return _finish_write("/analytics", lines, exit_code)

@@ -196,11 +196,14 @@ def test_the_blessed_producers_lock_the_anatomy_the_goldens_hold():
         "<p>detail</p>",
         _Model(window_days=30, group_by="prefix"),
         "velocity",
+        data_note="Available data.",
+        state_html="",
     )
     assert card == (
         '<div class="card analytics-card"><p class="lead">Velocity</p>'
         '<p class="big">4 sessions, 140 minutes</p>'
         '<p class="mut">Sessions and work items started in the selected window.</p>'
+        '<p class="small mut data-note">Available data.</p>'
         "<svg>chart</svg>"
         "<details><summary>Details</summary><p>detail</p></details>"
         '<form method="post" action="/analytics/export" class="actions">'
@@ -226,6 +229,15 @@ def test_the_blessed_producers_lock_the_anatomy_the_goldens_hold():
         '<input type="hidden" name="group-by" value="prefix">'
         '<input type="hidden" name="theme" value="velocity">'
         '<p class="small mut">Which window the charts cover.</p>'
+        '</div><div class="form-row"><label for="analytics-state">Node state</label>'
+        '<select name="state" id="analytics-state" multiple size="5">'
+        '<option value="locked">locked</option>'
+        '<option value="available">available</option>'
+        '<option value="active">active</option>'
+        '<option value="passed">passed</option>'
+        '<option value="mastered">mastered</option>'
+        "</select><p class=\"small mut\">Narrow rows to these states (OR). "
+        "Leave all unselected for every state.</p>"
         '<button class="btn secondary" type="submit">Apply</button></div></form>'
         '<div class="form-row"><label>Group by</label>'
         '<p class="small mut">How sessions are bucketed in the charts.</p>'
@@ -245,6 +257,8 @@ def test_the_blessed_producers_escape_and_stay_outside_the_script_budget():
         "<p>detail</p>",
         _Model(window_days=30, group_by="prefix"),
         "velocity",
+        data_note="Available data.",
+        state_html="",
     )
     controls = analytics_view._analytics_controls(30, "pre<fix", "ve&locity")
 
